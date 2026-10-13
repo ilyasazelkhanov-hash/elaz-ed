@@ -88,7 +88,7 @@ export function Home() {
       {courses.length > 0 && (
         <>
           <SectionTitle count={courses.length}>Курсы</SectionTitle>
-          <div className="no-bar flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1">
+          <div className="no-bar -mb-10 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-10">
             {courses.map((c) => (
               <CourseCard key={c.id} course={c} single={courses.length === 1} />
             ))}
@@ -342,13 +342,13 @@ function HeroCarousel({ cards }: { cards: Card[] }) {
 
   return (
     <>
-      <div ref={scroller} onScroll={onScroll} className="no-bar flex snap-x snap-mandatory gap-3 overflow-x-auto px-5">
+      <div ref={scroller} onScroll={onScroll} className="no-bar -mb-10 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-10">
         {cards.map((c, i) => (
           <HeroCard key={c.id} card={c} active={i === active} single={cards.length === 1} index={i} step={step} scrollX={scrollX} />
         ))}
       </div>
       {cards.length > 1 && (
-        <div className="mt-3 flex justify-center gap-1.5">
+        <div className="relative mt-3 flex justify-center gap-1.5">
           {cards.map((c, i) => (
             <motion.span key={c.id} animate={{ width: i === active ? 18 : 6, opacity: i === active ? 1 : 0.3 }} className="h-1.5 rounded-full bg-ink" />
           ))}

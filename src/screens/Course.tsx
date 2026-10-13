@@ -5,7 +5,7 @@ import { api, errorText, isDemo } from '../lib/api'
 import { GRADIENTS, lessonsWord, plural } from '../lib/game'
 import { appLink } from '../lib/links'
 import { sfx } from '../lib/sfx'
-import { canPayStars, haptic, inTelegram, openInvoice, shareLink } from '../lib/tg'
+import { canPayStars, confirmDialog, haptic, inTelegram, openInvoice, shareLink } from '../lib/tg'
 import { Markdown } from '../Markdown'
 import { insetOf, useStore, type Inset } from '../store'
 import { Bar, celebrate, Cta, Emoji, Pattern, Tap } from '../ui'
@@ -52,6 +52,8 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
   const buy = async () => {
     if (busy) return
     if (!isDemo && !canPayStars) return toast('Оплата звёздами работает в приложении Telegram')
+    // В демо настоящего счёта нет, поэтому курс открывается только после явного согласия.
+    if (isDemo && !(await confirmDialog(`Это демо. В Telegram здесь откроется счёт на ${course.price_stars} звёзд, и без оплаты курс не откроется. Открыть курс условно, чтобы посмотреть?`))) return
     setBusy('buy')
     try {
       const link = await api.courseInvoice(id)
