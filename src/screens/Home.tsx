@@ -2,7 +2,7 @@ import { Check, CirclePlay, Lock, Share2, Snowflake, Star } from 'lucide-react'
 import { AnimatePresence, animate, motion, useMotionValue, useTransform, type MotionValue } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText } from '../lib/api'
-import { dailyReward, days, GRADIENTS, lessonsWord, levelOf } from '../lib/game'
+import { dailyReward, days, GRADIENTS, iconFor, lessonsWord, levelOf } from '../lib/game'
 import { sfx } from '../lib/sfx'
 import { streakCard } from '../lib/shareCard'
 import { haptic } from '../lib/tg'
@@ -308,9 +308,12 @@ function StoryBubble({ card, index }: { card: Card; index: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.05 * index }}
     >
-      <div className="rounded-full p-[2.5px]" style={{ background: seen ? 'var(--track-strong)' : g.css }}>
+      <div className={seen ? 'rounded-full p-[2.5px]' : 'relative rounded-full p-[2.5px]'} style={{ background: seen ? 'var(--track-strong)' : g.css }}>
         <div className="rounded-full bg-bg p-[2.5px]">
-          <EmojiTile emoji={card.emoji} gradient={card.gradient} size={60} radius={30} />
+          <div className={`relative grid h-[60px] w-[60px] place-items-center overflow-hidden rounded-full ${seen ? 'opacity-60 saturate-50' : ''}`} style={{ background: g.css }}>
+            <Pattern name={card.gradient} full />
+            <Emoji char={iconFor(card)} size={36} animated={!seen} className="relative drop-shadow-[0_3px_4px_rgb(0_0_0/0.25)]" />
+          </div>
         </div>
       </div>
       <p className={`mt-1.5 line-clamp-2 text-center text-[11px] font-medium leading-tight ${seen ? 'text-faint' : 'text-ink'}`}>{card.title}</p>
@@ -402,15 +405,11 @@ function HeroCard({ card, active, single, index, step, scrollX }: HeroProps) {
       style={{ background: g.css, color: g.ink, boxShadow: `0 14px 30px -16px ${g.glow}` }}
     >
       <Pattern name={card.gradient} />
-      {card.cover_url ? (
-        <img src={card.cover_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45 mix-blend-luminosity" />
-      ) : (
-        <motion.div className="absolute -bottom-2 -right-1" style={{ x: emojiX, rotate: emojiRotate }}>
-          <div className="floaty">
-            <Emoji char={card.emoji} size={128} animated={active} />
-          </div>
-        </motion.div>
-      )}
+      <motion.div className="absolute -bottom-2 -right-1" style={{ x: emojiX, rotate: emojiRotate }}>
+        <div className="floaty">
+          <Emoji char={iconFor(card)} size={128} animated={active} />
+        </div>
+      </motion.div>
       <div className="relative flex h-full flex-col">
         <div className="flex items-center gap-1.5">
           <span className="rounded-full bg-black/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider">{card.category}</span>
@@ -420,9 +419,9 @@ function HeroCard({ card, active, single, index, step, scrollX }: HeroProps) {
             </span>
           )}
         </div>
-        <h3 className="mt-3 max-w-[82%] font-display text-[21px] font-semibold leading-[1.14]">{card.title}</h3>
+        <h3 className="mt-3 line-clamp-3 max-w-[82%] font-display text-[20px] font-semibold leading-[1.14]">{card.title}</h3>
         {card.subtitle && (
-          <p className="mt-2 max-w-[64%] text-[13.5px] font-medium leading-snug opacity-85">
+          <p className="mt-2 line-clamp-2 max-w-[62%] text-[13.5px] font-medium leading-snug opacity-85">
             <Typed text={card.subtitle} active={active} />
           </p>
         )}
@@ -487,7 +486,7 @@ function LessonRow({ card, index }: { card: Card; index: number }) {
       transition={{ delay: Math.min(index, 8) * 0.04 }}
       className="flex w-full items-center gap-3.5 border-b border-line p-3 text-left last:border-b-0 active:bg-veil/5"
     >
-      <EmojiTile emoji={card.emoji} gradient={card.gradient} size={54} radius={17} />
+      <EmojiTile emoji={iconFor(card)} gradient={card.gradient} size={54} radius={17} />
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-[15px] font-semibold leading-snug">{card.title}</p>
         <p className="mt-1 flex items-center gap-1.5 text-[12.5px] text-mute">

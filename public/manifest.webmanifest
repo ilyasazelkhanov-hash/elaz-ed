@@ -1,0 +1,13 @@
+{
+  "name": "Elaz Ed",
+  "short_name": "Elaz Ed",
+  "description": "Уроки, туториалы и новости с XP, стриком и рейтингом",
+  "start_url": "/?demo",
+  "display": "standalone",
+  "background_color": "#0b0a12",
+  "theme_color": "#0b0a12",
+  "lang": "ru",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

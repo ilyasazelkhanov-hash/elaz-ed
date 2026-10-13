@@ -2,7 +2,7 @@ import { Check, ChevronLeft, Copy, Eye, Heart, Play, Send, X } from 'lucide-reac
 import { AnimatePresence, motion, useMotionValue } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { api, ApiError, errorText } from '../lib/api'
-import { comboPoints, GRADIENTS, quizScore } from '../lib/game'
+import { comboPoints, GRADIENTS, iconFor, quizScore } from '../lib/game'
 import { appLink } from '../lib/links'
 import { sfx } from '../lib/sfx'
 import { copyText, haptic, inTelegram, openLink, shareLink } from '../lib/tg'
@@ -122,7 +122,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
             <div className="relative flex justify-center pb-14">
               <motion.div initial={{ scale: 0.5, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.12 }}>
                 <div className="floaty">
-                  <Emoji char={view?.emoji ?? '✨'} size={132} animated />
+                  <Emoji char={view ? iconFor(view) : '✨'} size={132} animated />
                 </div>
               </motion.div>
             </div>
