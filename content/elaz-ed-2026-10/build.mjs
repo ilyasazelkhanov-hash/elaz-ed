@@ -1,4 +1,4 @@
-import {mkdir,writeFile} from 'node:fs/promises'
+import {mkdir,writeFile,readFile} from 'node:fs/promises'
 import {fileURLToPath} from 'node:url'
 import {tools} from './tools.mjs'
 import {guides} from './guides.mjs'
@@ -6,7 +6,10 @@ import {prompts} from './prompts.mjs'
 import {course,courseLessons} from './course.mjs'
 
 const dir=fileURLToPath(new URL('.',import.meta.url))
-const batch='content_import:pronin-2026-10-v1'
+const batch='content_import:elaz-ed-2026-10-v1'
+const storage='https://dcdepwdxvadhludnubis.supabase.co/storage/v1/object/public/learning-content/'
+const assets=JSON.parse(await readFile(new URL('./assets-manifest.json',import.meta.url),'utf8'))
+const assetUrls=new Map(assets.filter(x=>!x.error).map(x=>[x.url,storage+x.name]))
 const gradients=['aurora','sunset','mint','ocean','candy','lime']
 const emoji={Дизайн:'🎨',Прочее:'🧰',Промпты:'💬',Нейронки:'🤖',Маркетинг:'📣',Закон:'⚖️',Безопасность:'🛡️',Продукт:'💡',Видео:'🎬'}
 const feed=[...tools,...guides,...prompts].sort((a,b)=>a.source_index-b.source_index)
@@ -14,10 +17,20 @@ if(feed.length!==64 || guides.length!==15 || prompts.length!==7 || tools.length!
 for(let i=1;i<=64;i++)if(feed[i-1].source_index!==i)throw Error(`Пропущена карточка ${i}`)
 if(courseLessons.length!==20)throw Error('Неполный курс')
 const lessons=[...feed,...courseLessons].map((x,i)=>({
-  ...x,kind:'lesson',emoji:emoji[x.category]??'✨',gradient:gradients[i%gradients.length],
+  ...x,subtitle:x.subtitle.slice(0,200),kind:'lesson',emoji:emoji[x.category]??'✨',gradient:gradients[i%gradients.length],
   video_url:x.video_url??null,pinned:false,position:x.position??x.source_index,
   free_preview:x.free_preview??false,course_key:x.course_key??null,
 }))
+for(const item of lessons){
+  item.cover_url=assetUrls.get(item.cover_url)??item.cover_url
+  if(item.key==='feed-58')item.video_url=storage+'seedance.mp4'
+  if(item.course_key){
+    item.quiz=item.quiz.map(q=>{
+      const shift=item.position%q.options.length
+      return {...q,options:[...q.options.slice(shift),...q.options.slice(0,shift)],correct:(q.correct-shift+q.options.length)%q.options.length}
+    })
+  }
+}
 for(const item of lessons){
   if(!item.title.trim()||!item.body.trim()||item.body.length<200)throw Error(`Пустой материал: ${item.key}`)
   if(item.title.length>120)throw Error(`Слишком длинный заголовок: ${item.key}`)
@@ -28,14 +41,13 @@ for(const item of lessons){
 }
 if(new Set(lessons.map(x=>x.key)).size!==84)throw Error('Повтор ключа')
 if(new Set(lessons.map(x=>x.title)).size!==84)throw Error('Повтор заголовка')
-const payload={batch,date:'2026-10-13',source:'https://t.me/proninhere_bot',rights_confirmed:true,
+const payload={batch,date:'2026-10-13',publisher:'Elaz Ed',rights_confirmed:true,
   course,lessons,notes:[
-    '42 карточки, 15 гайдов, 7 промптов адаптированы по доступному содержимому Telegram.',
-    '19 закрытых уроков написаны самостоятельно по программе; вводный адаптирован.',
-    'Цены и статистика исходных статей не объявлены актуальными без проверки.',
-    'Частный MCP, пресеты, платные паки и доступ к чужому чату не воспроизводятся.',
-    'Иллюстрации используют публичные URL источника; исходные файлы не экспортированы.',
-    'Две кнопки X и ссылка Foresight не раскрыли полный URL: используются ссылка на источник и домен разработчика.',
+    'Каталог: 42 карточки, 15 гайдов и 7 промптов.',
+    'Курс: 20 текстовых уроков в шести модулях, с практикой и квизами.',
+    'Цены и статистика требуют проверки на дату использования.',
+    '50 файлов находятся в собственном Supabase Storage: 48 изображений, ролик и архив слайдов.',
+    'Ресурсы и примеры доступны по полным ссылкам.',
   ]}
 await mkdir(dir,{recursive:true})
 await writeFile(new URL('payload.json',import.meta.url),JSON.stringify(payload,null,2)+'\n')
@@ -78,4 +90,24 @@ commit;
 select value from public.settings where key='${batch}';
 `
 await writeFile(new URL('import.sql',import.meta.url),sql)
+const updateSql=`begin;
+do $content_update$
+declare p jsonb := $elaz_content$${json}$elaz_content$::jsonb; marker record; l jsonb; lesson_id_current bigint;
+begin
+  select key,value into strict marker from public.settings where key like 'content_import:%' and value @> '{"course_id":1,"feed_count":64,"course_lesson_count":20}'::jsonb;
+  if (select count(*) from jsonb_each(marker.value->'lessons')) <> 84 then raise exception 'Некорректный пакет'; end if;
+  update public.courses set description=p->'course'->>'description',updated_at=now() where id=(marker.value->>'course_id')::bigint;
+  for l in select value from jsonb_array_elements(p->'lessons') loop
+    lesson_id_current=(marker.value->'lessons'->>(l->>'key'))::bigint;
+    if lesson_id_current is null then raise exception 'Нет материала %',l->>'key'; end if;
+    update public.lessons set title=l->>'title',subtitle=l->>'subtitle',body=l->>'body',copy_text=l->>'copy_text',cover_url=l->>'cover_url',video_url=l->>'video_url',updated_at=now() where id=lesson_id_current;
+    if not found then raise exception 'Материал % отсутствует',lesson_id_current; end if;
+  end loop;
+  update public.settings set key='${batch}',updated_at=now() where key=marker.key;
+end;
+$content_update$;
+commit;
+select count(*) as total,count(*) filter(where course_id is null) as feed,count(*) filter(where course_id is not null) as course from public.lessons;
+`
+await writeFile(new URL('update-existing.sql',import.meta.url),updateSql)
 console.log(JSON.stringify({feed:feed.length,tools:tools.length,guides:guides.length,prompts:prompts.length,courseLessons:courseLessons.length,total:lessons.length,characters:lessons.reduce((n,x)=>n+x.body.length,0),sqlBytes:Buffer.byteLength(sql)}))
