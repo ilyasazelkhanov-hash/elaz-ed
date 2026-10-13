@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0A12" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Elaz Ed</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
+    <script>
+      // Тему ставим до первой отрисовки, чтобы экран не мигал чужим цветом.
+      ;(function () {
+        try {
+          var saved = localStorage.getItem('elaz-ed-theme')
+          var wa = window.Telegram && window.Telegram.WebApp
+          var auto = wa && wa.initData && wa.colorScheme ? wa.colorScheme : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+          document.documentElement.dataset.theme = saved === 'light' || saved === 'dark' ? saved : auto
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,441 @@
+@import 'tailwindcss';
+
+/* Значения по умолчанию — тёмная тема. Светлая переопределяет те же переменные ниже. */
+@theme {
+  --font-display: 'Unbounded Variable', system-ui, sans-serif;
+  --font-sans: 'Onest Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --color-bg: #0b0a12;
+  --color-card: #15141f;
+  --color-card2: #1d1c2b;
+  --color-float: #1a1929;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-ink: #f3f1ff;
+  --color-mute: #a39fbf;
+  --color-faint: #827e9f;
+  /* Вуаль — полупрозрачные подложки и дорожки: светлая на тёмном фоне, тёмная на светлом. */
+  --color-veil: #ffffff;
+  /* Контрастная кнопка: белая в тёмной теме, чернильная в светлой. */
+  --color-inverse: #ffffff;
+  --color-on-inverse: #14101f;
+
+  --color-violet: #a58bff;
+  --color-pink: #ff8ac9;
+  --color-peach: #ffb58a;
+  --color-mint: #7bebc0;
+  --color-sky: #86cfff;
+  --color-amber: #ffcf6b;
+  --color-rose: #ff7a90;
+  --color-on-mint: #06231c;
+  --color-on-rose: #2a0810;
+}
+
+:root {
+  /* В полноэкранном режиме Telegram рисует свои кнопки поверх — отступаем на обе безопасные зоны. */
+  --top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+  --bottom: calc(var(--tg-safe-area-inset-bottom, 0px) + var(--tg-content-safe-area-inset-bottom, 0px));
+  --aurora: linear-gradient(135deg, #7c6bff 0%, #b26bff 50%, #ff85c0 100%);
+  --aurora-text: linear-gradient(100deg, #b9a8ff 0%, #ff9fd0 55%, #ffc79e 100%);
+  --track: color-mix(in srgb, var(--color-veil) 10%, transparent);
+  --track-strong: color-mix(in srgb, var(--color-veil) 15%, transparent);
+  --shadow-float: 0 14px 44px rgb(0 0 0 / 0.6);
+  --prose: #dcd8f2;
+  --code: #ffd9ee;
+  --blob-a: rgb(132 104 255 / 0.34);
+  --blob-b: rgb(255 122 190 / 0.2);
+  --blob-c: rgb(99 220 190 / 0.14);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --color-bg: #efecf8;
+  --color-card: #ffffff;
+  --color-card2: #f5f3fc;
+  --color-float: #ffffff;
+  --color-line: rgb(26 20 51 / 0.1);
+  --color-ink: #16122b;
+  --color-mute: #5d5878;
+  --color-faint: #77728f;
+  --color-veil: #1a1433;
+  --color-inverse: #16122b;
+  --color-on-inverse: #ffffff;
+
+  --color-violet: #6a4df0;
+  --color-pink: #dc3d96;
+  --color-peach: #d9722f;
+  --color-mint: #0c9a6d;
+  --color-sky: #1787cc;
+  --color-amber: #b3720a;
+  --color-rose: #e03a59;
+  --color-on-mint: #ffffff;
+  --color-on-rose: #ffffff;
+
+  --aurora-text: linear-gradient(100deg, #6a4df0 0%, #d43d9c 55%, #ef7d3a 100%);
+  --shadow-float: 0 12px 36px rgb(70 50 140 / 0.2);
+  --prose: #2f2a48;
+  --code: #b02a78;
+  --blob-a: rgb(132 104 255 / 0.3);
+  --blob-b: rgb(255 122 190 / 0.22);
+  --blob-c: rgb(80 210 180 / 0.2);
+  color-scheme: light;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+    overflow: hidden;
+    transition: background-color 0.3s ease;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  input,
+  textarea,
+  .selectable {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+.scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar,
+.no-bar::-webkit-scrollbar {
+  display: none;
+}
+.no-bar {
+  scrollbar-width: none;
+}
+
+.text-aurora {
+  background: var(--aurora-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Фон: три мягких пятна без blur-фильтров, чтобы не грузить слабые телефоны. */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora i {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+.aurora i:nth-child(1) {
+  width: 95vmax;
+  height: 95vmax;
+  left: -45vmax;
+  top: -50vmax;
+  background: radial-gradient(circle, var(--blob-a), transparent 62%);
+  animation: drift-a 24s ease-in-out infinite alternate;
+}
+.aurora i:nth-child(2) {
+  width: 80vmax;
+  height: 80vmax;
+  right: -45vmax;
+  top: 8vmax;
+  background: radial-gradient(circle, var(--blob-b), transparent 62%);
+  animation: drift-b 30s ease-in-out infinite alternate;
+}
+.aurora i:nth-child(3) {
+  width: 85vmax;
+  height: 85vmax;
+  left: -30vmax;
+  bottom: -55vmax;
+  background: radial-gradient(circle, var(--blob-c), transparent 62%);
+  animation: drift-a 34s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes drift-a {
+  to {
+    transform: translate3d(9vmax, 7vmax, 0) scale(1.12);
+  }
+}
+@keyframes drift-b {
+  to {
+    transform: translate3d(-10vmax, 9vmax, 0) scale(0.9);
+  }
+}
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-3deg);
+  }
+  50% {
+    transform: translate3d(0, -9px, 0) rotate(3deg);
+  }
+}
+@keyframes shimmer {
+  to {
+    transform: translateX(220%);
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.floaty {
+  animation: floaty 5.5s ease-in-out infinite;
+}
+.caret::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: currentColor;
+  animation: blink 1s steps(1) infinite;
+}
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+.shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  transform: translateX(-120%);
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  animation: shimmer 2.6s ease-in-out infinite;
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-card);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  transform: translateX(-120%);
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--color-veil) 7%, transparent), transparent);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+.ring-spin {
+  animation: spin-slow 7s linear infinite;
+}
+
+/* Текст урока */
+.prose-ed {
+  font-size: 16px;
+  line-height: 1.68;
+  color: var(--prose);
+  overflow-wrap: anywhere;
+}
+.prose-ed > * + * {
+  margin-top: 0.95em;
+}
+.prose-ed h1,
+.prose-ed h2,
+.prose-ed h3 {
+  font-family: var(--font-display);
+  color: var(--color-ink);
+  line-height: 1.25;
+  font-weight: 600;
+}
+.prose-ed h1 {
+  font-size: 22px;
+  margin-top: 1.5em;
+}
+.prose-ed h2 {
+  font-size: 18px;
+  margin-top: 1.7em;
+}
+.prose-ed h3 {
+  font-size: 15px;
+  margin-top: 1.5em;
+}
+.prose-ed > :first-child {
+  margin-top: 0;
+}
+.prose-ed strong {
+  color: var(--color-ink);
+  font-weight: 650;
+}
+.prose-ed a {
+  color: var(--color-violet);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-ed ul,
+.prose-ed ol {
+  padding-left: 0;
+  list-style: none;
+}
+.prose-ed li {
+  position: relative;
+  padding-left: 1.5em;
+}
+.prose-ed li + li {
+  margin-top: 0.5em;
+}
+.prose-ed ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0.3em;
+  top: 0.62em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--aurora);
+}
+.prose-ed ol {
+  counter-reset: n;
+}
+.prose-ed ol > li {
+  counter-increment: n;
+}
+.prose-ed ol > li::before {
+  content: counter(n);
+  position: absolute;
+  left: 0;
+  top: 0.22em;
+  width: 1.5em;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-violet);
+}
+.prose-ed blockquote {
+  position: relative;
+  padding: 14px 16px 14px 20px;
+  border-radius: 16px;
+  background: var(--color-card);
+  color: var(--color-ink);
+}
+.prose-ed blockquote::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--aurora);
+}
+.prose-ed :not(pre) > code {
+  padding: 0.14em 0.42em;
+  border-radius: 7px;
+  background: var(--track);
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  color: var(--code);
+}
+.prose-ed pre {
+  margin: 0;
+  padding: 16px;
+  padding-right: 48px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--color-ink);
+}
+.prose-ed img {
+  width: 100%;
+  border-radius: 18px;
+}
+.prose-ed hr {
+  height: 1px;
+  border: 0;
+  background: var(--color-line);
+  margin: 1.6em 0;
+}
+.prose-ed .table-wrap {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid var(--color-line);
+}
+.prose-ed table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+.prose-ed th,
+.prose-ed td {
+  padding: 10px 14px;
+  text-align: left;
+}
+.prose-ed th {
+  background: var(--color-card);
+  color: var(--color-mute);
+  font-weight: 500;
+  font-size: 13px;
+}
+.prose-ed tr + tr td {
+  border-top: 1px solid var(--color-line);
+}
+
+/* Сторис: крупнее, цвет текста задаёт градиент слайда, а не тема */
+.prose-story {
+  font-size: 19px;
+  line-height: 1.5;
+  color: inherit;
+}
+.prose-story h1 {
+  font-size: 30px;
+  line-height: 1.12;
+  font-weight: 700;
+}
+.prose-story h2 {
+  font-size: 25px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+.prose-story h1,
+.prose-story h2,
+.prose-story h3,
+.prose-story strong {
+  color: inherit;
+}
+.prose-story p {
+  opacity: 0.86;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora i,
+  .floaty,
+  .shine::after,
+  .ring-spin {
+    animation: none;
+  }
+}

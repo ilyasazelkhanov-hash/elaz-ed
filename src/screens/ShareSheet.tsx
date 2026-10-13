@@ -1,0 +1,160 @@
+import { Download, Link2, Share2 } from 'lucide-react'
+import { motion } from 'motion/react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { api, errorText, isDemo } from '../lib/api'
+import { appLink } from '../lib/links'
+import { blobToBase64, renderCard, type ShareCard } from '../lib/shareCard'
+import { canDownload, canShareStory, downloadFile, haptic, shareLink, shareToStory } from '../lib/tg'
+import { track } from '../lib/track'
+import { useStore } from '../store'
+import { Sheet, Spinner, Tap } from '../ui'
+
+const FILE_NAME = 'elaz-ed.jpg'
+
+/** Шторка «Поделиться»: собирает картинку для сторис и предлагает способы её отправить. */
+export function ShareSheet() {
+  const card = useStore((s) => s.share)
+  // Во время анимации закрытия карточки в сторе уже нет — показываем последнюю.
+  const last = useRef(card)
+  if (card) last.current = card
+  return (
+    <Sheet open={!!card} onClose={() => useStore.setState({ share: null })}>
+      {last.current && <Body key={`${last.current.kind}-${last.current.lessonId ?? ''}-${last.current.title}`} card={last.current} />}
+    </Sheet>
+  )
+}
+
+function Body({ card }: { card: ShareCard }) {
+  const me = useStore((s) => s.me)
+  const bot = useStore((s) => s.meta.bot.username)
+  const toast = useStore((s) => s.toast)
+  const [blob, setBlob] = useState<Blob | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
+  const hosted = useRef<string | null>(null)
+  const link = appLink(card.lessonId)
+
+  useEffect(() => {
+    let alive = true
+    let url: string | null = null
+    renderCard(card, me?.name ?? '', bot)
+      .then((b) => {
+        if (!alive) return
+        url = URL.createObjectURL(b)
+        setBlob(b)
+        setPreview(url)
+      })
+      .catch(() => toast('Картинка не собралась. Попробуй ещё раз'))
+    return () => {
+      alive = false
+      if (url) URL.revokeObjectURL(url)
+    }
+    // Карточка у шторки одна на всё время жизни — пересобирать незачем.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const file = useMemo(() => (blob ? new File([blob], FILE_NAME, { type: 'image/jpeg' }) : null), [blob])
+  const canNative = !!file && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })
+  const canStory = canShareStory && !isDemo
+  const sent = (channel: string) => track('share', { kind: card.kind, channel }, card.lessonId)
+
+  // Telegram публикует и сохраняет картинку только по ссылке — загружаем её один раз.
+  const hostedUrl = async () => {
+    if (hosted.current || !blob) return hosted.current
+    hosted.current = await api.shareUpload(await blobToBase64(blob), card.kind)
+    return hosted.current
+  }
+
+  const run = async (name: string, action: () => Promise<void>) => {
+    if (busy) return
+    setBusy(name)
+    try {
+      await action()
+    } catch (e) {
+      // Человек закрыл системное окно «Поделиться» — это не ошибка.
+      if (!(e instanceof DOMException && e.name === 'AbortError')) toast(errorText(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const native = () =>
+    run('native', async () => {
+      await navigator.share({ files: [file!], text: link ? `${card.caption} ${link}` : card.caption })
+      sent('native')
+    })
+
+  const story = () =>
+    run('story', async () => {
+      const url = await hostedUrl()
+      if (!url) return
+      shareToStory(url, card.caption, link)
+      sent('tg_story')
+    })
+
+  const save = () =>
+    run('save', async () => {
+      if (canDownload && !isDemo) {
+        const url = await hostedUrl()
+        if (!url) return
+        downloadFile(url, FILE_NAME)
+      } else if (preview) {
+        const a = document.createElement('a')
+        a.href = preview
+        a.download = FILE_NAME
+        a.click()
+        haptic.success()
+        toast('Картинка сохранена. Добавь её в сторис', '📸')
+      }
+      sent('save')
+    })
+
+  const sendLink = () => {
+    if (!link) return toast('Ссылка появится, когда бот будет настроен')
+    shareLink(link, card.caption)
+    sent('link')
+  }
+
+  return (
+    <div>
+      <p className="text-center font-display text-[18px] font-semibold">Поделиться</p>
+      <p className="mt-1 text-center text-[13.5px] text-mute">{canNative ? 'Картинка под сторис: Instagram, Telegram, куда угодно' : 'Сохрани картинку и добавь её в сторис Instagram'}</p>
+
+      <div className="mt-4 flex justify-center">
+        <div className="relative aspect-[9/16] h-[40vh] max-h-[380px] overflow-hidden rounded-[22px] border border-line bg-card shadow-[var(--shadow-float)]">
+          {preview ? (
+            <motion.img src={preview} alt="Картинка для сторис" draggable={false} initial={{ opacity: 0, scale: 1.06 }} animate={{ opacity: 1, scale: 1 }} className="h-full w-full object-cover" />
+          ) : (
+            <div className="skeleton h-full w-full" />
+          )}
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-2">
+        {canNative && (
+          <Tap onClick={native} disabled={!file || !!busy} className="shine flex h-[54px] w-full items-center justify-center gap-2 rounded-[20px] font-display text-[14px] font-semibold text-white disabled:opacity-60" style={{ background: 'var(--aurora)' }}>
+            {busy === 'native' ? <Spinner size={20} /> : <Share2 size={18} />} Поделиться картинкой
+          </Tap>
+        )}
+        <div className="flex gap-2">
+          {canStory && (
+            <Tap onClick={story} disabled={!file || !!busy} className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-line bg-card text-[14px] font-semibold disabled:opacity-60">
+              {busy === 'story' && <Spinner size={18} />} В сторис Telegram
+            </Tap>
+          )}
+          <Tap
+            onClick={save}
+            disabled={!file || !!busy}
+            className={`flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[18px] text-[14px] font-semibold disabled:opacity-60 ${canNative ? 'border border-line bg-card' : 'font-display text-white'}`}
+            style={canNative ? undefined : { background: 'var(--aurora)' }}
+          >
+            {busy === 'save' ? <Spinner size={18} /> : <Download size={17} />} Сохранить
+          </Tap>
+        </div>
+        <Tap onClick={sendLink} className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[18px] text-[14px] font-semibold text-mute">
+          <Link2 size={17} /> Отправить ссылку
+        </Tap>
+      </div>
+    </div>
+  )
+}
