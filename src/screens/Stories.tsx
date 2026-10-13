@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { AnimatePresence, motion, useMotionValue, useTransform } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
@@ -169,10 +169,19 @@ export function Stories({ startId }: { startId: number }) {
           </AnimatePresence>
         </div>
 
-        <p className="text-center text-[12px] font-semibold opacity-60">
-          {pi + 1} из {slides.length}
-          {stories.length > 1 ? ` · сторис ${si + 1}/${stories.length}` : ''}
-        </p>
+        {/* Явные кнопки: не всем очевидно, что листать можно тапом по краям. */}
+        <div className="flex items-center gap-3">
+          <Tap onClick={prev} aria-label="Назад" className="pointer-events-auto grid h-12 w-12 shrink-0 place-items-center rounded-full bg-black/15">
+            <ChevronLeft size={22} />
+          </Tap>
+          <p className="flex-1 text-center text-[12px] font-semibold opacity-70">
+            {pi + 1} из {slides.length}
+            {stories.length > 1 ? ` · новость ${si + 1} из ${stories.length}` : ''}
+          </p>
+          <Tap onClick={next} aria-label="Дальше" className="pointer-events-auto grid h-12 w-12 shrink-0 place-items-center rounded-full bg-black/25">
+            <ChevronRight size={22} />
+          </Tap>
+        </div>
       </div>
     </motion.div>
   )
