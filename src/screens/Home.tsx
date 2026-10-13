@@ -399,7 +399,7 @@ function HeroCard({ card, active, single, index, step, scrollX }: HeroProps) {
     <Tap
       onClick={(e) => push({ type: 'lesson', id: card.id, from: insetOf(e.currentTarget) })}
       className={`relative h-[220px] shrink-0 snap-center overflow-hidden rounded-[30px] p-5 text-left ${single ? 'w-full' : 'w-[86%]'}`}
-      style={{ background: g.css, color: g.ink, boxShadow: `0 18px 44px -18px ${g.glow}` }}
+      style={{ background: g.css, color: g.ink, boxShadow: `0 14px 30px -16px ${g.glow}` }}
     >
       <Pattern name={card.gradient} />
       {card.cover_url ? (
@@ -445,7 +445,7 @@ function CourseCard({ course, single }: { course: Course; single: boolean }) {
     <Tap
       onClick={(e) => push({ type: 'course', id: course.id, from: insetOf(e.currentTarget) })}
       className={`sheen relative h-[176px] shrink-0 snap-center overflow-hidden rounded-[28px] p-5 text-left ${single ? 'w-full' : 'w-[82%]'}`}
-      style={{ background: g.css, color: g.ink, boxShadow: `0 18px 44px -20px ${g.glow}` }}
+      style={{ background: g.css, color: g.ink, boxShadow: `0 14px 30px -16px ${g.glow}` }}
     >
       <Pattern name={course.gradient} full />
       <div className="floaty absolute -right-2 bottom-1">
