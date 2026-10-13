@@ -5,6 +5,7 @@ import { isDemo } from './lib/api'
 import { bindBack, initTelegram, inTelegram, startParam } from './lib/tg'
 import { applyTheme, watchTheme } from './lib/theme'
 import { preloadMarkdown } from './Markdown'
+import { CourseScreen } from './screens/Course'
 import { Home } from './screens/Home'
 import { LessonScreen } from './screens/Lesson'
 import { Profile } from './screens/Profile'
@@ -14,12 +15,15 @@ import { ErrorScreen, Gate, Outside, Setup, Splash } from './screens/States'
 import { Stories } from './screens/Stories'
 import { Top } from './screens/Top'
 import { useStore, type Overlay, type Tab } from './store'
-import { Tap, Toasts } from './ui'
+import { enableSparks, Tap, Toasts } from './ui'
 
 // Админку видит один человек — незачем грузить её всем.
 const AdminScreen = lazy(() => import('./screens/Admin').then((m) => ({ default: m.AdminScreen })))
 const EditorScreen = lazy(() => import('./screens/Admin').then((m) => ({ default: m.EditorScreen })))
 const AnalyticsScreen = lazy(() => import('./screens/Analytics').then((m) => ({ default: m.AnalyticsScreen })))
+const CoursesAdminScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CoursesAdminScreen })))
+const CourseEditorScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CourseEditorScreen })))
+const LabScreen = lazy(() => import('./screens/Lab').then((m) => ({ default: m.LabScreen })))
 
 export default function App() {
   const phase = useStore((s) => s.phase)
@@ -31,13 +35,13 @@ export default function App() {
     const { boot, setPhase } = useStore.getState()
     if (!inTelegram && !isDemo) setPhase('outside')
     else void boot()
+    return enableSparks()
   }, [])
 
   return (
     <MotionConfig reducedMotion="user">
       <div id="app" className="relative mx-auto h-full max-w-[480px] overflow-hidden">
-        <div className="aurora">
-          <i />
+        <div className="backdrop">
           <i />
           <i />
         </div>
@@ -73,7 +77,9 @@ function Shell() {
   // Прямая ссылка на урок: t.me/бот?start=l12
   useEffect(() => {
     const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
+    const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
     if (id) useStore.getState().push({ type: 'lesson', id })
+    else if (course) useStore.getState().push({ type: 'course', id: course })
     preloadMarkdown()
   }, [])
 
@@ -108,8 +114,12 @@ function overlayKey(o: Overlay, i: number) {
       return `lesson-${o.id}-${i}`
     case 'stories':
       return `stories-${o.id}-${i}`
+    case 'course':
+      return `course-${o.id}-${i}`
     case 'editor':
       return `editor-${o.lesson?.id ?? 'new'}-${i}`
+    case 'course-editor':
+      return `course-editor-${o.course?.id ?? 'new'}-${i}`
     default:
       return `${o.type}-${i}`
   }
@@ -121,6 +131,26 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
       return <LessonScreen id={overlay.id} from={overlay.from} />
     case 'stories':
       return <Stories startId={overlay.id} />
+    case 'course':
+      return <CourseScreen id={overlay.id} from={overlay.from} />
+    case 'lab':
+      return (
+        <Suspense fallback={null}>
+          <LabScreen />
+        </Suspense>
+      )
+    case 'courses-admin':
+      return (
+        <Suspense fallback={null}>
+          <CoursesAdminScreen />
+        </Suspense>
+      )
+    case 'course-editor':
+      return (
+        <Suspense fallback={null}>
+          <CourseEditorScreen course={overlay.course} />
+        </Suspense>
+      )
     case 'admin':
       return (
         <Suspense fallback={null}>

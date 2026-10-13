@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { errorText } from '../lib/api'
 import { haptic, openLink } from '../lib/tg'
 import { useStore } from '../store'
-import { Emoji, Spinner, Tap } from '../ui'
+import { Cta, Emoji, Spinner, Tap } from '../ui'
 
 const BOT = 'elazart_bot'
 
@@ -33,7 +33,7 @@ function Frame({ children }: { children: React.ReactNode }) {
   )
 }
 
-const primary = 'shine flex h-[56px] w-full items-center justify-center rounded-[20px] font-display text-[14.5px] font-semibold text-white'
+const primary = 'cta cta-aurora w-full'
 const secondary = 'flex h-[52px] w-full items-center justify-center gap-2 rounded-[20px] border border-line bg-card/80 text-[14.5px] font-semibold'
 
 export function Splash() {
@@ -107,9 +107,9 @@ export function Gate() {
       </div>
 
       <div className="mt-7 w-full max-w-[320px] space-y-2.5">
-        <Tap onClick={() => meta.channel.invite && openLink(meta.channel.invite)} className={primary} style={{ background: 'var(--aurora)', boxShadow: '0 14px 34px -12px #9b7bff' }}>
+        <Cta className="w-full" onClick={() => meta.channel.invite && openLink(meta.channel.invite)}>
           Подписаться на канал
-        </Tap>
+        </Cta>
         <Tap onClick={() => check()} disabled={busy} className={secondary}>
           {busy ? <Spinner size={18} /> : 'Я подписался'}
         </Tap>
@@ -152,7 +152,7 @@ export function Outside() {
       <Logo size={40} />
       <p className="mt-5 max-w-[300px] text-[16px] leading-snug text-mute">Уроки, туториалы и новости с XP, стриком и рейтингом. Работает внутри Telegram.</p>
       <div className="mt-8 w-full max-w-[320px] space-y-2.5">
-        <a href={`https://t.me/${BOT}`} className={primary} style={{ background: 'var(--aurora)', boxShadow: '0 14px 34px -12px #9b7bff' }}>
+        <a href={`https://t.me/${BOT}`} className={primary}>
           Открыть в Telegram
         </a>
         <a href="?demo" className={secondary}>

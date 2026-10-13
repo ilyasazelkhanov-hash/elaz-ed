@@ -5,7 +5,7 @@ import { sfx } from '../lib/sfx'
 import { lessonCard, levelCard } from '../lib/shareCard'
 import { haptic } from '../lib/tg'
 import { useStore, type Reward } from '../store'
-import { Bar, celebrate, Counter, Emoji, Tap } from '../ui'
+import { Bar, celebrate, Counter, Cta, Emoji, Tap } from '../ui'
 
 /**
  * Экран награды после урока: конфетти, XP, новый уровень, ачивки.
@@ -100,9 +100,7 @@ export function RewardModal({ reward }: { reward: Reward }) {
       )}
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="relative mt-8 flex w-full max-w-[340px] flex-col gap-2.5">
-        <Tap onClick={close} className="shine h-[54px] rounded-[20px] font-display text-[14px] font-semibold text-white" style={{ background: 'var(--aurora)', boxShadow: '0 12px 30px -10px #9b7bff' }}>
-          Дальше
-        </Tap>
+        <Cta onClick={close}>Дальше</Cta>
         <Tap onClick={share} className="h-[50px] rounded-[20px] text-[14.5px] font-semibold text-mute">
           Поделиться
         </Tap>

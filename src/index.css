@@ -42,9 +42,13 @@
   --shadow-float: 0 14px 44px rgb(0 0 0 / 0.6);
   --prose: #dcd8f2;
   --code: #ffd9ee;
-  --blob-a: rgb(132 104 255 / 0.34);
-  --blob-b: rgb(255 122 190 / 0.2);
-  --blob-c: rgb(99 220 190 / 0.14);
+  --blob-a: rgb(132 104 255 / 0.3);
+  --blob-b: rgb(255 122 190 / 0.14);
+  --grid-dot: rgb(255 255 255 / 0.13);
+  --grain: 0.07;
+  /* Нижняя грань объёмной кнопки */
+  --edge-aurora: #4a32c2;
+  --edge-inverse: #b9b4d6;
   color-scheme: dark;
 }
 
@@ -75,9 +79,11 @@
   --shadow-float: 0 12px 36px rgb(70 50 140 / 0.2);
   --prose: #2f2a48;
   --code: #b02a78;
-  --blob-a: rgb(132 104 255 / 0.3);
-  --blob-b: rgb(255 122 190 / 0.22);
-  --blob-c: rgb(80 210 180 / 0.2);
+  --blob-a: rgb(132 104 255 / 0.26);
+  --blob-b: rgb(255 122 190 / 0.18);
+  --grid-dot: rgb(26 20 51 / 0.16);
+  --grain: 0.05;
+  --edge-inverse: #000000;
   color-scheme: light;
 }
 
@@ -136,44 +142,58 @@
   color: transparent;
 }
 
-/* Фон: три мягких пятна без blur-фильтров, чтобы не грузить слабые телефоны. */
-.aurora {
+/* Фон: сетка точек, уходящая вверх, зерно и два мягких пятна. Без blur-фильтров — не грузит слабые телефоны. */
+.backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
 }
-.aurora i {
+.backdrop::before {
+  content: '';
+  position: absolute;
+  inset: -22px;
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1.5px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(130% 62% at 50% 0%, #000 0%, transparent 74%);
+  mask-image: radial-gradient(130% 62% at 50% 0%, #000 0%, transparent 74%);
+  animation: grid-drift 14s linear infinite;
+}
+.backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.backdrop i {
   position: absolute;
   border-radius: 50%;
   will-change: transform;
 }
-.aurora i:nth-child(1) {
+.backdrop i:nth-child(1) {
   width: 95vmax;
   height: 95vmax;
   left: -45vmax;
-  top: -50vmax;
+  top: -52vmax;
   background: radial-gradient(circle, var(--blob-a), transparent 62%);
   animation: drift-a 24s ease-in-out infinite alternate;
 }
-.aurora i:nth-child(2) {
+.backdrop i:nth-child(2) {
   width: 80vmax;
   height: 80vmax;
-  right: -45vmax;
-  top: 8vmax;
+  right: -48vmax;
+  bottom: -30vmax;
   background: radial-gradient(circle, var(--blob-b), transparent 62%);
   animation: drift-b 30s ease-in-out infinite alternate;
 }
-.aurora i:nth-child(3) {
-  width: 85vmax;
-  height: 85vmax;
-  left: -30vmax;
-  bottom: -55vmax;
-  background: radial-gradient(circle, var(--blob-c), transparent 62%);
-  animation: drift-a 34s ease-in-out infinite alternate-reverse;
-}
 
+@keyframes grid-drift {
+  to {
+    transform: translate3d(22px, 22px, 0);
+  }
+}
 @keyframes drift-a {
   to {
     transform: translate3d(9vmax, 7vmax, 0) scale(1.12);
@@ -251,6 +271,114 @@
 }
 .ring-spin {
   animation: spin-slow 7s linear infinite;
+}
+
+/* Объёмная кнопка: нижняя грань проседает под пальцем, как у аркадного автомата. */
+.cta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 54px;
+  margin-bottom: 5px;
+  border-radius: 18px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 5px 0 0 var(--edge);
+  transition:
+    transform 0.07s ease-out,
+    box-shadow 0.07s ease-out;
+}
+.cta:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 0 var(--edge);
+}
+.cta:disabled {
+  opacity: 0.6;
+}
+.cta-aurora {
+  --edge: var(--edge-aurora);
+  background: var(--aurora);
+  color: #fff;
+}
+.cta-inverse {
+  --edge: var(--edge-inverse);
+  background: var(--color-inverse);
+  color: var(--color-on-inverse);
+}
+.cta-quiet {
+  --edge: var(--color-line);
+  background: var(--color-card2);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+}
+
+/* Искры от нажатия: восемь точек разлетаются из-под пальца. */
+.spark {
+  position: fixed;
+  z-index: 300;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px;
+  border-radius: 50%;
+  pointer-events: none;
+  color: var(--color-violet);
+  box-shadow:
+    0 -9px 0 currentColor,
+    6.4px -6.4px 0 currentColor,
+    9px 0 0 currentColor,
+    6.4px 6.4px 0 currentColor,
+    0 9px 0 currentColor,
+    -6.4px 6.4px 0 currentColor,
+    -9px 0 0 currentColor,
+    -6.4px -6.4px 0 currentColor;
+  animation: spark 0.36s ease-out forwards;
+}
+@keyframes spark {
+  from {
+    transform: scale(0.35);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* Счётчик подпрыгивает, когда в него прилетают очки. */
+.bump {
+  animation: bump 0.42s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+@keyframes bump {
+  40% {
+    transform: scale(1.22);
+  }
+}
+
+/* Блик, пробегающий по карточке курса. */
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.28) 50%, transparent 62%);
+  transform: translateX(-130%);
+  animation: sheen 5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sheen {
+  0%,
+  55% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Текст урока */
@@ -432,10 +560,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aurora i,
+  .backdrop::before,
+  .backdrop i,
   .floaty,
   .shine::after,
+  .sheen::after,
   .ring-spin {
     animation: none;
+  }
+  .spark {
+    display: none;
   }
 }

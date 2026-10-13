@@ -1,7 +1,7 @@
 import { Check, ChevronLeft, Copy, Eye, Heart, Play, Send, X } from 'lucide-react'
 import { AnimatePresence, motion, useMotionValue } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { api, errorText } from '../lib/api'
+import { api, ApiError, errorText } from '../lib/api'
 import { comboPoints, GRADIENTS, quizScore } from '../lib/game'
 import { appLink } from '../lib/links'
 import { sfx } from '../lib/sfx'
@@ -10,7 +10,7 @@ import { track } from '../lib/track'
 import type { Lesson, QuizQuestion } from '../lib/types'
 import { Markdown } from '../Markdown'
 import { useStore, type Inset } from '../store'
-import { Emoji, Spinner, Tap } from '../ui'
+import { Cta, Emoji, Pattern, Tap } from '../ui'
 
 const clip = (i: Inset, radius: number) => `inset(${i.top}px ${i.right}px ${i.bottom}px ${i.left}px round ${radius}px)`
 const OPEN = { top: 0, right: 0, bottom: 0, left: 0 }
@@ -21,7 +21,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const pop = useStore((s) => s.pop)
   const { setMe, patchCard, setReward, toast, guard } = useStore.getState()
   const [lesson, setLesson] = useState<Lesson | null>(null)
-  const [failed, setFailed] = useState(false)
+  const [failed, setFailed] = useState<false | 'load' | 'locked'>(false)
   const [answers, setAnswers] = useState<number[] | null>(null)
   const [busy, setBusy] = useState(false)
   const scroller = useRef<HTMLDivElement>(null)
@@ -35,7 +35,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
       .then((l) => alive && setLesson(l))
       .catch((e) => {
         guard(e)
-        if (alive) setFailed(true)
+        if (alive) setFailed(e instanceof ApiError && e.code === 'course_locked' ? 'locked' : 'load')
       })
     return () => {
       alive = false
@@ -115,8 +115,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
     >
       <div ref={scroller} onScroll={onScroll} className="scroll h-full" style={{ paddingBottom: 'calc(120px + var(--bottom))' }}>
         <div className="relative overflow-hidden" style={{ background: g.css, color: g.ink, paddingTop: 'calc(var(--top) + 54px)' }}>
-          <div className="absolute -right-16 -top-10 h-64 w-64 rounded-full bg-white/20" />
-          <div className="absolute -bottom-24 -left-14 h-60 w-60 rounded-full bg-black/10" />
+          <Pattern name={view?.gradient ?? 'aurora'} full />
           {view?.cover_url ? (
             <img src={view.cover_url} alt="" className="relative mx-auto mb-12 h-[190px] w-[calc(100%-40px)] rounded-[24px] object-cover" />
           ) : (
@@ -156,8 +155,20 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
 
           {failed && (
             <div className="mt-8 rounded-[22px] border border-line bg-card p-5 text-center">
-              <p className="font-semibold">Урок не загрузился</p>
-              <p className="mt-1 text-[14px] text-mute">Проверь связь и открой его ещё раз.</p>
+              <p className="font-semibold">{failed === 'locked' ? 'Этот урок из закрытого курса' : 'Урок не загрузился'}</p>
+              <p className="mt-1 text-[14px] text-mute">{failed === 'locked' ? 'Он откроется вместе с курсом.' : 'Проверь связь и открой его ещё раз.'}</p>
+              {failed === 'locked' && card?.course_id && (
+                <Cta
+                  className="mt-4 w-full"
+                  onClick={() => {
+                    const courseId = card.course_id!
+                    pop()
+                    useStore.getState().push({ type: 'course', id: courseId })
+                  }}
+                >
+                  Открыть курс
+                </Cta>
+              )}
             </div>
           )}
 
@@ -223,15 +234,9 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
               К квизу · {quiz.length} {quiz.length === 1 ? 'вопрос' : quiz.length < 5 ? 'вопроса' : 'вопросов'}
             </Tap>
           ) : (
-            <Tap
-              onClick={finish}
-              disabled={!lesson || busy}
-              feedback="heavy"
-              className="shine flex h-[54px] flex-1 items-center justify-center gap-2 rounded-[20px] font-display text-[14px] font-semibold text-white disabled:opacity-60"
-              style={{ background: 'var(--aurora)', boxShadow: '0 12px 30px -10px #9b7bff' }}
-            >
-              {busy ? <Spinner size={20} /> : <>Забрать +{(view?.xp ?? 0) + bonus} XP</>}
-            </Tap>
+            <Cta className="tabular flex-1" onClick={finish} disabled={!lesson} busy={busy}>
+              Забрать +{(view?.xp ?? 0) + bonus} XP
+            </Cta>
           )}
         </div>
       </div>

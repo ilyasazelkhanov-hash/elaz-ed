@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { api, ApiError } from './lib/api'
 import { achievement } from './lib/game'
 import type { ShareCard } from './lib/shareCard'
-import type { Card, CompleteResult, Kind, Lesson, Me, Meta } from './lib/types'
+import type { AdminCourse, Card, CompleteResult, Course, Kind, Lesson, Me, Meta } from './lib/types'
 
 export type Tab = 'home' | 'top' | 'profile'
 
@@ -23,8 +23,12 @@ export function insetOf(el: Element): Inset {
 export type Overlay =
   | { type: 'lesson'; id: number; from?: Inset }
   | { type: 'stories'; id: number }
+  | { type: 'course'; id: number; from?: Inset }
+  | { type: 'lab' }
   | { type: 'admin' }
   | { type: 'analytics' }
+  | { type: 'courses-admin' }
+  | { type: 'course-editor'; course: AdminCourse | null }
   | { type: 'editor'; lesson: Lesson | null; kind: Kind }
 
 export interface Reward {
@@ -46,6 +50,7 @@ interface Store {
   errorCode: string | null
   me: Me | null
   feed: Card[]
+  courses: Course[]
   meta: Meta
   tab: Tab
   stack: Overlay[]
@@ -92,6 +97,7 @@ export const useStore = create<Store>((set, get) => ({
   errorCode: null,
   me: null,
   feed: [],
+  courses: [],
   meta: { channel: { title: null, invite: null }, bot: { username: null, main_app: false } },
   tab: 'home',
   stack: [],
@@ -104,7 +110,7 @@ export const useStore = create<Store>((set, get) => ({
     try {
       const b = await api.boot(force)
       const meta = { channel: b.channel, bot: b.bot }
-      if (b.status === 'ok') set({ phase: 'ok', me: b.me, feed: b.feed, meta, errorCode: null })
+      if (b.status === 'ok') set({ phase: 'ok', me: b.me, feed: b.feed, courses: b.courses ?? [], meta, errorCode: null })
       else set({ phase: b.status, meta, stack: [], reward: null })
       return b.status
     } catch (e) {

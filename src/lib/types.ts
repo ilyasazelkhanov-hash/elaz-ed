@@ -28,6 +28,11 @@ export interface Card {
   has_video: boolean
   /** Тело приходит в ленте только у сторис. */
   body: string | null
+  /** Урок закрытого курса: в общей ленте не показывается. */
+  course_id: number | null
+  position: number
+  /** Открыт всем, даже без доступа к курсу. */
+  free_preview: boolean
   completed: boolean
   liked: boolean
 }
@@ -54,6 +59,8 @@ export interface Me {
   achievements: string[]
   rank: number
   invited: number
+  /** Заморозки стрика: каждая спасает один пропущенный день. */
+  freezes: number
 }
 
 export interface Meta {
@@ -61,7 +68,48 @@ export interface Meta {
   bot: { username: string | null; main_app: boolean }
 }
 
-export type Boot = ({ status: 'ok'; me: Me; feed: Card[] } | { status: 'locked' | 'setup' }) & Meta
+export interface Course {
+  id: number
+  title: string
+  subtitle: string
+  description: string
+  emoji: string
+  gradient: GradientName
+  /** 0 — курс не продаётся, доступ только по заявке или приглашениям. */
+  price_stars: number
+  /** Сколько друзей нужно привести, чтобы курс открылся сам. 0 — выключено. */
+  invite_unlock: number
+  lessons: number
+  done: number
+  access: boolean
+  request: 'pending' | 'approved' | 'declined' | null
+}
+
+export interface AdminCourse {
+  id: number
+  title: string
+  subtitle: string
+  description: string
+  emoji: string
+  gradient: GradientName
+  price_stars: number
+  invite_unlock: number
+  position: number
+  published: boolean
+  students: number
+}
+
+export type CourseDraft = Omit<AdminCourse, 'id' | 'students'> & { id?: number }
+
+export interface AccessRequest {
+  user_id: number
+  course_id: number
+  created_at: string
+  name: string
+  username: string | null
+}
+
+export type Boot = ({ status: 'ok'; me: Me; feed: Card[]; courses: Course[] } | { status: 'locked' | 'setup' }) & Meta
 
 export interface CompleteResult {
   already: boolean
@@ -76,6 +124,8 @@ export interface CompleteResult {
 
 export interface DailyResult {
   gained: number
+  /** Пропущенный день закрыла заморозка. */
+  froze: boolean
   new_achievements: string[]
   me: Me
 }
@@ -103,7 +153,7 @@ export interface AdminStats {
 export type ShareKind = 'level' | 'lesson' | 'streak' | 'achievement'
 
 export interface ClientEvent {
-  name: 'share' | 'copy' | 'story_open' | 'theme'
+  name: 'share' | 'copy' | 'story_open' | 'theme' | 'lab'
   lesson_id?: number
   props?: Record<string, string | number | boolean>
 }
@@ -117,6 +167,8 @@ export interface Analytics {
   lessons: { id: number; title: string; emoji: string; kind: Kind; opens: number; done: number; quiz: number | null; likes: number; shares: number }[]
   shares: { kind: string; channel: string; n: number }[]
   invited: number
+  /** Выручка в звёздах Telegram за всё время. */
+  stars: { total: number; count: number }
 }
 
 export type LessonDraft = Omit<Lesson, 'id' | 'completed' | 'liked' | 'views' | 'likes' | 'quiz_count' | 'has_video' | 'published_at' | 'score'> & {
@@ -133,7 +185,18 @@ export interface Api {
   track(events: ClientEvent[]): Promise<void>
   /** Кладёт картинку в хранилище и возвращает публичную ссылку; в демо-режиме — null. */
   shareUpload(image: string, kind: ShareKind): Promise<string | null>
+  /** Готовит сообщение с картинкой и кнопкой; возвращает его id для Telegram. */
+  shareMessage(kind: ShareKind, lessonId?: number): Promise<string | null>
+  courseRequest(id: number): Promise<void>
+  /** Ссылка на счёт в звёздах; null — демо-режим, оплата условная. */
+  courseInvoice(id: number): Promise<string | null>
   adminAnalytics(): Promise<Analytics>
+  adminCourses(): Promise<{ courses: AdminCourse[]; requests: AccessRequest[] }>
+  adminCourseSave(course: CourseDraft): Promise<AdminCourse>
+  adminCourseDelete(id: number): Promise<void>
+  adminRequest(userId: number, courseId: number, approve: boolean): Promise<void>
+  /** Возвращает имя человека, которому открыт доступ. */
+  adminGrant(courseId: number, username: string): Promise<string>
   adminList(): Promise<{ lessons: Lesson[]; stats: AdminStats }>
   adminSave(lesson: LessonDraft): Promise<Lesson>
   adminDelete(id: number): Promise<void>

@@ -135,7 +135,9 @@ export function AnalyticsScreen() {
                   ))}
                 </div>
               )}
-              <p className="mt-3 text-[13px] text-mute">Пришли по приглашениям: {data.invited}</p>
+              <p className="tabular mt-3 text-[13px] text-mute">
+                Пришли по приглашениям: {data.invited} · куплено курсов: {data.stars?.count ?? 0} на {data.stars?.total ?? 0} звёзд
+              </p>
             </Section>
           </div>
         )}

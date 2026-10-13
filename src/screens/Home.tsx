@@ -1,23 +1,25 @@
-import { Check, CirclePlay, Share2, Sparkles } from 'lucide-react'
-import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'motion/react'
+import { Check, CirclePlay, Lock, Share2, Snowflake, Star } from 'lucide-react'
+import { AnimatePresence, animate, motion, useMotionValue, useTransform, type MotionValue } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText } from '../lib/api'
-import { dailyReward, days, GRADIENTS, levelOf } from '../lib/game'
+import { dailyReward, days, GRADIENTS, lessonsWord, levelOf } from '../lib/game'
 import { sfx } from '../lib/sfx'
 import { streakCard } from '../lib/shareCard'
 import { haptic } from '../lib/tg'
-import type { Card } from '../lib/types'
+import type { Card, Course } from '../lib/types'
 import { insetOf, useStore } from '../store'
-import { Avatar, Bar, burst, Counter, Emoji, EmojiTile, Ring, Tap } from '../ui'
+import { Avatar, Bar, burst, Counter, Emoji, EmojiTile, flyPoints, Odometer, Pattern, Ring, Tap } from '../ui'
 
 export function Home() {
   const me = useStore((s) => s.me)!
   const feed = useStore((s) => s.feed)
+  const courses = useStore((s) => s.courses)
   const setTab = useStore((s) => s.setTab)
   const [cat, setCat] = useState('Все')
 
   const stories = useMemo(() => feed.filter((c) => c.kind === 'story'), [feed])
-  const lessons = useMemo(() => feed.filter((c) => c.kind === 'lesson'), [feed])
+  // Уроки закрытых курсов живут на странице курса, а не в общей ленте.
+  const lessons = useMemo(() => feed.filter((c) => c.kind === 'lesson' && !c.course_id), [feed])
   const hero = useMemo(() => {
     const pinned = lessons.filter((c) => c.pinned)
     return pinned.length ? pinned : lessons.slice(0, 3)
@@ -38,11 +40,11 @@ export function Home() {
         </div>
         <div className="flex h-9 items-center gap-1.5 rounded-full border border-line bg-card/80 pl-2 pr-3">
           <Emoji char="🔥" size={18} animated={me.streak > 0} className={me.streak > 0 ? '' : 'opacity-40 grayscale'} />
-          <Counter value={me.streak} className="font-display text-[13px] font-semibold" />
+          <Counter value={me.streak} className="tabular font-display text-[13px] font-semibold" />
         </div>
-        <div className="flex h-9 items-center gap-1.5 rounded-full border border-line bg-card/80 pl-2 pr-3">
+        <div id="xp-pill" className="flex h-9 items-center gap-1.5 rounded-full border border-line bg-card/80 pl-2 pr-3">
           <Emoji char="⚡" size={18} />
-          <Counter value={me.xp} className="font-display text-[13px] font-semibold" />
+          <Odometer value={me.xp} className="font-display text-[13px] font-semibold" />
         </div>
       </header>
 
@@ -58,7 +60,7 @@ export function Home() {
           <p className="text-[12px] font-medium uppercase tracking-wider text-mute">Уровень {lvl.index}</p>
           <p className="font-display text-[18px] font-semibold leading-tight">{lvl.title}</p>
           <Bar progress={lvl.progress} className="mt-2.5" />
-          <p className="mt-1.5 text-[12px] text-mute">{lvl.next ? `Ещё ${lvl.left} XP до уровня «${lvl.next.title}»` : 'Максимальный уровень'}</p>
+          <p className="tabular mt-1.5 text-[12px] text-mute">{lvl.next ? `Ещё ${lvl.left} XP до уровня «${lvl.next.title}»` : 'Максимальный уровень'}</p>
         </div>
       </Tap>
 
@@ -78,8 +80,19 @@ export function Home() {
 
       {hero.length > 0 && (
         <>
-          <SectionTitle icon={<Sparkles size={15} className="text-violet" />}>В фокусе</SectionTitle>
+          <SectionTitle>В фокусе</SectionTitle>
           <HeroCarousel cards={hero} />
+        </>
+      )}
+
+      {courses.length > 0 && (
+        <>
+          <SectionTitle count={courses.length}>Курсы</SectionTitle>
+          <div className="no-bar flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1">
+            {courses.map((c) => (
+              <CourseCard key={c.id} course={c} single={courses.length === 1} />
+            ))}
+          </div>
         </>
       )}
 
@@ -88,9 +101,9 @@ export function Home() {
       {cats.length > 2 && (
         <div className="no-bar mb-3.5 flex gap-2 overflow-x-auto px-5">
           {cats.map((c) => (
-            <Tap key={c} feedback="select" onClick={() => setCat(c)} className={`relative h-10 shrink-0 rounded-full px-4 text-[13.5px] font-semibold ${cat === c ? 'text-white' : 'text-mute'}`}>
+            <Tap key={c} feedback="select" onClick={() => setCat(c)} className={`relative h-10 shrink-0 rounded-full px-4 text-[13.5px] font-semibold ${cat === c ? 'text-on-inverse' : 'text-mute'}`}>
               {cat === c ? (
-                <motion.span layoutId="chip" className="absolute inset-0 rounded-full" style={{ background: 'var(--aurora)' }} transition={{ type: 'spring', stiffness: 420, damping: 34 }} />
+                <motion.span layoutId="chip" className="absolute inset-0 rounded-full bg-inverse" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />
               ) : (
                 <span className="absolute inset-0 rounded-full border border-line bg-card/70" />
               )}
@@ -100,28 +113,28 @@ export function Home() {
         </div>
       )}
 
-      <div className="space-y-2.5 px-5">
-        {list.map((c, i) => (
-          <LessonRow key={c.id} card={c} index={i} />
-        ))}
-        {lessons.length === 0 && (
-          <div className="rounded-[26px] border border-dashed border-veil/15 px-6 py-10 text-center">
-            <Emoji char="🛠️" size={44} className="mx-auto" />
-            <p className="mt-3 font-display text-[15px] font-semibold">Первый урок уже в работе</p>
-            <p className="mt-1.5 text-[13.5px] text-mute">Он появится здесь сразу после анонса в канале.</p>
-          </div>
-        )}
-      </div>
+      {lessons.length > 0 ? (
+        <div className="mx-5 overflow-hidden rounded-[24px] border border-line bg-card/80">
+          {list.map((c, i) => (
+            <LessonRow key={c.id} card={c} index={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="mx-5 rounded-[26px] border border-dashed border-veil/15 px-6 py-10 text-center">
+          <Emoji char="🛠️" size={44} className="mx-auto" />
+          <p className="mt-3 font-display text-[15px] font-semibold">Первый урок уже в работе</p>
+          <p className="mt-1.5 text-[13.5px] text-mute">Он появится здесь сразу после анонса в канале.</p>
+        </div>
+      )}
     </div>
   )
 }
 
-function SectionTitle({ children, icon, count }: { children: string; icon?: React.ReactNode; count?: number }) {
+function SectionTitle({ children, count }: { children: string; count?: number }) {
   return (
-    <div className="mb-3.5 mt-7 flex items-center gap-2 px-5">
-      {icon}
+    <div className="mb-3.5 mt-7 flex items-baseline gap-2 px-5">
       <h2 className="font-display text-[15px] font-semibold">{children}</h2>
-      {count != null && count > 0 && <span className="rounded-full bg-veil/8 px-2 py-0.5 text-[11.5px] font-semibold text-mute">{count}</span>}
+      {count != null && count > 0 && <span className="tabular text-[12.5px] font-semibold text-faint">{count}</span>}
     </div>
   )
 }
@@ -156,11 +169,14 @@ function DailyCard() {
     try {
       const res = await api.daily()
       burst(orb.current)
+      flyPoints(orb.current)
       sfx.coin()
       haptic.success()
-      if (res.gained > 0) toast(`+${res.gained} XP · стрик ${days(res.me.streak)}`, '🔥')
+      if (res.froze) toast('Заморозка спасла стрик: вчерашний пропуск не считается', '🧊')
+      else if (res.gained > 0) toast(`+${res.gained} XP · стрик ${days(res.me.streak)}`, '🔥')
       unlocked(res.new_achievements)
-      setMe(res.me)
+      // Карточка меняется на стрик не сразу: очки успевают долететь до счётчика.
+      setTimeout(() => setMe(res.me), 620)
     } catch (e) {
       guard(e)
       toast(errorText(e))
@@ -206,10 +222,10 @@ function DailyCard() {
       className="relative flex items-center gap-3 overflow-hidden rounded-[26px] p-4 pl-5"
       style={{ background: g.css, color: g.ink }}
     >
-      <div className="absolute -right-8 -top-14 h-40 w-40 rounded-full bg-white/25" />
+      <Pattern name="candy" />
       <div className="relative min-w-0 flex-1">
         <p className="text-[12px] font-semibold uppercase tracking-wider opacity-70">Бонус дня</p>
-        <p className="font-display text-[19px] font-semibold leading-tight">+{reward} XP</p>
+        <p className="tabular font-display text-[19px] font-semibold leading-tight">+{reward} XP</p>
         <p className="mt-1 text-[13px] font-medium opacity-80">{hint ? 'Не отпускай, пока не зарядится' : me.streak > 0 ? `Стрик ${days(me.streak)} — не обрывай` : 'Зажми кнопку и держи'}</p>
       </div>
       <motion.div
@@ -246,9 +262,15 @@ function StreakCard() {
         <Emoji char="🔥" size={34} animated />
         <div className="min-w-0 flex-1">
           <p className="font-display text-[15px] font-semibold leading-tight">Стрик {days(me.streak)}</p>
-          <p className="mt-0.5 text-[12.5px] text-mute">Завтра бонус +{dailyReward(me.streak + 1)} XP</p>
+          <p className="tabular mt-0.5 text-[12.5px] text-mute">
+            Завтра +{dailyReward(me.streak + 1)} XP · рекорд {me.best_streak}
+          </p>
         </div>
-        <span className="rounded-full bg-veil/8 px-2.5 py-1 text-[11.5px] font-semibold text-mute">рекорд {me.best_streak}</span>
+        {me.freezes > 0 && (
+          <span className="tabular flex h-9 items-center gap-1 rounded-full bg-sky/15 px-2.5 text-[12.5px] font-semibold text-sky">
+            <Snowflake size={15} /> {me.freezes}
+          </span>
+        )}
         <Tap onClick={() => useStore.setState({ share: streakCard(me) })} aria-label="Поделиться стриком" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-veil/8 text-mute">
           <Share2 size={16} />
         </Tap>
@@ -265,6 +287,9 @@ function StreakCard() {
           />
         ))}
       </div>
+      <p className="mt-2.5 text-[12px] leading-snug text-faint">
+        {filled === 7 ? 'Неделя закрыта. Заморозка в запасе: она спасёт стрик, если пропустишь день.' : `Ещё ${days(7 - filled)} до заморозки — она спасает стрик, если пропустишь день.`}
+      </p>
     </motion.div>
   )
 }
@@ -297,13 +322,18 @@ function StoryBubble({ card, index }: { card: Card; index: number }) {
 
 function HeroCarousel({ cards }: { cards: Card[] }) {
   const scroller = useRef<HTMLDivElement>(null)
+  const scrollX = useMotionValue(0)
   const [active, setActive] = useState(0)
+  const [step, setStep] = useState(1)
 
   const onScroll = () => {
     const el = scroller.current
     const first = el?.firstElementChild as HTMLElement | null
     if (!el || !first) return
-    const i = Math.round(el.scrollLeft / (first.offsetWidth + 12))
+    const width = first.offsetWidth + 12
+    scrollX.set(el.scrollLeft)
+    if (width !== step) setStep(width)
+    const i = Math.round(el.scrollLeft / width)
     if (i !== active) {
       setActive(i)
       haptic.select()
@@ -314,7 +344,7 @@ function HeroCarousel({ cards }: { cards: Card[] }) {
     <>
       <div ref={scroller} onScroll={onScroll} className="no-bar flex snap-x snap-mandatory gap-3 overflow-x-auto px-5">
         {cards.map((c, i) => (
-          <HeroCard key={c.id} card={c} active={i === active} single={cards.length === 1} />
+          <HeroCard key={c.id} card={c} active={i === active} single={cards.length === 1} index={i} step={step} scrollX={scrollX} />
         ))}
       </div>
       {cards.length > 1 && (
@@ -349,23 +379,37 @@ function Typed({ text, active }: { text: string; active: boolean }) {
   )
 }
 
-function HeroCard({ card, active, single }: { card: Card; active: boolean; single: boolean }) {
+interface HeroProps {
+  card: Card
+  active: boolean
+  single: boolean
+  index: number
+  step: number
+  scrollX: MotionValue<number>
+}
+
+function HeroCard({ card, active, single, index, step, scrollX }: HeroProps) {
   const push = useStore((s) => s.push)
   const g = GRADIENTS[card.gradient] ?? GRADIENTS.aurora
+  // Параллакс: эмодзи движется медленнее карточки и чуть поворачивается, пока она уезжает.
+  const offset = useTransform(scrollX, (x) => (x - index * step) / Math.max(step, 1))
+  const emojiX = useTransform(offset, [-1, 0, 1], [-46, 0, 46])
+  const emojiRotate = useTransform(offset, [-1, 0, 1], [14, 0, -14])
   return (
     <Tap
       onClick={(e) => push({ type: 'lesson', id: card.id, from: insetOf(e.currentTarget) })}
       className={`relative h-[220px] shrink-0 snap-center overflow-hidden rounded-[30px] p-5 text-left ${single ? 'w-full' : 'w-[86%]'}`}
       style={{ background: g.css, color: g.ink, boxShadow: `0 18px 44px -18px ${g.glow}` }}
     >
-      <div className="absolute -right-12 -top-14 h-48 w-48 rounded-full bg-white/20" />
-      <div className="absolute -bottom-20 -left-10 h-44 w-44 rounded-full bg-black/10" />
+      <Pattern name={card.gradient} />
       {card.cover_url ? (
         <img src={card.cover_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45 mix-blend-luminosity" />
       ) : (
-        <div className="floaty absolute -bottom-2 -right-1">
-          <Emoji char={card.emoji} size={128} animated={active} />
-        </div>
+        <motion.div className="absolute -bottom-2 -right-1" style={{ x: emojiX, rotate: emojiRotate }}>
+          <div className="floaty">
+            <Emoji char={card.emoji} size={128} animated={active} />
+          </div>
+        </motion.div>
       )}
       <div className="relative flex h-full flex-col">
         <div className="flex items-center gap-1.5">
@@ -382,9 +426,45 @@ function HeroCard({ card, active, single }: { card: Card; active: boolean; singl
             <Typed text={card.subtitle} active={active} />
           </p>
         )}
-        <div className="mt-auto flex items-center gap-1.5 text-[12.5px] font-bold">
+        <div className="tabular mt-auto flex items-center gap-2 text-[12.5px] font-bold">
           <span className="rounded-full bg-black/15 px-2.5 py-1">{card.minutes} мин</span>
-          <span className="rounded-full bg-black/15 px-2.5 py-1">+{card.xp} XP</span>
+          {/* Наклейка с наградой: чуть повёрнута и с жёсткой тенью, как ценник на игровом автомате. */}
+          <span className="-rotate-3 rounded-[10px] bg-white px-2.5 py-1 text-[#14101f] shadow-[2px_3px_0_rgb(0_0_0/0.28)]">+{card.xp} XP</span>
+        </div>
+      </div>
+    </Tap>
+  )
+}
+
+// ---------- Курсы ----------
+
+function CourseCard({ course, single }: { course: Course; single: boolean }) {
+  const push = useStore((s) => s.push)
+  const g = GRADIENTS[course.gradient] ?? GRADIENTS.ocean
+  return (
+    <Tap
+      onClick={(e) => push({ type: 'course', id: course.id, from: insetOf(e.currentTarget) })}
+      className={`sheen relative h-[176px] shrink-0 snap-center overflow-hidden rounded-[28px] p-5 text-left ${single ? 'w-full' : 'w-[82%]'}`}
+      style={{ background: g.css, color: g.ink, boxShadow: `0 18px 44px -20px ${g.glow}` }}
+    >
+      <Pattern name={course.gradient} full />
+      <div className="floaty absolute -right-2 bottom-1">
+        <Emoji char={course.emoji} size={104} />
+      </div>
+      <div className="relative flex h-full flex-col">
+        <span className="flex w-fit items-center gap-1.5 rounded-full bg-black/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider">
+          {course.access ? <Check size={12} strokeWidth={3.5} /> : <Lock size={11} strokeWidth={3} />}
+          {course.access ? 'Курс открыт' : 'Закрытый курс'}
+        </span>
+        <h3 className="mt-2.5 max-w-[78%] font-display text-[19px] font-semibold leading-[1.15]">{course.title}</h3>
+        <div className="tabular mt-auto flex items-center gap-2 text-[12.5px] font-bold">
+          <span className="rounded-full bg-black/15 px-2.5 py-1">{course.access ? `${course.done} из ${course.lessons}` : `${course.lessons} ${lessonsWord(course.lessons)}`}</span>
+          {!course.access && course.price_stars > 0 && (
+            <span className="flex -rotate-3 items-center gap-1 rounded-[10px] bg-white px-2.5 py-1 text-[#14101f] shadow-[2px_3px_0_rgb(0_0_0/0.28)]">
+              <Star size={13} fill="#f5a524" strokeWidth={0} /> {course.price_stars}
+            </span>
+          )}
+          {!course.access && course.request === 'pending' && <span className="rounded-full bg-black/15 px-2.5 py-1">заявка у автора</span>}
         </div>
       </div>
     </Tap>
@@ -396,18 +476,22 @@ function HeroCard({ card, active, single }: { card: Card; active: boolean; singl
 function LessonRow({ card, index }: { card: Card; index: number }) {
   const push = useStore((s) => s.push)
   return (
-    <Tap
-      onClick={(e) => push({ type: 'lesson', id: card.id, from: insetOf(e.currentTarget) })}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: Math.min(index, 8) * 0.045, type: 'spring', stiffness: 380, damping: 32 }}
-      className="flex w-full items-center gap-3.5 rounded-[22px] border border-line bg-card/80 p-3 text-left"
+    <motion.button
+      type="button"
+      onClick={(e) => {
+        haptic.tap()
+        push({ type: 'lesson', id: card.id, from: insetOf(e.currentTarget) })
+      }}
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: Math.min(index, 8) * 0.04 }}
+      className="flex w-full items-center gap-3.5 border-b border-line p-3 text-left last:border-b-0 active:bg-veil/5"
     >
-      <EmojiTile emoji={card.emoji} gradient={card.gradient} size={58} />
+      <EmojiTile emoji={card.emoji} gradient={card.gradient} size={54} radius={17} />
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-[15px] font-semibold leading-snug">{card.title}</p>
         <p className="mt-1 flex items-center gap-1.5 text-[12.5px] text-mute">
-          <span className="truncate">
+          <span className="tabular truncate">
             {card.category} · {card.minutes} мин{card.quiz_count > 0 ? ' · квиз' : ''}
           </span>
           {card.has_video && <CirclePlay size={13} className="shrink-0" />}
@@ -418,8 +502,8 @@ function LessonRow({ card, index }: { card: Card; index: number }) {
           <Check size={16} strokeWidth={3} />
         </span>
       ) : (
-        <span className="shrink-0 rounded-full bg-violet/15 px-2.5 py-1 text-[12px] font-bold text-violet">+{card.xp}</span>
+        <span className="tabular shrink-0 rounded-full bg-violet/15 px-2.5 py-1 text-[12px] font-bold text-violet">+{card.xp}</span>
       )}
-    </Tap>
+    </motion.button>
   )
 }

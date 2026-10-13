@@ -221,7 +221,9 @@ async function logEvent(userId: number, name: string, lessonId: number | null = 
 
 async function buildMe(row: Row, tz: unknown) {
   const day = localDay(tz)
-  const alive = !!row.last_claim && dayDiff(day, row.last_claim) <= 1
+  // Пропущен один день, но есть заморозка — стрик ещё можно спасти, поэтому показываем его.
+  const gap = row.last_claim ? dayDiff(day, row.last_claim) : Infinity
+  const alive = gap <= 1 || (gap === 2 && row.freezes > 0)
   const { count } = await db.from('users').select('id', { count: 'exact', head: true }).gt('xp', row.xp)
   return {
     id: row.id,
@@ -237,6 +239,7 @@ async function buildMe(row: Row, tz: unknown) {
     achievements: row.achievements ?? [],
     rank: (count ?? 0) + 1,
     invited: row.invited,
+    freezes: row.freezes ?? 0,
   }
 }
 
@@ -255,6 +258,78 @@ async function member(body: Row, admin = false): Promise<Row> {
   if (!row.subscribed) throw new HttpError(403, 'locked')
   if (admin && !row.is_admin) throw new HttpError(403, 'forbidden')
   return row
+}
+
+// ---------- Курсы ----------
+
+function adminIds(s: Settings): number[] {
+  return Object.values(s.admins ?? {}).filter((v): v is number => typeof v === 'number')
+}
+
+async function grantAccess(userId: number, courseId: number, source: 'stars' | 'admin' | 'invites') {
+  await db.from('course_access').upsert({ user_id: userId, course_id: courseId, source }, { onConflict: 'user_id,course_id', ignoreDuplicates: true })
+}
+
+// Урок из курса открыт, если он помечен бесплатным, у человека есть доступ к курсу или это админ.
+async function canRead(row: Row, les: Row): Promise<boolean> {
+  if (!les.course_id || les.free_preview || row.is_admin) return true
+  const { data } = await db.from('course_access').select('course_id').eq('user_id', row.id).eq('course_id', les.course_id).maybeSingle()
+  return !!data
+}
+
+async function buildCourses(row: Row, feed: Row[]) {
+  const [courses, access, requests] = await Promise.all([
+    db.from('courses').select('*').eq('published', true).order('position').order('id'),
+    db.from('course_access').select('course_id').eq('user_id', row.id),
+    db.from('access_requests').select('course_id,status').eq('user_id', row.id),
+  ])
+  const has = new Set((access.data ?? []).map((a) => a.course_id))
+  const asked = new Map((requests.data ?? []).map((r) => [r.course_id, r.status]))
+  const out = []
+  for (const c of courses.data ?? []) {
+    // «Открой с друзьями»: привёл нужное число людей — курс открывается сам.
+    if (!has.has(c.id) && c.invite_unlock > 0 && row.invited >= c.invite_unlock) {
+      await grantAccess(row.id, c.id, 'invites')
+      has.add(c.id)
+    }
+    const lessons = feed.filter((l) => l.course_id === c.id)
+    out.push({
+      id: c.id,
+      title: c.title,
+      subtitle: c.subtitle,
+      description: c.description,
+      emoji: c.emoji,
+      gradient: c.gradient,
+      price_stars: c.price_stars,
+      invite_unlock: c.invite_unlock,
+      lessons: lessons.length,
+      done: lessons.filter((l) => l.completed).length,
+      access: row.is_admin || has.has(c.id),
+      request: asked.get(c.id) ?? null,
+    })
+  }
+  return out
+}
+
+async function notifyOpened(userId: number, course: Row, s: Settings) {
+  if (!s.app_url) return
+  await tg('sendMessage', {
+    chat_id: userId,
+    text: `Курс «${course.title}» открыт. Заходи.`,
+    reply_markup: { inline_keyboard: [[{ text: 'Открыть курс', web_app: { url: `${s.app_url}/?sp=c${course.id}` } }]] },
+  })
+}
+
+// Решение по заявке: из админки или кнопкой прямо в чате с ботом.
+async function decideRequest(courseId: number, userId: number, approve: boolean): Promise<string | null> {
+  const { data: course } = await db.from('courses').select('id,title').eq('id', courseId).maybeSingle()
+  if (!course) return null
+  await db.from('access_requests').upsert({ user_id: userId, course_id: courseId, status: approve ? 'approved' : 'declined', decided_at: new Date().toISOString() })
+  if (approve) {
+    await grantAccess(userId, courseId, 'admin')
+    await notifyOpened(userId, course, await getSettings())
+  }
+  return course.title
 }
 
 async function buildFeed(userId: number) {
@@ -296,12 +371,13 @@ async function boot(body: Row) {
     const { data } = await db.from('users').select('*').eq('id', row.id).single()
     if (data) row = data
   }
-  const [me, feed] = await Promise.all([
+  const feed = await buildFeed(row.id)
+  const [me, courses] = await Promise.all([
     buildMe(row, body.tz),
-    buildFeed(row.id),
+    buildCourses(row, feed),
     logEvent(row.id, 'open', null, { platform: str(body.platform, 20), theme: str(body.theme, 10) }),
   ])
-  return { status: 'ok', me, feed, ...meta }
+  return { status: 'ok', me, feed, courses, ...meta }
 }
 
 async function lesson(body: Row) {
@@ -309,6 +385,7 @@ async function lesson(body: Row) {
   const id = Number(body.id)
   const { data } = await db.from('lessons').select('*').eq('id', id).maybeSingle()
   if (!data || (!data.published && !row.is_admin)) throw new HttpError(404, 'not_found')
+  if (!(await canRead(row, data))) throw new HttpError(403, 'course_locked')
   const [p, l] = await Promise.all([
     db.from('progress').select('score,total').eq('user_id', row.id).eq('lesson_id', id).maybeSingle(),
     db.from('likes').select('lesson_id').eq('user_id', row.id).eq('lesson_id', id).maybeSingle(),
@@ -328,8 +405,9 @@ async function lesson(body: Row) {
 async function complete(body: Row) {
   const row = await member(body)
   const id = Number(body.id)
-  const { data: les } = await db.from('lessons').select('id,kind,xp,quiz,published').eq('id', id).maybeSingle()
+  const { data: les } = await db.from('lessons').select('id,kind,xp,quiz,published,course_id,free_preview').eq('id', id).maybeSingle()
   if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
+  if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
   const quiz: { correct: number }[] = Array.isArray(les.quiz) ? les.quiz : []
   const answers: unknown[] = Array.isArray(body.answers) ? body.answers : []
   // Серия верных ответов поднимает награду: 10, 15, дальше по 20. Ошибка сбрасывает серию.
@@ -384,8 +462,8 @@ async function daily(body: Row) {
   if (streak >= 30) earned.push('streak30')
   const fresh = gained > 0 ? earned.filter((c) => !(row.achievements ?? []).includes(c)) : []
   if (fresh.length) await db.rpc('grant_achievements', { p_user: row.id, p_codes: fresh })
-  if (gained > 0) await logEvent(row.id, 'daily', null, { streak, xp: gained })
-  return { gained, new_achievements: fresh, me: await freshMe(row.id, body.tz) }
+  if (gained > 0) await logEvent(row.id, 'daily', null, { streak, xp: gained, froze: !!res?.used_freeze })
+  return { gained, froze: !!res?.used_freeze, new_achievements: fresh, me: await freshMe(row.id, body.tz) }
 }
 
 async function like(body: Row) {
@@ -397,7 +475,7 @@ async function like(body: Row) {
 }
 
 // События с клиента: только из белого списка и небольшими пачками.
-const CLIENT_EVENTS = ['share', 'copy', 'story_open', 'theme']
+const CLIENT_EVENTS = ['share', 'copy', 'story_open', 'theme', 'lab']
 
 async function track(body: Row) {
   const row = await member(body)
@@ -432,6 +510,91 @@ async function shareUpload(body: Row) {
   const { error } = await db.storage.from('shares').upload(file, bytes, { contentType: 'image/jpeg', upsert: true, cacheControl: '60' })
   if (error) throw new HttpError(500, 'upload')
   return { url: `${SUPABASE_URL}/storage/v1/object/public/shares/${file}?v=${Date.now()}` }
+}
+
+// «Поделиться» карточкой с кнопкой: бот заранее готовит сообщение, а человек сам выбирает чат.
+// Подпись и ссылку собирает сервер, чтобы от имени бота нельзя было отправить произвольный текст.
+async function shareMessage(body: Row) {
+  const row = await member(body)
+  const s = await getSettings()
+  if (!s.bot?.username) throw new HttpError(400, 'not_ready')
+  const kind = SHARE_KINDS.includes(body.kind) ? body.kind : 'level'
+  const lessonId = Number(body.lesson_id)
+  let caption = 'Учусь в Elaz Ed: уроки с XP, стриком и рейтингом.'
+  let start = `r${row.id}`
+  if (kind === 'lesson' && lessonId > 0) {
+    const { data: les } = await db.from('lessons').select('id,title').eq('id', lessonId).eq('published', true).maybeSingle()
+    if (les) {
+      caption = `Прошёл урок «${les.title}» в Elaz Ed.`
+      start = `l${les.id}_r${row.id}`
+    }
+  } else if (kind === 'streak') {
+    caption = `Держу стрик в Elaz Ed: ${row.streak} дн. подряд.`
+  } else if (kind === 'achievement') {
+    caption = 'Открыл новую ачивку в Elaz Ed.'
+  }
+  const photo = `${SUPABASE_URL}/storage/v1/object/public/shares/${row.id}/${kind}.jpg?v=${Date.now()}`
+  const r = await tg('savePreparedInlineMessage', {
+    user_id: row.id,
+    result: {
+      type: 'photo',
+      id: crypto.randomUUID().replace(/-/g, ''),
+      photo_url: photo,
+      thumbnail_url: photo,
+      caption,
+      reply_markup: { inline_keyboard: [[{ text: 'Открыть Elaz Ed', url: `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=${start}` }]] },
+    },
+    allow_user_chats: true,
+    allow_group_chats: true,
+    allow_channel_chats: true,
+  })
+  if (!r.ok) throw new HttpError(502, 'telegram')
+  return { id: r.result.id }
+}
+
+async function courseRequest(body: Row) {
+  const row = await member(body)
+  const id = Number(body.id)
+  const { data: course } = await db.from('courses').select('id,title,published').eq('id', id).maybeSingle()
+  if (!course?.published) throw new HttpError(404, 'not_found')
+  await db.from('access_requests').upsert({ user_id: row.id, course_id: id, status: 'pending', created_at: new Date().toISOString(), decided_at: null })
+  await logEvent(row.id, 'course_request', null, { course: id })
+  const who = `${row.first_name || 'Без имени'}${row.username ? ` (@${row.username})` : ''}`
+  const s = await getSettings()
+  await Promise.all(
+    adminIds(s).map((admin) =>
+      tg('sendMessage', {
+        chat_id: admin,
+        text: `Заявка на курс «${course.title}»\nОт: ${who}`,
+        reply_markup: {
+          inline_keyboard: [[
+            { text: 'Открыть доступ', callback_data: `req:a:${id}:${row.id}` },
+            { text: 'Отклонить', callback_data: `req:d:${id}:${row.id}` },
+          ]],
+        },
+      }),
+    ),
+  )
+  return { request: 'pending' }
+}
+
+// Счёт в звёздах Telegram. Доступ выдаёт вебхук, когда Telegram подтвердит оплату.
+async function courseInvoice(body: Row) {
+  const row = await member(body)
+  const id = Number(body.id)
+  const { data: c } = await db.from('courses').select('*').eq('id', id).maybeSingle()
+  if (!c?.published || c.price_stars <= 0) throw new HttpError(400, 'not_for_sale')
+  const r = await tg('createInvoiceLink', {
+    title: String(c.title).slice(0, 32),
+    description: String(c.subtitle || `Доступ к курсу «${c.title}»`).slice(0, 255),
+    payload: `course:${id}:${row.id}`,
+    provider_token: '',
+    currency: 'XTR',
+    prices: [{ label: 'Доступ к курсу', amount: c.price_stars }],
+  })
+  if (!r.ok) throw new HttpError(502, 'telegram')
+  await logEvent(row.id, 'invoice', null, { course: id, stars: c.price_stars })
+  return { link: r.result }
 }
 
 async function top(body: Row) {
@@ -495,8 +658,87 @@ function cleanLesson(input: Row) {
     xp: int(input.xp, 0, 500, 50),
     pinned: !!input.pinned,
     published: !!input.published,
+    course_id: Number(input.course_id) > 0 ? Number(input.course_id) : null,
+    position: int(input.position, 0, 999, 0),
+    free_preview: !!input.free_preview,
     updated_at: new Date().toISOString(),
   }
+}
+
+function cleanCourse(input: Row) {
+  const title = str(input.title, 80)
+  if (!title) throw new HttpError(400, 'title_required')
+  return {
+    title,
+    subtitle: str(input.subtitle, 160),
+    description: typeof input.description === 'string' ? input.description.slice(0, 4000) : '',
+    emoji: [...str(input.emoji, 16)].slice(0, 8).join('') || '🎓',
+    gradient: GRADIENTS.includes(input.gradient) ? input.gradient : 'ocean',
+    price_stars: int(input.price_stars, 0, 100_000, 0),
+    invite_unlock: int(input.invite_unlock, 0, 100, 0),
+    position: int(input.position, 0, 999, 0),
+    published: !!input.published,
+    updated_at: new Date().toISOString(),
+  }
+}
+
+async function adminCourses(body: Row) {
+  await member(body, true)
+  const [courses, access, requests] = await Promise.all([
+    db.from('courses').select('*').order('position').order('id'),
+    db.from('course_access').select('course_id'),
+    db.from('access_requests').select('user_id,course_id,created_at,users(first_name,username)').eq('status', 'pending').order('created_at'),
+  ])
+  const students = new Map<number, number>()
+  for (const a of access.data ?? []) students.set(a.course_id, (students.get(a.course_id) ?? 0) + 1)
+  return {
+    courses: (courses.data ?? []).map((c) => ({ ...c, students: students.get(c.id) ?? 0 })),
+    // deno-lint-ignore no-explicit-any
+    requests: (requests.data ?? []).map((r: any) => ({
+      user_id: r.user_id,
+      course_id: r.course_id,
+      created_at: r.created_at,
+      name: r.users?.first_name || 'Без имени',
+      username: r.users?.username ?? null,
+    })),
+  }
+}
+
+async function adminCourseSave(body: Row) {
+  await member(body, true)
+  const input = body.course ?? {}
+  const clean = cleanCourse(input)
+  const id = Number(input.id)
+  const query = id ? db.from('courses').update(clean).eq('id', id) : db.from('courses').insert(clean)
+  const { data, error } = await query.select('*').single()
+  if (error) throw new HttpError(500, 'db')
+  return data
+}
+
+async function adminCourseDelete(body: Row) {
+  await member(body, true)
+  await db.from('courses').delete().eq('id', Number(body.id))
+  return { ok: true }
+}
+
+async function adminRequest(body: Row) {
+  await member(body, true)
+  const title = await decideRequest(Number(body.course_id), Number(body.user_id), !!body.approve)
+  if (!title) throw new HttpError(404, 'not_found')
+  return { ok: true }
+}
+
+// Доступ вручную по @username. Человек должен хотя бы раз открыть приложение — иначе его нет в базе.
+async function adminGrant(body: Row) {
+  await member(body, true)
+  const username = str(body.username, 64).replace(/^@/, '')
+  const courseId = Number(body.course_id)
+  if (!username) throw new HttpError(400, 'user_not_found')
+  const { data: user } = await db.from('users').select('id,first_name').ilike('username', username).maybeSingle()
+  if (!user) throw new HttpError(404, 'user_not_found')
+  const title = await decideRequest(courseId, user.id, true)
+  if (!title) throw new HttpError(404, 'not_found')
+  return { name: user.first_name || username }
 }
 
 async function adminList(body: Row) {
@@ -519,7 +761,9 @@ async function adminAnalytics(body: Row) {
   await member(body, true)
   const { data, error } = await db.rpc('analytics_summary', { p_days: 14, p_tz: clampTz(body.tz) })
   if (error) throw new HttpError(500, 'db')
-  return data
+  const { data: pays } = await db.from('payments').select('stars')
+  const stars = { total: (pays ?? []).reduce((n, p) => n + p.stars, 0), count: (pays ?? []).length }
+  return { ...data, stars }
 }
 
 async function adminSave(body: Row) {
@@ -594,6 +838,61 @@ async function webhook(req: Request) {
       }
     }
 
+    if (msg?.chat?.type === 'private' && typeof msg.text === 'string' && msg.text.startsWith('/paysupport')) {
+      await tg('sendMessage', { chat_id: msg.chat.id, text: 'Вопрос по оплате? Напиши @elazart — разберёмся и вернём звёзды, если курс не открылся.' })
+    }
+
+    // Telegram ждёт ответа на проверку перед оплатой не дольше 10 секунд.
+    const pcq = update.pre_checkout_query
+    if (pcq) {
+      const m = /^course:(\d+):(\d+)$/.exec(pcq.invoice_payload ?? '')
+      let ok = false
+      if (m && pcq.currency === 'XTR' && Number(m[2]) === pcq.from?.id) {
+        const { data: c } = await db.from('courses').select('price_stars,published').eq('id', Number(m[1])).maybeSingle()
+        ok = !!c?.published && c.price_stars === pcq.total_amount
+      }
+      await tg('answerPreCheckoutQuery', {
+        pre_checkout_query_id: pcq.id,
+        ok,
+        ...(ok ? {} : { error_message: 'Курс сейчас недоступен. Звёзды не списаны.' }),
+      })
+    }
+
+    const paid = msg?.successful_payment
+    if (paid) {
+      const m = /^course:(\d+):(\d+)$/.exec(paid.invoice_payload ?? '')
+      if (m && Number(m[2]) === msg.from?.id) {
+        const courseId = Number(m[1])
+        const userId = Number(m[2])
+        const { error } = await db.from('payments').insert({ user_id: userId, course_id: courseId, stars: paid.total_amount, charge_id: paid.telegram_payment_charge_id })
+        if (!error) {
+          await grantAccess(userId, courseId, 'stars')
+          await logEvent(userId, 'purchase', null, { course: courseId, stars: paid.total_amount })
+          const { data: course } = await db.from('courses').select('id,title').eq('id', courseId).maybeSingle()
+          if (course) await notifyOpened(userId, course, s)
+        }
+      }
+    }
+
+    const cb = update.callback_query
+    if (typeof cb?.data === 'string' && cb.data.startsWith('req:')) {
+      const [, action, courseId, userId] = cb.data.split(':')
+      if (adminIds(s).includes(cb.from?.id)) {
+        const approve = action === 'a'
+        await decideRequest(Number(courseId), Number(userId), approve)
+        await tg('answerCallbackQuery', { callback_query_id: cb.id, text: approve ? 'Доступ открыт' : 'Заявка отклонена' })
+        if (cb.message) {
+          await tg('editMessageText', {
+            chat_id: cb.message.chat.id,
+            message_id: cb.message.message_id,
+            text: `${cb.message.text ?? 'Заявка'}\n\n${approve ? 'Доступ открыт.' : 'Отклонено.'}`,
+          })
+        }
+      } else {
+        await tg('answerCallbackQuery', { callback_query_id: cb.id, text: 'Решать может только админ' })
+      }
+    }
+
     const mine = update.my_chat_member
     if (mine?.chat?.type === 'channel') {
       const st = mine.new_chat_member?.status
@@ -633,14 +932,19 @@ async function setup() {
   const hook = await tg('setWebhook', {
     url: `${s.api_url ?? `${SUPABASE_URL}/functions/v1/api`}/webhook`,
     secret_token: await webhookSecret(),
-    allowed_updates: ['message', 'my_chat_member', 'chat_member'],
+    allowed_updates: ['message', 'my_chat_member', 'chat_member', 'pre_checkout_query', 'callback_query'],
   })
   let menu = false
   if (s.app_url) {
     const r = await tg('setChatMenuButton', { menu_button: { type: 'web_app', text: 'Elaz Ed', web_app: { url: s.app_url } } })
     menu = r.ok
   }
-  await tg('setMyCommands', { commands: [{ command: 'start', description: 'Открыть Elaz Ed' }] })
+  await tg('setMyCommands', {
+    commands: [
+      { command: 'start', description: 'Открыть Elaz Ed' },
+      { command: 'paysupport', description: 'Вопрос по оплате' },
+    ],
+  })
   await tg('setMyShortDescription', { short_description: 'Elaz Ed — уроки, туториалы и новости для подписчиков канала.' })
   return json({
     ok: true,
@@ -669,6 +973,14 @@ const routes: Record<string, (body: Row) => Promise<unknown>> = {
   top,
   track,
   share_upload: shareUpload,
+  share_message: shareMessage,
+  course_request: courseRequest,
+  course_invoice: courseInvoice,
+  admin_courses: adminCourses,
+  admin_course_save: adminCourseSave,
+  admin_course_delete: adminCourseDelete,
+  admin_request: adminRequest,
+  admin_grant: adminGrant,
   admin_list: adminList,
   admin_analytics: adminAnalytics,
   admin_save: adminSave,

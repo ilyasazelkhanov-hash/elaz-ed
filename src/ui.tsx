@@ -266,3 +266,129 @@ export function EmojiTile({ emoji, gradient, size = 56, radius = 18 }: { emoji: 
     </div>
   )
 }
+
+// ---------- Объёмная кнопка ----------
+
+type CtaProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { tone?: 'aurora' | 'inverse' | 'quiet'; busy?: boolean }
+
+/** Главное действие экрана. Нижняя грань проседает под пальцем — см. .cta в стилях. */
+export function Cta({ tone = 'aurora', busy = false, className = '', onClick, children, disabled, ...rest }: CtaProps) {
+  return (
+    <button
+      type="button"
+      className={`cta cta-${tone} ${className}`}
+      disabled={disabled || busy}
+      onClick={(e) => {
+        haptic.heavy()
+        onClick?.(e)
+      }}
+      {...rest}
+    >
+      {busy ? <Spinner size={20} /> : children}
+    </button>
+  )
+}
+
+// ---------- Узор обложки ----------
+
+// У каждого градиента свой рисунок: обложки различаются не только цветом.
+const PATTERNS: Record<GradientName, React.CSSProperties> = {
+  aurora: { backgroundImage: 'radial-gradient(rgb(255 255 255 / 0.26) 1.6px, transparent 2.1px)', backgroundSize: '14px 14px' },
+  sunset: { backgroundImage: 'repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.16) 0 2px, transparent 2px 13px)' },
+  ocean: { backgroundImage: 'repeating-radial-gradient(circle at 88% 12%, rgb(255 255 255 / 0.18) 0 2px, transparent 2px 24px)' },
+  mint: {
+    backgroundImage: 'linear-gradient(rgb(0 0 0 / 0.08) 1.5px, transparent 1.5px), linear-gradient(90deg, rgb(0 0 0 / 0.08) 1.5px, transparent 1.5px)',
+    backgroundSize: '22px 22px',
+  },
+  candy: {
+    backgroundImage: 'radial-gradient(rgb(0 0 0 / 0.1) 3px, transparent 3.6px), radial-gradient(rgb(0 0 0 / 0.1) 3px, transparent 3.6px)',
+    backgroundSize: '26px 26px',
+    backgroundPosition: '0 0, 13px 13px',
+  },
+  lime: { backgroundImage: 'repeating-linear-gradient(90deg, rgb(0 0 0 / 0.07) 0 10px, transparent 10px 20px)' },
+}
+
+/** Рисунок поверх градиента. Гаснет к левому краю, чтобы не спорить с текстом. */
+export function Pattern({ name, full = false }: { name: GradientName; full?: boolean }) {
+  const mask = full ? undefined : 'linear-gradient(to left, #000 8%, transparent 78%)'
+  return <div className="pointer-events-none absolute inset-0" style={{ ...(PATTERNS[name] ?? PATTERNS.aurora), WebkitMaskImage: mask, maskImage: mask }} />
+}
+
+// ---------- Одометр ----------
+
+const DIGITS = '0123456789'.split('')
+
+/** Число, у которого цифры прокручиваются по одной, как на механическом счётчике. */
+export function Odometer({ value, className = '' }: { value: number; className?: string }) {
+  const digits = String(Math.max(0, Math.round(value))).split('')
+  return (
+    <span className={`tabular inline-flex overflow-hidden leading-none ${className}`} aria-label={String(value)}>
+      {digits.map((d, i) => (
+        // Ключ считается от младшего разряда: при росте числа старые цифры остаются на своих местах.
+        <span key={digits.length - i} className="relative inline-block h-[1em]" aria-hidden>
+          <span className="invisible">0</span>
+          <motion.span
+            className="absolute left-0 top-0 flex w-full flex-col items-center"
+            initial={false}
+            animate={{ y: `${-Number(d)}em` }}
+            transition={{ type: 'spring', stiffness: 160, damping: 20, delay: (digits.length - i - 1) * 0.05 }}
+          >
+            {DIGITS.map((n) => (
+              <span key={n} className="h-[1em]">
+                {n}
+              </span>
+            ))}
+          </motion.span>
+        </span>
+      ))}
+    </span>
+  )
+}
+
+// ---------- Искры и летящие очки ----------
+
+/** Включает искры от нажатий на кнопки. Возвращает функцию отключения. */
+export function enableSparks() {
+  const onDown = (e: PointerEvent) => {
+    if (!(e.target instanceof Element) || !e.target.closest('button, a, [role="button"]')) return
+    const spark = document.createElement('i')
+    spark.className = 'spark'
+    spark.style.left = `${e.clientX}px`
+    spark.style.top = `${e.clientY}px`
+    spark.addEventListener('animationend', () => spark.remove())
+    document.body.appendChild(spark)
+  }
+  document.addEventListener('pointerdown', onDown, { passive: true })
+  return () => document.removeEventListener('pointerdown', onDown)
+}
+
+/** Очки вылетают из кнопки и по дуге прилетают в счётчик XP в шапке. */
+export function flyPoints(from: Element | null, count = 7) {
+  const target = document.getElementById('xp-pill')
+  if (!from || !target || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  const a = from.getBoundingClientRect()
+  const b = target.getBoundingClientRect()
+  const start = { x: a.left + a.width / 2, y: a.top + a.height / 2 }
+  const end = { x: b.left + b.width / 2, y: b.top + b.height / 2 }
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement('i')
+    const spread = { x: (Math.random() - 0.5) * 120, y: (Math.random() - 0.5) * 70 - 40 }
+    dot.style.cssText = `position:fixed;left:0;top:0;z-index:250;width:10px;height:10px;margin:-5px;border-radius:50%;pointer-events:none;background:var(--aurora);box-shadow:0 0 10px 2px rgb(165 139 255 / 0.7)`
+    document.body.appendChild(dot)
+    const flight = dot.animate(
+      [
+        { transform: `translate(${start.x}px, ${start.y}px) scale(0.4)`, opacity: 0 },
+        { transform: `translate(${start.x + spread.x}px, ${start.y + spread.y}px) scale(1.15)`, opacity: 1, offset: 0.28 },
+        { transform: `translate(${end.x}px, ${end.y}px) scale(0.5)`, opacity: 0.9 },
+      ],
+      { duration: 760, delay: i * 55, easing: 'cubic-bezier(0.5, 0, 0.2, 1)', fill: 'both' },
+    )
+    flight.onfinish = () => {
+      dot.remove()
+      target.classList.remove('bump')
+      void target.offsetWidth
+      target.classList.add('bump')
+      if (i === count - 1) haptic.soft()
+    }
+  }
+}

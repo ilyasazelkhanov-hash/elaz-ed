@@ -1,10 +1,10 @@
-import { ChartNoAxesColumn, ChevronLeft, ChevronRight, Eye, Heart, Megaphone, Plus, Trash2, X } from 'lucide-react'
+import { ChartNoAxesColumn, ChevronLeft, ChevronRight, Eye, GraduationCap, Heart, Megaphone, Plus, Trash2, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText } from '../lib/api'
 import { GRADIENT_NAMES, GRADIENTS, readMinutes, slidesOf } from '../lib/game'
 import { confirmDialog, haptic, inTelegram } from '../lib/tg'
-import type { AdminStats, GradientName, Kind, Lesson, LessonDraft, QuizQuestion } from '../lib/types'
+import type { AdminCourse, AdminStats, GradientName, Kind, Lesson, LessonDraft, QuizQuestion } from '../lib/types'
 import { useStore } from '../store'
 import { EmojiTile, Spinner, Tap } from '../ui'
 
@@ -89,6 +89,17 @@ export function AdminScreen() {
           <ChevronRight size={18} className="text-faint" />
         </Tap>
 
+        <Tap onClick={() => push({ type: 'courses-admin' })} className="mx-5 mt-2 flex w-[calc(100%-40px)] items-center gap-3 rounded-[18px] border border-line bg-card p-3.5 text-left">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-violet/15 text-violet">
+            <GraduationCap size={19} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-semibold">Курсы и заявки</span>
+            <span className="block text-[12.5px] text-mute">Закрытые курсы, цена в звёздах, доступ</span>
+          </span>
+          <ChevronRight size={18} className="text-faint" />
+        </Tap>
+
         <div className="mt-4 grid grid-cols-2 gap-2 px-5">
           <Tap onClick={() => push({ type: 'editor', lesson: null, kind: 'lesson' })} className="flex h-[52px] items-center justify-center gap-2 rounded-[18px] font-display text-[13.5px] font-semibold text-white" style={{ background: 'var(--aurora)' }}>
             <Plus size={18} /> Урок
@@ -155,6 +166,9 @@ function blank(kind: Kind): LessonDraft {
     xp: kind === 'story' ? 5 : 50,
     pinned: false,
     published: false,
+    course_id: null,
+    position: 0,
+    free_preview: false,
   }
 }
 
@@ -172,6 +186,14 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
   const categories = useMemo(() => [...new Set(feed.filter((c) => c.kind === 'lesson').map((c) => c.category))], [feed])
   const [d, setD] = useState<LessonDraft>(() => (lesson ? { ...lesson } : blank(kind)))
   const [autoMinutes, setAutoMinutes] = useState(!lesson)
+  const [courses, setCourses] = useState<AdminCourse[]>([])
+
+  useEffect(() => {
+    api
+      .adminCourses()
+      .then((r) => setCourses(r.courses))
+      .catch(() => {})
+  }, [])
   const [busy, setBusy] = useState<string | null>(null)
   const area = useRef<HTMLTextAreaElement>(null)
   const story = d.kind === 'story'
@@ -417,6 +439,26 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
               )}
 
               <Check label="В фокусе" hint="Большая карточка наверху главной" on={d.pinned} onChange={(v) => set('pinned', v)} />
+
+              {courses.length > 0 && (
+                <>
+                  <Label hint="урок уйдёт из общей ленты на страницу курса">Курс</Label>
+                  <div className="no-bar flex gap-1.5 overflow-x-auto">
+                    {[{ id: null, title: 'Без курса' }, ...courses].map((c) => (
+                      <Tap key={c.id ?? 'none'} feedback="select" onClick={() => set('course_id', c.id)} className={`h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold ${d.course_id === c.id ? 'border-violet/60 bg-violet/15 text-ink' : 'border-line text-mute'}`}>
+                        {c.title}
+                      </Tap>
+                    ))}
+                  </div>
+                  {d.course_id && (
+                    <>
+                      <Label hint="номер урока в программе">Порядок в курсе</Label>
+                      <input id="lesson-position" type="number" inputMode="numeric" value={d.position} onChange={(e) => set('position', Math.max(0, Number(e.target.value)))} min={0} className={field} />
+                      <Check label="Открыт всем" hint="Пробный урок: доступен без покупки курса" on={d.free_preview} onChange={(v) => set('free_preview', v)} />
+                    </>
+                  )}
+                </>
+              )}
             </>
           )}
 

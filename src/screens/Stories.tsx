@@ -8,7 +8,7 @@ import { haptic } from '../lib/tg'
 import { track } from '../lib/track'
 import { Markdown } from '../Markdown'
 import { useStore } from '../store'
-import { Emoji, Tap } from '../ui'
+import { Emoji, Pattern, Tap } from '../ui'
 
 const SLIDE_MS = 6000
 const HOLD_MS = 190
@@ -108,8 +108,7 @@ export function Stories({ startId }: { startId: number }) {
         if (info.offset.y > 110 || info.velocity.y > 600) pop()
       }}
     >
-      <div className="absolute -right-24 -top-16 h-80 w-80 rounded-full bg-white/20" />
-      <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full bg-black/10" />
+      <Pattern name={story.gradient} full />
 
       <div
         className="absolute inset-0"

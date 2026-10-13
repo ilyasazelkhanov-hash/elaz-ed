@@ -1,3 +1,4 @@
+import { ApiError } from './errors'
 import { mockApi } from './mock'
 import { initData, inTelegram, platform, startParam } from './tg'
 import type { Api } from './types'
@@ -7,11 +8,7 @@ const API_URL: string = import.meta.env.VITE_API_URL ?? ''
 /** Вне Telegram приложение работает только как демо на локальных данных. */
 export const isDemo = !inTelegram && (import.meta.env.DEV || new URLSearchParams(location.search).has('demo'))
 
-export class ApiError extends Error {
-  constructor(public code: string, public status: number) {
-    super(code)
-  }
-}
+export { ApiError }
 
 async function call<T>(route: string, payload: Record<string, unknown> = {}): Promise<T> {
   let res: Response
@@ -41,7 +38,21 @@ const httpApi: Api = {
     await call('track', { events })
   },
   shareUpload: async (image, kind) => (await call<{ url: string }>('share_upload', { image, kind })).url,
+  shareMessage: async (kind, lessonId) => (await call<{ id: string }>('share_message', { kind, lesson_id: lessonId })).id,
+  courseRequest: async (id) => {
+    await call('course_request', { id })
+  },
+  courseInvoice: async (id) => (await call<{ link: string }>('course_invoice', { id })).link,
   adminAnalytics: () => call('admin_analytics'),
+  adminCourses: () => call('admin_courses'),
+  adminCourseSave: (course) => call('admin_course_save', { course }),
+  adminCourseDelete: async (id) => {
+    await call('admin_course_delete', { id })
+  },
+  adminRequest: async (userId, courseId, approve) => {
+    await call('admin_request', { user_id: userId, course_id: courseId, approve })
+  },
+  adminGrant: async (courseId, username) => (await call<{ name: string }>('admin_grant', { course_id: courseId, username })).name,
   adminList: () => call('admin_list'),
   adminSave: (lesson) => call('admin_save', { lesson }),
   adminDelete: async (id) => {
@@ -68,6 +79,12 @@ export function errorText(e: unknown) {
       return 'Нужен заголовок'
     case 'not_published':
       return 'Сначала опубликуй урок'
+    case 'course_locked':
+      return 'Урок откроется вместе с курсом'
+    case 'user_not_found':
+      return 'Не нашёл такого @username. Человек должен хотя бы раз открыть приложение'
+    case 'not_for_sale':
+      return 'Этот курс не продаётся за звёзды'
     case 'bad_image':
     case 'upload':
       return 'Картинка не загрузилась. Попробуй ещё раз'

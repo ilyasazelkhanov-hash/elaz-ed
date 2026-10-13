@@ -1,10 +1,10 @@
-import { Download, Link2, Share2 } from 'lucide-react'
+import { Download, Link2, MessageCircle, Share2 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText, isDemo } from '../lib/api'
 import { appLink } from '../lib/links'
 import { blobToBase64, renderCard, type ShareCard } from '../lib/shareCard'
-import { canDownload, canShareStory, downloadFile, haptic, shareLink, shareToStory } from '../lib/tg'
+import { canDownload, canShareMessage, canShareStory, downloadFile, haptic, shareLink, shareMessage, shareToStory } from '../lib/tg'
 import { track } from '../lib/track'
 import { useStore } from '../store'
 import { Sheet, Spinner, Tap } from '../ui'
@@ -84,6 +84,17 @@ function Body({ card }: { card: ShareCard }) {
       sent('native')
     })
 
+  // Сообщение с картинкой и кнопкой «Открыть»: Telegram сам покажет выбор чата.
+  const toChat = () =>
+    run('chat', async () => {
+      if (!(await hostedUrl())) return
+      const id = await api.shareMessage(card.kind, card.lessonId)
+      if (id && (await shareMessage(id))) {
+        haptic.success()
+        sent('tg_chat')
+      }
+    })
+
   const story = () =>
     run('story', async () => {
       const url = await hostedUrl()
@@ -131,6 +142,11 @@ function Body({ card }: { card: ShareCard }) {
       </div>
 
       <div className="mt-5 space-y-2">
+        {canShareMessage && !isDemo && (
+          <Tap onClick={toChat} disabled={!file || !!busy} className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[18px] bg-inverse text-[14.5px] font-semibold text-on-inverse disabled:opacity-60">
+            {busy === 'chat' ? <Spinner size={18} /> : <MessageCircle size={18} />} Отправить в чат
+          </Tap>
+        )}
         {canNative && (
           <Tap onClick={native} disabled={!file || !!busy} className="shine flex h-[54px] w-full items-center justify-center gap-2 rounded-[20px] font-display text-[14px] font-semibold text-white disabled:opacity-60" style={{ background: 'var(--aurora)' }}>
             {busy === 'native' ? <Spinner size={20} /> : <Share2 size={18} />} Поделиться картинкой

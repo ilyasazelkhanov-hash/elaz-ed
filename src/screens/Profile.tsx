@@ -1,4 +1,4 @@
-import { ChevronRight, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX } from 'lucide-react'
+import { ChevronRight, FlaskConical, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX } from 'lucide-react'
 import { motion, useMotionTemplate, useTransform } from 'motion/react'
 import { useState } from 'react'
 import { isDemo } from '../lib/api'
@@ -13,7 +13,7 @@ import { getMode, setMode, type ThemeMode } from '../lib/theme'
 import { useTilt } from '../lib/tilt'
 import type { Me } from '../lib/types'
 import { useStore } from '../store'
-import { Avatar, Counter, Emoji, Sheet, Tap } from '../ui'
+import { Avatar, Counter, Emoji, Pattern, Sheet, Tap } from '../ui'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const wa: any = window.Telegram?.WebApp
@@ -104,7 +104,7 @@ export function Profile() {
       </div>
 
       <Tap onClick={invite} className="relative mx-5 mt-7 flex w-[calc(100%-40px)] items-center gap-3 overflow-hidden rounded-[26px] p-4 pl-5 text-left" style={{ background: GRADIENTS.mint.css, color: GRADIENTS.mint.ink }}>
-        <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/30" />
+        <Pattern name="mint" />
         <div className="relative min-w-0 flex-1">
           <p className="font-display text-[16px] font-semibold leading-tight">Позови друга</p>
           <p className="mt-1 text-[13px] font-medium leading-snug opacity-80">+100 XP тебе и +50 ему, когда он подпишется на канал{me.invited > 0 ? `. Уже пришло: ${me.invited}` : ''}</p>
@@ -114,7 +114,18 @@ export function Profile() {
         </span>
       </Tap>
 
-      <div className="mx-5 mt-4 rounded-[24px] border border-line bg-card/80 p-4">
+      <Tap onClick={() => push({ type: 'lab' })} className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center gap-3.5 rounded-[24px] border border-line bg-card/80 p-4 text-left">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-violet/15 text-violet">
+          <FlaskConical size={20} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold">Лаборатория</span>
+          <span className="mt-0.5 block text-[12.5px] leading-snug text-mute">Что умеет мини-апп: гироскоп, сканер, биометрия, звёзды</span>
+        </span>
+        <ChevronRight size={18} className="shrink-0 text-faint" />
+      </Tap>
+
+      <div className="mx-5 mt-3 rounded-[24px] border border-line bg-card/80 p-4">
         <div className="flex items-baseline justify-between">
           <p className="text-[15px] font-medium">Тема</p>
           <p className="text-[12.5px] text-mute">{theme === 'auto' ? (inTelegram ? 'Как в Telegram' : 'Как на устройстве') : theme === 'light' ? 'Всегда светлая' : 'Всегда тёмная'}</p>

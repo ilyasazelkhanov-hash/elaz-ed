@@ -94,6 +94,35 @@ export function downloadFile(url: string, fileName: string) {
   safe(() => wa.downloadFile({ url, file_name: fileName }))
 }
 
+export const canShareMessage = inTelegram && supports('8.0') && typeof wa?.shareMessage === 'function'
+export const canPayStars = inTelegram && supports('6.1') && typeof wa?.openInvoice === 'function'
+
+/** Отправка заранее подготовленного сообщения: Telegram сам покажет выбор чата. */
+export function shareMessage(id: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      wa.shareMessage(id, (sent: boolean) => resolve(!!sent))
+    } catch {
+      resolve(false)
+    }
+  })
+}
+
+/** Открывает счёт в звёздах Telegram поверх приложения. */
+export function openInvoice(link: string): Promise<'paid' | 'cancelled' | 'failed' | 'pending'> {
+  return new Promise((resolve) => {
+    try {
+      wa.openInvoice(link, (status: 'paid' | 'cancelled' | 'failed' | 'pending') => resolve(status))
+    } catch {
+      resolve('failed')
+    }
+  })
+}
+
+/** Сырой объект Telegram — для экрана «Лаборатория», где возможности показываются как есть. */
+export const telegram: any = inTelegram ? wa : null
+export const tgVersion = (v: string) => inTelegram && supports(v)
+
 export function confirmDialog(message: string): Promise<boolean> {
   if (wa?.showConfirm && inTelegram && supports('6.2')) {
     return new Promise((resolve) => {
