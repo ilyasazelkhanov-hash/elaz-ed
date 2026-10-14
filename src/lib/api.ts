@@ -1,6 +1,6 @@
 import { ApiError } from './errors'
 import { initData, inTelegram, platform, startParam } from './tg'
-import type { AdminDoor, Api, Payment, RedeemPoint } from './types'
+import type { AdminDoor, AdminPoint, AdventWinner, Api, Payment, RedeemPoint } from './types'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? ''
 
@@ -87,6 +87,16 @@ const httpApi: Api = {
   adminAdventDoorDelete: async (day) => {
     await call('admin_advent_door_delete', { day })
   },
+  adminAdventPulse: () => call('admin_advent_pulse'),
+  adminAdventWinners: async (rewardId) => (await call<{ winners: AdventWinner[] }>('admin_advent_winners', { reward_id: rewardId ?? 0 })).winners,
+  adminAdventTicketGrant: async (username, count) => (await call<{ name: string }>('admin_advent_ticket_grant', { username, count })).name,
+  adminAdventPoints: async () => (await call<{ points: AdminPoint[] }>('admin_advent_points')).points,
+  adminAdventPointSave: async (point) => {
+    await call('admin_advent_point_save', point)
+  },
+  adminAdventPointDelete: async (id) => {
+    await call('admin_advent_point_delete', { id })
+  },
   redeemPoints: async () => (await call<{ points: RedeemPoint[] }>('redeem_points')).points,
   redeemCheck: (point, pin, code) => call('redeem', { point, pin, code, check: true }),
   redeem: (point, pin, code) => call('redeem', { point, pin, code }),
@@ -128,6 +138,10 @@ export function errorText(e: unknown) {
       return 'Не нашёл такого @username. Человек должен хотя бы раз открыть приложение'
     case 'not_for_sale':
       return 'Этот курс не продаётся за звёзды'
+    case 'bad_pin_format':
+      return 'PIN — от 4 до 8 цифр'
+    case 'point_used':
+      return 'На этой точке уже гасили коды — удалить нельзя, можно сменить PIN'
     case 'stock_required':
       return 'У розыгрыша и случайного приза нужен лимит — сколько штук всего'
     case 'bad_window':

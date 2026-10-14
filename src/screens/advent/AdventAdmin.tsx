@@ -7,6 +7,7 @@ import type { AdventAdmin, AdventThemeId } from '../../lib/types'
 import { useStore } from '../../store'
 import { Spinner, Tap } from '../../ui'
 import { Header, sheet } from '../Admin'
+import { PointsPanel, PulsePanel, WinnersPanel } from './AdventOps'
 import { DoorsEditor, RewardsEditor, SettingsForm } from './AdventSetup'
 import { THEME_IDS, themeOf, ThemeScene } from './themes'
 
@@ -67,7 +68,10 @@ export function AdventAdminScreen() {
           </div>
         ) : (
           <div className="px-5">
-            <h2 className="mt-5 font-display text-[16px] font-semibold">Оформление</h2>
+            <h2 className="mt-5 font-display text-[16px] font-semibold">Ход календаря</h2>
+            <PulsePanel key={version} />
+
+            <h2 className="mt-7 font-display text-[16px] font-semibold">Оформление</h2>
             <p className="mt-1 text-[12.5px] leading-snug text-mute">Меняется сразу у всех участников: шапка, двери, карточка на главной.</p>
             <div className="mt-3 space-y-2">
               {THEME_IDS.map((id) => {
@@ -115,6 +119,16 @@ export function AdventAdminScreen() {
                 <RewardsEditor list={data.reward_list} onChanged={refresh} />
               </>
             )}
+
+            {data.reward_list && (
+              <>
+                <h2 className="mt-7 font-display text-[16px] font-semibold">Кто что получил</h2>
+                <WinnersPanel key={version} rewards={data.reward_list} />
+              </>
+            )}
+
+            <h2 className="mt-7 font-display text-[16px] font-semibold">Точки погашения</h2>
+            <PointsPanel />
 
             <div className="mt-7 grid grid-cols-2 gap-2">
               <Tile value={data.participants} label="Участников" />
@@ -172,7 +186,7 @@ export function AdventAdminScreen() {
                 </div>
               </>
             )}
-            <p className="mt-6 text-[12.5px] leading-snug text-faint">Точки погашения (кассы и их PIN) пока заводятся через SQL — шаблон в content/advent/README.md.</p>
+
           </div>
         )}
       </div>

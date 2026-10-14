@@ -174,7 +174,7 @@ export function setAdventThemeDemo(theme: AdventThemeId) {
   save()
 }
 
-type AdventApi = Pick<Api, 'advent' | 'adventDoor' | 'adventOpen' | 'adminAdvent' | 'adminAdventTheme' | 'adventTicketInvoice' | 'adminAdventSave' | 'adminAdventRewardSave' | 'adminAdventRewardDelete' | 'adminAdventDraw' | 'adminAdventDoors' | 'adminAdventDoorSave' | 'adminAdventDoorDelete' | 'redeemPoints' | 'redeemCheck' | 'redeem'>
+type AdventApi = Pick<Api, 'advent' | 'adventDoor' | 'adventOpen' | 'adminAdvent' | 'adminAdventTheme' | 'adventTicketInvoice' | 'adminAdventSave' | 'adminAdventRewardSave' | 'adminAdventRewardDelete' | 'adminAdventDraw' | 'adminAdventDoors' | 'adminAdventDoorSave' | 'adminAdventDoorDelete' | 'adminAdventPulse' | 'adminAdventWinners' | 'adminAdventTicketGrant' | 'adminAdventPoints' | 'adminAdventPointSave' | 'adminAdventPointDelete' | 'redeemPoints' | 'redeemCheck' | 'redeem'>
 
 /** me и addXp приходят из основного демо: XP у человека общий. */
 export function makeAdventMock(me: () => Me, addXp: (n: number) => void): AdventApi {
@@ -305,6 +305,50 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
       if (r && mine && !state.codes[id]) state.codes[id] = { code: code(), redeemed: false }
       save()
       return mine ? 1 : 0
+    },
+
+    async adminAdventPulse() {
+      await wait()
+      return {
+        today: DEMO_DAY,
+        days: settings().days,
+        catchup: { sheet_users: 41, tries: { stars: 12, invite: 9, quiz: 17, story: 6 }, sources: { quiz: { earned: 14, used: 11, revoked: 0 }, invite: { earned: 5, used: 4, revoked: 0 }, story: { earned: 3, used: 2, revoked: 0 }, stars: { earned: 9 + (state.bought ?? 0), used: 8, revoked: 1 } } },
+        pacing: rewards().map((r) => {
+          const span = (r.day_to ?? 24) - (r.day_from ?? 1) + 1
+          const elapsed = Math.min(Math.max(DEMO_DAY - (r.day_from ?? 1) + 1, 0), span)
+          return { id: r.id, title: r.title, emoji: r.emoji, mode: r.mode, stock: r.stock, day_from: r.day_from, day_to: r.day_to, drawn: !!state.drawn?.includes(r.id), issued: r.mode === 'instant' ? 4 : r.doors <= 7 ? 120 : 0, redeemed: r.mode === 'instant' ? 2 : 60, expected: r.mode === 'instant' && r.stock ? Math.round((r.stock * elapsed) / span) : null }
+        }),
+      }
+    },
+
+    async adminAdventWinners(rewardId) {
+      await wait()
+      const all = [
+        { code: 'K7PM-3QXA', status: 'redeemed' as const, issued_at: new Date(Date.now() - 3 * 86_400_000).toISOString(), redeemed_at: new Date(Date.now() - 2 * 86_400_000).toISOString(), reward_id: 1, reward: rewards()[0]?.title ?? 'Приз', emoji: rewards()[0]?.emoji ?? '🎁', kind: rewards()[0]?.kind ?? 'promo', user_id: 104, name: 'Марк', username: 'mark_dev', point: DEMO_POINT.name },
+        { code: 'H2RD-9WTN', status: 'issued' as const, issued_at: new Date(Date.now() - 86_400_000).toISOString(), redeemed_at: null, reward_id: 2, reward: rewards()[1]?.title ?? 'Приз', emoji: rewards()[1]?.emoji ?? '🎁', kind: rewards()[1]?.kind ?? 'promo', user_id: 105, name: 'Айгерим', username: 'aigerim', point: null },
+      ]
+      return rewardId ? all.filter((w) => w.reward_id === rewardId) : all
+    },
+
+    async adminAdventTicketGrant(username, count) {
+      await wait(300)
+      state.tickets = (state.tickets ?? 0) + count
+      save()
+      return username.replace(/^@/, '')
+    },
+
+    async adminAdventPoints() {
+      await wait()
+      return [{ id: DEMO_POINT.id, name: DEMO_POINT.name, locked: false, redeemed: 37 }]
+    },
+
+    async adminAdventPointSave() {
+      await wait(250)
+    },
+
+    async adminAdventPointDelete() {
+      await wait(200)
+      throw new ApiError('point_used', 409)
     },
 
     async adminAdventDoors() {

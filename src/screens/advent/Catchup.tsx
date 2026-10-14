@@ -1,10 +1,11 @@
 import { ExternalLink, Star } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatCode } from '../../lib/advent'
 import { api, errorText, isDemo } from '../../lib/api'
 import { appLink, storyLink } from '../../lib/links'
 import { canPayStars, copyText, haptic, openInvoice, openLink, shareLink } from '../../lib/tg'
 import type { AdventCatchup, AdventState, CatchupMethod, RewardContent, RewardKind } from '../../lib/types'
+import { track } from '../../lib/track'
 import { useStore } from '../../store'
 import { Cta, Emoji, Sheet, Spinner, Tap } from '../../ui'
 import { Video } from '../Lesson'
@@ -27,6 +28,11 @@ export function CatchupSheet({ open, onClose, data, reload }: { open: boolean; o
   const me = useStore((s) => s.me)
   const c: AdventCatchup = data.catchup ?? { methods: [], stars: 0, tickets: 0, used: 0, earned: {} }
   const [busy, setBusy] = useState<CatchupMethod | null>(null)
+
+  useEffect(() => {
+    if (open) track('catchup', { step: 'open', tickets: c.tickets })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const buy = async () => {
     if (busy) return
@@ -136,7 +142,12 @@ export function CatchupSheet({ open, onClose, data, reload }: { open: boolean; o
               </p>
               <p className="mt-0.5 text-[12px] leading-snug text-mute">{METHOD[m].how}</p>
             </div>
-            <Tap onClick={action[m].run} disabled={!!busy} className="flex h-10 shrink-0 items-center gap-1 rounded-full bg-inverse px-3.5 text-[13px] font-bold text-on-inverse disabled:opacity-50">
+            <Tap
+              onClick={() => {
+                track('catchup', { step: 'try', method: m })
+                action[m].run()
+              }}
+              disabled={!!busy} className="flex h-10 shrink-0 items-center gap-1 rounded-full bg-inverse px-3.5 text-[13px] font-bold text-on-inverse disabled:opacity-50">
               {busy === m ? <Spinner size={16} /> : m === 'stars' ? <Star size={13} fill="currentColor" strokeWidth={0} /> : null}
               {busy === m ? '' : action[m].label}
             </Tap>

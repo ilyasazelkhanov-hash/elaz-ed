@@ -15,7 +15,7 @@ const KEYS = {
   reward_codes: ['code'],
 }
 const UNIQUE = { payments: ['charge_id'], advent_tickets: ['ref'] }
-const AUTO_ID = ['payments', 'events', 'courses', 'lessons', 'advent_tickets', 'advent_rewards']
+const AUTO_ID = ['payments', 'events', 'courses', 'lessons', 'advent_tickets', 'advent_rewards', 'advent_points']
 
 export const state = {
   tables: {},
@@ -86,6 +86,10 @@ class Query {
     this.filters.push((r) => r[k] > v)
     return this
   }
+  not(k, op, v) {
+    if (op === 'is') this.filters.push((r) => (v === null ? r[k] != null : r[k] !== v))
+    return this
+  }
   lte(k, v) {
     this.filters.push((r) => r[k] <= v)
     return this
@@ -133,6 +137,8 @@ class Query {
       const copy = { ...r }
       if (typeof this.cols === 'string' && this.cols.includes('users(')) copy.users = table('users').find((u) => u.id === r.user_id) ?? null
       if (typeof this.cols === 'string' && this.cols.includes('courses(')) copy.courses = table('courses').find((c) => c.id === r.course_id) ?? null
+      if (typeof this.cols === 'string' && this.cols.includes('advent_rewards(')) copy.advent_rewards = table('advent_rewards').find((x) => x.id === r.reward_id) ?? null
+      if (typeof this.cols === 'string' && this.cols.includes('advent_points(')) copy.advent_points = table('advent_points').find((x) => x.id === r.point_id) ?? null
       return copy
     })
     if (this.mode === 'maybe') return out.length > 1 ? { data: null, error: { code: 'PGRST116' } } : { data: out[0] ?? null, error: null }

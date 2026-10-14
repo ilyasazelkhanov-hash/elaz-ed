@@ -531,7 +531,7 @@ async function like(body: Row) {
 }
 
 // События с клиента: только из белого списка и небольшими пачками.
-const CLIENT_EVENTS = ['share', 'copy', 'story_open', 'theme', 'lab']
+const CLIENT_EVENTS = ['share', 'copy', 'story_open', 'theme', 'lab', 'catchup']
 
 async function track(body: Row) {
   const row = await member(body)
@@ -1758,6 +1758,163 @@ async function adminAdventDoorDelete(body: Row) {
   return { ok: true }
 }
 
+// ---------- Ход календаря для админа ----------
+
+/**
+ * Сводка для корректировки: билеты «догнать» (откуда пришли, сколько потрачено, кто открывал окно
+ * и какие способы выбирал) и темп призов с окном — сколько выдано против ожидаемого к сегодняшнему дню.
+ */
+async function adminAdventPulse(body: Row) {
+  await member(body, true)
+  const s = await getSettings()
+  const cfg = adventCfg(s)
+  const a = s.advent ?? {}
+  const days = int(a.days, 1, 60, 24)
+  const today = cfg ? adventToday(cfg) : 0
+  const [tickets, events, rewards, codes] = await Promise.all([
+    db.from('advent_tickets').select('source,used_at,revoked_at'),
+    db.from('events').select('user_id,props').eq('name', 'catchup').limit(5000),
+    db.from('advent_rewards').select('id,title,emoji,mode,stock,day_from,day_to,drawn_at').order('id'),
+    db.from('reward_codes').select('reward_id,status'),
+  ])
+  const bySource: Record<string, { earned: number; used: number; revoked: number }> = {}
+  for (const t of tickets.data ?? []) {
+    const b = (bySource[t.source] ??= { earned: 0, used: 0, revoked: 0 })
+    if (t.revoked_at) b.revoked++
+    else {
+      b.earned++
+      if (t.used_at) b.used++
+    }
+  }
+  const opened = new Set<number>()
+  const tries: Record<string, number> = {}
+  for (const e of events.data ?? []) {
+    if (e.props?.step === 'open') opened.add(e.user_id)
+    if (e.props?.step === 'try' && typeof e.props?.method === 'string') tries[e.props.method] = (tries[e.props.method] ?? 0) + 1
+  }
+  const issued = new Map<number, { issued: number; redeemed: number }>()
+  for (const c of codes.data ?? []) {
+    const x = issued.get(c.reward_id) ?? { issued: 0, redeemed: 0 }
+    x.issued++
+    if (c.status === 'redeemed') x.redeemed++
+    issued.set(c.reward_id, x)
+  }
+  return {
+    today,
+    days,
+    catchup: { sheet_users: opened.size, tries, sources: bySource },
+    // Ожидание: лимит, равномерно разложенный по дням окна. Сильно впереди — призы кончатся рано, сильно позади — останутся.
+    pacing: (rewards.data ?? []).map((r) => {
+      const from = r.day_from ?? 1
+      const to = r.day_to ?? days
+      const span = Math.max(1, to - from + 1)
+      const elapsed = Math.min(Math.max(today - from + 1, 0), span)
+      return {
+        id: r.id,
+        title: r.title,
+        emoji: r.emoji,
+        mode: r.mode ?? 'threshold',
+        stock: r.stock,
+        day_from: r.day_from,
+        day_to: r.day_to,
+        drawn: !!r.drawn_at,
+        issued: issued.get(r.id)?.issued ?? 0,
+        redeemed: issued.get(r.id)?.redeemed ?? 0,
+        expected: r.mode === 'instant' && r.stock != null ? Math.round((r.stock * elapsed) / span) : null,
+      }
+    }),
+  }
+}
+
+/** Кто что получил: приз, человек, код, погашение. Последние 500 — с фильтром по призу. */
+async function adminAdventWinners(body: Row) {
+  await member(body, true)
+  let q = db
+    .from('reward_codes')
+    .select('code,status,issued_at,redeemed_at,reward_id,users(id,first_name,username),advent_rewards(title,emoji,kind),advent_points(name)')
+    .order('issued_at', { ascending: false })
+    .limit(500)
+  if (Number(body.reward_id) > 0) q = q.eq('reward_id', Number(body.reward_id))
+  const { data, error } = await q
+  if (error) throw new HttpError(500, 'db')
+  return {
+    // deno-lint-ignore no-explicit-any
+    winners: (data ?? []).map((c: any) => ({
+      code: c.code,
+      status: c.status,
+      issued_at: c.issued_at,
+      redeemed_at: c.redeemed_at,
+      reward_id: c.reward_id,
+      reward: c.advent_rewards?.title ?? 'Приз удалён',
+      emoji: c.advent_rewards?.emoji ?? '🎁',
+      kind: c.advent_rewards?.kind ?? 'promo',
+      user_id: c.users?.id ?? null,
+      name: c.users?.first_name || 'Без имени',
+      username: c.users?.username ?? null,
+      point: c.advent_points?.name ?? null,
+    })),
+  }
+}
+
+/** Ручная корректировка: выдать человеку билеты «догнать» — например, если что-то пошло не так. */
+async function adminAdventTicketGrant(body: Row) {
+  await member(body, true)
+  const username = str(body.username, 64).replace(/^@/, '')
+  const count = int(body.count, 1, 10, 1)
+  if (!username) throw new HttpError(400, 'user_not_found')
+  const { data: user } = await db.from('users').select('id,first_name').ilike('username', username.replace(/[\\%_]/g, '\\$&')).maybeSingle()
+  if (!user) throw new HttpError(404, 'user_not_found')
+  const stamp = Date.now()
+  const rows = Array.from({ length: count }, (_, i) => ({ user_id: user.id, source: 'admin', ref: `admin:${user.id}:${stamp}:${i}` }))
+  const { error } = await db.from('advent_tickets').insert(rows)
+  if (error) throw new HttpError(500, 'db')
+  await tg('sendMessage', { chat_id: user.id, text: `🎟 Автор календаря выдал тебе ${count === 1 ? 'билет' : `билеты: ${count}`} — можно догнать пропущенные двери.` })
+  return { name: user.first_name || username, count }
+}
+
+// ---------- Точки погашения ----------
+
+async function adminAdventPoints(body: Row) {
+  await member(body, true)
+  const [points, used] = await Promise.all([db.from('advent_points').select('id,name,locked_until').order('id'), db.from('reward_codes').select('point_id').not('point_id', 'is', null)])
+  const counts = new Map<number, number>()
+  for (const u of used.data ?? []) counts.set(u.point_id, (counts.get(u.point_id) ?? 0) + 1)
+  return {
+    points: (points.data ?? []).map((p) => ({ id: p.id, name: p.name, locked: !!p.locked_until && Date.parse(p.locked_until) > Date.now(), redeemed: counts.get(p.id) ?? 0 })),
+  }
+}
+
+// PIN храним только как sha256(`<id>:<pin>`) — у новой точки id появляется после вставки, поэтому хеш пишем вторым шагом.
+async function adminAdventPointSave(body: Row) {
+  await member(body, true)
+  const name = str(body.name, 60)
+  if (!name) throw new HttpError(400, 'title_required')
+  const pin = str(body.pin, 12)
+  if (pin && !/^\d{4,8}$/.test(pin)) throw new HttpError(400, 'bad_pin_format')
+  let id = Number(body.id)
+  if (!id) {
+    if (!pin) throw new HttpError(400, 'bad_pin_format')
+    const { data, error } = await db.from('advent_points').insert({ name, pin_hash: '' }).select('id').single()
+    if (error || !data) throw new HttpError(500, 'db')
+    id = data.id
+  }
+  const patch: Row = { name }
+  if (pin) Object.assign(patch, { pin_hash: await sha256Hex(`${id}:${pin}`), fails: 0, locked_until: null })
+  const { error } = await db.from('advent_points').update(patch).eq('id', id)
+  if (error) throw new HttpError(500, 'db')
+  return { id }
+}
+
+// Точку с погашениями не удаляем: в журнале «где погашен» осталась бы пустота. Можно сменить PIN.
+async function adminAdventPointDelete(body: Row) {
+  await member(body, true)
+  const id = Number(body.id)
+  const { count } = await db.from('reward_codes').select('code', { count: 'exact', head: true }).eq('point_id', id)
+  if ((count ?? 0) > 0) throw new HttpError(409, 'point_used')
+  await db.from('advent_points').delete().eq('id', id)
+  return { ok: true }
+}
+
 // Выданный приз не удаляем: у людей остались коды и доступы, а статистика потеряла бы смысл.
 async function adminAdventRewardDelete(body: Row) {
   await member(body, true)
@@ -1856,6 +2013,12 @@ const routes: Record<string, (body: Row) => Promise<unknown>> = {
   admin_advent_reward_save: adminAdventRewardSave,
   admin_advent_reward_delete: adminAdventRewardDelete,
   admin_advent_draw: adminAdventDraw,
+  admin_advent_pulse: adminAdventPulse,
+  admin_advent_winners: adminAdventWinners,
+  admin_advent_ticket_grant: adminAdventTicketGrant,
+  admin_advent_points: adminAdventPoints,
+  admin_advent_point_save: adminAdventPointSave,
+  admin_advent_point_delete: adminAdventPointDelete,
   admin_advent_doors: adminAdventDoors,
   admin_advent_door_save: adminAdventDoorSave,
   admin_advent_door_delete: adminAdventDoorDelete,

@@ -290,6 +290,57 @@ export interface AdminReward {
   drawn_at?: string | null
 }
 
+/** Ход календаря для админа: билеты «догнать» и темп призов. */
+export interface AdventPulse {
+  today: number
+  days: number
+  catchup: {
+    /** Сколько человек открывали окно «Как получить билет». */
+    sheet_users: number
+    /** Нажатия на способы. */
+    tries: Partial<Record<CatchupMethod, number>>
+    sources: Record<string, { earned: number; used: number; revoked: number }>
+  }
+  pacing: {
+    id: number
+    title: string
+    emoji: string
+    mode: RewardMode
+    stock: number | null
+    day_from: number | null
+    day_to: number | null
+    drawn: boolean
+    issued: number
+    redeemed: number
+    /** Сколько случайных призов ожидалось к сегодняшнему дню при равномерном темпе. */
+    expected: number | null
+  }[]
+}
+
+/** Строка журнала «кто что получил». */
+export interface AdventWinner {
+  code: string
+  status: 'issued' | 'redeemed'
+  issued_at: string
+  redeemed_at: string | null
+  reward_id: number
+  reward: string
+  emoji: string
+  kind: RewardKind
+  user_id: number | null
+  name: string
+  username: string | null
+  point: string | null
+}
+
+export interface AdminPoint {
+  id: number
+  name: string
+  /** Заблокирована после перебора PIN. */
+  locked: boolean
+  redeemed: number
+}
+
 /** Дверь в редакторе админки — со всем содержимым, включая правильные ответы. */
 export interface AdminDoor {
   day: number
@@ -382,7 +433,7 @@ export interface AdminStats {
 export type ShareKind = 'level' | 'lesson' | 'streak' | 'achievement'
 
 export interface ClientEvent {
-  name: 'share' | 'copy' | 'story_open' | 'theme' | 'lab'
+  name: 'share' | 'copy' | 'story_open' | 'theme' | 'lab' | 'catchup'
   lesson_id?: number
   props?: Record<string, string | number | boolean>
 }
@@ -450,6 +501,13 @@ export interface Api {
   adminAdventDoors(): Promise<AdminDoor[]>
   adminAdventDoorSave(door: AdminDoor): Promise<AdminDoor>
   adminAdventDoorDelete(day: number): Promise<void>
+  adminAdventPulse(): Promise<AdventPulse>
+  adminAdventWinners(rewardId?: number): Promise<AdventWinner[]>
+  /** Выдать билеты «догнать» по @username; возвращает имя. */
+  adminAdventTicketGrant(username: string, count: number): Promise<string>
+  adminAdventPoints(): Promise<AdminPoint[]>
+  adminAdventPointSave(point: { id?: number; name: string; pin?: string }): Promise<void>
+  adminAdventPointDelete(id: number): Promise<void>
   redeemPoints(): Promise<RedeemPoint[]>
   /** check — только проверить код, не гасить. */
   redeemCheck(point: number, pin: string, code: string): Promise<RedeemCheck>

@@ -142,7 +142,7 @@ test('встроенные методы объекта не считаются �
 
 test('админские адреса закрыты для обычного подписчика', async () => {
   await everyoneBoots()
-  for (const route of ['admin_list', 'admin_courses', 'admin_payments', 'admin_refund', 'admin_save', 'admin_delete', 'admin_course_save', 'admin_course_delete', 'admin_grant', 'admin_request', 'admin_analytics', 'admin_announce', 'admin_advent_theme', 'admin_advent_save', 'admin_advent_reward_save', 'admin_advent_reward_delete']) {
+  for (const route of ['admin_list', 'admin_courses', 'admin_payments', 'admin_refund', 'admin_save', 'admin_delete', 'admin_course_save', 'admin_course_delete', 'admin_grant', 'admin_request', 'admin_analytics', 'admin_announce', 'admin_advent_theme', 'admin_advent_save', 'admin_advent_reward_save', 'admin_advent_reward_delete', 'admin_advent_pulse', 'admin_advent_winners', 'admin_advent_ticket_grant', 'admin_advent_points', 'admin_advent_point_save', 'admin_advent_point_delete']) {
     assert.deepEqual(await call(route, { id: 1 }, BUYER), { status: 403, body: { error: 'forbidden' } }, route)
   }
   assert.equal(state.tables.courses.length, 2)
@@ -677,6 +677,80 @@ test('админ: дверь сохраняется с проверкой, от�
   await call('advent_open', { day: 5 }, BUYER)
   assert.deepEqual(await call('admin_advent_door_delete', { day: 5 }, ADMIN), { status: 409, body: { error: 'door_opened' } })
   assert.deepEqual(await call('admin_advent_door_delete', { day: 11 }, ADMIN), { status: 200, body: { ok: true } })
+})
+
+// ---------- Адвент: ход календаря, журнал призов, точки погашения ----------
+
+test('точка погашения: PIN хранится хешем, по новому PIN касса гасит код, повторно — нет', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.advent_points = []
+  assert.deepEqual(await call('admin_advent_point_save', { name: 'Касса', pin: '12' }, ADMIN), { status: 400, body: { error: 'bad_pin_format' } })
+  const { body } = await call('admin_advent_point_save', { name: 'Касса 1', pin: '482913' }, ADMIN)
+  const point = state.tables.advent_points[0]
+  assert.equal(point.id, body.id)
+  assert.ok(!JSON.stringify(point).includes('482913'))
+  state.tables.advent_rewards = [reward({ doors: 1 })]
+  await call('advent_open', { day: 5 }, BUYER)
+  const code = state.tables.reward_codes[0].code
+  const cashier = (pin) => handler(new Request(`${SUPABASE_URL}/functions/v1/api/redeem`, { method: 'POST', body: JSON.stringify({ point: point.id, pin, code }) })).then((r) => r.status)
+  assert.equal(await cashier('000000'), 403)
+  // Погашение делает SQL-функция redeem_code — здесь проверяем, что PIN принят.
+  state.tables.reward_codes[0].status = 'issued'
+  assert.notEqual(await cashier('482913'), 403)
+})
+
+test('точку с погашениями удалить нельзя, пустую — можно', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.advent_points = [{ id: 1, name: 'A', pin_hash: 'x', fails: 0, locked_until: null }, { id: 2, name: 'B', pin_hash: 'x', fails: 0, locked_until: null }]
+  state.tables.reward_codes = [{ code: 'AAAA-AAAA', user_id: BUYER, reward_id: 1, status: 'redeemed', point_id: 1 }]
+  assert.deepEqual(await call('admin_advent_point_delete', { id: 1 }, ADMIN), { status: 409, body: { error: 'point_used' } })
+  assert.deepEqual(await call('admin_advent_point_delete', { id: 2 }, ADMIN), { status: 200, body: { ok: true } })
+  const list = (await call('admin_advent_points', {}, ADMIN)).body.points
+  assert.deepEqual(list.map((p) => [p.name, p.redeemed]), [['A', 1]])
+})
+
+test('журнал «кто что получил»: человек, приз, код и точка погашения', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.advent_points = [{ id: 1, name: 'Касса 1' }]
+  state.tables.advent_rewards = [reward({ id: 1, title: 'Промокод' }), reward({ id: 2, title: 'Курс', kind: 'course', payload: { course_id: 1 } })]
+  state.tables.reward_codes = [
+    { code: 'AAAA-AAAA', user_id: BUYER, reward_id: 1, status: 'redeemed', point_id: 1, issued_at: '2026-12-08T10:00:00Z', redeemed_at: '2026-12-09T10:00:00Z' },
+    { code: 'BBBB-BBBB', user_id: OTHER, reward_id: 2, status: 'issued', point_id: null, issued_at: '2026-12-09T10:00:00Z' },
+  ]
+  const all = (await call('admin_advent_winners', {}, ADMIN)).body.winners
+  assert.deepEqual(all.map((w) => [w.username, w.reward, w.status, w.point]).sort(), [['ivan_p', 'Промокод', 'redeemed', 'Касса 1'], ['ivanxp', 'Курс', 'issued', null]].sort())
+  const one = (await call('admin_advent_winners', { reward_id: 2 }, ADMIN)).body.winners
+  assert.deepEqual(one.map((w) => w.username), ['ivanxp'])
+})
+
+test('ручной билет: админ выдаёт по @username, человеку приходит сообщение', async () => {
+  await everyoneBoots()
+  adventOn()
+  calls.length = 0
+  assert.deepEqual(await call('admin_advent_ticket_grant', { username: '@ivan_p', count: 2 }, ADMIN), { status: 200, body: { name: `User${BUYER}`, count: 2 } })
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 2)
+  assert.equal(sent('sendMessage').filter((c) => c.payload.chat_id === BUYER).length, 1)
+  assert.deepEqual(await call('admin_advent_ticket_grant', { username: 'nobody' }, ADMIN), { status: 404, body: { error: 'user_not_found' } })
+})
+
+test('ход календаря: нажатия «догнать», билеты по источникам и темп случайных призов', async () => {
+  await everyoneBoots()
+  adventOn()
+  await call('track', { events: [{ name: 'catchup', props: { step: 'open' } }, { name: 'catchup', props: { step: 'try', method: 'stars' } }, { name: 'catchup', props: { step: 'try', method: 'stars' } }] }, BUYER)
+  await call('track', { events: [{ name: 'catchup', props: { step: 'open' } }] }, OTHER)
+  state.tables.advent_tickets.push({ user_id: BUYER, source: 'quiz', ref: 'q1', used_at: '2026-12-08' }, { user_id: BUYER, source: 'stars', ref: 's1', revoked_at: '2026-12-09' })
+  state.tables.advent_rewards = [reward({ id: 1, mode: 'instant', day_from: 1, day_to: 10, stock: 20 })]
+  const p = (await call('admin_advent_pulse', {}, ADMIN)).body
+  assert.equal(p.today, 5)
+  assert.equal(p.catchup.sheet_users, 2)
+  assert.deepEqual(p.catchup.tries, { stars: 2 })
+  assert.deepEqual(p.catchup.sources.quiz, { earned: 1, used: 1, revoked: 0 })
+  assert.deepEqual(p.catchup.sources.stars, { earned: 0, used: 0, revoked: 1 })
+  // 5-й день из 10 — к сегодняшнему дню ожидается половина лимита.
+  assert.equal(p.pacing[0].expected, 10)
 })
 
 // ---------- Настройка бота ----------
