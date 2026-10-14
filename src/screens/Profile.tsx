@@ -6,7 +6,6 @@ import { appLink } from '../lib/links'
 import { achievementCard, levelCard } from '../lib/shareCard'
 import { track } from '../lib/track'
 import { ACHIEVEMENTS, GRADIENTS, lessonsWord, LEVELS, levelOf } from '../lib/game'
-import { resetDemo } from '../lib/mock'
 import { sfx } from '../lib/sfx'
 import { addShortcut, INSTAGRAM } from '../lib/install'
 import { haptic, inTelegram, openLink, shareLink } from '../lib/tg'
@@ -174,7 +173,8 @@ export function Profile() {
           <Item
             icon={<RotateCcw size={19} />}
             label="Сбросить демо"
-            onClick={() => {
+            onClick={async () => {
+              const { resetDemo } = await import('../lib/mock')
               resetDemo()
               location.reload()
             }}

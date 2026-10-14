@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { errorText } from '../lib/api'
 import { INSTAGRAM } from '../lib/install'
 import { haptic, openLink } from '../lib/tg'
@@ -71,11 +71,15 @@ export function Gate() {
   const { boot, toast } = useStore.getState()
   const [busy, setBusy] = useState(false)
   const [shake, setShake] = useState(0)
+  // Флаг в ref, а не в state: обработчик возврата в приложение создан один раз и видел бы старое значение busy.
+  const pending = useRef(false)
 
   const check = async (silent = false) => {
-    if (busy) return
+    if (pending.current) return
+    pending.current = true
     setBusy(true)
     const status = await boot(true)
+    pending.current = false
     setBusy(false)
     if (status === 'locked' && !silent) {
       haptic.error()

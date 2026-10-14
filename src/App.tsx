@@ -24,6 +24,14 @@ const AnalyticsScreen = lazy(() => import('./screens/Analytics').then((m) => ({ 
 const CoursesAdminScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CoursesAdminScreen })))
 const CourseEditorScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CourseEditorScreen })))
 const LabScreen = lazy(() => import('./screens/Lab').then((m) => ({ default: m.LabScreen })))
+// Адвент нужен только в сезон — грузим экраны календаря, игр и кассы по требованию.
+const AdventScreen = lazy(() => import('./screens/advent/Advent').then((m) => ({ default: m.AdventScreen })))
+const DoorScreen = lazy(() => import('./screens/advent/Door').then((m) => ({ default: m.DoorScreen })))
+const AdventAdminScreen = lazy(() => import('./screens/advent/AdventAdmin').then((m) => ({ default: m.AdventAdminScreen })))
+const RedeemScreen = lazy(() => import('./screens/Redeem').then((m) => ({ default: m.RedeemScreen })))
+
+/** Страница кассира: …/?redeem открывается в обычном браузере, без входа через Telegram. */
+const CASHIER = new URLSearchParams(location.search).has('redeem')
 
 export default function App() {
   const phase = useStore((s) => s.phase)
@@ -33,6 +41,7 @@ export default function App() {
     applyTheme()
     watchTheme()
     const { boot, setPhase } = useStore.getState()
+    if (CASHIER) return
     if (!inTelegram && !isDemo) setPhase('outside')
     else void boot()
     return enableSparks()
@@ -45,8 +54,13 @@ export default function App() {
           <i />
           <i />
         </div>
+        {CASHIER && (
+          <Suspense fallback={null}>
+            <RedeemScreen />
+          </Suspense>
+        )}
         <AnimatePresence mode="wait">
-          {phase === 'loading' && <Splash key="splash" />}
+          {phase === 'loading' && !CASHIER && <Splash key="splash" />}
           {phase === 'ok' && <Shell key="shell" />}
           {phase === 'locked' && <Gate key="gate" />}
           {phase === 'setup' && <Setup key="setup" />}
@@ -90,6 +104,8 @@ function Shell() {
     const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
     if (id) useStore.getState().push({ type: 'lesson', id })
     else if (course) useStore.getState().push({ type: 'course', id: course })
+    // Кнопка из напоминания бота: t.me/бот?startapp=advent
+    else if (/(?:^|_)advent(?:_|$)/.test(startParam) && useStore.getState().advent) useStore.getState().push({ type: 'advent' })
     preloadMarkdown()
   }, [])
 
@@ -131,6 +147,8 @@ function overlayKey(o: Overlay, i: number) {
       return `editor-${o.lesson?.id ?? 'new'}-${i}`
     case 'course-editor':
       return `course-editor-${o.course?.id ?? 'new'}-${i}`
+    case 'door':
+      return `door-${o.day}-${i}`
     default:
       return `${o.type}-${i}`
   }
@@ -178,6 +196,24 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
       return (
         <Suspense fallback={null}>
           <EditorScreen lesson={overlay.lesson} kind={overlay.kind} />
+        </Suspense>
+      )
+    case 'advent':
+      return (
+        <Suspense fallback={null}>
+          <AdventScreen />
+        </Suspense>
+      )
+    case 'door':
+      return (
+        <Suspense fallback={null}>
+          <DoorScreen day={overlay.day} />
+        </Suspense>
+      )
+    case 'advent-admin':
+      return (
+        <Suspense fallback={null}>
+          <AdventAdminScreen />
         </Suspense>
       )
   }

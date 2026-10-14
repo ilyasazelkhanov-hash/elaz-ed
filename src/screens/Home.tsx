@@ -3,6 +3,7 @@ import { useMemo, useRef } from 'react'
 import { levelOf } from '../lib/game'
 import { useStore } from '../store'
 import { Avatar, Bar, Counter, Emoji, Odometer, Ring, Tap } from '../ui'
+import { AdventBanner } from './advent/Banner'
 import { DailyCard, StreakCard } from './home/Daily'
 import { Feed } from './home/Feed'
 import { HeroCarousel } from './home/Hero'
@@ -50,6 +51,8 @@ export function Home() {
           <Odometer value={me.xp} className="font-display text-[13px] font-semibold" />
         </div>
       </header>
+
+      <AdventBanner />
 
       <Tap
         feedback="soft"

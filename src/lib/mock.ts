@@ -1,6 +1,7 @@
 // Демо-режим: тот же интерфейс, что у сервера, но всё живёт в localStorage. К настоящей базе не обращается.
 import seed from './seed.json'
 import { ApiError } from './errors'
+import { adventSummaryDemo, makeAdventMock, resetAdventDemo } from './mockAdvent'
 import { dailyReward, quizScore } from './game'
 import { tgUser } from './tg'
 import type { AdminCourse, Analytics, Api, Boot, Card, CompleteResult, Course, DailyResult, Lesson, LessonDraft, Me, Payment, TopUser } from './types'
@@ -215,6 +216,7 @@ export const mockApi: Api = {
         .sort((a, b) => (b.published_at ?? '').localeCompare(a.published_at ?? ''))
         .map(card),
       courses: courses(),
+      advent: adventSummaryDemo(),
       channel: { title: 'Elaz', invite: 'https://t.me/+k36WMjkFf6BmNDYy' },
       bot: { username: 'elazart_bot', main_app: false },
     }
@@ -438,9 +440,15 @@ export const mockApi: Api = {
   async adminAnnounce() {
     await wait(400)
   },
+
+  ...makeAdventMock(me, (xp) => {
+    state.xp += xp
+    save()
+  }),
 }
 
 export function resetDemo() {
   state = initial()
   save()
+  resetAdventDemo()
 }

@@ -123,7 +123,124 @@ export interface Payment {
   course: string
 }
 
-export type Boot = ({ status: 'ok'; me: Me; feed: Card[]; courses: Course[] } | { status: 'locked' | 'setup' }) & Meta
+export type Boot = (
+  | { status: 'ok'; me: Me; feed: Card[]; courses: Course[]; advent?: AdventSummary | null; new_achievements?: string[] }
+  | { status: 'locked' | 'setup' }
+) &
+  Meta
+
+// ---------- Адвент-календарь ----------
+
+/** Короткая сводка для главной: есть ли календарь, какой сегодня день, открыта ли дверь. */
+export interface AdventSummary {
+  title: string
+  start: string
+  days: number
+  /** Номер дня кампании: 1 — первый день, 0 и меньше — до старта. */
+  today: number
+  opened: number
+  today_open: boolean
+  streak: number
+}
+
+export type DoorKind = 'quiz' | 'scratch' | 'arcade' | 'story'
+/** open — открыта; today — дверь сегодняшнего дня; late — пропущена, можно догнать; missed — кампания закрыта; locked — ещё не наступила. */
+export type DoorState = 'open' | 'today' | 'late' | 'missed' | 'locked'
+
+export interface AdventCell {
+  day: number
+  kind: DoorKind
+  /** У будущих дверей тема и иконка скрыты. */
+  title: string | null
+  emoji: string | null
+  state: DoorState
+  xp: number | null
+}
+
+export interface AdventReward {
+  id: number
+  doors: number
+  title: string
+  description: string
+  emoji: string
+  stock: number | null
+  code: string | null
+  redeemed: boolean
+}
+
+export interface AdventState {
+  title: string
+  start: string
+  days: number
+  today: number
+  closed: boolean
+  opened: number
+  streak: number
+  doors: AdventCell[]
+  rewards: AdventReward[]
+}
+
+export interface DoorQuestion {
+  q: string
+  options: string[]
+  /** Приходят только после того, как дверь открыта. */
+  correct?: number
+  explain?: string
+}
+
+export interface DoorView {
+  day: number
+  kind: DoorKind
+  title: string
+  subtitle: string
+  emoji: string
+  xp: number
+  late: boolean
+  closed: boolean
+  opened: { score: number; total: number; xp: number; late: boolean } | null
+  quiz: DoorQuestion[]
+  arcade: { seconds: number; cap: number } | null
+  prize: string | null
+  body: string | null
+}
+
+export interface NewCode {
+  reward_id: number
+  code: string
+  title: string
+  emoji: string
+}
+
+export interface DoorResult {
+  already: boolean
+  gained: number
+  score: number
+  total: number
+  opened: number | null
+  new_codes: NewCode[]
+  door: DoorView
+  me: Me
+}
+
+export interface AdventAdmin {
+  participants: number
+  opens: number
+  by_day: { day: number; title: string; kind: DoorKind; opens: number; late: number }[]
+  rewards: { id: number; title: string; doors: number; stock: number | null; issued: number; redeemed: number }[]
+  points: { name: string; redeemed: number }[]
+}
+
+export interface RedeemPoint {
+  id: number
+  name: string
+}
+
+export interface RedeemCheck {
+  status: 'issued' | 'redeemed'
+  redeemed_at: string | null
+  title: string
+  emoji: string
+}
 
 export interface CompleteResult {
   already: boolean
@@ -218,4 +335,13 @@ export interface Api {
   adminSave(lesson: LessonDraft): Promise<Lesson>
   adminDelete(id: number): Promise<void>
   adminAnnounce(id: number): Promise<void>
+  advent(): Promise<AdventState>
+  adventDoor(day: number): Promise<DoorView>
+  /** answers — для квиза, score — для аркады; скретч и сторис открываются без данных. */
+  adventOpen(day: number, input?: { answers?: number[]; score?: number }): Promise<DoorResult>
+  adminAdvent(): Promise<AdventAdmin>
+  redeemPoints(): Promise<RedeemPoint[]>
+  /** check — только проверить код, не гасить. */
+  redeemCheck(point: number, pin: string, code: string): Promise<RedeemCheck>
+  redeem(point: number, pin: string, code: string): Promise<{ title: string; emoji: string }>
 }
