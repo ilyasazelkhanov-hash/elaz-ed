@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-13T19:48:48.319Z",
+  "checked_at": "2026-10-14T14:53:00.025Z",
   "health": {
     "ok": true,
     "token": true,
@@ -11,6 +11,9 @@
     "status": 401,
     "error": "no_auth"
   },
+  "router": {
+    "status": 404
+  },
   "assets": {
     "count": 50,
     "passed": 50,
@@ -18,21 +21,9 @@
   },
   "checks": [
     {
-      "file": "approute-604w.webp",
-      "status": 200,
-      "bytes": 11264,
-      "match": true
-    },
-    {
       "file": "arloui-604w.webp",
       "status": 200,
       "bytes": 3886,
-      "match": true
-    },
-    {
-      "file": "agentation-604w.webp",
-      "status": 200,
-      "bytes": 8068,
       "match": true
     },
     {
@@ -48,9 +39,15 @@
       "match": true
     },
     {
-      "file": "blocks-so-604w.webp",
+      "file": "agentation-604w.webp",
       "status": 200,
-      "bytes": 10152,
+      "bytes": 8068,
+      "match": true
+    },
+    {
+      "file": "approute-604w.webp",
+      "status": 200,
+      "bytes": 11264,
       "match": true
     },
     {
@@ -60,15 +57,9 @@
       "match": true
     },
     {
-      "file": "bloub-604w.webp",
+      "file": "blocks-so-604w.webp",
       "status": 200,
-      "bytes": 6294,
-      "match": true
-    },
-    {
-      "file": "codenotch-604w.webp",
-      "status": 200,
-      "bytes": 26438,
+      "bytes": 10152,
       "match": true
     },
     {
@@ -78,15 +69,21 @@
       "match": true
     },
     {
-      "file": "dprofile-604w.webp",
+      "file": "codenotch-604w.webp",
       "status": 200,
-      "bytes": 2502,
+      "bytes": 26438,
       "match": true
     },
     {
-      "file": "doodle-icons-604w.webp",
+      "file": "bloub-604w.webp",
       "status": 200,
-      "bytes": 7104,
+      "bytes": 6294,
+      "match": true
+    },
+    {
+      "file": "dprofile-604w.webp",
+      "status": 200,
+      "bytes": 2502,
       "match": true
     },
     {
@@ -96,9 +93,9 @@
       "match": true
     },
     {
-      "file": "codex-reset-512w.webp",
+      "file": "doodle-icons-604w.webp",
       "status": 200,
-      "bytes": 13214,
+      "bytes": 7104,
       "match": true
     },
     {
@@ -108,9 +105,27 @@
       "match": true
     },
     {
+      "file": "codex-reset-512w.webp",
+      "status": 200,
+      "bytes": 13214,
+      "match": true
+    },
+    {
       "file": "fonts-1-480w.webp",
       "status": 200,
       "bytes": 30664,
+      "match": true
+    },
+    {
+      "file": "fonts-3-480w.webp",
+      "status": 200,
+      "bytes": 28010,
+      "match": true
+    },
+    {
+      "file": "fontshare-604w.webp",
+      "status": 200,
+      "bytes": 6532,
       "match": true
     },
     {
@@ -126,15 +141,15 @@
       "match": true
     },
     {
-      "file": "fontshare-604w.webp",
+      "file": "geometric-604w.webp",
       "status": 200,
-      "bytes": 6532,
+      "bytes": 8418,
       "match": true
     },
     {
-      "file": "fonts-3-480w.webp",
+      "file": "gsap-skills-604w.webp",
       "status": 200,
-      "bytes": 28010,
+      "bytes": 6952,
       "match": true
     },
     {
@@ -150,27 +165,15 @@
       "match": true
     },
     {
-      "file": "geometric-604w.webp",
-      "status": 200,
-      "bytes": 8418,
-      "match": true
-    },
-    {
       "file": "genery-604w.webp",
       "status": 200,
       "bytes": 15320,
       "match": true
     },
     {
-      "file": "gsap-skills-604w.webp",
+      "file": "heroui-604w.webp",
       "status": 200,
-      "bytes": 6952,
-      "match": true
-    },
-    {
-      "file": "inspora-512w.webp",
-      "status": 200,
-      "bytes": 8540,
+      "bytes": 8934,
       "match": true
     },
     {
@@ -180,15 +183,15 @@
       "match": true
     },
     {
-      "file": "iconimate-604w.webp",
+      "file": "inspora-512w.webp",
       "status": 200,
-      "bytes": 11334,
+      "bytes": 8540,
       "match": true
     },
     {
-      "file": "heroui-604w.webp",
+      "file": "iconimate-604w.webp",
       "status": 200,
-      "bytes": 8934,
+      "bytes": 11334,
       "match": true
     },
     {
@@ -204,21 +207,15 @@
       "match": true
     },
     {
-      "file": "limitreset-512w.webp",
-      "status": 200,
-      "bytes": 9608,
-      "match": true
-    },
-    {
-      "file": "mobbin-604w.webp",
-      "status": 200,
-      "bytes": 14784,
-      "match": true
-    },
-    {
       "file": "meigen-604w.webp",
       "status": 200,
       "bytes": 21494,
+      "match": true
+    },
+    {
+      "file": "limitreset-512w.webp",
+      "status": 200,
+      "bytes": 9608,
       "match": true
     },
     {
@@ -228,15 +225,9 @@
       "match": true
     },
     {
-      "file": "replicate-604w.webp",
+      "file": "mobbin-604w.webp",
       "status": 200,
-      "bytes": 15892,
-      "match": true
-    },
-    {
-      "file": "onepromptdesign-604w.webp",
-      "status": 200,
-      "bytes": 18872,
+      "bytes": 14784,
       "match": true
     },
     {
@@ -246,21 +237,27 @@
       "match": true
     },
     {
-      "file": "page-mascot-604w.webp",
-      "status": 200,
-      "bytes": 10820,
-      "match": true
-    },
-    {
       "file": "refero-604w.webp",
       "status": 200,
       "bytes": 26542,
       "match": true
     },
     {
-      "file": "shadcn-604w.webp",
+      "file": "page-mascot-604w.webp",
       "status": 200,
-      "bytes": 10938,
+      "bytes": 10820,
+      "match": true
+    },
+    {
+      "file": "onepromptdesign-604w.webp",
+      "status": 200,
+      "bytes": 18872,
+      "match": true
+    },
+    {
+      "file": "replicate-604w.webp",
+      "status": 200,
+      "bytes": 15892,
       "match": true
     },
     {
@@ -276,6 +273,12 @@
       "match": true
     },
     {
+      "file": "shadcn-604w.webp",
+      "status": 200,
+      "bytes": 10938,
+      "match": true
+    },
+    {
       "file": "shaders-604w.webp",
       "status": 200,
       "bytes": 10628,
@@ -285,12 +288,6 @@
       "file": "seedance.mp4",
       "status": 200,
       "bytes": 1162437,
-      "match": true
-    },
-    {
-      "file": "sileo-604w.webp",
-      "status": 200,
-      "bytes": 5080,
       "match": true
     },
     {
@@ -309,6 +306,12 @@
       "file": "tweakcn-604w.webp",
       "status": 200,
       "bytes": 11398,
+      "match": true
+    },
+    {
+      "file": "sileo-604w.webp",
+      "status": 200,
+      "bytes": 5080,
       "match": true
     },
     {
