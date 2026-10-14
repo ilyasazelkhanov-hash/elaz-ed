@@ -586,27 +586,8 @@
 }
 
 /* Снег в шапке адвента. */
-.snowflake {
-  animation: snowfall linear infinite;
-}
-@keyframes snowfall {
-  0% {
-    transform: translate3d(0, -10px, 0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  100% {
-    transform: translate3d(14px, 260px, 0);
-    opacity: 0;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
-  .snowflake {
-    display: none;
-  }
   .backdrop::before,
   .backdrop i,
   .floaty,
@@ -616,6 +597,287 @@
     animation: none;
   }
   .spark {
+    display: none;
+  }
+}
+
+/* ---------- Темы адвент-календаря ----------
+   Класс на корне экрана календаря и двери перекрашивает карточки, линии и акцент.
+   Хэллоуин и Новый год всегда тёмные — так задумана сцена, независимо от темы приложения. */
+.advent-halloween {
+  --color-bg: #0d0716;
+  --color-card: #1a1027;
+  --color-card2: #221532;
+  --color-float: #1c1129;
+  --color-line: rgb(255 170 90 / 0.13);
+  --color-ink: #fbeee0;
+  --color-mute: #bba6cc;
+  --color-faint: #8e7b9e;
+  --color-veil: #ffffff;
+  --color-inverse: #ff8a1f;
+  --color-on-inverse: #1a0b03;
+  --color-violet: #ff8a1f;
+  --color-amber: #a3ff4f;
+  --color-mint: #a3ff4f;
+  --color-on-mint: #0d1a03;
+  --aurora: linear-gradient(90deg, #ff6a00 0%, #ffb347 100%);
+  --track: rgb(255 255 255 / 0.1);
+  --edge-aurora: #8a3304;
+  color: var(--color-ink);
+  color-scheme: dark;
+}
+.advent-newyear {
+  --color-bg: #08172e;
+  --color-card: #0f2240;
+  --color-card2: #142a4d;
+  --color-float: #11264a;
+  --color-line: rgb(170 215 255 / 0.14);
+  --color-ink: #f2f8ff;
+  --color-mute: #a8c0de;
+  --color-faint: #7d97b8;
+  --color-veil: #ffffff;
+  --color-inverse: #ffd166;
+  --color-on-inverse: #2a1a00;
+  --color-violet: #ffd166;
+  --color-amber: #ff9f43;
+  --color-mint: #3ee08f;
+  --color-on-mint: #03200f;
+  --aurora: linear-gradient(90deg, #e8334a 0%, #ffd166 50%, #3ee08f 100%);
+  --track: rgb(255 255 255 / 0.1);
+  --edge-aurora: #8c1c2c;
+  color: var(--color-ink);
+  color-scheme: dark;
+}
+
+@keyframes fx-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.fx-twinkle {
+  animation: fx-twinkle 3s ease-in-out infinite;
+}
+@keyframes fx-sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+}
+.fx-sparkle {
+  animation: fx-sparkle 2.6s ease-in-out infinite;
+}
+@keyframes fx-aurora {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1, 1);
+  }
+  50% {
+    transform: translate3d(14%, 6%, 0) scale(1.15, 0.85);
+  }
+}
+.fx-aurora {
+  animation: fx-aurora 11s ease-in-out infinite;
+}
+.fx-aurora-rev {
+  animation: fx-aurora 13s ease-in-out infinite reverse;
+}
+@keyframes fx-moon {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+.fx-moon {
+  animation: fx-moon 8s ease-in-out infinite;
+}
+/* Летучая мышь летит через шапку по волне */
+@keyframes fx-bat {
+  0% {
+    transform: translate3d(-60px, 0, 0);
+  }
+  25% {
+    transform: translate3d(25vw, -18px, 0);
+  }
+  50% {
+    transform: translate3d(50vw, 10px, 0);
+  }
+  75% {
+    transform: translate3d(75vw, -14px, 0);
+  }
+  100% {
+    transform: translate3d(calc(100vw + 60px), 0, 0);
+  }
+}
+.fx-bat {
+  left: 0;
+  animation: fx-bat 10s linear infinite;
+}
+.fx-bat-rev {
+  left: 0;
+  animation: fx-bat 10s linear infinite reverse;
+}
+.fx-bat-rev svg {
+  transform: scaleX(-1);
+}
+@keyframes fx-flap {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.35);
+  }
+}
+.fx-flap {
+  animation: fx-flap 0.28s ease-in-out infinite;
+  transform-origin: 50% 70%;
+}
+@keyframes fx-fog {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(22%, -6px, 0);
+  }
+}
+.fx-fog {
+  animation: fx-fog 14s ease-in-out infinite;
+}
+.fx-fog-rev {
+  animation: fx-fog 17s ease-in-out infinite reverse;
+}
+@keyframes fx-spider {
+  0%,
+  100% {
+    transform: rotate(-7deg) translateY(0);
+  }
+  50% {
+    transform: rotate(7deg) translateY(10px);
+  }
+}
+.fx-spider {
+  animation: fx-spider 4.5s ease-in-out infinite;
+}
+/* Тыквенный огонь: неровное мерцание, как свеча */
+@keyframes fx-flicker {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  8% {
+    opacity: 0.55;
+  }
+  12% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.75;
+  }
+  44% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.65;
+  }
+}
+.fx-flicker {
+  animation: fx-flicker 2.4s linear infinite;
+}
+@keyframes fx-bulb {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px 3px currentColor;
+  }
+  50% {
+    opacity: 0.35;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+}
+.fx-bulb {
+  animation: fx-bulb 1.4s ease-in-out infinite;
+}
+@keyframes fx-snow {
+  0% {
+    transform: translate3d(0, -12px, 0);
+  }
+  50% {
+    transform: translate3d(12px, 140px, 0);
+  }
+  100% {
+    transform: translate3d(-6px, 300px, 0);
+  }
+}
+.fx-snow {
+  animation: fx-snow 9s linear infinite;
+}
+@keyframes fx-shine {
+  0%,
+  60% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+.fx-shine {
+  animation: fx-shine 3.2s ease-in-out infinite;
+}
+/* Подарок дня подпрыгивает и покачивается */
+@keyframes fx-gift {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0) translateY(0);
+  }
+  76% {
+    transform: rotate(-6deg) translateY(-3px);
+  }
+  82% {
+    transform: rotate(5deg) translateY(-1px);
+  }
+  88% {
+    transform: rotate(-3deg);
+  }
+}
+.fx-gift {
+  animation: fx-gift 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-twinkle,
+  .fx-sparkle,
+  .fx-aurora,
+  .fx-aurora-rev,
+  .fx-moon,
+  .fx-flap,
+  .fx-fog,
+  .fx-fog-rev,
+  .fx-spider,
+  .fx-flicker,
+  .fx-bulb,
+  .fx-shine,
+  .fx-gift {
+    animation: none;
+  }
+  .fx-bat,
+  .fx-bat-rev,
+  .fx-snow {
     display: none;
   }
 }

@@ -70,6 +70,9 @@ const httpApi: Api = {
   adventDoor: (day) => call('advent_door', { day }),
   adventOpen: (day, input) => call('advent_open', { day, ...input }),
   adminAdvent: () => call('admin_advent'),
+  adminAdventTheme: async (theme) => {
+    await call('admin_advent_theme', { theme })
+  },
   redeemPoints: async () => (await call<{ points: RedeemPoint[] }>('redeem_points')).points,
   redeemCheck: (point, pin, code) => call('redeem', { point, pin, code, check: true }),
   redeem: (point, pin, code) => call('redeem', { point, pin, code }),

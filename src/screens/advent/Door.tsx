@@ -13,6 +13,7 @@ import { burst, celebrate, Cta, Emoji, Pattern, Spinner, Tap } from '../../ui'
 import { Arcade } from './Arcade'
 import { slide } from './Advent'
 import { Scratch } from './Scratch'
+import { themeOf, ThemeScene } from './themes'
 
 const LOOK: Record<DoorKind, { g: Gradient; name: 'candy' | 'aurora' | 'sunset' | 'mint' }> = {
   quiz: { g: GRADIENTS.aurora, name: 'aurora' },
@@ -26,6 +27,7 @@ type Input = { answers?: number[]; score?: number }
 /** Дверь календаря. Что внутри и сколько XP — решает сервер; экран только показывает и собирает ответы. */
 export function DoorScreen({ day }: { day: number }) {
   const { pop, guard, toast, setMe } = useStore.getState()
+  const themeId = useStore((s) => s.advent?.theme)
   const [door, setDoor] = useState<DoorView | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
   const [result, setResult] = useState<DoorResult | null>(null)
@@ -77,11 +79,14 @@ export function DoorScreen({ day }: { day: number }) {
   }
 
   const look = LOOK[door?.kind ?? 'quiz']
+  // В тематическом календаре шапка двери — та же сцена; в стандартном — цвет по типу двери.
+  const theme = themeOf(themeId)
+  const themed = theme.id !== 'standard'
   return (
-    <motion.div {...slide} className="absolute inset-0 z-[32] bg-bg">
+    <motion.div {...slide} className={`absolute inset-0 z-[32] bg-bg ${theme.className}`}>
       <div className="scroll h-full" style={{ paddingBottom: 'calc(48px + var(--bottom))' }}>
-        <div className="relative overflow-hidden px-5 pb-12 text-center" style={{ background: look.g.css, color: look.g.ink, paddingTop: 'calc(var(--top) + 54px)' }}>
-          <Pattern name={look.name} full />
+        <div className={`relative overflow-hidden px-5 text-center ${themed ? 'pb-16' : 'pb-12'}`} style={{ background: themed ? theme.hero : look.g.css, color: themed ? theme.ink : look.g.ink, paddingTop: 'calc(var(--top) + 54px)' }}>
+          {themed ? <ThemeScene theme={theme.id} /> : <Pattern name={look.name} full />}
           <div className="relative">
             <p className="mx-auto w-fit rounded-full bg-black/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider">
               Дверь №{day}

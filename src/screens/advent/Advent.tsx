@@ -2,13 +2,13 @@ import { Check, ChevronLeft, Copy, Lock } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { dayMonth, formatCode, KIND_LABEL } from '../../lib/advent'
-import { api } from '../../lib/api'
-import { GRADIENTS } from '../../lib/game'
+import { api, isDemo } from '../../lib/api'
 import { copyText, haptic, inTelegram } from '../../lib/tg'
-import type { AdventCell, AdventReward, AdventState } from '../../lib/types'
+import type { AdventCell, AdventReward, AdventState, AdventThemeId } from '../../lib/types'
 import { useStore } from '../../store'
-import { Bar, Emoji, Pattern, Tap } from '../../ui'
-import { doorsWord, Snow } from './Banner'
+import { Bar, Emoji, Tap } from '../../ui'
+import { doorsWord } from './Banner'
+import { DoorSkin, doorInk, doorShape, OpeningLeaf, THEME_IDS, themeOf, ThemeScene } from './themes'
 
 /** Дата двери: старт кампании + (день − 1). */
 export function doorDate(start: string, day: number) {
@@ -44,6 +44,7 @@ export function AdventScreen() {
         setFailed(false)
         setAdvent({
           title: d.title,
+          theme: d.theme,
           start: d.start,
           days: d.days,
           today: d.today,
@@ -63,35 +64,42 @@ export function AdventScreen() {
 
   const next = useMemo(() => data?.rewards.find((r) => !r.code && r.doors > data.opened) ?? null, [data])
 
-  const tapDoor = (cell: AdventCell) => {
+  const locked = (cell: AdventCell) => {
     if (!data) return
-    if (cell.state === 'locked') {
-      haptic.error()
-      return toast(`Откроется ${doorDate(data.start, cell.day)}`, '🔒')
-    }
+    haptic.error()
     if (cell.state === 'missed') return toast('Календарь закрыт — эту дверь уже не открыть')
-    push({ type: 'door', day: cell.day })
+    toast(`Откроется ${doorDate(data.start, cell.day)}`, '🔒')
   }
 
-  const g = GRADIENTS.ocean
+  // В демо тему можно примерить прямо здесь. На проде её меняет автор в админке — сразу у всех.
+  const [preview, setPreview] = useState<AdventThemeId | null>(null)
+  const themeId = preview ?? data?.theme ?? 'standard'
+  const theme = themeOf(themeId)
+  const pick = (id: AdventThemeId) => {
+    haptic.select()
+    setPreview(id)
+    void api.adminAdventTheme(id).catch(() => {})
+    const summary = useStore.getState().advent
+    if (summary) setAdvent({ ...summary, theme: id })
+  }
+
   return (
-    <motion.div {...slide}>
+    <motion.div {...slide} className={`${slide.className} ${theme.className}`}>
       <div className="scroll h-full" style={{ paddingBottom: 'calc(48px + var(--bottom))' }}>
-        <div className="relative overflow-hidden px-5 pb-12" style={{ background: g.css, color: g.ink, paddingTop: 'calc(var(--top) + 58px)' }}>
-          <Pattern name="ocean" full />
-          <Snow />
+        <div className={`relative overflow-hidden px-5 ${themeId === 'standard' ? 'pb-12' : 'pb-20'}`} style={{ background: theme.hero, color: theme.ink, paddingTop: 'calc(var(--top) + 58px)' }}>
+          <ThemeScene key={themeId} theme={themeId} />
           <div className="relative">
-            <p className="w-fit rounded-full bg-black/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider">
+            <p className="w-fit rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider" style={{ background: theme.chip }}>
               {!data ? 'Календарь' : data.today < 1 ? `Старт ${dayMonth(data.start)}` : data.today > data.days ? 'Финал' : `День ${data.today} из ${data.days}`}
             </p>
-            <h1 className="mt-3 font-display text-[27px] font-semibold leading-[1.1]">{data?.title ?? 'Адвент-календарь'}</h1>
+            <h1 className="mt-3 max-w-[70%] font-display text-[27px] font-semibold leading-[1.1] drop-shadow-[0_2px_10px_rgb(0_0_0_/_0.35)]">{data?.title ?? 'Адвент-календарь'}</h1>
             {data && (
               <div className="mt-4 flex flex-wrap gap-2 text-[13px] font-semibold">
-                <span className="flex items-center gap-1.5 rounded-full bg-black/15 px-3 py-1.5">
-                  <Emoji char="🔥" size={16} /> серия {data.streak}
+                <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-sm" style={{ background: theme.chip }}>
+                  <Emoji char={themeId === 'halloween' ? '🕯️' : '🔥'} size={16} /> серия {data.streak}
                 </span>
-                <span className="flex items-center gap-1.5 rounded-full bg-black/15 px-3 py-1.5">
-                  <Emoji char="🚪" size={16} /> открыто {data.opened} из {data.days}
+                <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-sm" style={{ background: theme.chip }}>
+                  <Emoji char={themeId === 'newyear' ? '🎁' : themeId === 'halloween' ? '🦇' : '🚪'} size={16} /> открыто {data.opened} из {data.days}
                 </span>
               </div>
             )}
@@ -110,6 +118,7 @@ export function AdventScreen() {
 
           {data && (
             <>
+              {isDemo && <ThemePicker value={themeId} onPick={pick} />}
               {next && (
                 <div className="mb-5 rounded-[22px] border border-line bg-card p-4">
                   <div className="flex items-center gap-3">
@@ -130,7 +139,7 @@ export function AdventScreen() {
 
               <div className="grid grid-cols-4 gap-2.5">
                 {data.doors.map((cell, i) => (
-                  <DoorCell key={cell.day} cell={cell} index={i} onTap={() => tapDoor(cell)} />
+                  <DoorCell key={`${themeId}-${cell.day}`} cell={cell} index={i} theme={themeId} onOpen={() => push({ type: 'door', day: cell.day })} onLocked={() => locked(cell)} />
                 ))}
               </div>
               <p className="mt-3 text-center text-[12.5px] leading-snug text-faint">Пропущенную дверь можно догнать — за половину XP. Серия растёт, только если открывать в свой день.</p>
@@ -159,48 +168,130 @@ export function AdventScreen() {
   )
 }
 
-function DoorCell({ cell, index, onTap }: { cell: AdventCell; index: number; onTap: () => void }) {
-  const base = 'relative flex aspect-square flex-col items-center justify-center overflow-hidden rounded-[20px] border'
-  const style: Record<AdventCell['state'], string> = {
-    today: 'border-transparent text-white shadow-[0_10px_30px_rgb(124_107_255_/_0.45)]',
-    open: 'border-line bg-card',
-    late: 'border-dashed border-amber/60 bg-card',
-    locked: 'border-line bg-card/50 text-faint',
-    missed: 'border-line bg-card/40 opacity-45',
-  }
+function ThemePicker({ value, onPick }: { value: AdventThemeId; onPick: (id: AdventThemeId) => void }) {
   return (
-    <Tap
-      feedback={cell.state === 'locked' ? 'none' : 'tap'}
-      onClick={onTap}
+    <div className="mb-5">
+      <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-mute">Оформление · демо</p>
+      <div className="grid grid-cols-3 gap-2">
+        {THEME_IDS.map((id) => {
+          const t = themeOf(id)
+          const on = id === value
+          return (
+            <Tap
+              key={id}
+              feedback="none"
+              onClick={() => onPick(id)}
+              aria-pressed={on}
+              className="relative h-[68px] overflow-hidden rounded-[18px] p-2.5 text-left"
+              style={{ background: t.hero, color: t.ink, outline: on ? '2px solid var(--color-ink)' : '1px solid var(--color-line)', outlineOffset: on ? 2 : 0 }}
+            >
+              <ThemeScene theme={id} compact />
+              <span className="relative block text-[20px] leading-none">{t.emoji}</span>
+              <span className="relative mt-1.5 inline-block rounded-full px-1.5 py-0.5 text-[12px] font-bold" style={{ background: 'rgb(0 0 0 / 0.45)' }}>{t.label}</span>
+            </Tap>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** Дверь в календаре. Открытие — короткая анимация (створка или крышка), потом экран двери. */
+function DoorCell({ cell, index, theme, onOpen, onLocked }: { cell: AdventCell; index: number; theme: AdventThemeId; onOpen: () => void; onLocked: () => void }) {
+  const [opening, setOpening] = useState(false)
+  const [nudge, setNudge] = useState(0)
+  const t = themeOf(theme)
+  const ink = doorInk(theme, cell.state)
+  const closed = cell.state === 'locked' || cell.state === 'missed'
+
+  const tap = () => {
+    if (closed) {
+      setNudge((n) => n + 1)
+      return onLocked()
+    }
+    // Уже открытую дверь показываем сразу, новую — после анимации.
+    if (cell.state === 'open') {
+      haptic.tap()
+      return onOpen()
+    }
+    if (opening) return
+    haptic.heavy()
+    setOpening(true)
+    setTimeout(() => {
+      onOpen()
+      setOpening(false)
+    }, 560)
+  }
+
+  return (
+    <motion.button
+      type="button"
+      onClick={tap}
       aria-label={`Дверь ${cell.day}`}
-      initial={{ opacity: 0, scale: 0.85 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: Math.min(index, 24) * 0.018, type: 'spring', stiffness: 380, damping: 26 }}
-      className={`${base} ${style[cell.state]}`}
-      style={cell.state === 'today' ? { background: 'var(--aurora)' } : undefined}
+      initial={{ opacity: 0, scale: 0.8, y: 8 }}
+      animate={nudge ? { opacity: 1, scale: 1, y: 0, x: [0, -5, 5, -3, 3, 0] } : { opacity: 1, scale: 1, y: 0 }}
+      transition={nudge ? { duration: 0.35 } : { delay: Math.min(index, 24) * 0.02, type: 'spring', stiffness: 380, damping: 24 }}
+      whileTap={{ scale: 0.94 }}
+      className={`relative flex aspect-square flex-col items-center justify-center ${cell.state === 'today' && theme === 'newyear' ? 'fx-gift' : ''}`}
+      style={{
+        ...doorShape(theme),
+        perspective: 500,
+        color: ink,
+        boxShadow:
+          cell.state === 'today'
+            ? theme === 'halloween'
+              ? '0 0 26px 2px rgb(255 122 26 / 0.55)'
+              : theme === 'newyear'
+                ? '0 0 24px 2px rgb(255 209 102 / 0.5)'
+                : '0 10px 30px rgb(124 107 255 / 0.45)'
+            : undefined,
+        border: theme === 'standard' && cell.state !== 'today' ? `1px ${cell.state === 'late' ? 'dashed' : 'solid'} var(--color-line)` : theme === 'halloween' && cell.state === 'late' ? '1px dashed #a3ff4f' : 'none',
+      }}
     >
-      {cell.state === 'today' && <motion.span className="absolute inset-0 rounded-[20px] border-2 border-white/70" animate={{ opacity: [0.9, 0.2, 0.9] }} transition={{ duration: 1.8, repeat: Infinity }} />}
-      {/* У закрытой двери номер и так крупно по центру — в углу его не дублируем. */}
-      {cell.state !== 'locked' && <span className={`absolute left-2 top-1.5 font-display text-[11px] font-bold ${cell.state === 'today' ? 'text-white/85' : 'text-faint'}`}>{cell.day}</span>}
-      {cell.state === 'locked' ? (
-        <>
-          <span className="font-display text-[22px] font-semibold opacity-60">{cell.day}</span>
-          <Lock size={12} className="mt-0.5 opacity-60" />
-        </>
+      <DoorSkin theme={theme} state={cell.state} day={cell.day} />
+      {/* Свет из-за открывающейся двери */}
+      {opening && <motion.span className="absolute inset-0" style={{ borderRadius: 'inherit', background: 'radial-gradient(circle, rgb(255 255 255 / 0.95), rgb(255 230 150 / 0.4) 50%, transparent 75%)' }} initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1.25 }} transition={{ duration: 0.5 }} />}
+
+      {cell.state === 'today' && theme === 'standard' && <motion.span className="absolute inset-0 border-2 border-white/70" style={{ borderRadius: 'inherit' }} animate={{ opacity: [0.9, 0.2, 0.9] }} transition={{ duration: 1.8, repeat: Infinity }} />}
+
+      {!closed && <span className="absolute left-2 top-1.5 z-[1] font-display text-[11px] font-bold opacity-80">{cell.day}</span>}
+      {closed ? (
+        theme === 'newyear' ? (
+          <span className="relative z-[1] mt-[30%] rounded-md bg-white/95 px-1.5 py-0.5 font-display text-[13px] font-bold text-[#8c1c2c] shadow">{cell.day}</span>
+        ) : (
+          <>
+            <span className="relative z-[1] font-display text-[22px] font-semibold opacity-70" style={theme === 'halloween' ? { color: '#ffb36b', textShadow: '0 0 10px rgb(255 122 26 / 0.45)' } : undefined}>
+              {cell.day}
+            </span>
+            <Lock size={12} className="relative z-[1] mt-0.5 opacity-60" />
+          </>
+        )
       ) : (
-        <>
-          <Emoji char={cell.emoji ?? '🎁'} size={30} animated={cell.state === 'today'} />
-          <span className={`mt-1 text-[10px] font-bold uppercase tracking-wide ${cell.state === 'today' ? 'text-white' : cell.state === 'late' ? 'text-amber' : 'text-mute'}`}>
-            {cell.state === 'today' ? 'Сегодня' : cell.state === 'late' ? 'Догнать' : cell.state === 'open' ? `+${cell.xp ?? 0}` : KIND_LABEL[cell.kind]}
+        <span className="relative z-[1] flex flex-col items-center">
+          <Emoji char={cell.emoji ?? (theme === 'halloween' ? '🎃' : '🎁')} size={30} animated={cell.state === 'today'} />
+          <span className={`mt-1 text-[10px] font-extrabold uppercase tracking-wide ${theme === 'newyear' && cell.state !== 'today' ? 'rounded-full bg-black/35 px-1.5' : ''}`} style={{ color: ink ?? (cell.state === 'late' ? 'var(--color-amber)' : 'var(--color-mute)') }}>
+            {cell.state === 'today' ? t.todayLabel : cell.state === 'late' ? 'Догнать' : cell.state === 'open' ? `+${cell.xp ?? 0}` : KIND_LABEL[cell.kind]}
           </span>
-        </>
+        </span>
       )}
       {cell.state === 'open' && (
-        <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-mint text-on-mint">
+        <span className="absolute right-1.5 top-1.5 z-[1] grid h-4 w-4 place-items-center rounded-full bg-mint text-on-mint">
           <Check size={10} strokeWidth={4} />
         </span>
       )}
-    </Tap>
+
+      {/* Створка на петлях или крышка коробки — поверх двери, пока она открывается */}
+      {opening &&
+        (t.opening === 'lid' ? (
+          <motion.span className="absolute inset-0 z-[2]" style={{ borderRadius: 'inherit' }} initial={{ y: 0, rotate: 0, opacity: 1 }} animate={{ y: -46, rotate: -24, opacity: 0 }} transition={{ duration: 0.55, ease: [0.3, 0.7, 0.2, 1] }}>
+            <OpeningLeaf theme={theme} />
+          </motion.span>
+        ) : (
+          <motion.span className="absolute inset-0 z-[2]" style={{ borderRadius: 'inherit', transformOrigin: 'left center' }} initial={{ rotateY: 0 }} animate={{ rotateY: -115 }} transition={{ duration: 0.55, ease: [0.3, 0.7, 0.2, 1] }}>
+            <OpeningLeaf theme={theme} />
+          </motion.span>
+        ))}
+    </motion.button>
   )
 }
 

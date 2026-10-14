@@ -2,16 +2,38 @@ import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { KIND_LABEL } from '../../lib/advent'
 import { api, errorText } from '../../lib/api'
-import type { AdventAdmin } from '../../lib/types'
+import { haptic } from '../../lib/tg'
+import type { AdventAdmin, AdventThemeId } from '../../lib/types'
 import { useStore } from '../../store'
+import { Spinner, Tap } from '../../ui'
 import { Header, sheet } from '../Admin'
+import { THEME_IDS, themeOf, ThemeScene } from './themes'
 
 const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0)
 
 /** Статистика адвента для админа: сколько людей открывают двери и сколько кодов дошло до кассы. */
 export function AdventAdminScreen() {
-  const { guard, toast } = useStore.getState()
+  const { guard, toast, setAdvent } = useStore.getState()
   const [data, setData] = useState<AdventAdmin | null>(null)
+  const [saving, setSaving] = useState<AdventThemeId | null>(null)
+
+  // Оформление меняется у всех участников сразу — поэтому с подтверждающим тостом.
+  const pickTheme = async (id: AdventThemeId) => {
+    if (saving || data?.theme === id) return
+    setSaving(id)
+    try {
+      await api.adminAdventTheme(id)
+      haptic.success()
+      setData((d) => (d ? { ...d, theme: id } : d))
+      const summary = useStore.getState().advent
+      if (summary) setAdvent({ ...summary, theme: id })
+      toast(`Оформление: ${themeOf(id).label}`, themeOf(id).emoji)
+    } catch (e) {
+      toast(errorText(e))
+    } finally {
+      setSaving(null)
+    }
+  }
 
   useEffect(() => {
     let alive = true
@@ -41,7 +63,34 @@ export function AdventAdminScreen() {
           </div>
         ) : (
           <div className="px-5">
-            <div className="mt-5 grid grid-cols-2 gap-2">
+            <h2 className="mt-5 font-display text-[16px] font-semibold">Оформление</h2>
+            <p className="mt-1 text-[12.5px] leading-snug text-mute">Меняется сразу у всех участников: шапка, двери, карточка на главной.</p>
+            <div className="mt-3 space-y-2">
+              {THEME_IDS.map((id) => {
+                const t = themeOf(id)
+                const on = (data.theme ?? 'standard') === id
+                return (
+                  <Tap
+                    key={id}
+                    feedback="none"
+                    onClick={() => pickTheme(id)}
+                    aria-pressed={on}
+                    className="relative flex h-[76px] w-full items-center gap-3 overflow-hidden rounded-[20px] px-4 text-left"
+                    style={{ background: t.hero, color: t.ink, outline: on ? '2px solid var(--color-ink)' : '1px solid var(--color-line)', outlineOffset: on ? 2 : 0 }}
+                  >
+                    <ThemeScene theme={id} compact />
+                    <span className="relative text-[28px] leading-none">{t.emoji}</span>
+                    <span className="relative min-w-0 flex-1 rounded-[12px] px-2 py-1" style={{ background: 'rgb(0 0 0 / 0.35)' }}>
+                      <span className="block font-display text-[15px] font-semibold">{t.label}</span>
+                      <span className="block truncate text-[12px] opacity-85">{t.tagline}</span>
+                    </span>
+                    {saving === id ? <Spinner size={18} /> : on && <span className="relative rounded-full bg-white px-2.5 py-1 text-[12px] font-bold text-[#14101f]">Сейчас</span>}
+                  </Tap>
+                )
+              })}
+            </div>
+
+            <div className="mt-7 grid grid-cols-2 gap-2">
               <Tile value={data.participants} label="Участников" />
               <Tile value={data.opens} label="Открыто дверей" />
             </div>

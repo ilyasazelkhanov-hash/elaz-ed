@@ -131,9 +131,14 @@ export type Boot = (
 
 // ---------- Адвент-календарь ----------
 
+/** Оформление календаря: выбирает автор, у всех участников одно. */
+export type AdventThemeId = 'standard' | 'halloween' | 'newyear'
+
 /** Короткая сводка для главной: есть ли календарь, какой сегодня день, открыта ли дверь. */
 export interface AdventSummary {
   title: string
+  /** Старый сервер тему не присылает — тогда стандартная. */
+  theme?: AdventThemeId
   start: string
   days: number
   /** Номер дня кампании: 1 — первый день, 0 и меньше — до старта. */
@@ -170,6 +175,7 @@ export interface AdventReward {
 
 export interface AdventState {
   title: string
+  theme?: AdventThemeId
   start: string
   days: number
   today: number
@@ -223,6 +229,7 @@ export interface DoorResult {
 }
 
 export interface AdventAdmin {
+  theme?: AdventThemeId
   participants: number
   opens: number
   by_day: { day: number; title: string; kind: DoorKind; opens: number; late: number }[]
@@ -340,6 +347,8 @@ export interface Api {
   /** answers — для квиза, score — для аркады; скретч и сторис открываются без данных. */
   adventOpen(day: number, input?: { answers?: number[]; score?: number }): Promise<DoorResult>
   adminAdvent(): Promise<AdventAdmin>
+  /** Меняет оформление календаря у всех участников. */
+  adminAdventTheme(theme: AdventThemeId): Promise<void>
   redeemPoints(): Promise<RedeemPoint[]>
   /** check — только проверить код, не гасить. */
   redeemCheck(point: number, pin: string, code: string): Promise<RedeemCheck>

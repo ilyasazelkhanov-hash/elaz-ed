@@ -3,7 +3,7 @@
 import seed from './adventSeed.json'
 import { adventStreak, doorXp } from './advent'
 import { ApiError } from './errors'
-import type { AdventAdmin, AdventState, AdventSummary, Api, DoorKind, DoorView, Me, NewCode, RedeemCheck, RedeemPoint } from './types'
+import type { AdventAdmin, AdventThemeId, AdventState, AdventSummary, Api, DoorKind, DoorView, Me, NewCode, RedeemCheck, RedeemPoint } from './types'
 
 const KEY = 'elaz-ed-demo-advent-v1'
 const DEMO_DAY = 7
@@ -34,6 +34,7 @@ interface Opened {
 }
 
 interface AdventDemo {
+  theme?: AdventThemeId
   opens: Record<number, Opened>
   codes: Record<number, { code: string; redeemed: boolean }>
 }
@@ -118,6 +119,7 @@ function issue(): NewCode[] {
 export function adventSummaryDemo(): AdventSummary {
   return {
     title: TITLE,
+    theme: state.theme ?? 'halloween',
     start: start(),
     days: DAYS,
     today: DEMO_DAY,
@@ -128,11 +130,17 @@ export function adventSummaryDemo(): AdventSummary {
 }
 
 export function resetAdventDemo() {
-  state = { opens: {}, codes: {} }
+  state = { theme: state.theme, opens: {}, codes: {} }
   save()
 }
 
-type AdventApi = Pick<Api, 'advent' | 'adventDoor' | 'adventOpen' | 'adminAdvent' | 'redeemPoints' | 'redeemCheck' | 'redeem'>
+/** В демо тему можно менять прямо из календаря — она хранится вместе с демо-прогрессом. */
+export function setAdventThemeDemo(theme: AdventThemeId) {
+  state.theme = theme
+  save()
+}
+
+type AdventApi = Pick<Api, 'advent' | 'adventDoor' | 'adventOpen' | 'adminAdvent' | 'adminAdventTheme' | 'redeemPoints' | 'redeemCheck' | 'redeem'>
 
 /** me и addXp приходят из основного демо: XP у человека общий. */
 export function makeAdventMock(me: () => Me, addXp: (n: number) => void): AdventApi {
@@ -193,9 +201,15 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
       return { already: false, gained: xp, score, total, opened: Object.keys(state.opens).length, new_codes: fresh, door: view(d), me: me() }
     },
 
+    async adminAdventTheme(theme) {
+      await wait(200)
+      setAdventThemeDemo(theme)
+    },
+
     async adminAdvent(): Promise<AdventAdmin> {
       await wait()
       return {
+        theme: state.theme ?? 'halloween',
         participants: 312,
         opens: 2140 + Object.keys(state.opens).length,
         by_day: DOORS.filter((d) => d.day <= DEMO_DAY).map((d) => ({ day: d.day, title: d.title, kind: d.kind, opens: Math.max(40, 300 - d.day * 22), late: 6 + d.day })),

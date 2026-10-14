@@ -1081,8 +1081,11 @@ async function health() {
 // Двери открываются по календарю кампании (пояс из settings.advent.tz), а не по поясу человека:
 // у всех участников дверь №7 открывается в одну и ту же минуту. Все очки и награды считает сервер.
 
+const ADVENT_THEMES = ['standard', 'halloween', 'newyear']
+
 interface AdventCfg {
   title: string
+  theme: string
   start: string
   days: number
   tz: number
@@ -1095,6 +1098,7 @@ function adventCfg(s: Settings): AdventCfg | null {
   if (!a?.enabled || typeof a.start !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(a.start)) return null
   return {
     title: str(a.title, 60) || 'Адвент-календарь',
+    theme: ADVENT_THEMES.includes(a.theme) ? a.theme : 'standard',
     start: a.start,
     days: int(a.days, 1, 60, 24),
     tz: clampTz(a.tz ?? 300),
@@ -1139,6 +1143,7 @@ async function adventSummary(row: Row, s: Settings) {
   const opens = data ?? []
   return {
     title: cfg.title,
+    theme: cfg.theme,
     start: cfg.start,
     days: cfg.days,
     today,
@@ -1170,6 +1175,7 @@ async function advent(body: Row) {
   const mine = new Map((codes.data ?? []).map((c) => [c.reward_id, c]))
   return {
     title: cfg.title,
+    theme: cfg.theme,
     start: cfg.start,
     days: cfg.days,
     today,
@@ -1373,7 +1379,17 @@ async function adminAdvent(body: Row) {
   await member(body, true)
   const { data, error } = await db.rpc('advent_summary')
   if (error) throw new HttpError(500, 'db')
-  return data
+  const theme = (await getSettings()).advent?.theme
+  return { ...data, theme: ADVENT_THEMES.includes(theme) ? theme : 'standard' }
+}
+
+// Оформление календаря меняется у всех сразу; остальные настройки адвента не трогаем.
+async function adminAdventTheme(body: Row) {
+  await member(body, true)
+  if (!ADVENT_THEMES.includes(body.theme)) throw new HttpError(400, 'bad_theme')
+  const s = await getSettings(true)
+  await setSetting('advent', { ...(s.advent ?? { enabled: false }), theme: body.theme })
+  return { ok: true }
 }
 
 // ---------- Напоминание о новой двери (вызывает cron) ----------
@@ -1449,6 +1465,7 @@ const routes: Record<string, (body: Row) => Promise<unknown>> = {
   advent_door: adventDoor,
   advent_open: adventOpen,
   admin_advent: adminAdvent,
+  admin_advent_theme: adminAdventTheme,
   // Без Telegram: страница кассира проверяет PIN точки, а не подпись пользователя.
   redeem,
   redeem_points: redeemPoints,

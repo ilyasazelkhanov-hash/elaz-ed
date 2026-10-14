@@ -142,7 +142,7 @@ test('встроенные методы объекта не считаются �
 
 test('админские адреса закрыты для обычного подписчика', async () => {
   await everyoneBoots()
-  for (const route of ['admin_list', 'admin_courses', 'admin_payments', 'admin_refund', 'admin_save', 'admin_delete', 'admin_course_save', 'admin_course_delete', 'admin_grant', 'admin_request', 'admin_analytics', 'admin_announce']) {
+  for (const route of ['admin_list', 'admin_courses', 'admin_payments', 'admin_refund', 'admin_save', 'admin_delete', 'admin_course_save', 'admin_course_delete', 'admin_grant', 'admin_request', 'admin_analytics', 'admin_announce', 'admin_advent_theme']) {
     assert.deepEqual(await call(route, { id: 1 }, BUYER), { status: 403, body: { error: 'forbidden' } }, route)
   }
   assert.equal(state.tables.courses.length, 2)
@@ -380,6 +380,21 @@ test('доступ по @username с подчёркиванием выдаётс
   assert.equal(access(BUYER, 1).length, 1)
   assert.equal(access(OTHER, 1).length, 0)
   assert.deepEqual(await call('admin_grant', { course_id: 1, username: '%' }, ADMIN), { status: 404, body: { error: 'user_not_found' } })
+})
+
+// ---------- Адвент ----------
+
+test('оформление календаря меняет только админ и только на известную тему', async () => {
+  await everyoneBoots()
+  state.tables.settings.push({ key: 'advent', value: { enabled: false, start: '2026-12-08', days: 24 } })
+  assert.deepEqual(await call('admin_advent_theme', { theme: 'halloween' }, BUYER), { status: 403, body: { error: 'forbidden' } })
+  assert.deepEqual(await call('admin_advent_theme', { theme: '<script>' }, ADMIN), { status: 400, body: { error: 'bad_theme' } })
+  assert.deepEqual(await call('admin_advent_theme', { theme: 'newyear' }, ADMIN), { status: 200, body: { ok: true } })
+  const advent = state.tables.settings.find((s) => s.key === 'advent').value
+  assert.equal(advent.theme, 'newyear')
+  // Остальные настройки адвента не потерялись.
+  assert.equal(advent.start, '2026-12-08')
+  assert.equal(advent.enabled, false)
 })
 
 // ---------- Настройка бота ----------
