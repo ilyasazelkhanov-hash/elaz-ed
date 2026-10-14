@@ -109,6 +109,20 @@ export interface AccessRequest {
   username: string | null
 }
 
+/** Покупка курса за звёзды — для списка в админке. */
+export interface Payment {
+  id: number
+  user_id: number | null
+  course_id: number | null
+  stars: number
+  created_at: string
+  refunded: boolean
+  name: string
+  username: string | null
+  /** Название курса на момент запроса. */
+  course: string
+}
+
 export type Boot = ({ status: 'ok'; me: Me; feed: Card[]; courses: Course[] } | { status: 'locked' | 'setup' }) & Meta
 
 export interface CompleteResult {
@@ -197,6 +211,9 @@ export interface Api {
   adminRequest(userId: number, courseId: number, approve: boolean): Promise<void>
   /** Возвращает имя человека, которому открыт доступ. */
   adminGrant(courseId: number, username: string): Promise<string>
+  adminPayments(): Promise<Payment[]>
+  /** Возвращает звёзды через Telegram и закрывает доступ, выданный за эту оплату. */
+  adminRefund(id: number): Promise<void>
   adminList(): Promise<{ lessons: Lesson[]; stats: AdminStats }>
   adminSave(lesson: LessonDraft): Promise<Lesson>
   adminDelete(id: number): Promise<void>

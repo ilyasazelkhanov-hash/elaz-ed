@@ -10,17 +10,8 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
-    <script>
-      // Тему ставим до первой отрисовки, чтобы экран не мигал чужим цветом.
-      ;(function () {
-        try {
-          var saved = localStorage.getItem('elaz-ed-theme')
-          var wa = window.Telegram && window.Telegram.WebApp
-          var auto = wa && wa.initData && wa.colorScheme ? wa.colorScheme : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-          document.documentElement.dataset.theme = saved === 'light' || saved === 'dark' ? saved : auto
-        } catch (e) {}
-      })()
-    </script>
+    <!-- Тема ставится до первой отрисовки. Отдельный файл, а не встроенный скрипт: встроенные запрещены политикой безопасности (vercel.json). -->
+    <script src="/theme.js"></script>
   </head>
   <body>
     <div id="root"></div>

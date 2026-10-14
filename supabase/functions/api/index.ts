@@ -267,14 +267,19 @@ function adminIds(s: Settings): number[] {
 }
 
 async function grantAccess(userId: number, courseId: number, source: 'stars' | 'admin' | 'invites') {
-  await db.from('course_access').upsert({ user_id: userId, course_id: courseId, source }, { onConflict: 'user_id,course_id', ignoreDuplicates: true })
+  const { error } = await db.from('course_access').upsert({ user_id: userId, course_id: courseId, source }, { onConflict: 'user_id,course_id', ignoreDuplicates: true })
+  return !error
+}
+
+async function hasAccess(userId: number, courseId: number) {
+  const { data } = await db.from('course_access').select('course_id').eq('user_id', userId).eq('course_id', courseId).maybeSingle()
+  return !!data
 }
 
 // Урок из курса открыт, если он помечен бесплатным, у человека есть доступ к курсу или это админ.
 async function canRead(row: Row, les: Row): Promise<boolean> {
   if (!les.course_id || les.free_preview || row.is_admin) return true
-  const { data } = await db.from('course_access').select('course_id').eq('user_id', row.id).eq('course_id', les.course_id).maybeSingle()
-  return !!data
+  return hasAccess(row.id, les.course_id)
 }
 
 async function buildCourses(row: Row, feed: Row[]) {
@@ -330,6 +335,16 @@ async function decideRequest(courseId: number, userId: number, approve: boolean)
     await notifyOpened(userId, course, await getSettings())
   }
   return course.title
+}
+
+// Возврат звёзд: помечаем оплату и закрываем доступ, выданный за неё. Повторный вызов ничего не меняет.
+async function markRefunded(chargeId: string) {
+  const { data: p, error } = await db.rpc('apply_star_refund', { p_charge: chargeId })
+  if (error || !p) throw new HttpError(500, 'db')
+  if (!p.new_refund || !p.user_id) return
+  await logEvent(p.user_id, 'refund', null, { course: p.course_id, stars: p.stars })
+  const { data: course } = await db.from('courses').select('title').eq('id', p.course_id).maybeSingle()
+  await tg('sendMessage', { chat_id: p.user_id, text: `Звёзды за курс «${course?.title ?? ''}» возвращены. Доступ к курсу закрыт.` })
 }
 
 async function buildFeed(userId: number) {
@@ -555,8 +570,14 @@ async function shareMessage(body: Row) {
 async function courseRequest(body: Row) {
   const row = await member(body)
   const id = Number(body.id)
-  const { data: course } = await db.from('courses').select('id,title,published').eq('id', id).maybeSingle()
+  const { data: course } = await db.from('courses').select('id,title,published,price_stars').eq('id', id).maybeSingle()
   if (!course?.published) throw new HttpError(404, 'not_found')
+  if (await hasAccess(row.id, id)) return { request: 'approved' }
+  // У курса с ценой бесплатной заявки нет: он открывается оплатой. Вручную доступ по-прежнему выдаёт автор.
+  if (course.price_stars > 0) throw new HttpError(400, 'paid_only')
+  // Пока заявка ждёт ответа, повторное нажатие ничего не шлёт: иначе админов можно завалить сообщениями.
+  const { data: prev } = await db.from('access_requests').select('status').eq('user_id', row.id).eq('course_id', id).maybeSingle()
+  if (prev?.status === 'pending') return { request: 'pending' }
   await db.from('access_requests').upsert({ user_id: row.id, course_id: id, status: 'pending', created_at: new Date().toISOString(), decided_at: null })
   await logEvent(row.id, 'course_request', null, { course: id })
   const who = `${row.first_name || 'Без имени'}${row.username ? ` (@${row.username})` : ''}`
@@ -584,6 +605,7 @@ async function courseInvoice(body: Row) {
   const id = Number(body.id)
   const { data: c } = await db.from('courses').select('*').eq('id', id).maybeSingle()
   if (!c?.published || c.price_stars <= 0) throw new HttpError(400, 'not_for_sale')
+  if (row.is_admin || (await hasAccess(row.id, id))) throw new HttpError(400, 'already_open')
   const r = await tg('createInvoiceLink', {
     title: String(c.title).slice(0, 32),
     description: String(c.subtitle || `Доступ к курсу «${c.title}»`).slice(0, 255),
@@ -734,11 +756,53 @@ async function adminGrant(body: Row) {
   const username = str(body.username, 64).replace(/^@/, '')
   const courseId = Number(body.course_id)
   if (!username) throw new HttpError(400, 'user_not_found')
-  const { data: user } = await db.from('users').select('id,first_name').ilike('username', username).maybeSingle()
+  // В шаблоне ilike знаки _ и % — подстановочные; экранируем, чтобы ivan_p не совпал с ivanxp.
+  const { data: user } = await db.from('users').select('id,first_name').ilike('username', username.replace(/[\\%_]/g, '\\$&')).maybeSingle()
   if (!user) throw new HttpError(404, 'user_not_found')
   const title = await decideRequest(courseId, user.id, true)
   if (!title) throw new HttpError(404, 'not_found')
   return { name: user.first_name || username }
+}
+
+async function adminPayments(body: Row) {
+  await member(body, true)
+  const { data, error } = await db
+    .from('payments')
+    .select('id,user_id,course_id,stars,created_at,refunded_at,users(first_name,username),courses(title)')
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (error) throw new HttpError(500, 'db')
+  return {
+    // deno-lint-ignore no-explicit-any
+    payments: (data ?? []).map((p: any) => ({
+      id: p.id,
+      user_id: p.user_id,
+      course_id: p.course_id,
+      stars: p.stars,
+      created_at: p.created_at,
+      refunded: !!p.refunded_at,
+      name: p.users?.first_name || 'Без имени',
+      username: p.users?.username ?? null,
+      course: p.courses?.title ?? 'Курс удалён',
+    })),
+  }
+}
+
+// Возврат звёзд делает сам Telegram по номеру оплаты; после этого закрываем доступ.
+async function adminRefund(body: Row) {
+  await member(body, true)
+  const { data: p } = await db.from('payments').select('id,user_id,charge_id,refunded_at').eq('id', Number(body.id)).maybeSingle()
+  if (!p) throw new HttpError(404, 'not_found')
+  if (p.refunded_at) {
+    await markRefunded(p.charge_id)
+    return { ok: true }
+  }
+  if (!p.user_id) throw new HttpError(404, 'user_not_found')
+  const r = await tg('refundStarPayment', { user_id: p.user_id, telegram_payment_charge_id: p.charge_id })
+  // Telegram уже вернул эти звёзды раньше — остаётся только отметить это у себя.
+  if (!r.ok && !/ALREADY_REFUNDED/i.test(r.description ?? '')) throw new HttpError(502, 'telegram')
+  await markRefunded(p.charge_id)
+  return { ok: true }
 }
 
 async function adminList(body: Row) {
@@ -761,7 +825,7 @@ async function adminAnalytics(body: Row) {
   await member(body, true)
   const { data, error } = await db.rpc('analytics_summary', { p_days: 14, p_tz: clampTz(body.tz) })
   if (error) throw new HttpError(500, 'db')
-  const { data: pays } = await db.from('payments').select('stars')
+  const { data: pays } = await db.from('payments').select('stars').is('refunded_at', null)
   const stars = { total: (pays ?? []).reduce((n, p) => n + p.stars, 0), count: (pays ?? []).length }
   return { ...data, stars }
 }
@@ -803,7 +867,7 @@ async function adminAnnounce(body: Row) {
   if (!s.channel?.id || !s.bot?.username) throw new HttpError(400, 'not_ready')
   const link = `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=l${les.id}`
   const meta = les.kind === 'story' ? 'Сторис' : `${les.minutes} мин · +${les.xp} XP`
-  const text = `${les.emoji} <b>${escapeHtml(les.title)}</b>\n${escapeHtml(les.subtitle)}\n\n${meta}`
+  const text = `${escapeHtml(les.emoji)} <b>${escapeHtml(les.title)}</b>\n${escapeHtml(les.subtitle)}\n\n${meta}`
   const r = await tg('sendMessage', {
     chat_id: s.channel.id,
     text,
@@ -820,6 +884,8 @@ async function webhook(req: Request) {
   if (!BOT_TOKEN) return json({ ok: false }, 503)
   if (req.headers.get('x-telegram-bot-api-secret-token') !== (await webhookSecret())) return json({ ok: false }, 401)
   const update = await req.json().catch(() => ({}))
+  // Оплату нельзя потерять: если базу не удалось обновить, отвечаем ошибкой — Telegram пришлёт уведомление ещё раз.
+  let retry = false
   try {
     const s = await getSettings()
 
@@ -847,14 +913,20 @@ async function webhook(req: Request) {
     if (pcq) {
       const m = /^course:(\d+):(\d+)$/.exec(pcq.invoice_payload ?? '')
       let ok = false
+      let reason = 'Курс сейчас недоступен. Звёзды не списаны.'
       if (m && pcq.currency === 'XTR' && Number(m[2]) === pcq.from?.id) {
         const { data: c } = await db.from('courses').select('price_stars,published').eq('id', Number(m[1])).maybeSingle()
-        ok = !!c?.published && c.price_stars === pcq.total_amount
+        ok = !!c?.published && c.price_stars > 0 && c.price_stars === pcq.total_amount
+        // Счёт мог остаться открытым с прошлого раза: второй раз за открытый курс не берём.
+        if (ok && (await hasAccess(pcq.from.id, Number(m[1])))) {
+          ok = false
+          reason = 'Курс уже открыт. Звёзды не списаны.'
+        }
       }
       await tg('answerPreCheckoutQuery', {
         pre_checkout_query_id: pcq.id,
         ok,
-        ...(ok ? {} : { error_message: 'Курс сейчас недоступен. Звёзды не списаны.' }),
+        ...(ok ? {} : { error_message: reason }),
       })
     }
 
@@ -864,15 +936,24 @@ async function webhook(req: Request) {
       if (m && Number(m[2]) === msg.from?.id) {
         const courseId = Number(m[1])
         const userId = Number(m[2])
-        const { error } = await db.from('payments').insert({ user_id: userId, course_id: courseId, stars: paid.total_amount, charge_id: paid.telegram_payment_charge_id })
-        if (!error) {
-          await grantAccess(userId, courseId, 'stars')
+        // Журнал и доступ меняются в одной транзакции. Повтор оплаты после возврата доступ не вернёт.
+        const { data: payment, error } = await db.rpc('apply_star_payment', {
+          p_user: userId, p_course: courseId, p_stars: paid.total_amount, p_charge: paid.telegram_payment_charge_id,
+        })
+        if (error || !payment) {
+          console.error('payment', paid.telegram_payment_charge_id, error)
+          retry = true
+        } else if (!payment.duplicate && !payment.refunded) {
           await logEvent(userId, 'purchase', null, { course: courseId, stars: paid.total_amount })
           const { data: course } = await db.from('courses').select('id,title').eq('id', courseId).maybeSingle()
           if (course) await notifyOpened(userId, course, s)
         }
       }
     }
+
+    // Звёзды вернули (из админки или через поддержку Telegram) — доступ закрываем.
+    const refunded = msg?.refunded_payment
+    if (refunded?.telegram_payment_charge_id) await markRefunded(String(refunded.telegram_payment_charge_id))
 
     const cb = update.callback_query
     if (typeof cb?.data === 'string' && cb.data.startsWith('req:')) {
@@ -918,8 +999,9 @@ async function webhook(req: Request) {
     }
   } catch (e) {
     console.error('webhook', e)
+    if (update.message?.successful_payment || update.message?.refunded_payment) retry = true
   }
-  return json({ ok: true })
+  return retry ? json({ ok: false }, 500) : json({ ok: true })
 }
 
 // Идемпотентная настройка бота: вебхук, кнопка меню, команды. Секретов не возвращает.
@@ -930,7 +1012,7 @@ async function setup() {
   if (!me.ok) return json({ ok: false, error: 'bad_token' }, 502)
   await setSetting('bot', { id: me.result.id, username: me.result.username, main_app: !!me.result.has_main_web_app })
   const hook = await tg('setWebhook', {
-    url: `${s.api_url ?? `${SUPABASE_URL}/functions/v1/api`}/webhook`,
+    url: `${SUPABASE_URL}/functions/v1/api/webhook`,
     secret_token: await webhookSecret(),
     allowed_updates: ['message', 'my_chat_member', 'chat_member', 'pre_checkout_query', 'callback_query'],
   })
@@ -981,6 +1063,8 @@ const routes: Record<string, (body: Row) => Promise<unknown>> = {
   admin_course_delete: adminCourseDelete,
   admin_request: adminRequest,
   admin_grant: adminGrant,
+  admin_payments: adminPayments,
+  admin_refund: adminRefund,
   admin_list: adminList,
   admin_analytics: adminAnalytics,
   admin_save: adminSave,
@@ -995,7 +1079,8 @@ Deno.serve(async (req) => {
     if (route === 'webhook' && req.method === 'POST') return await webhook(req)
     if (route === 'setup') return await setup()
     if (route === 'health' || route === 'api') return await health()
-    const handler = routes[route]
+    // Только собственные ключи: иначе адрес вроде /constructor попадал во встроенные методы объекта.
+    const handler = Object.hasOwn(routes, route) ? routes[route] : null
     if (!handler || req.method !== 'POST') return json({ error: 'not_found' }, 404)
     const body = JSON.parse((await req.text()) || '{}')
     return json(await handler(body))

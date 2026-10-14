@@ -12,7 +12,9 @@ for(let i=0;i<manifest.length;i+=5)await Promise.all(manifest.slice(i,i+5).map(a
 const health=await (await fetch(base+'/functions/v1/api/health')).json()
 const unauth=await fetch(base+'/functions/v1/api/boot',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
 const unauthBody=await unauth.json()
-const result={checked_at:new Date().toISOString(),health,authentication:{status:unauth.status,error:unauthBody.error},assets:{count:checks.length,passed:checks.filter(x=>x.match).length,bytes:checks.reduce((n,x)=>n+x.bytes,0)},checks}
+// У версии функции от 14 октября адрес /constructor даёт 404; старая возвращала тело запроса обратно.
+const router=await fetch(base+'/functions/v1/api/constructor',{method:'POST',body:'{}'})
+const result={checked_at:new Date().toISOString(),health,authentication:{status:unauth.status,error:unauthBody.error},router:{status:router.status},assets:{count:checks.length,passed:checks.filter(x=>x.match).length,bytes:checks.reduce((n,x)=>n+x.bytes,0)},checks}
 await writeFile(new URL('./verification.json',import.meta.url),JSON.stringify(result,null,2)+'\n')
 console.log(JSON.stringify({...result,checks:checks.filter(x=>!x.match)}))
-if(checks.some(x=>!x.match)||unauth.status!==401||!health.ok||!health.channel)process.exitCode=1
+if(checks.some(x=>!x.match)||unauth.status!==401||router.status!==404||!health.ok||!health.channel)process.exitCode=1

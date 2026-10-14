@@ -29,6 +29,17 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
   const next = lessons.find((l) => !l.completed)
   const finished = course.access && lessons.length > 0 && !next
   const friendsLeft = Math.max(0, course.invite_unlock - me.invited)
+  // Называем только те способы открыть курс, которые у него включены.
+  // Курс с ценой открывается оплатой, без цены — по заявке; друзья — отдельный способ, если он включён.
+  const paid = course.price_stars > 0
+  const byFriends = course.invite_unlock > 0
+  const howToOpen = paid
+    ? `Курс закрыт. Открой его за звёзды${byFriends ? ' или вместе с друзьями' : ''}.`
+    : byFriends
+      ? 'Курс закрыт. Открой его по заявке или вместе с друзьями.'
+      : 'Курс закрыт. Доступ открывает автор — по заявке.'
+  // Высота нижней панели зависит от того, какие кнопки на ней есть.
+  const panel = 80 + (paid ? 104 : 0) + (!paid || byFriends ? 58 : 0)
 
   const open = (lessonId: number, el: Element) => push({ type: 'lesson', id: lessonId, from: insetOf(el) })
 
@@ -108,7 +119,7 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
       exit={from ? { clipPath: clip(from, 26), opacity: 0 } : { y: '100%' }}
       transition={{ type: 'spring', stiffness: 300, damping: 34, mass: 0.9 }}
     >
-      <div className="scroll h-full" style={{ paddingBottom: course.access ? 'calc(120px + var(--bottom))' : 'calc(210px + var(--bottom))' }}>
+      <div className="scroll h-full" style={{ paddingBottom: `calc(${course.access ? 120 : panel}px + var(--bottom))` }}>
         <div className="relative overflow-hidden px-5 pb-14" style={{ background: g.css, color: g.ink, paddingTop: 'calc(var(--top) + 62px)' }}>
           <Pattern name={course.gradient} full />
           <div className="relative flex items-end gap-4">
@@ -140,7 +151,7 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
                 <Lock size={18} />
               </span>
               <p className="text-[14px] leading-snug text-mute">
-                {course.request === 'pending' ? 'Заявка у автора. Как только он ответит, бот напишет тебе.' : 'Курс закрыт. Открой его звёздами, по заявке или вместе с друзьями.'}
+                {course.request === 'pending' ? 'Заявка у автора. Как только он ответит, бот напишет тебе.' : howToOpen}
               </p>
             </div>
           )}
@@ -208,25 +219,30 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
           )
         ) : (
           <motion.div key={nudge} animate={nudge ? { x: [0, -10, 10, -6, 6, 0] } : {}} transition={{ duration: 0.38 }} className="space-y-2">
-            {course.price_stars > 0 && (
+            {paid && (
               <Cta className="w-full" busy={busy === 'buy'} onClick={buy}>
                 Открыть за <Star size={17} fill="currentColor" strokeWidth={0} /> <span className="tabular">{course.price_stars}</span>
               </Cta>
             )}
-            <div className="flex gap-2">
-              <Tap
-                onClick={request}
-                disabled={course.request === 'pending' || !!busy}
-                className="flex h-[50px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-line bg-card2 text-[14px] font-semibold disabled:text-mute"
-              >
-                <Send size={16} /> {course.request === 'pending' ? 'Заявка отправлена' : 'Запросить доступ'}
-              </Tap>
-              {course.invite_unlock > 0 && (
-                <Tap onClick={invite} className="flex h-[50px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-line bg-card2 text-[14px] font-semibold">
-                  <Users size={16} /> Ещё {friendsLeft} {plural(friendsLeft, ['друг', 'друга', 'друзей'])}
-                </Tap>
-              )}
-            </div>
+            {(!paid || byFriends) && (
+              <div className="flex gap-2">
+                {!paid && (
+                  <Tap
+                    onClick={request}
+                    disabled={course.request === 'pending' || !!busy}
+                    className="flex h-[50px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-line bg-card2 text-[14px] font-semibold disabled:text-mute"
+                  >
+                    <Send size={16} /> {course.request === 'pending' ? 'Заявка отправлена' : 'Запросить доступ'}
+                  </Tap>
+                )}
+                {byFriends && (
+                  <Tap onClick={invite} className="flex h-[50px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-line bg-card2 text-[14px] font-semibold">
+                    <Users size={16} /> Ещё {friendsLeft} {plural(friendsLeft, ['друг', 'друга', 'друзей'])}
+                  </Tap>
+                )}
+              </div>
+            )}
+            {paid && <p className="px-2 pt-1 text-center text-[12px] leading-snug text-faint">Оплата звёздами Telegram. Вопрос по оплате — команда /paysupport в чате с ботом.</p>}
           </motion.div>
         )}
       </div>

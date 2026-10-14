@@ -5,6 +5,20 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
 
+// После выкладки файлы прошлой версии с сервера исчезают. Если кусок приложения не загрузился,
+// один раз перезагружаемся за свежей версией; повторно в течение минуты — нет, чтобы не зациклиться.
+window.addEventListener('vite:preloadError', (e) => {
+  const KEY = 'elaz-ed-reloaded'
+  try {
+    if (Date.now() - Number(sessionStorage.getItem(KEY) ?? 0) < 60_000) return
+    sessionStorage.setItem(KEY, String(Date.now()))
+  } catch {
+    return
+  }
+  e.preventDefault()
+  location.reload()
+})
+
 /** Последний рубеж: вместо пустого экрана — понятное сообщение и перезапуск. */
 class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false }

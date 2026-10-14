@@ -1,7 +1,7 @@
 import { ApiError } from './errors'
 import { mockApi } from './mock'
 import { initData, inTelegram, platform, startParam } from './tg'
-import type { Api } from './types'
+import type { Api, Payment } from './types'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? ''
 
@@ -53,6 +53,10 @@ const httpApi: Api = {
     await call('admin_request', { user_id: userId, course_id: courseId, approve })
   },
   adminGrant: async (courseId, username) => (await call<{ name: string }>('admin_grant', { course_id: courseId, username })).name,
+  adminPayments: async () => (await call<{ payments: Payment[] }>('admin_payments')).payments,
+  adminRefund: async (id) => {
+    await call('admin_refund', { id })
+  },
   adminList: () => call('admin_list'),
   adminSave: (lesson) => call('admin_save', { lesson }),
   adminDelete: async (id) => {
@@ -85,6 +89,10 @@ export function errorText(e: unknown) {
       return 'Не нашёл такого @username. Человек должен хотя бы раз открыть приложение'
     case 'not_for_sale':
       return 'Этот курс не продаётся за звёзды'
+    case 'paid_only':
+      return 'Этот курс открывается за звёзды'
+    case 'already_open':
+      return 'Курс уже открыт. Обнови приложение'
     case 'bad_image':
     case 'upload':
       return 'Картинка не загрузилась. Попробуй ещё раз'

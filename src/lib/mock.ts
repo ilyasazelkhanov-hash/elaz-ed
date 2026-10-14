@@ -3,7 +3,7 @@ import seed from './seed.json'
 import { ApiError } from './errors'
 import { dailyReward, quizScore } from './game'
 import { tgUser } from './tg'
-import type { AdminCourse, Analytics, Api, Boot, Card, CompleteResult, Course, DailyResult, Lesson, LessonDraft, Me, TopUser } from './types'
+import type { AdminCourse, Analytics, Api, Boot, Card, CompleteResult, Course, DailyResult, Lesson, LessonDraft, Me, Payment, TopUser } from './types'
 
 const KEY = 'elaz-ed-demo-v2'
 
@@ -21,6 +21,8 @@ interface DemoState {
   achievements: string[]
   access: number[]
   requests: number[]
+  /** Условные покупки в демо. В старом сохранённом состоянии поля может не быть. */
+  payments?: Payment[]
 }
 
 const today = () => {
@@ -311,7 +313,14 @@ export const mockApi: Api = {
   // В демо оплата условная: курс открывается сразу, звёзды не списываются.
   async courseInvoice(id) {
     await wait(500)
-    if (!state.access.includes(id)) state.access.push(id)
+    const course = state.courses.find((c) => c.id === id)
+    if (course && !state.access.includes(id)) {
+      state.access.push(id)
+      state.payments = [
+        { id: Date.now(), user_id: tgUser.id ?? 1, course_id: id, stars: course.price_stars, created_at: new Date().toISOString(), refunded: false, name: tgUser.first_name ?? 'Гость', username: null, course: course.title },
+        ...(state.payments ?? []),
+      ]
+    }
     state.requests = state.requests.filter((x) => x !== id)
     save()
     return null
@@ -374,6 +383,21 @@ export const mockApi: Api = {
   async adminGrant(_courseId, username) {
     await wait(300)
     return username.replace(/^@/, '')
+  },
+
+  async adminPayments() {
+    await wait()
+    const sample: Payment = { id: 1, user_id: 104, course_id: DEMO_COURSE.id, stars: DEMO_COURSE.price_stars, created_at: new Date(Date.now() - 26 * 3_600_000).toISOString(), refunded: false, name: 'Марк', username: 'mark_dev', course: DEMO_COURSE.title }
+    return [...(state.payments ?? []), sample]
+  },
+
+  async adminRefund(id) {
+    await wait(400)
+    const paid = state.payments?.find((p) => p.id === id)
+    if (!paid) return
+    paid.refunded = true
+    state.access = state.access.filter((c) => c !== paid.course_id)
+    save()
   },
 
   async adminList() {

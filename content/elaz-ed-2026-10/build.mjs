@@ -72,7 +72,7 @@ begin
   end if;
   c := p->'course';
   insert into public.courses(title,subtitle,description,emoji,gradient,price_stars,invite_unlock,position,published)
-  values(c->>'title',c->>'subtitle',c->>'description',c->>'emoji',c->>'gradient',0,0,0,true)
+  values(c->>'title',c->>'subtitle',c->>'description',c->>'emoji',c->>'gradient',(c->>'price_stars')::integer,(c->>'invite_unlock')::integer,(c->>'position')::integer,true)
   returning id into course_id_new;
   for l in select value from jsonb_array_elements(p->'lessons') loop
     insert into public.lessons(kind,title,subtitle,category,emoji,gradient,cover_url,body,video_url,copy_text,quiz,minutes,xp,pinned,published,published_at,course_id,position,free_preview)
@@ -110,4 +110,20 @@ commit;
 select count(*) as total,count(*) filter(where course_id is null) as feed,count(*) filter(where course_id is not null) as course from public.lessons;
 `
 await writeFile(new URL('update-existing.sql',import.meta.url),updateSql)
+// Цена и описание курса для уже работающего проекта. Запускается один раз; дальше цену меняет автор в админке.
+const courseJson=JSON.stringify({price_stars:course.price_stars,description:course.description})
+if(courseJson.includes('$elaz_course$'))throw Error('Конфликт SQL-разделителя')
+const priceSql=`begin;
+do $course_price$
+declare p jsonb := $elaz_course$${courseJson}$elaz_course$::jsonb; marker record;
+begin
+  select key,value into strict marker from public.settings where key like 'content_import:%' and value ? 'course_id';
+  update public.courses set price_stars=(p->>'price_stars')::integer,description=p->>'description',updated_at=now() where id=(marker.value->>'course_id')::bigint;
+  if not found then raise exception 'Курс не найден'; end if;
+end;
+$course_price$;
+commit;
+select id,title,price_stars from public.courses order by id;
+`
+await writeFile(new URL('course-price.sql',import.meta.url),priceSql)
 console.log(JSON.stringify({feed:feed.length,tools:tools.length,guides:guides.length,prompts:prompts.length,courseLessons:courseLessons.length,total:lessons.length,characters:lessons.reduce((n,x)=>n+x.body.length,0),sqlBytes:Buffer.byteLength(sql)}))

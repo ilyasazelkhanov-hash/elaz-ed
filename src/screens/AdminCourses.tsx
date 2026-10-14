@@ -1,10 +1,10 @@
-import { Check, Plus, Star, Trash2, UserPlus, X } from 'lucide-react'
+import { Check, Plus, Star, Trash2, Undo2, UserPlus, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { api, errorText } from '../lib/api'
-import { GRADIENT_NAMES, GRADIENTS } from '../lib/game'
+import { api, ApiError, errorText } from '../lib/api'
+import { GRADIENT_NAMES, GRADIENTS, plural } from '../lib/game'
 import { confirmDialog, haptic } from '../lib/tg'
-import type { AccessRequest, AdminCourse, CourseDraft, GradientName } from '../lib/types'
+import type { AccessRequest, AdminCourse, CourseDraft, GradientName, Payment } from '../lib/types'
 import { useStore } from '../store'
 import { Cta, EmojiTile, Spinner, Tap } from '../ui'
 import { Header, sheet } from './Admin'
@@ -28,9 +28,16 @@ export function CoursesAdminScreen() {
   const [courses, setCourses] = useState<AdminCourse[] | null>(null)
   const [requests, setRequests] = useState<AccessRequest[]>([])
   const [deciding, setDeciding] = useState<string | null>(null)
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [refunding, setRefunding] = useState<number | null>(null)
 
-  const load = () =>
+  const load = () => {
+    // Покупки грузятся отдельно: если сервер ещё старой версии и не знает этого запроса, экран курсов всё равно работает.
     api
+      .adminPayments()
+      .then(setPayments)
+      .catch(() => setPayments([]))
+    return api
       .adminCourses()
       .then((d) => {
         setCourses(d.courses)
@@ -40,6 +47,24 @@ export function CoursesAdminScreen() {
         guard(e)
         toast(errorText(e))
       })
+  }
+
+  const refund = async (p: Payment) => {
+    if (!(await confirmDialog(`Вернуть ${p.stars} ${plural(p.stars, ['звезду', 'звезды', 'звёзд'])} — ${p.name}? Доступ к курсу «${p.course}» закроется.`))) return
+    setRefunding(p.id)
+    try {
+      await api.adminRefund(p.id)
+      haptic.success()
+      toast('Звёзды возвращены, доступ закрыт')
+      setPayments((list) => list.map((x) => (x.id === p.id ? { ...x, refunded: true } : x)))
+      void boot()
+    } catch (e) {
+      haptic.error()
+      toast(e instanceof ApiError && e.code === 'telegram' ? 'Telegram отклонил возврат. Попробуй позже' : errorText(e))
+    } finally {
+      setRefunding(null)
+    }
+  }
 
   // Перечитываем, когда редактор курса закрылся и этот экран снова сверху.
   useEffect(() => {
@@ -122,6 +147,38 @@ export function CoursesAdminScreen() {
             ))}
             {courses?.length === 0 && <p className="py-8 text-center text-[14px] text-mute">Курсов пока нет. Создай первый и добавь в него уроки в редакторе урока.</p>}
           </div>
+
+          {payments.length > 0 && (
+            <>
+              <h2 className="mb-3 mt-7 font-display text-[15px] font-semibold">Покупки</h2>
+              <div className="overflow-hidden rounded-[20px] border border-line bg-card">
+                {payments.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 border-b border-line p-3.5 last:border-b-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[15px] font-semibold">
+                        {p.name}
+                        {p.username && <span className="font-normal text-mute"> @{p.username}</span>}
+                      </p>
+                      <p className="tabular mt-0.5 flex items-center gap-1 text-[12.5px] text-mute">
+                        <Star size={12} className="shrink-0" />
+                        <span className="truncate">
+                          {p.stars} · {new Date(p.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} · {p.course}
+                        </span>
+                      </p>
+                    </div>
+                    {p.refunded ? (
+                      <span className="shrink-0 rounded-full bg-veil/8 px-2.5 py-1 text-[12px] font-semibold text-mute">Возвращено</span>
+                    ) : (
+                      <Tap onClick={() => refund(p)} disabled={refunding !== null} className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-line px-3 text-[13px] font-semibold text-mute disabled:opacity-50">
+                        {refunding === p.id ? <Spinner size={15} /> : <Undo2 size={14} />} Вернуть
+                      </Tap>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[12.5px] leading-snug text-faint">Возврат делает Telegram: звёзды уходят обратно покупателю, доступ к курсу закрывается.</p>
+            </>
+          )}
         </div>
       </div>
     </motion.div>
@@ -235,7 +292,7 @@ export function CourseEditorScreen({ course }: { course: AdminCourse | null }) {
               <input id="course-invites" type="number" inputMode="numeric" value={d.invite_unlock} onChange={(e) => set('invite_unlock', Math.max(0, Number(e.target.value)))} min={0} className={field} />
             </div>
           </div>
-          <p className="mt-2 text-[12.5px] leading-snug text-faint">Ноль в цене — курс не продаётся, доступ только по заявке. Ноль в «друзьях» — открыть приглашениями нельзя.</p>
+          <p className="mt-2 text-[12.5px] leading-snug text-faint">С ценой курс продаётся за звёзды, и кнопки «Запросить доступ» у него нет. Ноль в цене — курс не продаётся, доступ по заявке. Ноль в «друзьях» — открыть приглашениями нельзя.</p>
 
           <Label hint="меньше — выше в списке">Порядок</Label>
           <input id="course-position" type="number" inputMode="numeric" value={d.position} onChange={(e) => set('position', Math.max(0, Number(e.target.value)))} min={0} className={field} />
