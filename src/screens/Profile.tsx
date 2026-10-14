@@ -42,7 +42,7 @@ export function Profile() {
   }
 
   return (
-    <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 18px)', paddingBottom: 'calc(120px + var(--bottom))' }}>
+    <div data-tab-scroll className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 18px)', paddingBottom: 'calc(120px + var(--bottom))' }}>
       <div className="px-5">
         <HoloCard me={me} />
       </div>

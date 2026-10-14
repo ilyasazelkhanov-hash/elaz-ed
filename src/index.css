@@ -135,6 +135,32 @@
   scrollbar-width: none;
 }
 
+/* Матовое стекло: то, что уезжает под панель, размывается, а не просвечивает. */
+.glass {
+  background: color-mix(in srgb, var(--color-bg) 76%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+}
+/* Фильтры ленты: стеклянная подложка только в прилипшем состоянии. */
+.glass-stuck {
+  transition: background-color 0.2s ease;
+}
+.glass-stuck[data-stuck='true'] {
+  background: color-mix(in srgb, var(--color-bg) 76%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+}
+/* Полоса под системными кнопками Telegram: плотнее у верхнего края, где стоят кнопки. Вне полноэкранного режима её высота равна нулю. */
+.top-scrim {
+  height: var(--top);
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--color-bg) 94%, transparent), color-mix(in srgb, var(--color-bg) 76%, transparent));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.top-scrim[data-on='true'] {
+  opacity: 1;
+}
+
 .text-aurora {
   background: var(--aurora-text);
   -webkit-background-clip: text;

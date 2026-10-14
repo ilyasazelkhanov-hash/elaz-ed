@@ -180,7 +180,8 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
                 </div>
               )}
 
-              <Markdown text={lesson.body} />
+              {/* Подзаголовок часто повторяет первую фразу текста — второй раз её не показываем. */}
+              <Markdown text={lesson.subtitle && lesson.body.startsWith(lesson.subtitle) ? lesson.body.slice(lesson.subtitle.length).trimStart() : lesson.body} />
 
               <Tap onClick={copyForAi} className="mt-8 flex w-full items-center gap-3.5 rounded-[22px] border border-line bg-card p-4 text-left">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-violet/15 text-violet">
