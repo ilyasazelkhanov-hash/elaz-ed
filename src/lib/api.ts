@@ -1,6 +1,6 @@
 import { ApiError } from './errors'
 import { initData, inTelegram, platform, startParam } from './tg'
-import type { Api, Payment, RedeemPoint } from './types'
+import type { AdminDoor, Api, Payment, RedeemPoint } from './types'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? ''
 
@@ -81,6 +81,12 @@ const httpApi: Api = {
   adminAdventRewardDelete: async (id) => {
     await call('admin_advent_reward_delete', { id })
   },
+  adminAdventDraw: async (id) => (await call<{ winners: number }>('admin_advent_draw', { id })).winners,
+  adminAdventDoors: async () => (await call<{ doors: AdminDoor[] }>('admin_advent_doors')).doors,
+  adminAdventDoorSave: (door) => call('admin_advent_door_save', { door }),
+  adminAdventDoorDelete: async (day) => {
+    await call('admin_advent_door_delete', { day })
+  },
   redeemPoints: async () => (await call<{ points: RedeemPoint[] }>('redeem_points')).points,
   redeemCheck: (point, pin, code) => call('redeem', { point, pin, code, check: true }),
   redeem: (point, pin, code) => call('redeem', { point, pin, code }),
@@ -122,6 +128,20 @@ export function errorText(e: unknown) {
       return 'Не нашёл такого @username. Человек должен хотя бы раз открыть приложение'
     case 'not_for_sale':
       return 'Этот курс не продаётся за звёзды'
+    case 'stock_required':
+      return 'У розыгрыша и случайного приза нужен лимит — сколько штук всего'
+    case 'bad_window':
+      return 'День «до» не может быть раньше дня «с»'
+    case 'already_drawn':
+      return 'Розыгрыш уже прошёл'
+    case 'quiz_required':
+      return 'Добавь хотя бы один вопрос с двумя вариантами'
+    case 'prize_required':
+      return 'Напиши, что под защитным слоем'
+    case 'door_opened':
+      return 'Эту дверь уже открывали — удалить нельзя, можно только поправить'
+    case 'bad_day':
+      return 'Номер дня — от 1 до 60'
     case 'need_ticket':
       return 'Нужен билет, чтобы догнать эту дверь'
     case 'reward_payload':

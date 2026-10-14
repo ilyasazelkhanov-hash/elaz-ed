@@ -162,6 +162,9 @@ export interface AdventCell {
   xp: number | null
 }
 
+/** Как выдаётся приз: за N дверей, подарок выбранных дней, мгновенный выигрыш или розыгрыш после окна. */
+export type RewardMode = 'threshold' | 'day' | 'instant' | 'draw'
+
 /** Вид приза: промокод с погашением на кассе, текст, ссылка, видео, урок или курс. */
 export type RewardKind = 'promo' | 'message' | 'link' | 'video' | 'lesson' | 'course'
 
@@ -188,6 +191,15 @@ export interface AdventReward {
   code: string | null
   redeemed: boolean
   content?: RewardContent | null
+  mode?: RewardMode
+  day_from?: number | null
+  day_to?: number | null
+  /** Сколько осталось у приза с лимитом. */
+  left?: number | null
+  /** Розыгрыш уже прошёл. */
+  drawn?: boolean
+  /** Шансы в розыгрыше: сколько дверей окна человек открыл. */
+  entries?: number | null
 }
 
 /** Чем можно заработать билет «догнать». */
@@ -246,6 +258,7 @@ export interface NewCode {
   /** Только у промокода. */
   code: string | null
   kind?: RewardKind
+  mode?: RewardMode
   title: string
   emoji: string
   content?: RewardContent | null
@@ -271,6 +284,24 @@ export interface AdminReward {
   position: number
   kind: RewardKind
   payload: { text?: string; url?: string; label?: string; lesson_id?: number; course_id?: number }
+  mode: RewardMode
+  day_from: number | null
+  day_to: number | null
+  drawn_at?: string | null
+}
+
+/** Дверь в редакторе админки — со всем содержимым, включая правильные ответы. */
+export interface AdminDoor {
+  day: number
+  kind: DoorKind
+  title: string
+  subtitle: string
+  emoji: string
+  body: string
+  quiz: QuizQuestion[]
+  prize: string
+  arcade: { seconds?: number; cap?: number }
+  xp: number
 }
 
 export interface DoorResult {
@@ -414,6 +445,11 @@ export interface Api {
   adminAdventSave(settings: Partial<AdventSettings>): Promise<void>
   adminAdventRewardSave(reward: AdminReward): Promise<AdminReward>
   adminAdventRewardDelete(id: number): Promise<void>
+  /** Провести розыгрыш сейчас; возвращает число победителей. */
+  adminAdventDraw(id: number): Promise<number>
+  adminAdventDoors(): Promise<AdminDoor[]>
+  adminAdventDoorSave(door: AdminDoor): Promise<AdminDoor>
+  adminAdventDoorDelete(day: number): Promise<void>
   redeemPoints(): Promise<RedeemPoint[]>
   /** check — только проверить код, не гасить. */
   redeemCheck(point: number, pin: string, code: string): Promise<RedeemCheck>

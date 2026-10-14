@@ -1,8 +1,8 @@
-import { Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { Dices, Plus, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { api, errorText } from '../../lib/api'
 import { confirmDialog, haptic } from '../../lib/tg'
-import type { AdminReward, AdventSettings, CatchupMethod, RewardKind } from '../../lib/types'
+import type { AdminDoor, AdminReward, AdventSettings, CatchupMethod, DoorKind, RewardKind, RewardMode } from '../../lib/types'
 import { useStore } from '../../store'
 import { Cta, Emoji, Sheet, Spinner, Tap } from '../../ui'
 import { KIND_NAME } from './Catchup'
@@ -102,10 +102,43 @@ function Switch({ on }: { on: boolean }) {
   )
 }
 
-const blank = (): AdminReward => ({ title: '', description: '', emoji: '🎁', doors: 3, stock: null, position: 0, kind: 'promo', payload: {} })
+const MODES: { id: RewardMode; label: string; hint: string }[] = [
+  { id: 'threshold', label: 'За N дверей', hint: 'Получает каждый, кто открыл нужное число дверей, пока есть лимит.' },
+  { id: 'day', label: 'Подарок дней', hint: 'Получает тот, кто открыл дверь одного из выбранных дней, пока есть лимит.' },
+  { id: 'instant', label: 'Случайный', hint: 'Выпадает случайно при открытии двери в окне. Шанс подстраивается под темп, чтобы весь лимит разошёлся к концу окна, а не в первый день. Одному человеку — не больше одного.' },
+  { id: 'draw', label: 'Розыгрыш', hint: 'После последнего дня окна сервер выберет победителей. Каждая открытая дверь окна — один шанс: открыл 7 дверей — 7 шансов. Победителям придёт сообщение.' },
+]
+
+const blank = (): AdminReward => ({ title: '', description: '', emoji: '🎁', doors: 3, stock: null, position: 0, kind: 'promo', payload: {}, mode: 'threshold', day_from: null, day_to: null })
+
+const modeLabel = (r: AdminReward) => {
+  const range = r.day_from && r.day_to ? `дни ${r.day_from}–${r.day_to}` : ''
+  if (r.mode === 'day') return `подарок, ${range}`
+  if (r.mode === 'instant') return `случайный, ${range}`
+  if (r.mode === 'draw') return r.drawn_at ? 'разыгран' : `розыгрыш, ${range}`
+  return `за ${r.doors}`
+}
 
 export function RewardsEditor({ list, onChanged }: { list: AdminReward[]; onChanged: () => void }) {
+  const toast = useStore((s) => s.toast)
   const [edit, setEdit] = useState<AdminReward | null>(null)
+  const [drawing, setDrawing] = useState<number | null>(null)
+
+  // Розыгрыш раньше конца окна — по кнопке, с подтверждением: повторить его нельзя.
+  const draw = async (r: AdminReward) => {
+    if (!r.id || !(await confirmDialog(`Разыграть «${r.title}» сейчас? Победителей выберет сервер среди открывших двери ${r.day_from}–${r.day_to}. Повторить розыгрыш нельзя.`))) return
+    setDrawing(r.id)
+    try {
+      const n = await api.adminAdventDraw(r.id)
+      haptic.success()
+      toast(n ? `Победителей: ${n}. Им пришло сообщение` : 'Участников в окне не было')
+      onChanged()
+    } catch (e) {
+      toast(errorText(e))
+    } finally {
+      setDrawing(null)
+    }
+  }
   return (
     <>
       <div className="mt-3 overflow-hidden rounded-[20px] border border-line bg-card">
@@ -115,9 +148,22 @@ export function RewardsEditor({ list, onChanged }: { list: AdminReward[]; onChan
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[14.5px] font-semibold">{r.title}</span>
               <span className="block text-[12px] text-mute">
-                {KIND_NAME[r.kind]} · за {r.doors} · {r.stock == null ? 'без лимита' : `лимит ${r.stock}`}
+                {KIND_NAME[r.kind]} · {modeLabel(r)} · {r.stock == null ? 'без лимита' : `всего ${r.stock}`}
               </span>
             </span>
+            {r.mode === 'draw' && !r.drawn_at && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void draw(r)
+                }}
+                className="flex h-9 shrink-0 items-center gap-1 rounded-full border border-line px-3 text-[12.5px] font-semibold text-mute"
+              >
+                {drawing === r.id ? <Spinner size={14} /> : <Dices size={14} />} Разыграть
+              </span>
+            )}
           </Tap>
         ))}
         {list.length === 0 && <p className="px-4 py-6 text-center text-[13.5px] text-mute">Призов пока нет.</p>}
@@ -197,6 +243,21 @@ function RewardForm({ initial, onDone }: { initial: AdminReward; onDone: () => v
       </div>
       <p className="mt-2 text-[12px] leading-snug text-faint">{KIND_HINT[r.kind]}</p>
 
+      <p className="mb-1.5 mt-4 text-[12.5px] font-semibold text-mute">Как выдаётся</p>
+      <div className="grid grid-cols-2 gap-1.5">
+        {MODES.map((m) => (
+          <Tap
+            key={m.id}
+            feedback="select"
+            onClick={() => setR((p) => ({ ...p, mode: m.id, day_from: m.id === 'threshold' ? null : (p.day_from ?? 1), day_to: m.id === 'threshold' ? null : (p.day_to ?? 24) }))}
+            className={`h-10 rounded-[12px] text-[13px] font-semibold ${r.mode === m.id ? 'bg-inverse text-on-inverse' : 'border border-line bg-card text-mute'}`}
+          >
+            {m.label}
+          </Tap>
+        ))}
+      </div>
+      <p className="mt-2 text-[12px] leading-snug text-faint">{MODES.find((m) => m.id === r.mode)?.hint}</p>
+
       <div className="mt-3 flex gap-2">
         <input value={r.emoji} onChange={(e) => set('emoji', e.target.value)} maxLength={8} className={`${field.replace('w-full', 'w-16 shrink-0')} text-center`} aria-label="Эмодзи" />
         <input value={r.title} onChange={(e) => set('title', e.target.value)} placeholder="Название" maxLength={80} className={field} />
@@ -232,17 +293,225 @@ function RewardForm({ initial, onDone }: { initial: AdminReward; onDone: () => v
       )}
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <label>
-          <span className="mb-1.5 block text-[12.5px] font-semibold text-mute">За сколько дверей</span>
-          <input type="number" inputMode="numeric" min={1} max={60} value={r.doors} onChange={(e) => set('doors', Math.max(1, Number(e.target.value) || 1))} className={field} />
-        </label>
+        {r.mode === 'threshold' ? (
+          <label>
+            <span className="mb-1.5 block text-[12.5px] font-semibold text-mute">За сколько дверей</span>
+            <input type="number" inputMode="numeric" min={1} max={60} value={r.doors} onChange={(e) => set('doors', Math.max(1, Number(e.target.value) || 1))} className={field} />
+          </label>
+        ) : (
+          <div className="grid grid-cols-2 gap-1.5">
+            <label>
+              <span className="mb-1.5 block text-[12.5px] font-semibold text-mute">С дня</span>
+              <input type="number" inputMode="numeric" min={1} max={60} value={r.day_from ?? 1} onChange={(e) => set('day_from', Math.max(1, Number(e.target.value) || 1))} className={field} />
+            </label>
+            <label>
+              <span className="mb-1.5 block text-[12.5px] font-semibold text-mute">по</span>
+              <input type="number" inputMode="numeric" min={1} max={60} value={r.day_to ?? 1} onChange={(e) => set('day_to', Math.max(1, Number(e.target.value) || 1))} className={field} />
+            </label>
+          </div>
+        )}
         <label>
           <span className="mb-1.5 block text-[12.5px] font-semibold text-mute">Сколько всего</span>
-          <input type="number" inputMode="numeric" min={0} value={r.stock ?? ''} placeholder="без лимита" onChange={(e) => set('stock', e.target.value === '' ? null : Math.max(0, Number(e.target.value)))} className={field} />
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={r.stock ?? ''}
+            placeholder={r.mode === 'instant' || r.mode === 'draw' ? 'обязательно' : 'без лимита'}
+            onChange={(e) => set('stock', e.target.value === '' ? null : Math.max(0, Number(e.target.value)))}
+            className={field}
+          />
         </label>
       </div>
+      {r.mode === 'draw' && r.drawn_at && <p className="mt-2 text-[12px] text-amber">Розыгрыш уже прошёл — окно и лимит менять бессмысленно.</p>}
       <Cta className="mt-4 w-full" busy={busy === 'save'} onClick={save}>
         Сохранить приз
+      </Cta>
+    </div>
+  )
+}
+
+// ---------- Двери ----------
+
+const DOOR_KINDS: { id: DoorKind; label: string; hint: string }[] = [
+  { id: 'quiz', label: 'Квиз', hint: 'Вопросы с вариантами. Правильные ответы проверяет сервер, до открытия их не видно.' },
+  { id: 'scratch', label: 'Скретч', hint: 'Стираешь слой — под ним приз-текст.' },
+  { id: 'arcade', label: 'Аркада', hint: 'Мини-игра на время. Очки сверх потолка XP не дают.' },
+  { id: 'story', label: 'История', hint: 'Просто текст: совет, история, анонс.' },
+]
+
+const blankDoor = (day: number): AdminDoor => ({ day, kind: 'quiz', title: '', subtitle: '', emoji: '🎁', body: '', quiz: [{ q: '', options: ['', ''], correct: 0 }], prize: '', arcade: { seconds: 30, cap: 40 }, xp: 30 })
+
+/** Сетка дней календаря: заведённые двери с иконкой, пустые — с плюсом. */
+export function DoorsEditor({ days }: { days: number }) {
+  const { toast, guard } = useStore.getState()
+  const [doors, setDoors] = useState<AdminDoor[] | null>(null)
+  const [edit, setEdit] = useState<AdminDoor | null>(null)
+  const load = () =>
+    api
+      .adminAdventDoors()
+      .then(setDoors)
+      .catch((e) => {
+        guard(e)
+        toast(errorText(e))
+      })
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const byDay = new Map((doors ?? []).map((d) => [d.day, d]))
+  const total = Math.max(days, ...(doors ?? []).map((d) => d.day))
+  return (
+    <>
+      <div className="mt-3 grid grid-cols-6 gap-1.5">
+        {!doors && Array.from({ length: 12 }, (_, i) => <div key={i} className="skeleton aspect-square rounded-[12px]" />)}
+        {doors &&
+          Array.from({ length: total }, (_, i) => i + 1).map((day) => {
+            const d = byDay.get(day)
+            return (
+              <Tap
+                key={day}
+                onClick={() => setEdit(d ? { ...d, quiz: d.quiz.map((q) => ({ ...q, options: [...q.options] })), arcade: { ...d.arcade } } : blankDoor(day))}
+                className={`relative grid aspect-square place-items-center rounded-[12px] border ${d ? 'border-line bg-card' : 'border-dashed border-veil/20 text-faint'} ${day > days ? 'opacity-50' : ''}`}
+              >
+                <span className="absolute left-1 top-0.5 text-[9px] font-bold text-faint">{day}</span>
+                {d ? <Emoji char={d.emoji} size={22} /> : <Plus size={14} />}
+              </Tap>
+            )
+          })}
+      </div>
+      <p className="mt-2 text-[12px] text-faint">Нажми на день, чтобы настроить дверь. Бледные дни — за пределами календаря.</p>
+      <Sheet open={!!edit} onClose={() => setEdit(null)}>
+        {edit && (
+          <DoorForm
+            key={edit.day}
+            initial={edit}
+            exists={byDay.has(edit.day)}
+            onDone={() => {
+              setEdit(null)
+              void load()
+            }}
+          />
+        )}
+      </Sheet>
+    </>
+  )
+}
+
+function DoorForm({ initial, exists, onDone }: { initial: AdminDoor; exists: boolean; onDone: () => void }) {
+  const toast = useStore((s) => s.toast)
+  const [d, setD] = useState<AdminDoor>(initial)
+  const [busy, setBusy] = useState<string | null>(null)
+  const set = <K extends keyof AdminDoor>(k: K, v: AdminDoor[K]) => setD((p) => ({ ...p, [k]: v }))
+  const setQ = (i: number, patch: Partial<AdminDoor['quiz'][number]>) => set('quiz', d.quiz.map((q, j) => (j === i ? { ...q, ...patch } : q)))
+
+  const save = async () => {
+    if (!d.title.trim()) return toast('Нужно название')
+    setBusy('save')
+    try {
+      await api.adminAdventDoorSave({ ...d, quiz: d.quiz.map((q) => ({ ...q, options: q.options.filter((o) => o.trim()) })) })
+      haptic.success()
+      toast(`Дверь ${d.day} сохранена`)
+      onDone()
+    } catch (e) {
+      toast(errorText(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+  const remove = async () => {
+    if (!(await confirmDialog(`Удалить дверь ${d.day}?`))) return
+    setBusy('delete')
+    try {
+      await api.adminAdventDoorDelete(d.day)
+      toast('Дверь удалена')
+      onDone()
+    } catch (e) {
+      toast(errorText(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div className="scroll max-h-[72vh] pb-2">
+      <div className="flex items-center justify-between">
+        <p className="font-display text-[18px] font-semibold">Дверь {d.day}</p>
+        {exists && (
+          <Tap onClick={remove} aria-label="Удалить дверь" className="grid h-9 w-9 place-items-center rounded-full border border-line text-rose">
+            {busy === 'delete' ? <Spinner size={16} /> : <Trash2 size={16} />}
+          </Tap>
+        )}
+      </div>
+      <div className="mt-3 grid grid-cols-4 gap-1.5">
+        {DOOR_KINDS.map((k) => (
+          <Tap key={k.id} feedback="select" onClick={() => set('kind', k.id)} className={`h-10 rounded-[12px] text-[13px] font-semibold ${d.kind === k.id ? 'bg-inverse text-on-inverse' : 'border border-line bg-card text-mute'}`}>
+            {k.label}
+          </Tap>
+        ))}
+      </div>
+      <p className="mt-2 text-[12px] leading-snug text-faint">{DOOR_KINDS.find((k) => k.id === d.kind)?.hint}</p>
+
+      <div className="mt-3 flex gap-2">
+        <input value={d.emoji} onChange={(e) => set('emoji', e.target.value)} maxLength={8} className={`${field.replace('w-full', 'w-16 shrink-0')} text-center`} aria-label="Эмодзи" />
+        <input value={d.title} onChange={(e) => set('title', e.target.value)} placeholder="Название" maxLength={80} className={field} />
+      </div>
+      <input value={d.subtitle} onChange={(e) => set('subtitle', e.target.value)} placeholder="Подзаголовок" maxLength={160} className={`${field} mt-2`} />
+      <textarea value={d.body} onChange={(e) => set('body', e.target.value)} rows={3} placeholder="Текст после открытия (Markdown)" className={`${field} mt-2 resize-y`} />
+
+      {d.kind === 'quiz' && (
+        <div className="mt-3 space-y-3">
+          {d.quiz.map((q, i) => (
+            <div key={i} className="rounded-[14px] border border-line bg-bg p-3">
+              <div className="flex items-center gap-2">
+                <input value={q.q} onChange={(e) => setQ(i, { q: e.target.value })} placeholder={`Вопрос ${i + 1}`} className={field} />
+                <Tap onClick={() => set('quiz', d.quiz.filter((_, j) => j !== i))} aria-label="Убрать вопрос" className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-faint">
+                  <Trash2 size={15} />
+                </Tap>
+              </div>
+              {q.options.map((o, j) => (
+                <div key={j} className="mt-1.5 flex items-center gap-2">
+                  <Tap feedback="select" onClick={() => setQ(i, { correct: j })} aria-label="Правильный ответ" className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border text-[12px] font-bold ${q.correct === j ? 'border-mint bg-mint text-on-mint' : 'border-line text-faint'}`}>
+                    {'АБВГ'[j]}
+                  </Tap>
+                  <input value={o} onChange={(e) => setQ(i, { options: q.options.map((x, k) => (k === j ? e.target.value : x)) })} placeholder="Вариант" className={field} />
+                </div>
+              ))}
+              {q.options.length < 4 && (
+                <Tap onClick={() => setQ(i, { options: [...q.options, ''] })} className="mt-1.5 text-[12.5px] font-semibold text-violet">
+                  + вариант
+                </Tap>
+              )}
+              <input value={q.explain ?? ''} onChange={(e) => setQ(i, { explain: e.target.value })} placeholder="Пояснение после ответа" className={`${field} mt-1.5`} />
+            </div>
+          ))}
+          {d.quiz.length < 10 && (
+            <Tap onClick={() => set('quiz', [...d.quiz, { q: '', options: ['', ''], correct: 0 }])} className="text-[13px] font-semibold text-violet">
+              + вопрос
+            </Tap>
+          )}
+          <p className="text-[12px] text-faint">Зелёная буква — правильный ответ.</p>
+        </div>
+      )}
+      {d.kind === 'scratch' && <textarea value={d.prize} onChange={(e) => set('prize', e.target.value)} rows={2} placeholder="Что под защитным слоем" className={`${field} mt-3 resize-y`} />}
+      {d.kind === 'arcade' && (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <label>
+            <span className="mb-1.5 block text-[12.5px] font-semibold text-mute">Секунд в раунде</span>
+            <input type="number" inputMode="numeric" min={10} max={120} value={d.arcade.seconds ?? 30} onChange={(e) => set('arcade', { ...d.arcade, seconds: Number(e.target.value) })} className={field} />
+          </label>
+          <label>
+            <span className="mb-1.5 block text-[12.5px] font-semibold text-mute">Потолок очков</span>
+            <input type="number" inputMode="numeric" min={1} max={1000} value={d.arcade.cap ?? 40} onChange={(e) => set('arcade', { ...d.arcade, cap: Number(e.target.value) })} className={field} />
+          </label>
+        </div>
+      )}
+      <label className="mt-3 block">
+        <span className="mb-1.5 block text-[12.5px] font-semibold text-mute">XP за дверь</span>
+        <input type="number" inputMode="numeric" min={0} max={500} value={d.xp} onChange={(e) => set('xp', Math.max(0, Number(e.target.value) || 0))} className={field} />
+      </label>
+      <Cta className="mt-4 w-full" busy={busy === 'save'} onClick={save}>
+        Сохранить дверь
       </Cta>
     </div>
   )

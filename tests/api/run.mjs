@@ -580,6 +580,105 @@ test('админ: настройки календаря — дни, способ
   assert.deepEqual(await call('admin_advent_save', { settings: { start: '14.10.2026' } }, ADMIN), { status: 400, body: { error: 'bad_date' } })
 })
 
+// ---------- Адвент: режимы выдачи призов и двери ----------
+
+const reward = (over) => ({ id: 1, doors: 1, title: 'Приз', description: '', emoji: '🎁', stock: null, position: 0, kind: 'promo', payload: {}, mode: 'threshold', day_from: null, day_to: null, drawn_at: null, ...over })
+const winners = (id) => state.tables.reward_codes.filter((c) => c.reward_id === id).map((c) => c.user_id)
+
+test('подарок дня: достаётся открывшим дверь своего окна, пока не кончится лимит', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.advent_rewards = [reward({ mode: 'day', day_from: 5, day_to: 5, stock: 2 })]
+  state.tables.users.push({ id: 60, first_name: 'Четвёртый', username: 'u60', subscribed: true, sub_checked_at: new Date(Date.now() + 9e9).toISOString(), xp: 0 })
+  // Окно — только пятый день: шестой день тут ни при чём, а четвёртый открывают за билет.
+  for (const id of [BUYER, OTHER, ADMIN]) await call('advent_open', { day: 5 }, id)
+  assert.deepEqual(winners(1).sort(), [BUYER, OTHER].sort())
+})
+
+test('мгновенный выигрыш: в последний день окна разыгрывается всё, что осталось, но не больше лимита', async () => {
+  await everyoneBoots()
+  adventOn()
+  // Окно закончилось сегодня (5-й день) — шанс 100%, пока есть призы.
+  state.tables.advent_rewards = [reward({ mode: 'instant', day_from: 1, day_to: 5, stock: 2 })]
+  for (const id of [BUYER, OTHER, ADMIN]) await call('advent_open', { day: 5 }, id)
+  assert.equal(winners(1).length, 2)
+})
+
+test('мгновенный выигрыш в начале длинного окна выпадает не всем', async () => {
+  await everyoneBoots()
+  adventOn({ days: 30 })
+  state.tables.advent_doors = Array.from({ length: 30 }, (_, i) => ({ day: i + 1, kind: 'story', title: `Дверь ${i + 1}`, emoji: '🎁', xp: 30, quiz: [], body: '', prize: '' }))
+  // Сотня открытий уже была: темп высокий, впереди ещё 25 дней — шанс маленький.
+  for (let u = 0; u < 100; u++) state.tables.advent_opens.push({ user_id: 1000 + u, day: 1 + (u % 5), score: 0, total: 0, xp: 0, late: false })
+  state.tables.advent_rewards = [reward({ mode: 'instant', day_from: 1, day_to: 30, stock: 3 })]
+  for (const id of [BUYER, OTHER, ADMIN]) await call('advent_open', { day: 5 }, id)
+  assert.ok(winners(1).length < 3)
+})
+
+test('розыгрыш: проходит после окна, ровно по лимиту, разным людям; до окна — нет', async () => {
+  await everyoneBoots()
+  adventOn()
+  // Окно 1–3 закончилось, окно 1–7 — ещё нет.
+  for (const [uid, days] of [[BUYER, [1, 2, 3]], [OTHER, [2]], [ADMIN, [1, 3]]]) for (const d of days) state.tables.advent_opens.push({ user_id: uid, day: d, score: 0, total: 0, xp: 0, late: false })
+  state.tables.advent_rewards = [reward({ id: 1, mode: 'draw', day_from: 1, day_to: 3, stock: 2 }), reward({ id: 2, mode: 'draw', day_from: 1, day_to: 7, stock: 1 })]
+  calls.length = 0
+  const st = (await call('advent', {}, BUYER)).body
+  assert.equal(winners(1).length, 2)
+  assert.equal(new Set(winners(1)).size, 2)
+  assert.equal(winners(2).length, 0)
+  assert.ok(state.tables.advent_rewards[0].drawn_at)
+  assert.equal(sent('sendMessage').length, 2)
+  // Шансы в незакончившемся розыгрыше — число открытых дверей окна.
+  assert.equal(st.rewards.find((r) => r.id === 2).entries, 3)
+  // Повторный заход розыгрыш не повторяет.
+  await call('advent', {}, OTHER)
+  assert.equal(winners(1).length, 2)
+})
+
+test('розыгрыш вручную: только админ и только один раз', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.advent_opens.push({ user_id: BUYER, day: 1, score: 0, total: 0, xp: 0, late: false })
+  state.tables.advent_rewards = [reward({ mode: 'draw', day_from: 1, day_to: 9, stock: 5 })]
+  assert.deepEqual(await call('admin_advent_draw', { id: 1 }, BUYER), { status: 403, body: { error: 'forbidden' } })
+  assert.deepEqual(await call('admin_advent_draw', { id: 1 }, ADMIN), { status: 200, body: { winners: 1 } })
+  assert.deepEqual(await call('admin_advent_draw', { id: 1 }, ADMIN), { status: 409, body: { error: 'already_drawn' } })
+})
+
+test('приз «за N дверей» по-прежнему выдаётся по порогу', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.advent_rewards = [reward({ doors: 1 })]
+  await call('advent_open', { day: 5 }, BUYER)
+  assert.deepEqual(winners(1), [BUYER])
+})
+
+test('админ: розыгрыш и мгновенный приз без лимита и с перевёрнутым окном не сохраняются', async () => {
+  await everyoneBoots()
+  adventOn()
+  assert.deepEqual(await call('admin_advent_reward_save', { reward: { title: 'x', mode: 'draw', day_from: 1, day_to: 7 } }, ADMIN), { status: 400, body: { error: 'stock_required' } })
+  assert.deepEqual(await call('admin_advent_reward_save', { reward: { title: 'x', mode: 'day', day_from: 7, day_to: 2 } }, ADMIN), { status: 400, body: { error: 'bad_window' } })
+  const ok = await call('admin_advent_reward_save', { reward: { title: 'x', mode: 'instant', day_from: 1, day_to: 24, stock: 13 } }, ADMIN)
+  assert.equal(ok.status, 200)
+  assert.deepEqual([ok.body.mode, ok.body.day_from, ok.body.day_to, ok.body.stock], ['instant', 1, 24, 13])
+})
+
+test('админ: дверь сохраняется с проверкой, открытую дверь удалить нельзя', async () => {
+  await everyoneBoots()
+  adventOn()
+  assert.deepEqual(await call('admin_advent_door_save', { door: { day: 11, kind: 'quiz', title: 'Квиз', quiz: [] } }, ADMIN), { status: 400, body: { error: 'quiz_required' } })
+  assert.deepEqual(await call('admin_advent_door_save', { door: { day: 11, kind: 'scratch', title: 'Скретч' } }, ADMIN), { status: 400, body: { error: 'prize_required' } })
+  const saved = await call('admin_advent_door_save', { door: { day: 11, kind: 'quiz', title: 'Квиз', xp: 9999, quiz: [{ q: 'Вопрос?', options: ['Да', 'Нет'], correct: 7 }] } }, ADMIN)
+  assert.equal(saved.status, 200)
+  assert.equal(saved.body.xp, 500)
+  assert.equal(saved.body.quiz[0].correct, 1)
+  assert.equal((await call('admin_advent_doors', {}, ADMIN)).body.doors.length, 11)
+  assert.deepEqual(await call('admin_advent_door_save', { door: { day: 12, title: 'x' } }, BUYER), { status: 403, body: { error: 'forbidden' } })
+  await call('advent_open', { day: 5 }, BUYER)
+  assert.deepEqual(await call('admin_advent_door_delete', { day: 5 }, ADMIN), { status: 409, body: { error: 'door_opened' } })
+  assert.deepEqual(await call('admin_advent_door_delete', { day: 11 }, ADMIN), { status: 200, body: { ok: true } })
+})
+
 // ---------- Настройка бота ----------
 
 test('вебхук ставится на адрес своего проекта, а не на адрес из настроек', async () => {

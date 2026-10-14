@@ -3,6 +3,7 @@ import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { dayMonth, KIND_LABEL } from '../../lib/advent'
 import { api, isDemo } from '../../lib/api'
+import { plural } from '../../lib/game'
 import { haptic, inTelegram } from '../../lib/tg'
 import type { AdventCell, AdventReward, AdventState, AdventThemeId } from '../../lib/types'
 import { useStore } from '../../store'
@@ -362,8 +363,20 @@ function DoorCell({ cell, index, theme, needTicket, onNeedTicket, onOpen, onLock
   )
 }
 
+/** Как получить приз — одной строкой под названием. */
+function modeLine(r: AdventReward) {
+  const range = r.day_from && r.day_to ? (r.day_from === r.day_to ? `дня ${r.day_from}` : `дней ${r.day_from}–${r.day_to}`) : ''
+  const left = r.left != null && r.stock != null ? ` · осталось ${r.left} из ${r.stock}` : ''
+  if (r.mode === 'day') return `Подарок за дверь ${range}${left}`
+  if (r.mode === 'instant') return `Может выпасть при открытии двери ${range}${left}`
+  if (r.mode === 'draw') return r.drawn ? 'Розыгрыш прошёл' : `Розыгрыш после дня ${r.day_to} среди открывших двери ${range}${r.stock ? ` · призов ${r.stock}` : ''}`
+  return null
+}
+
 function RewardRow({ reward, opened }: { reward: AdventReward; opened: number }) {
   const kind = reward.kind ?? 'promo'
+  const mode = reward.mode ?? 'threshold'
+  const line = modeLine(reward)
   // Старый сервер не присылает issued — тогда выданным считаем приз с кодом.
   const issued = reward.issued ?? !!reward.code
   const left = Math.max(0, reward.doors - opened)
@@ -375,17 +388,25 @@ function RewardRow({ reward, opened }: { reward: AdventReward; opened: number })
           <p className="font-display text-[15px] font-semibold leading-tight">{reward.title}</p>
           <p className="mt-0.5 text-[13px] leading-snug text-mute">
             {reward.description || `За ${reward.doors} ${doorsWord(reward.doors)}`}
-            {reward.stock != null && !issued ? ' · количество ограничено' : ''}
+            {mode === 'threshold' && reward.stock != null && !issued ? ' · количество ограничено' : ''}
           </p>
+          {line && !issued && <p className="mt-1 text-[12px] font-semibold leading-snug text-violet">{line}</p>}
         </div>
         {issued ? (
           <span className="shrink-0 rounded-full bg-veil/8 px-2.5 py-1 text-[11.5px] font-semibold text-mute">{reward.redeemed ? 'Погашен' : KIND_NAME[kind]}</span>
-        ) : (
+        ) : mode === 'draw' && !reward.drawn ? (
+          <span className="tabular shrink-0 text-right text-[12px] font-semibold leading-tight text-mute">
+            {reward.entries ?? 0}
+            <br />
+            {plural(reward.entries ?? 0, ['шанс', 'шанса', 'шансов'])}
+          </span>
+        ) : mode === 'threshold' ? (
           <span className="tabular shrink-0 text-[12.5px] font-semibold text-mute">{left > 0 ? `${opened}/${reward.doors}` : '…'}</span>
-        )}
+        ) : null}
       </div>
-      {!issued && left > 0 && <Bar progress={opened / reward.doors} className="mt-3" />}
-      {!issued && left === 0 && <p className="mt-2 text-[12.5px] text-faint">Награды этой ступени закончились.</p>}
+      {mode === 'threshold' && !issued && left > 0 && <Bar progress={opened / reward.doors} className="mt-3" />}
+      {mode === 'threshold' && !issued && left === 0 && <p className="mt-2 text-[12.5px] text-faint">Награды этой ступени закончились.</p>}
+      {mode === 'draw' && !issued && !reward.drawn && <p className="mt-2 text-[12px] leading-snug text-faint">Каждая открытая дверь окна — ещё один шанс. Победителей выберет сервер случайно, им придёт сообщение в бот.</p>}
       {issued && kind === 'promo' && reward.code && (
         <>
           <PromoCode code={reward.code} redeemed={reward.redeemed} />

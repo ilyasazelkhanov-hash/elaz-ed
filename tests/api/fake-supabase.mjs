@@ -11,6 +11,7 @@ const KEYS = {
   lesson_access: ['user_id', 'lesson_id'],
   advent_opens: ['user_id', 'day'],
   advent_tickets: ['ref'],
+  advent_doors: ['day'],
   reward_codes: ['code'],
 }
 const UNIQUE = { payments: ['charge_id'], advent_tickets: ['ref'] }
@@ -196,11 +197,50 @@ class Query {
   }
 }
 
+let codeSeq = 0
+function grant(user, rewardId) {
+  const r = table('advent_rewards').find((x) => x.id === rewardId)
+  if (!r) return null
+  const codes = table('reward_codes')
+  if (codes.some((c) => c.user_id === user && c.reward_id === rewardId)) return null
+  if (r.stock != null && codes.filter((c) => c.reward_id === rewardId).length >= r.stock) return null
+  codeSeq++
+  const code = `T${String(codeSeq).padStart(3, '0')}-ABCD`.slice(0, 4) + '-' + String(codeSeq).padStart(4, 'A')
+  codes.push({ code, user_id: user, reward_id: rewardId, status: 'issued' })
+  if (r.kind === 'lesson' && r.payload?.lesson_id) table('lesson_access').push({ user_id: user, lesson_id: Number(r.payload.lesson_id), source: 'advent' })
+  if (r.kind === 'course' && r.payload?.course_id && !table('course_access').some((a) => a.user_id === user && a.course_id === Number(r.payload.course_id))) {
+    table('course_access').push({ user_id: user, course_id: Number(r.payload.course_id), source: 'advent' })
+  }
+  return code
+}
+
 export function createClient() {
   return {
     from: (name) => new Query(name),
     // Функции базы здесь не проверяются: их логика живёт в миграциях.
     rpc: async (name, args) => {
+      // Выдача приза: лимит, повтор, код, доступ к уроку или курсу — как в SQL-функции advent_grant.
+      if (name === 'advent_grant') return { data: grant(args.p_user, args.p_reward), error: null }
+      // Розыгрыш: взвешенно по числу открытых дверей окна, без повторов — как advent_draw.
+      if (name === 'advent_draw') {
+        const r = table('advent_rewards').find((x) => x.id === args.p_reward)
+        if (!r || r.mode !== 'draw' || r.drawn_at) return { data: [], error: null }
+        const counts = new Map()
+        for (const o of table('advent_opens')) {
+          if (o.day < (r.day_from ?? 1) || o.day > (r.day_to ?? 60)) continue
+          if (table('reward_codes').some((c) => c.reward_id === r.id && c.user_id === o.user_id)) continue
+          counts.set(o.user_id, (counts.get(o.user_id) ?? 0) + 1)
+        }
+        const slots = (r.stock ?? 1) - table('reward_codes').filter((c) => c.reward_id === r.id).length
+        const order = [...counts].map(([uid, n]) => [uid, Math.random() ** (1 / n)]).sort((a, b) => b[1] - a[1]).slice(0, Math.max(slots, 0))
+        const winners = []
+        for (const [uid] of order) {
+          const code = grant(uid, r.id)
+          if (code) winners.push({ winner_id: uid, winner_code: code })
+        }
+        r.drawn_at = new Date().toISOString()
+        return { data: winners, error: null }
+      }
       // Двери календаря: та же логика, что в SQL-функциях advent_open и advent_open_late.
       if (name === 'advent_open' || name === 'advent_open_late') {
         const opens = table('advent_opens')

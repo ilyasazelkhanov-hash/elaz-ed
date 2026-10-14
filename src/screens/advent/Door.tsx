@@ -207,7 +207,7 @@ function ResultCard({ result }: { result: DoorResult }) {
       {result.new_codes.map((c) => (
         <div key={c.reward_id} className="mt-3 rounded-[18px] border border-violet/40 bg-violet/10 p-3.5">
           <p className="flex items-center gap-2 text-[14px] font-semibold">
-            <Emoji char={c.emoji} size={20} /> Награда: {c.title}
+            <Emoji char={c.emoji} size={20} /> {c.mode === 'instant' ? 'Повезло! Выпал приз' : c.mode === 'day' ? 'Подарок дня' : 'Награда'}: {c.title}
           </p>
           {c.code ? (
             <>

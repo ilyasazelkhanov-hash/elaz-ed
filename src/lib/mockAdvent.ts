@@ -3,7 +3,7 @@
 import seed from './adventSeed.json'
 import { adventStreak, doorXp } from './advent'
 import { ApiError } from './errors'
-import type { AdminReward, AdventAdmin, AdventSettings, AdventThemeId, AdventState, AdventSummary, Api, DoorKind, DoorView, Me, NewCode, RedeemCheck, RedeemPoint } from './types'
+import type { AdminDoor, AdminReward, AdventAdmin, AdventSettings, AdventThemeId, AdventState, AdventSummary, Api, DoorKind, DoorView, Me, NewCode, RedeemCheck, RedeemPoint } from './types'
 
 const KEY = 'elaz-ed-demo-advent-v1'
 const DEMO_DAY = 7
@@ -41,11 +41,13 @@ interface AdventDemo {
   bought?: number
   settings?: AdventSettings
   rewardList?: AdminReward[]
+  doorList?: Door[]
+  drawn?: number[]
   opens: Record<number, Opened>
   codes: Record<number, { code: string; redeemed: boolean }>
 }
 
-const DOORS = seed.doors as Door[]
+const SEED_DOORS = seed.doors as Door[]
 // Призы демо показывают разные виды: промокод, сообщение, видео.
 const DEMO_KINDS: Pick<AdminReward, 'kind' | 'payload'>[] = [
   { kind: 'message', payload: { text: 'Промпт-пак: «Ты — редактор. Сократи текст на треть, сохрани факты и голос автора».' } },
@@ -54,7 +56,14 @@ const DEMO_KINDS: Pick<AdminReward, 'kind' | 'payload'>[] = [
   { kind: 'promo', payload: {} },
 ]
 type DemoReward = AdminReward & { id: number }
-const SEED_REWARDS: DemoReward[] = seed.rewards.map((r, i) => ({ ...r, id: i + 1, position: i, ...DEMO_KINDS[i % DEMO_KINDS.length] }))
+// Режимы в демо: по порогу, случайный приз и розыгрыш — чтобы было видно все варианты.
+const DEMO_MODES: Pick<AdminReward, 'mode' | 'day_from' | 'day_to'>[] = [
+  { mode: 'threshold', day_from: null, day_to: null },
+  { mode: 'instant', day_from: 1, day_to: 24 },
+  { mode: 'draw', day_from: 1, day_to: 14 },
+  { mode: 'threshold', day_from: null, day_to: null },
+]
+const SEED_REWARDS: DemoReward[] = seed.rewards.map((r, i) => ({ ...r, id: i + 1, position: i, ...DEMO_KINDS[i % DEMO_KINDS.length], ...DEMO_MODES[i % DEMO_MODES.length], stock: r.stock ?? (i === 1 ? 13 : i === 2 ? 7 : null) }))
 const rewards = (): DemoReward[] => (state.rewardList as DemoReward[] | undefined) ?? SEED_REWARDS
 
 function load(): AdventDemo {
@@ -68,6 +77,7 @@ function load(): AdventDemo {
 }
 
 let state = load()
+const doors = (): Door[] => state.doorList ?? SEED_DOORS
 const save = () => {
   try {
     localStorage.setItem(KEY, JSON.stringify(state))
@@ -107,7 +117,7 @@ function view(d: Door): DoorView {
 }
 
 function door(day: number) {
-  const d = DOORS.find((x) => x.day === day)
+  const d = doors().find((x) => x.day === day)
   if (!d) throw new ApiError('not_found', 404)
   if (day > DEMO_DAY) throw new ApiError('door_locked', 403)
   return d
@@ -119,14 +129,19 @@ function code() {
   return `${s.slice(0, 4)}-${s.slice(4)}`
 }
 
-function issue(): NewCode[] {
+function issue(lastDay: number): NewCode[] {
   const opened = Object.keys(state.opens).length
   const fresh: NewCode[] = []
   for (const r of rewards()) {
-    if (r.doors > opened || state.codes[r.id]) continue
+    if (state.codes[r.id]) continue
+    const inWin = (d: number) => d >= (r.day_from ?? 1) && d <= (r.day_to ?? 60)
+    const issuedCount = Object.keys(state.codes).filter((k) => Number(k) === r.id).length
+    // В демо один участник: случайный приз выпадает с шансом 35%, розыгрыш — только по кнопке в админке.
+    const take = r.mode === 'threshold' ? r.doors <= opened : r.mode === 'day' ? inWin(lastDay) : r.mode === 'instant' ? inWin(lastDay) && (r.stock ?? 1) > issuedCount && Math.random() < 0.35 : false
+    if (!take) continue
     const c = code()
     state.codes[r.id] = { code: c, redeemed: false }
-    fresh.push({ reward_id: r.id, code: r.kind === 'promo' ? c : null, kind: r.kind, title: r.title, emoji: r.emoji, content: r.kind === 'promo' ? null : r.payload })
+    fresh.push({ reward_id: r.id, code: r.kind === 'promo' ? c : null, kind: r.kind, mode: r.mode, title: r.title, emoji: r.emoji, content: r.kind === 'promo' ? null : r.payload })
   }
   return fresh
 }
@@ -159,7 +174,7 @@ export function setAdventThemeDemo(theme: AdventThemeId) {
   save()
 }
 
-type AdventApi = Pick<Api, 'advent' | 'adventDoor' | 'adventOpen' | 'adminAdvent' | 'adminAdventTheme' | 'adventTicketInvoice' | 'adminAdventSave' | 'adminAdventRewardSave' | 'adminAdventRewardDelete' | 'redeemPoints' | 'redeemCheck' | 'redeem'>
+type AdventApi = Pick<Api, 'advent' | 'adventDoor' | 'adventOpen' | 'adminAdvent' | 'adminAdventTheme' | 'adventTicketInvoice' | 'adminAdventSave' | 'adminAdventRewardSave' | 'adminAdventRewardDelete' | 'adminAdventDraw' | 'adminAdventDoors' | 'adminAdventDoorSave' | 'adminAdventDoorDelete' | 'redeemPoints' | 'redeemCheck' | 'redeem'>
 
 /** me и addXp приходят из основного демо: XP у человека общий. */
 export function makeAdventMock(me: () => Me, addXp: (n: number) => void): AdventApi {
@@ -181,7 +196,7 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
       return {
         ...adventSummaryDemo(),
         closed: false,
-        doors: DOORS.map((d) => {
+        doors: doors().map((d) => {
           const o = state.opens[d.day]
           const visible = d.day <= DEMO_DAY
           const st = o ? 'open' : d.day > DEMO_DAY ? 'locked' : d.day === DEMO_DAY ? 'today' : 'late'
@@ -189,7 +204,27 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
         }),
         rewards: rewards().map((r) => {
           const c = state.codes[r.id]
-          return { id: r.id, doors: r.doors, title: r.title, description: r.description, emoji: r.emoji, stock: r.stock, kind: r.kind, issued: !!c, code: c && r.kind === 'promo' ? c.code : null, redeemed: !!c?.redeemed, content: c && r.kind !== 'promo' ? r.payload : null }
+          const entries = Object.keys(state.opens).filter((d) => Number(d) >= (r.day_from ?? 1) && Number(d) <= (r.day_to ?? 60)).length
+          return {
+            id: r.id,
+            doors: r.doors,
+            title: r.title,
+            description: r.description,
+            emoji: r.emoji,
+            stock: r.stock,
+            kind: r.kind,
+            issued: !!c,
+            code: c && r.kind === 'promo' ? c.code : null,
+            redeemed: !!c?.redeemed,
+            content: c && r.kind !== 'promo' ? r.payload : null,
+            mode: r.mode,
+            day_from: r.day_from,
+            day_to: r.day_to,
+            // Демо: будто другие участники уже забрали часть.
+            left: r.stock != null ? Math.max(0, r.stock - (c ? 1 : 0) - (r.mode === 'instant' ? 4 : 0)) : null,
+            drawn: !!state.drawn?.includes(r.id),
+            entries: r.mode === 'draw' ? entries : null,
+          }
         }),
         catchup: { methods: settings().catchup.methods, stars: settings().catchup.stars, tickets: state.tickets ?? 0, used: state.used ?? 0, earned: { stars: state.bought ?? 0 } },
       }
@@ -225,7 +260,7 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
       const xp = doorXp(d, score, cap(d), late)
       state.opens[day] = { score, total, xp, late }
       addXp(xp)
-      const fresh = issue()
+      const fresh = issue(day)
       save()
       return { already: false, gained: xp, score, total, opened: Object.keys(state.opens).length, new_codes: fresh, door: view(d), me: me() }
     },
@@ -260,6 +295,38 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
       save()
     },
 
+    async adminAdventDraw(id) {
+      await wait(400)
+      if (state.drawn?.includes(id)) throw new ApiError('already_drawn', 409)
+      state.drawn = [...(state.drawn ?? []), id]
+      const r = rewards().find((x) => x.id === id)
+      const mine = Object.keys(state.opens).some((d) => Number(d) >= (r?.day_from ?? 1) && Number(d) <= (r?.day_to ?? 60))
+      // Демо: единственный участник с шансами — выигрывает.
+      if (r && mine && !state.codes[id]) state.codes[id] = { code: code(), redeemed: false }
+      save()
+      return mine ? 1 : 0
+    },
+
+    async adminAdventDoors() {
+      await wait()
+      return doors().map((d) => ({ day: d.day, kind: d.kind, title: d.title, subtitle: d.subtitle ?? '', emoji: d.emoji, body: d.body ?? '', quiz: d.quiz ?? [], prize: d.prize ?? '', arcade: d.arcade ?? {}, xp: d.xp }))
+    },
+
+    async adminAdventDoorSave(door: AdminDoor) {
+      await wait(250)
+      const next = doors().filter((d) => d.day !== door.day)
+      state.doorList = [...next, door as unknown as Door].sort((a, b) => a.day - b.day)
+      save()
+      return door
+    },
+
+    async adminAdventDoorDelete(day) {
+      await wait(200)
+      if (state.opens[day]) throw new ApiError('door_opened', 409)
+      state.doorList = doors().filter((d) => d.day !== day)
+      save()
+    },
+
     async adminAdventTheme(theme) {
       await wait(200)
       setAdventThemeDemo(theme)
@@ -271,11 +338,11 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
         theme: state.theme ?? 'halloween',
         participants: 312,
         opens: 2140 + Object.keys(state.opens).length,
-        by_day: DOORS.filter((d) => d.day <= DEMO_DAY).map((d) => ({ day: d.day, title: d.title, kind: d.kind, opens: Math.max(40, 300 - d.day * 22), late: 6 + d.day })),
+        by_day: doors().filter((d) => d.day <= DEMO_DAY).map((d) => ({ day: d.day, title: d.title, kind: d.kind, opens: Math.max(40, 300 - d.day * 22), late: 6 + d.day })),
         rewards: rewards().map((r) => ({ id: r.id, title: r.title, doors: r.doors, stock: r.stock, issued: r.doors <= 7 ? 180 - r.doors * 12 : 0, redeemed: r.doors <= 7 ? 90 - r.doors * 8 : 0 })),
         points: [{ name: DEMO_POINT.name, redeemed: 37 }],
         settings: settings(),
-        doors_defined: DOORS.length,
+        doors_defined: doors().length,
         reward_list: rewards(),
       }
     },

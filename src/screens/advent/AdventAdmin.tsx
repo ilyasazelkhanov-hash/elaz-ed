@@ -7,7 +7,7 @@ import type { AdventAdmin, AdventThemeId } from '../../lib/types'
 import { useStore } from '../../store'
 import { Spinner, Tap } from '../../ui'
 import { Header, sheet } from '../Admin'
-import { RewardsEditor, SettingsForm } from './AdventSetup'
+import { DoorsEditor, RewardsEditor, SettingsForm } from './AdventSetup'
 import { THEME_IDS, themeOf, ThemeScene } from './themes'
 
 const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0)
@@ -101,10 +101,17 @@ export function AdventAdminScreen() {
               </>
             )}
 
+            {data.settings && (
+              <>
+                <h2 className="mt-7 font-display text-[16px] font-semibold">Двери</h2>
+                <DoorsEditor days={data.settings.days} />
+              </>
+            )}
+
             {data.reward_list && (
               <>
                 <h2 className="mt-7 font-display text-[16px] font-semibold">Призы</h2>
-                <p className="mt-1 text-[12.5px] leading-snug text-mute">Промокод, сообщение, ссылка, видео, урок или курс. Выдаётся, когда человек откроет нужное число дверей.</p>
+                <p className="mt-1 text-[12.5px] leading-snug text-mute">Промокод, сообщение, ссылка, видео, урок или курс. Выдаётся за N дверей, в выбранные дни, случайно или розыгрышем.</p>
                 <RewardsEditor list={data.reward_list} onChanged={refresh} />
               </>
             )}
@@ -165,7 +172,7 @@ export function AdventAdminScreen() {
                 </div>
               </>
             )}
-            <p className="mt-6 text-[12.5px] leading-snug text-faint">Содержимое дверей и точки погашения пока правятся через SQL — шаблоны в content/advent/.</p>
+            <p className="mt-6 text-[12.5px] leading-snug text-faint">Точки погашения (кассы и их PIN) пока заводятся через SQL — шаблон в content/advent/README.md.</p>
           </div>
         )}
       </div>
