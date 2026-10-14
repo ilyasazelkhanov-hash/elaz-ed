@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { api, ApiError } from './lib/api'
 import { achievement } from './lib/game'
 import type { ShareCard } from './lib/shareCard'
-import type { AdminCourse, Card, CompleteResult, Course, Kind, Lesson, Me, Meta } from './lib/types'
+import type { AdminCourse, AdventSummary, Card, CompleteResult, Course, Kind, Lesson, Me, Meta } from './lib/types'
 
 export type Tab = 'home' | 'top' | 'profile'
 
@@ -30,6 +30,9 @@ export type Overlay =
   | { type: 'courses-admin' }
   | { type: 'course-editor'; course: AdminCourse | null }
   | { type: 'editor'; lesson: Lesson | null; kind: Kind }
+  | { type: 'advent' }
+  | { type: 'door'; day: number }
+  | { type: 'advent-admin' }
 
 export interface Reward {
   result: CompleteResult
@@ -51,6 +54,8 @@ interface Store {
   me: Me | null
   feed: Card[]
   courses: Course[]
+  /** Сводка адвента для главной; null — календарь выключен или закончился. */
+  advent: AdventSummary | null
   meta: Meta
   tab: Tab
   stack: Overlay[]
@@ -65,6 +70,7 @@ interface Store {
   push: (overlay: Overlay) => void
   pop: () => void
   setMe: (me: Me) => void
+  setAdvent: (advent: AdventSummary | null) => void
   patchCard: (id: number, patch: Partial<Card>) => void
   setReward: (reward: Reward | null) => void
   toast: (text: string, emoji?: string) => void
@@ -98,6 +104,7 @@ export const useStore = create<Store>((set, get) => ({
   me: null,
   feed: [],
   courses: [],
+  advent: null,
   meta: { channel: { title: null, invite: null }, bot: { username: null, main_app: false } },
   tab: 'home',
   stack: [],
@@ -110,8 +117,10 @@ export const useStore = create<Store>((set, get) => ({
     try {
       const b = await api.boot(force)
       const meta = { channel: b.channel, bot: b.bot }
-      if (b.status === 'ok') set({ phase: 'ok', me: b.me, feed: b.feed, courses: b.courses ?? [], meta, errorCode: null })
-      else set({ phase: b.status, meta, stack: [], reward: null })
+      if (b.status === 'ok') {
+        set({ phase: 'ok', me: b.me, feed: b.feed, courses: b.courses ?? [], advent: b.advent ?? null, meta, errorCode: null })
+        if (b.new_achievements?.length) get().unlocked(b.new_achievements)
+      } else set({ phase: b.status, meta, stack: [], reward: null })
       return b.status
     } catch (e) {
       set({ phase: 'error', errorCode: e instanceof ApiError ? e.code : 'server' })
@@ -124,6 +133,7 @@ export const useStore = create<Store>((set, get) => ({
   push: (overlay) => set((s) => ({ stack: [...s.stack, overlay] })),
   pop: () => set((s) => ({ stack: s.stack.slice(0, -1) })),
   setMe: (me) => set({ me }),
+  setAdvent: (advent) => set({ advent }),
   patchCard: (id, patch) => set((s) => ({ feed: s.feed.map((c) => (c.id === id ? { ...c, ...patch } : c)) })),
   setReward: (reward) => set({ reward }),
 

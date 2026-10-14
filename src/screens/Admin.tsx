@@ -1,4 +1,4 @@
-import { ChartNoAxesColumn, ChevronLeft, ChevronRight, Eye, GraduationCap, Heart, Plus } from 'lucide-react'
+import { ChartNoAxesColumn, ChevronLeft, ChevronRight, Eye, Gift, GraduationCap, Heart, Plus } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { api, errorText } from '../lib/api'
@@ -84,6 +84,17 @@ export function AdminScreen() {
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold">Аналитика</span>
             <span className="block text-[12.5px] text-mute">Активность, возврат, воронка и уроки</span>
+          </span>
+          <ChevronRight size={18} className="text-faint" />
+        </Tap>
+
+        <Tap onClick={() => push({ type: 'advent-admin' })} className="mx-5 mt-2 flex w-[calc(100%-40px)] items-center gap-3 rounded-[18px] border border-line bg-card p-3.5 text-left">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-violet/15 text-violet">
+            <Gift size={19} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-semibold">Адвент</span>
+            <span className="block text-[12.5px] text-mute">Двери по дням, коды и погашения</span>
           </span>
           <ChevronRight size={18} className="text-faint" />
         </Tap>

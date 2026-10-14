@@ -58,7 +58,7 @@ function safeEqual(a: string, b: string) {
   return diff === 0
 }
 
-let secretKey: Uint8Array | null = null
+let secretKey: Uint8Array<ArrayBuffer> | null = null
 
 interface TgUser {
   id: number
@@ -156,6 +156,24 @@ function localDay(tz: unknown) {
   return new Date(Date.now() + clampTz(tz) * 60_000).toISOString().slice(0, 10)
 }
 
+// Часовой пояс человека хранится на сервере. Раньше он приходил с каждым запросом, и сменой пояса
+// можно было забрать бонус дня два-три раза за сутки. Теперь пояс меняется не чаще раза в 20 часов.
+const TZ_LOCK = 20 * 3600_000
+
+function tzOf(row: Row, fallback?: unknown) {
+  return row.tz ?? clampTz(fallback)
+}
+
+async function syncTz(row: Row, clientTz: unknown): Promise<Row> {
+  const tz = clampTz(clientTz)
+  if (row.tz === tz) return row
+  const lockedUntil = row.tz_at ? Date.parse(row.tz_at) + TZ_LOCK : 0
+  if (row.tz != null && Date.now() < lockedUntil) return row
+  const patch = { tz, tz_at: new Date().toISOString() }
+  await db.from('users').update(patch).eq('id', row.id)
+  return { ...row, ...patch }
+}
+
 function dayDiff(a: string, b: string) {
   return Math.round((Date.parse(a) - Date.parse(b)) / 86_400_000)
 }
@@ -211,27 +229,29 @@ async function resolveAdmin(row: Row, s: Settings): Promise<boolean> {
 }
 
 // Журнал событий для аналитики. Сбой записи не должен ломать запрос пользователя.
+// supabase-js не бросает исключений, а возвращает error — поэтому проверяем его, а не ловим.
 async function logEvent(userId: number, name: string, lessonId: number | null = null, props: Row = {}) {
-  try {
-    await db.from('events').insert({ user_id: userId, name, lesson_id: lessonId, props })
-  } catch (e) {
-    console.error('event', name, e)
-  }
+  const { error } = await db.from('events').insert({ user_id: userId, name, lesson_id: lessonId, props })
+  if (error) console.error('event', name, error.message)
 }
 
-async function buildMe(row: Row, tz: unknown) {
-  const day = localDay(tz)
-  // Пропущен один день, но есть заморозка — стрик ещё можно спасти, поэтому показываем его.
-  const gap = row.last_claim ? dayDiff(day, row.last_claim) : Infinity
-  const alive = gap <= 1 || (gap === 2 && row.freezes > 0)
-  const { count } = await db.from('users').select('id', { count: 'exact', head: true }).gt('xp', row.xp)
+// Стрик, который ещё жив на сегодня: пропущен один день, но есть заморозка — его можно спасти.
+function aliveStreak(row: Row) {
+  const gap = row.last_claim ? dayDiff(localDay(tzOf(row)), row.last_claim) : Infinity
+  return gap <= 1 || (gap === 2 && row.freezes > 0) ? row.streak : 0
+}
+
+async function buildMe(row: Row) {
+  const day = localDay(tzOf(row))
+  // Место считаем среди подписчиков — так же, как строится таблица рейтинга.
+  const { count } = await db.from('users').select('id', { count: 'exact', head: true }).eq('subscribed', true).gt('xp', row.xp)
   return {
     id: row.id,
     name: row.first_name || 'Друг',
     username: row.username,
     photo: row.photo_url,
     xp: row.xp,
-    streak: alive ? row.streak : 0,
+    streak: aliveStreak(row),
     best_streak: row.best_streak,
     daily_claimed: !!row.last_claim && row.last_claim >= day,
     lessons_done: row.lessons_done,
@@ -243,10 +263,10 @@ async function buildMe(row: Row, tz: unknown) {
   }
 }
 
-async function freshMe(id: number, tz: unknown) {
+async function freshMe(id: number) {
   const { data } = await db.from('users').select('*').eq('id', id).single()
   if (!data) throw new HttpError(500, 'db')
-  return buildMe(data, tz)
+  return buildMe(data)
 }
 
 // Авторизованный и подписанный пользователь — для всего, кроме boot.
@@ -380,19 +400,27 @@ async function boot(body: Row) {
     await logEvent(row.id, 'gate')
     return { status: 'locked', ...meta }
   }
+  row = await syncTz(row, body.tz)
   if (row.referred_by && !row.ref_rewarded) {
     const { data: referrer } = await db.rpc('reward_referral', { p_user: row.id })
     if (referrer) await logEvent(row.id, 'referral', null, { by: referrer })
     const { data } = await db.from('users').select('*').eq('id', row.id).single()
     if (data) row = data
   }
+  // «Амбассадор» раньше выдавался только при открытии рейтинга — теперь при любом входе.
+  const fresh = row.invited >= 3 && !(row.achievements ?? []).includes('invite') ? ['invite'] : []
+  if (fresh.length) {
+    await db.rpc('grant_achievements', { p_user: row.id, p_codes: fresh })
+    row = { ...row, achievements: [...(row.achievements ?? []), ...fresh] }
+  }
   const feed = await buildFeed(row.id)
-  const [me, courses] = await Promise.all([
-    buildMe(row, body.tz),
+  const [me, courses, advent] = await Promise.all([
+    buildMe(row),
     buildCourses(row, feed),
+    adventSummary(row, s),
     logEvent(row.id, 'open', null, { platform: str(body.platform, 20), theme: str(body.theme, 10) }),
   ])
-  return { status: 'ok', me, feed, courses, ...meta }
+  return { status: 'ok', me, feed, courses, advent, new_achievements: fresh, ...meta }
 }
 
 async function lesson(body: Row) {
@@ -439,14 +467,16 @@ async function complete(body: Row) {
     }
   })
   const gained = les.xp + bonus
-  const { data: inserted } = await db.rpc('complete_lesson', {
+  const { data: inserted, error } = await db.rpc('complete_lesson', {
     p_user: row.id,
     p_lesson: id,
     p_score: score,
     p_total: quiz.length,
     p_xp: gained,
   })
-  if (!inserted) return { already: true, gained: 0, base: 0, bonus: 0, score, total: quiz.length, new_achievements: [], me: await buildMe(row, body.tz) }
+  // Раньше сбой базы выглядел как «урок уже пройден» и XP молча терялись.
+  if (error) throw new HttpError(500, 'db')
+  if (!inserted) return { already: true, gained: 0, base: 0, bonus: 0, score, total: quiz.length, new_achievements: [], me: await buildMe(row) }
 
   const earned: string[] = []
   if (les.kind === 'lesson') {
@@ -456,18 +486,19 @@ async function complete(body: Row) {
     if (n >= 5) earned.push('five')
     if (n >= 10) earned.push('ten')
     if (quiz.length > 0 && score === quiz.length) earned.push('perfect')
-    const hour = new Date(Date.now() + clampTz(body.tz) * 60_000).getUTCHours()
+    const hour = new Date(Date.now() + tzOf(row) * 60_000).getUTCHours()
     if (hour < 5) earned.push('night')
   }
   const fresh = earned.filter((c) => !(row.achievements ?? []).includes(c))
   if (fresh.length) await db.rpc('grant_achievements', { p_user: row.id, p_codes: fresh })
   await logEvent(row.id, les.kind === 'story' ? 'story_done' : 'lesson_done', id, { score, total: quiz.length, xp: gained, answers: answers.slice(0, 10) })
-  return { already: false, gained, base: les.xp, bonus, score, total: quiz.length, new_achievements: fresh, me: await freshMe(row.id, body.tz) }
+  return { already: false, gained, base: les.xp, bonus, score, total: quiz.length, new_achievements: fresh, me: await freshMe(row.id) }
 }
 
 async function daily(body: Row) {
   const row = await member(body)
-  const { data } = await db.rpc('claim_daily', { p_user: row.id, p_today: localDay(body.tz) })
+  const { data, error } = await db.rpc('claim_daily', { p_user: row.id, p_today: localDay(tzOf(row, body.tz)) })
+  if (error) throw new HttpError(500, 'db')
   const res = Array.isArray(data) ? data[0] : data
   const gained = res?.gained ?? 0
   const streak = res?.new_streak ?? 0
@@ -478,7 +509,7 @@ async function daily(body: Row) {
   const fresh = gained > 0 ? earned.filter((c) => !(row.achievements ?? []).includes(c)) : []
   if (fresh.length) await db.rpc('grant_achievements', { p_user: row.id, p_codes: fresh })
   if (gained > 0) await logEvent(row.id, 'daily', null, { streak, xp: gained, froze: !!res?.used_freeze })
-  return { gained, froze: !!res?.used_freeze, new_achievements: fresh, me: await freshMe(row.id, body.tz) }
+  return { gained, froze: !!res?.used_freeze, new_achievements: fresh, me: await freshMe(row.id) }
 }
 
 async function like(body: Row) {
@@ -544,7 +575,8 @@ async function shareMessage(body: Row) {
       start = `l${les.id}_r${row.id}`
     }
   } else if (kind === 'streak') {
-    caption = `Держу стрик в Elaz Ed: ${row.streak} дн. подряд.`
+    // Сырой row.streak мог остаться от оборванного стрика — берём живой.
+    caption = `Держу стрик в Elaz Ed: ${aliveStreak(row)} дн. подряд.`
   } else if (kind === 'achievement') {
     caption = 'Открыл новую ачивку в Elaz Ed.'
   }
@@ -621,19 +653,18 @@ async function courseInvoice(body: Row) {
 
 async function top(body: Row) {
   const row = await member(body)
+  // В рейтинге только подписчики: экран так и подписан, и отписавшиеся не занимают места.
   const { data } = await db
     .from('users')
-    .select('id,first_name,photo_url,xp,streak')
+    .select('id,first_name,photo_url,xp,streak,last_claim,freezes,tz')
+    .eq('subscribed', true)
     .gt('xp', 0)
     .order('xp', { ascending: false })
     .order('id')
     .limit(50)
-  if (row.invited >= 3 && !(row.achievements ?? []).includes('invite')) {
-    await db.rpc('grant_achievements', { p_user: row.id, p_codes: ['invite'] })
-  }
-  const me = await buildMe(row, body.tz)
+  const me = await buildMe(row)
   return {
-    top: (data ?? []).map((u) => ({ id: u.id, name: u.first_name || 'Друг', photo: u.photo_url, xp: u.xp, streak: u.streak })),
+    top: (data ?? []).map((u) => ({ id: u.id, name: u.first_name || 'Друг', photo: u.photo_url, xp: u.xp, streak: aliveStreak(u) })),
     rank: me.rank,
   }
 }
@@ -1011,6 +1042,8 @@ async function setup() {
   const me = await tg('getMe')
   if (!me.ok) return json({ ok: false, error: 'bad_token' }, 502)
   await setSetting('bot', { id: me.result.id, username: me.result.username, main_app: !!me.result.has_main_web_app })
+  // Адрес вебхука берём из проекта, в котором работает функция. Раньше он читался из settings.api_url,
+  // а миграция 006 записывает туда адрес старого проекта — после переезда /setup вешал вебхук не туда.
   const hook = await tg('setWebhook', {
     url: `${SUPABASE_URL}/functions/v1/api/webhook`,
     secret_token: await webhookSecret(),
@@ -1044,6 +1077,348 @@ async function health() {
   return json({ ok: !error, token: !!BOT_TOKEN, db: !error, channel: s.channel?.title ?? null, app_url: s.app_url ?? null })
 }
 
+// ---------- Адвент-календарь ----------
+// Двери открываются по календарю кампании (пояс из settings.advent.tz), а не по поясу человека:
+// у всех участников дверь №7 открывается в одну и ту же минуту. Все очки и награды считает сервер.
+
+interface AdventCfg {
+  title: string
+  start: string
+  days: number
+  tz: number
+  grace: number
+  push_hour: number
+}
+
+function adventCfg(s: Settings): AdventCfg | null {
+  const a = s.advent
+  if (!a?.enabled || typeof a.start !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(a.start)) return null
+  return {
+    title: str(a.title, 60) || 'Адвент-календарь',
+    start: a.start,
+    days: int(a.days, 1, 60, 24),
+    tz: clampTz(a.tz ?? 300),
+    grace: int(a.grace, 0, 30, 3),
+    push_hour: int(a.push_hour, 0, 23, 10),
+  }
+}
+
+/** Номер сегодняшнего дня кампании: 1 — первый день, 0 и меньше — до старта. */
+const adventToday = (cfg: AdventCfg) => dayDiff(localDay(cfg.tz), cfg.start) + 1
+const adventClosed = (cfg: AdventCfg, today: number) => today > cfg.days + cfg.grace
+
+const QUIZ_POINT = 10
+const LATE_RATE = 0.5
+const arcadeCap = (door: Row) => int(door.arcade?.cap, 1, 1000, 40)
+const arcadeSeconds = (door: Row) => int(door.arcade?.seconds, 10, 120, 30)
+
+/** XP за дверь: база + 10 за верный ответ квиза или половина очков аркады (не выше потолка). Опоздание — вдвое меньше. */
+function doorXp(door: Row, score: number, late: boolean) {
+  const bonus = door.kind === 'quiz' ? score * QUIZ_POINT : door.kind === 'arcade' ? Math.floor(Math.min(score, arcadeCap(door)) / 2) : 0
+  return Math.round((door.xp + bonus) * (late ? LATE_RATE : 1))
+}
+
+/** Серия: сколько дней подряд двери открывались в свой день, считая от сегодня (или вчера, если сегодня ещё нет). */
+function adventStreak(opens: Row[], today: number) {
+  const onTime = new Set(opens.filter((o) => !o.late).map((o) => o.day))
+  let d = onTime.has(today) ? today : today - 1
+  let n = 0
+  while (d >= 1 && onTime.has(d)) {
+    n++
+    d--
+  }
+  return n
+}
+
+async function adventSummary(row: Row, s: Settings) {
+  const cfg = adventCfg(s)
+  if (!cfg) return null
+  const today = adventToday(cfg)
+  if (adventClosed(cfg, today)) return null
+  const { data } = await db.from('advent_opens').select('day,late').eq('user_id', row.id)
+  const opens = data ?? []
+  return {
+    title: cfg.title,
+    start: cfg.start,
+    days: cfg.days,
+    today,
+    opened: opens.length,
+    today_open: opens.some((o) => o.day === today),
+    streak: adventStreak(opens, today),
+  }
+}
+
+function needAdvent(s: Settings) {
+  const cfg = adventCfg(s)
+  if (!cfg) throw new HttpError(404, 'advent_off')
+  return cfg
+}
+
+async function advent(body: Row) {
+  const row = await member(body)
+  const cfg = needAdvent(await getSettings())
+  const today = adventToday(cfg)
+  const closed = adventClosed(cfg, today)
+  const [doors, opens, rewards, codes] = await Promise.all([
+    db.from('advent_doors').select('day,kind,title,emoji').lte('day', cfg.days).order('day'),
+    db.from('advent_opens').select('day,score,total,xp,late').eq('user_id', row.id),
+    db.from('advent_rewards').select('id,doors,title,description,emoji,stock').order('doors').order('position'),
+    db.from('reward_codes').select('code,reward_id,status,redeemed_at').eq('user_id', row.id),
+  ])
+  if (doors.error || rewards.error) throw new HttpError(500, 'db')
+  const opened = new Map((opens.data ?? []).map((o) => [o.day, o]))
+  const mine = new Map((codes.data ?? []).map((c) => [c.reward_id, c]))
+  return {
+    title: cfg.title,
+    start: cfg.start,
+    days: cfg.days,
+    today,
+    closed,
+    opened: opened.size,
+    streak: adventStreak(opens.data ?? [], today),
+    // Будущие двери — сюрприз: тему и иконку не показываем, пока не наступил день.
+    doors: (doors.data ?? []).map((d) => {
+      const o = opened.get(d.day)
+      const state = o ? 'open' : d.day > today ? 'locked' : closed ? 'missed' : d.day === today ? 'today' : 'late'
+      return { day: d.day, kind: d.kind, title: d.day <= today ? d.title : null, emoji: d.day <= today ? d.emoji : null, state, xp: o?.xp ?? null }
+    }),
+    rewards: (rewards.data ?? []).map((r) => {
+      const c = mine.get(r.id)
+      return { ...r, code: c?.code ?? null, redeemed: c?.status === 'redeemed' }
+    }),
+  }
+}
+
+/** Дверь, человек и день кампании. Будущую дверь не отдаём даже по прямому запросу. */
+async function loadDoor(body: Row) {
+  const row = await member(body)
+  const cfg = needAdvent(await getSettings())
+  const today = adventToday(cfg)
+  const day = int(body.day, 1, 60, 0)
+  if (!day || day > cfg.days) throw new HttpError(404, 'not_found')
+  if (day > today) throw new HttpError(403, 'door_locked')
+  const [door, open] = await Promise.all([
+    db.from('advent_doors').select('*').eq('day', day).maybeSingle(),
+    db.from('advent_opens').select('score,total,xp,late').eq('user_id', row.id).eq('day', day).maybeSingle(),
+  ])
+  if (!door.data) throw new HttpError(404, 'not_found')
+  return { row, cfg, today, door: door.data as Row, open: open.data as Row | null }
+}
+
+/** Что видно на двери. До открытия — без правильных ответов, текста и приза: их нельзя подсмотреть в запросе. */
+function doorView(door: Row, open: Row | null, cfg: AdventCfg, today: number) {
+  const quiz: Row[] = Array.isArray(door.quiz) ? door.quiz : []
+  return {
+    day: door.day,
+    kind: door.kind,
+    title: door.title,
+    subtitle: door.subtitle,
+    emoji: door.emoji,
+    xp: door.xp,
+    late: !open && door.day < today,
+    closed: !open && adventClosed(cfg, today),
+    opened: open ? { score: open.score, total: open.total, xp: open.xp, late: open.late } : null,
+    quiz: quiz.map((q) => ({ q: q.q, options: q.options, ...(open ? { correct: q.correct, explain: q.explain ?? '' } : {}) })),
+    arcade: door.kind === 'arcade' ? { seconds: arcadeSeconds(door), cap: arcadeCap(door) } : null,
+    prize: open ? door.prize : null,
+    body: open ? door.body : null,
+  }
+}
+
+async function adventDoor(body: Row) {
+  const { cfg, today, door, open } = await loadDoor(body)
+  return doorView(door, open, cfg, today)
+}
+
+// Коды без похожих символов (0/O, 1/I/L): кассиру проще прочитать с экрана.
+const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+
+function genCode() {
+  const bytes = crypto.getRandomValues(new Uint32Array(8))
+  const s = [...bytes].map((b) => CODE_ABC[b % CODE_ABC.length]).join('')
+  return `${s.slice(0, 4)}-${s.slice(4)}`
+}
+
+const normCode = (v: unknown) => {
+  const s = str(v, 20).toUpperCase().replace(/[^A-Z0-9]/g, '')
+  return s.length === 8 ? `${s.slice(0, 4)}-${s.slice(4)}` : s
+}
+
+/** Выдаёт коды за все пройденные ступени, которых у человека ещё нет. Лимит stock проверяется до выдачи. */
+async function issueCodes(row: Row, opened: number, s: Settings) {
+  const [rewards, mine] = await Promise.all([
+    db.from('advent_rewards').select('*').lte('doors', opened).order('doors'),
+    db.from('reward_codes').select('reward_id').eq('user_id', row.id),
+  ])
+  const have = new Set((mine.data ?? []).map((c) => c.reward_id))
+  const fresh: Row[] = []
+  for (const r of rewards.data ?? []) {
+    if (have.has(r.id)) continue
+    if (r.stock != null) {
+      const { count } = await db.from('reward_codes').select('code', { count: 'exact', head: true }).eq('reward_id', r.id)
+      if ((count ?? 0) >= r.stock) continue
+    }
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const code = genCode()
+      const { error } = await db.from('reward_codes').insert({ code, user_id: row.id, reward_id: r.id })
+      if (!error) {
+        fresh.push({ reward_id: r.id, code, title: r.title, emoji: r.emoji })
+        break
+      }
+      // 23505 по (user_id, reward_id) — код уже выдан параллельным запросом; по code — редкое совпадение, пробуем снова.
+      if (error.code !== '23505' || error.message.includes('user_id')) break
+    }
+  }
+  // Код дублируем в чат с ботом: так он не потеряется, даже если человек закроет приложение.
+  if (fresh.length) {
+    const lines = fresh.map((c) => `${c.emoji} <b>${escapeHtml(c.title)}</b>\nКод: <code>${c.code}</code>`).join('\n\n')
+    await tg('sendMessage', {
+      chat_id: row.id,
+      parse_mode: 'HTML',
+      text: `Награда открыта!\n\n${lines}\n\nПокажи код на кассе. Он одноразовый.`,
+      ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть календарь', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
+    })
+  }
+  return fresh
+}
+
+async function adventOpen(body: Row) {
+  const { row, cfg, today, door, open } = await loadDoor(body)
+  const s = await getSettings()
+  if (open) return { already: true, gained: 0, score: open.score, total: open.total, opened: null, new_codes: [], door: doorView(door, open, cfg, today), me: await buildMe(row) }
+  if (adventClosed(cfg, today)) throw new HttpError(403, 'advent_closed')
+  const late = door.day < today
+  let score = 0
+  let total = 0
+  if (door.kind === 'quiz') {
+    const quiz: Row[] = Array.isArray(door.quiz) ? door.quiz : []
+    const answers: unknown[] = Array.isArray(body.answers) ? body.answers : []
+    total = quiz.length
+    score = quiz.filter((q, i) => Number(answers[i]) === q.correct).length
+  } else if (door.kind === 'arcade') {
+    // Счёт аркады присылает клиент, поэтому он ограничен потолком: накрутка даёт не больше cap / 2 XP.
+    total = arcadeCap(door)
+    score = Math.min(int(body.score, 0, 100_000, 0), total)
+  }
+  const xp = doorXp(door, score, late)
+  const { data, error } = await db.rpc('advent_open', { p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp, p_late: late })
+  if (error) throw new HttpError(500, 'db')
+  const res = Array.isArray(data) ? data[0] : data
+  const inserted = !!res?.inserted
+  const newCodes = inserted ? await issueCodes(row, res.opened, s) : []
+  if (inserted) await logEvent(row.id, 'advent_open', null, { day: door.day, kind: door.kind, score, late })
+  const after = { score, total, xp, late }
+  return {
+    already: !inserted,
+    gained: inserted ? xp : 0,
+    score,
+    total,
+    opened: res?.opened ?? null,
+    new_codes: newCodes,
+    door: doorView(door, after, cfg, today),
+    me: await freshMe(row.id),
+  }
+}
+
+// ---------- Погашение кодов (страница кассира, без Telegram) ----------
+
+async function sha256Hex(text: string) {
+  return hex(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(text))))
+}
+
+const PIN_TRIES = 8
+const PIN_LOCK = 15 * 60_000
+
+async function cashierPoint(body: Row) {
+  const id = Number(body.point)
+  const { data: p } = await db.from('advent_points').select('*').eq('id', id).maybeSingle()
+  if (!p) throw new HttpError(404, 'point_not_found')
+  if (p.locked_until && Date.parse(p.locked_until) > Date.now()) throw new HttpError(429, 'pin_locked')
+  const ok = safeEqual(await sha256Hex(`${p.id}:${str(body.pin, 12)}`), p.pin_hash)
+  if (!ok) {
+    // После 8 неверных PIN точка блокируется на 15 минут: перебор кодов без PIN бессмыслен, с PIN — медленный.
+    const fails = p.fails + 1
+    await db
+      .from('advent_points')
+      .update(fails >= PIN_TRIES ? { fails: 0, locked_until: new Date(Date.now() + PIN_LOCK).toISOString() } : { fails })
+      .eq('id', p.id)
+    throw new HttpError(403, 'bad_pin')
+  }
+  if (p.fails) await db.from('advent_points').update({ fails: 0 }).eq('id', p.id)
+  return p
+}
+
+async function redeemPoints() {
+  const { data } = await db.from('advent_points').select('id,name').order('id')
+  return { points: data ?? [] }
+}
+
+async function redeem(body: Row) {
+  const p = await cashierPoint(body)
+  const code = normCode(body.code)
+  if (body.check) {
+    const { data: c } = await db.from('reward_codes').select('status,redeemed_at,advent_rewards(title,emoji)').eq('code', code).maybeSingle()
+    if (!c) throw new HttpError(404, 'code_not_found')
+    // deno-lint-ignore no-explicit-any
+    const r: any = c.advent_rewards
+    return { status: c.status, redeemed_at: c.redeemed_at, title: r?.title ?? '', emoji: r?.emoji ?? '🎁' }
+  }
+  const { data, error } = await db.rpc('redeem_code', { p_code: code, p_point: p.id })
+  if (error) throw new HttpError(500, 'db')
+  if (!data?.ok) throw new HttpError(data?.error === 'already' ? 409 : 404, data?.error === 'already' ? 'code_used' : 'code_not_found')
+  return data
+}
+
+async function adminAdvent(body: Row) {
+  await member(body, true)
+  const { data, error } = await db.rpc('advent_summary')
+  if (error) throw new HttpError(500, 'db')
+  return data
+}
+
+// ---------- Напоминание о новой двери (вызывает cron) ----------
+// Telegram пропускает около 30 сообщений в секунду; шлём по 25 и ждём секунду. 3000 человек — примерно 2 минуты.
+
+const PUSH_LIMIT = 3000
+
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void }
+
+async function adventPush(req: Request) {
+  const s = await getSettings(true)
+  if (!s.cron_key || !safeEqual(req.headers.get('x-cron-key') ?? '', String(s.cron_key))) return json({ ok: false }, 401)
+  const cfg = adventCfg(s)
+  if (!cfg || !s.app_url) return json({ ok: true, sent: 0, reason: 'off' })
+  const today = adventToday(cfg)
+  if (today < 1 || today > cfg.days) return json({ ok: true, sent: 0, reason: 'out_of_range' })
+  // Повторный вызов cron в тот же день ничего не шлёт.
+  if (s.advent_push_day === today) return json({ ok: true, sent: 0, reason: 'already' })
+  await setSetting('advent_push_day', today)
+  const [door, done, users] = await Promise.all([
+    db.from('advent_doors').select('title,emoji').eq('day', today).maybeSingle(),
+    db.from('advent_opens').select('user_id').eq('day', today),
+    db.from('users').select('id').eq('subscribed', true).order('id').limit(PUSH_LIMIT),
+  ])
+  if (!door.data) return json({ ok: true, sent: 0, reason: 'no_door' })
+  const skip = new Set((done.data ?? []).map((o) => o.user_id))
+  const ids = (users.data ?? []).map((u) => u.id).filter((id) => !skip.has(id))
+  const text = `${door.data.emoji} Дверь №${today} открыта: ${door.data.title}`
+  const markup = { inline_keyboard: [[{ text: 'Открыть дверь', web_app: { url: `${s.app_url}/?sp=advent` } }]] }
+  const send = async () => {
+    let sent = 0
+    for (let i = 0; i < ids.length; i += 25) {
+      const res = await Promise.all(ids.slice(i, i + 25).map((id) => tg('sendMessage', { chat_id: id, text, reply_markup: markup })))
+      sent += res.filter((r) => r.ok).length
+      if (i + 25 < ids.length) await new Promise((r) => setTimeout(r, 1000))
+    }
+    console.log('advent_push', today, sent, '/', ids.length)
+  }
+  // Рассылка идёт в фоне: cron (pg_net) не ждёт ответа дольше нескольких секунд, а Supabase держит
+  // функцию живой до конца waitUntil. Без EdgeRuntime (локальный запуск) — ждём сами.
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(send())
+  else await send()
+  return json({ ok: true, queued: ids.length, truncated: (users.data ?? []).length === PUSH_LIMIT })
+}
+
 // ---------- Роутер ----------
 
 const routes: Record<string, (body: Row) => Promise<unknown>> = {
@@ -1070,6 +1445,13 @@ const routes: Record<string, (body: Row) => Promise<unknown>> = {
   admin_save: adminSave,
   admin_delete: adminDelete,
   admin_announce: adminAnnounce,
+  advent,
+  advent_door: adventDoor,
+  advent_open: adventOpen,
+  admin_advent: adminAdvent,
+  // Без Telegram: страница кассира проверяет PIN точки, а не подпись пользователя.
+  redeem,
+  redeem_points: redeemPoints,
 }
 
 Deno.serve(async (req) => {
@@ -1079,6 +1461,7 @@ Deno.serve(async (req) => {
     if (route === 'webhook' && req.method === 'POST') return await webhook(req)
     if (route === 'setup') return await setup()
     if (route === 'health' || route === 'api') return await health()
+    if (route === 'advent_push' && req.method === 'POST') return await adventPush(req)
     // Только собственные ключи: иначе адрес вроде /constructor попадал во встроенные методы объекта.
     const handler = Object.hasOwn(routes, route) ? routes[route] : null
     if (!handler || req.method !== 'POST') return json({ error: 'not_found' }, 404)

@@ -585,7 +585,28 @@
   opacity: 0.86;
 }
 
+/* Снег в шапке адвента. */
+.snowflake {
+  animation: snowfall linear infinite;
+}
+@keyframes snowfall {
+  0% {
+    transform: translate3d(0, -10px, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(14px, 260px, 0);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .snowflake {
+    display: none;
+  }
   .backdrop::before,
   .backdrop i,
   .floaty,
