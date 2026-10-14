@@ -1,5 +1,5 @@
 begin;
--- Elaz Ed: схема. Доступ к таблицам только у service role (RLS включён, политик нет).
+-- OG CRE8R²: схема. Доступ к таблицам только у service role (RLS включён, политик нет).
 
 create table public.settings (
   key text primary key,

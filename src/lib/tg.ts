@@ -87,7 +87,7 @@ export const canShareStory = inTelegram && supports('7.8') && typeof wa?.shareTo
 export const canDownload = inTelegram && supports('8.0') && typeof wa?.downloadFile === 'function'
 
 export function shareToStory(url: string, text: string, link: string | null) {
-  safe(() => wa.shareToStory(url, { text, ...(link ? { widget_link: { url: link, name: 'Elaz Ed' } } : {}) }))
+  safe(() => wa.shareToStory(url, { text, ...(link ? { widget_link: { url: link, name: 'OG CRE8R²' } } : {}) }))
 }
 
 export function downloadFile(url: string, fileName: string) {

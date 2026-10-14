@@ -101,7 +101,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const share = () => {
     const link = appLink(id)
     if (!link || !view) return toast('Ссылка появится, когда бот будет настроен')
-    shareLink(link, `${view.title} — урок в Elaz Ed`)
+    shareLink(link, `${view.title} — урок в OG CRE8R²`)
     track('share', { kind: 'lesson', channel: 'link' }, id)
   }
 

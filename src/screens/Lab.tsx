@@ -265,7 +265,7 @@ function Biometrics({ onTry }: DemoProps) {
   const check = () => {
     const authenticate = () =>
       attempt(() =>
-        manager.authenticate({ reason: 'Проверка в лаборатории Elaz Ed' }, (ok: boolean) => {
+        manager.authenticate({ reason: 'Проверка в лаборатории OG CRE8R²' }, (ok: boolean) => {
           onTry()
           if (ok) haptic.success()
           toast(ok ? 'Это точно ты' : 'Не узнал', ok ? '🔓' : '🔒')

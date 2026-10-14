@@ -31,7 +31,7 @@ export function levelCard(me: Me): ShareCard {
     title: lvl.title,
     big: `${me.xp} XP`,
     sub: [`Уровень ${lvl.index}`, me.streak > 0 ? `стрик ${days(me.streak)}` : '', `${me.rank} место`].filter(Boolean).join(' · '),
-    caption: `Мой уровень в Elaz Ed — «${lvl.title}». Догоняй.`,
+    caption: `Мой уровень в OG CRE8R² — «${lvl.title}». Догоняй.`,
   }
 }
 
@@ -44,7 +44,7 @@ export function lessonCard(lesson: { id: number; title: string; emoji: string; g
     title: lesson.title,
     big: `+${result.gained} XP`,
     sub: result.total > 0 ? `Квиз ${result.score} из ${result.total}` : undefined,
-    caption: `Прошёл урок «${lesson.title}» в Elaz Ed.`,
+    caption: `Прошёл урок «${lesson.title}» в OG CRE8R².`,
     lessonId: lesson.id,
   }
 }
@@ -59,7 +59,7 @@ export function streakCard(me: Me): ShareCard {
     bigFirst: true,
     title: `${plural(me.streak, ['день', 'дня', 'дней'])} подряд`,
     sub: me.best_streak > me.streak ? `Рекорд — ${me.best_streak}` : 'Это мой рекорд',
-    caption: `Держу стрик ${days(me.streak)} в Elaz Ed.`,
+    caption: `Держу стрик ${days(me.streak)} в OG CRE8R².`,
   }
 }
 
@@ -71,7 +71,7 @@ export function achievementCard(a: { title: string; desc: string; emoji: string 
     emoji: a.emoji,
     title: a.title,
     sub: a.desc,
-    caption: `Открыл ачивку «${a.title}» в Elaz Ed.`,
+    caption: `Открыл ачивку «${a.title}» в OG CRE8R².`,
   }
 }
 
@@ -140,7 +140,7 @@ export async function renderCard(card: ShareCard, userName: string, botUsername:
   const g = GRADIENTS[card.gradient] ?? GRADIENTS.aurora
   const ink = g.ink
   const accent = g.stops[Math.min(1, g.stops.length - 1)][0]
-  const sample = `${card.title} ${card.big ?? ''} ${card.sub ?? ''} ${card.chip} ${userName} Elaz Ed`
+  const sample = `${card.title} ${card.big ?? ''} ${card.sub ?? ''} ${card.chip} ${userName} OG CRE8R²`
 
   const [emoji] = await Promise.all([
     emojiImage(card.emoji),
@@ -167,13 +167,13 @@ export async function renderCard(card: ShareCard, userName: string, botUsername:
   ctx.textAlign = 'left'
   ctx.fillStyle = ink
   ctx.font = `700 60px ${DISPLAY}`
-  ctx.fillText('Elaz', 84, SAFE_TOP)
-  const elazWidth = ctx.measureText('Elaz').width
+  ctx.fillText('OG', 84, SAFE_TOP)
+  const elazWidth = ctx.measureText('OG').width
   ctx.font = `700 52px ${DISPLAY}`
-  const edWidth = ctx.measureText('Ed').width
+  const edWidth = ctx.measureText('CRE8R²').width
   pill(ctx, 84 + elazWidth + 18, SAFE_TOP - 42, edWidth + 36, 84, 20)
   ctx.fillStyle = accent
-  ctx.fillText('Ed', 84 + elazWidth + 36, SAFE_TOP + 2)
+  ctx.fillText('CRE8R²', 84 + elazWidth + 36, SAFE_TOP + 2)
 
   ctx.font = `700 32px ${TEXT}`
   const chip = card.chip.toUpperCase()
@@ -263,7 +263,7 @@ export async function renderCard(card: ShareCard, userName: string, botUsername:
   ctx.fillText(name, 84 + 164, FOOTER_TOP + 64)
   ctx.font = `500 34px ${TEXT}`
   ctx.globalAlpha = 0.78
-  ctx.fillText('учится в Elaz Ed', 84 + 164, FOOTER_TOP + 116)
+  ctx.fillText('учится в OG CRE8R²', 84 + 164, FOOTER_TOP + 116)
   ctx.globalAlpha = 1
   if (botUsername) {
     ctx.textAlign = 'right'

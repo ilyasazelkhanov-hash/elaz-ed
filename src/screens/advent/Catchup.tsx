@@ -71,7 +71,7 @@ export function CatchupSheet({ open, onClose, data, reload }: { open: boolean; o
   const invite = () => {
     const link = appLink()
     if (!link) return toast('Ссылка появится, когда бот будет настроен')
-    shareLink(link, 'Залетай в Elaz Ed — там адвент-календарь с призами.')
+    shareLink(link, 'Залетай в OG CRE8R² — там адвент-календарь с призами.')
   }
 
   // Сторис: та же шторка «Поделиться», но со ссылкой, которая засчитывает переход автору.
@@ -88,8 +88,8 @@ export function CatchupSheet({ open, onClose, data, reload }: { open: boolean; o
         title: 'Открываю двери',
         big: `${data.opened} из ${data.days}`,
         bigFirst: true,
-        sub: 'Адвент-календарь в Elaz Ed',
-        caption: 'Открываю адвент-календарь в Elaz Ed. Заходи по ссылке — там призы.',
+        sub: 'Адвент-календарь в OG CRE8R²',
+        caption: 'Открываю адвент-календарь в OG CRE8R². Заходи по ссылке — там призы.',
         link,
       },
     })

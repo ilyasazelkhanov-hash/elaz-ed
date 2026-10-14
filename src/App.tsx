@@ -73,7 +73,7 @@ export default function App() {
           className="pointer-events-none fixed inset-x-0 z-[110] flex items-center justify-center overflow-hidden font-display text-[14px] font-bold text-ink/90"
           style={{ top: 'var(--tg-safe-area-inset-top, 0px)', height: 'var(--tg-content-safe-area-inset-top, 0px)' }}
         >
-          Elaz Ed
+          OG CRE8R²
         </div>
       </div>
     </MotionConfig>

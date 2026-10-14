@@ -1,4 +1,4 @@
-# Elaz Ed
+# OG CRE8R²
 
 Telegram Mini App для подписчиков канала: уроки, сторис, квизы, XP, стрик, уровни, рейтинг.
 Бот — [@elazart_bot](https://t.me/elazart_bot).

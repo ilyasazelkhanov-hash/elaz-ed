@@ -108,7 +108,7 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
   const invite = () => {
     const link = appLink()
     if (!link) return toast('Ссылка появится, когда бот будет настроен')
-    shareLink(link, `Зову в Elaz Ed. Если придёшь, у меня откроется курс «${course.title}».`)
+    shareLink(link, `Зову в OG CRE8R². Если придёшь, у меня откроется курс «${course.title}».`)
   }
 
   return (

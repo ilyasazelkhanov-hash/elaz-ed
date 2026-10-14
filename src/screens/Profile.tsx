@@ -37,7 +37,7 @@ export function Profile() {
   const invite = () => {
     const link = appLink()
     if (!link) return toast('Ссылка появится, когда бот будет настроен')
-    shareLink(link, 'Elaz Ed: уроки и разборы с XP, стриком и рейтингом. Заходи.')
+    shareLink(link, 'OG CRE8R²: уроки и разборы с XP, стриком и рейтингом. Заходи.')
   }
 
   return (
@@ -183,7 +183,7 @@ export function Profile() {
       </div>
 
       <p className="mt-6 text-center text-[12px] text-faint">
-        Elaz Ed{isDemo ? ' · демо-режим' : ''} · автор в Instagram {INSTAGRAM.handle}
+        OG CRE8R²{isDemo ? ' · демо-режим' : ''} · автор в Instagram {INSTAGRAM.handle}
       </p>
 
       <Sheet open={!!picked} onClose={() => setOpen(null)}>
@@ -250,7 +250,7 @@ function HoloCard({ me }: { me: Me }) {
         <div className="relative flex h-full flex-col text-white" style={{ transform: 'translateZ(28px)' }}>
           <div className="flex items-center justify-between">
             <p className="font-display text-[15px] font-bold tracking-tight">
-              Elaz <span className="rounded-md bg-white px-1.5 py-0.5 text-[#1a1436]">Ed</span>
+              OG <span className="rounded-md bg-white px-1.5 py-0.5 text-[#1a1436]">CRE8R²</span>
             </p>
             <p className="font-mono text-[10.5px] uppercase tracking-[0.2em] text-white/60">member</p>
           </div>

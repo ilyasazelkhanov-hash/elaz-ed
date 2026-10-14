@@ -10,10 +10,10 @@ const BOT = 'elazart_bot'
 
 export function Logo({ size = 30 }: { size?: number }) {
   return (
-    <p className="font-display font-bold leading-none tracking-tight" style={{ fontSize: size }}>
-      Elaz{' '}
+    <p className="whitespace-nowrap font-display font-bold leading-none tracking-tight" style={{ fontSize: size }}>
+      OG{' '}
       <span className="inline-block rounded-[0.3em] px-[0.22em] py-[0.08em] text-white" style={{ background: 'var(--aurora)' }}>
-        Ed
+        CRE8R²
       </span>
     </p>
   )

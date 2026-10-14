@@ -1,4 +1,4 @@
-// Elaz Ed API: проверка подписи Telegram, доступ по подписке на канал, XP, стрики, админка, вебхук бота.
+// OG CRE8R² API: проверка подписи Telegram, доступ по подписке на канал, XP, стрики, админка, вебхук бота.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
@@ -576,19 +576,19 @@ async function shareMessage(body: Row) {
   if (!s.bot?.username) throw new HttpError(400, 'not_ready')
   const kind = SHARE_KINDS.includes(body.kind) ? body.kind : 'level'
   const lessonId = Number(body.lesson_id)
-  let caption = 'Учусь в Elaz Ed: уроки с XP, стриком и рейтингом.'
+  let caption = 'Учусь в OG CRE8R²: уроки с XP, стриком и рейтингом.'
   let start = `r${row.id}`
   if (kind === 'lesson' && lessonId > 0) {
     const { data: les } = await db.from('lessons').select('id,title').eq('id', lessonId).eq('published', true).maybeSingle()
     if (les) {
-      caption = `Прошёл урок «${les.title}» в Elaz Ed.`
+      caption = `Прошёл урок «${les.title}» в OG CRE8R².`
       start = `l${les.id}_r${row.id}`
     }
   } else if (kind === 'streak') {
     // Сырой row.streak мог остаться от оборванного стрика — берём живой.
-    caption = `Держу стрик в Elaz Ed: ${aliveStreak(row)} дн. подряд.`
+    caption = `Держу стрик в OG CRE8R²: ${aliveStreak(row)} дн. подряд.`
   } else if (kind === 'achievement') {
-    caption = 'Открыл новую ачивку в Elaz Ed.'
+    caption = 'Открыл новую ачивку в OG CRE8R².'
   }
   const photo = `${SUPABASE_URL}/storage/v1/object/public/shares/${row.id}/${kind}.jpg?v=${Date.now()}`
   const r = await tg('savePreparedInlineMessage', {
@@ -599,7 +599,7 @@ async function shareMessage(body: Row) {
       photo_url: photo,
       thumbnail_url: photo,
       caption,
-      reply_markup: { inline_keyboard: [[{ text: 'Открыть Elaz Ed', url: `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=${start}` }]] },
+      reply_markup: { inline_keyboard: [[{ text: 'Открыть OG CRE8R²', url: `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=${start}` }]] },
     },
     allow_user_chats: true,
     allow_group_chats: true,
@@ -932,7 +932,7 @@ async function adminAnnounce(body: Row) {
     chat_id: s.channel.id,
     text,
     parse_mode: 'HTML',
-    reply_markup: { inline_keyboard: [[{ text: 'Открыть в Elaz Ed', url: link }]] },
+    reply_markup: { inline_keyboard: [[{ text: 'Открыть в OG CRE8R²', url: link }]] },
   })
   if (!r.ok) throw new HttpError(502, 'telegram')
   return { ok: true }
@@ -956,9 +956,9 @@ async function webhook(req: Request) {
       if (appUrl) {
         await tg('sendMessage', {
           chat_id: msg.chat.id,
-          text: 'Это Elaz Ed. Уроки, туториалы и новости — в одном месте, с XP и стриком.\n\nДоступ открыт подписчикам канала.',
+          text: 'Это OG CRE8R². Уроки, туториалы и новости — в одном месте, с XP и стриком.\n\nДоступ открыт подписчикам канала.',
           reply_markup: {
-            inline_keyboard: [[{ text: 'Открыть Elaz Ed', web_app: { url: payload ? `${appUrl}/?sp=${payload}` : appUrl } }]],
+            inline_keyboard: [[{ text: 'Открыть OG CRE8R²', web_app: { url: payload ? `${appUrl}/?sp=${payload}` : appUrl } }]],
           },
         })
       }
@@ -1069,7 +1069,7 @@ async function webhook(req: Request) {
       if (st === 'administrator' && (!s.channel?.id || s.channel.id === mine.chat.id)) {
         await setSetting('channel', { id: mine.chat.id, title: mine.chat.title ?? '' })
         if (mine.from?.id) {
-          await tg('sendMessage', { chat_id: mine.from.id, text: `Канал «${mine.chat.title ?? ''}» подключён. Elaz Ed теперь проверяет подписку.` })
+          await tg('sendMessage', { chat_id: mine.from.id, text: `Канал «${mine.chat.title ?? ''}» подключён. OG CRE8R² теперь проверяет подписку.` })
         }
       }
     }
@@ -1109,16 +1109,16 @@ async function setup() {
   })
   let menu = false
   if (s.app_url) {
-    const r = await tg('setChatMenuButton', { menu_button: { type: 'web_app', text: 'Elaz Ed', web_app: { url: s.app_url } } })
+    const r = await tg('setChatMenuButton', { menu_button: { type: 'web_app', text: 'OG CRE8R²', web_app: { url: s.app_url } } })
     menu = r.ok
   }
   await tg('setMyCommands', {
     commands: [
-      { command: 'start', description: 'Открыть Elaz Ed' },
+      { command: 'start', description: 'Открыть OG CRE8R²' },
       { command: 'paysupport', description: 'Вопрос по оплате' },
     ],
   })
-  await tg('setMyShortDescription', { short_description: 'Elaz Ed — уроки, туториалы и новости для подписчиков канала.' })
+  await tg('setMyShortDescription', { short_description: 'OG CRE8R² — уроки, туториалы и новости для подписчиков канала.' })
   return json({
     ok: true,
     bot: me.result.username,

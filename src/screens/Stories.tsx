@@ -145,7 +145,7 @@ export function Stories({ startId }: { startId: number }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14px] font-bold leading-tight">{story.title}</p>
-            <p className="text-[12px] font-medium opacity-70">Elaz Ed · {story.category}</p>
+            <p className="text-[12px] font-medium opacity-70">OG CRE8R² · {story.category}</p>
           </div>
           <Tap onClick={pop} aria-label="Закрыть" className="pointer-events-auto grid h-9 w-9 place-items-center rounded-full bg-black/15">
             <X size={18} />

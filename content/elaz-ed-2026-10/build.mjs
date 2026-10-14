@@ -41,7 +41,7 @@ for(const item of lessons){
 }
 if(new Set(lessons.map(x=>x.key)).size!==84)throw Error('Повтор ключа')
 if(new Set(lessons.map(x=>x.title)).size!==84)throw Error('Повтор заголовка')
-const payload={batch,date:'2026-10-13',publisher:'Elaz Ed',rights_confirmed:true,
+const payload={batch,date:'2026-10-13',publisher:'OG CRE8R²',rights_confirmed:true,
   course,lessons,notes:[
     'Каталог: 42 карточки, 15 гайдов и 7 промптов.',
     'Курс: 20 текстовых уроков в шести модулях, с практикой и квизами.',
