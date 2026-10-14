@@ -299,7 +299,9 @@ async function hasAccess(userId: number, courseId: number) {
 // Урок из курса открыт, если он помечен бесплатным, у человека есть доступ к курсу или это админ.
 async function canRead(row: Row, les: Row): Promise<boolean> {
   if (!les.course_id || les.free_preview || row.is_admin) return true
-  return hasAccess(row.id, les.course_id)
+  if (await hasAccess(row.id, les.course_id)) return true
+  const { data } = await db.from('lesson_access').select('lesson_id').eq('user_id', row.id).eq('lesson_id', les.id).maybeSingle()
+  return !!data
 }
 
 async function buildCourses(row: Row, feed: Row[]) {
@@ -361,8 +363,14 @@ async function decideRequest(courseId: number, userId: number, approve: boolean)
 async function markRefunded(chargeId: string) {
   const { data: p, error } = await db.rpc('apply_star_refund', { p_charge: chargeId })
   if (error || !p) throw new HttpError(500, 'db')
+  // Билет за возвращённые звёзды отзываем, если он ещё не потрачен.
+  await db.from('advent_tickets').update({ revoked_at: new Date().toISOString() }).eq('ref', `stars:${chargeId}`).is('used_at', null).is('revoked_at', null)
   if (!p.new_refund || !p.user_id) return
   await logEvent(p.user_id, 'refund', null, { course: p.course_id, stars: p.stars })
+  if (!p.course_id) {
+    await tg('sendMessage', { chat_id: p.user_id, text: 'Звёзды за билет календаря возвращены. Если билет не был потрачен, он отменён.' })
+    return
+  }
   const { data: course } = await db.from('courses').select('title').eq('id', p.course_id).maybeSingle()
   await tg('sendMessage', { chat_id: p.user_id, text: `Звёзды за курс «${course?.title ?? ''}» возвращены. Доступ к курсу закрыт.` })
 }
@@ -401,6 +409,8 @@ async function boot(body: Row) {
     return { status: 'locked', ...meta }
   }
   row = await syncTz(row, body.tz)
+  const storyOwner = Number(/(?:^|_)st(\d+)/.exec(typeof body.sp === 'string' ? body.sp : '')?.[1] ?? 0)
+  if (storyOwner) await storyVisit(storyOwner, row.id, s)
   if (row.referred_by && !row.ref_rewarded) {
     const { data: referrer } = await db.rpc('reward_referral', { p_user: row.id })
     if (referrer) await logEvent(row.id, 'referral', null, { by: referrer })
@@ -651,6 +661,25 @@ async function courseInvoice(body: Row) {
   return { link: r.result }
 }
 
+// Билет календаря за звёзды. Выдаёт его вебхук после подтверждения оплаты Telegram.
+async function adventTicketInvoice(body: Row) {
+  const row = await member(body)
+  const cfg = needAdvent(await getSettings())
+  if (!cfg.catchup.methods.includes('stars')) throw new HttpError(400, 'not_for_sale')
+  if (adventClosed(cfg, adventToday(cfg))) throw new HttpError(403, 'advent_closed')
+  const r = await tg('createInvoiceLink', {
+    title: 'Билет календаря',
+    description: 'Открывает одну пропущенную дверь адвент-календаря.',
+    payload: `catchup:${row.id}:${Date.now()}`,
+    provider_token: '',
+    currency: 'XTR',
+    prices: [{ label: 'Билет', amount: cfg.catchup.stars }],
+  })
+  if (!r.ok) throw new HttpError(502, 'telegram')
+  await logEvent(row.id, 'invoice', null, { catchup: true, stars: cfg.catchup.stars })
+  return { link: r.result }
+}
+
 async function top(body: Row) {
   const row = await member(body)
   // В рейтинге только подписчики: экран так и подписан, и отписавшиеся не занимают места.
@@ -799,7 +828,7 @@ async function adminPayments(body: Row) {
   await member(body, true)
   const { data, error } = await db
     .from('payments')
-    .select('id,user_id,course_id,stars,created_at,refunded_at,users(first_name,username),courses(title)')
+    .select('id,user_id,course_id,stars,created_at,refunded_at,purpose,users(first_name,username),courses(title)')
     .order('created_at', { ascending: false })
     .limit(100)
   if (error) throw new HttpError(500, 'db')
@@ -814,7 +843,7 @@ async function adminPayments(body: Row) {
       refunded: !!p.refunded_at,
       name: p.users?.first_name || 'Без имени',
       username: p.users?.username ?? null,
-      course: p.courses?.title ?? 'Курс удалён',
+      course: p.purpose === 'catchup' ? 'Билет календаря' : p.courses?.title ?? 'Курс удалён',
     })),
   }
 }
@@ -954,6 +983,13 @@ async function webhook(req: Request) {
           reason = 'Курс уже открыт. Звёзды не списаны.'
         }
       }
+      // Билет календаря: цена из настроек, календарь должен быть открыт.
+      const t = /^catchup:(\d+):\d+$/.exec(pcq.invoice_payload ?? '')
+      if (t && pcq.currency === 'XTR' && Number(t[1]) === pcq.from?.id) {
+        const cfg = adventCfg(s)
+        ok = !!cfg && cfg.catchup.methods.includes('stars') && cfg.catchup.stars === pcq.total_amount && !adventClosed(cfg, adventToday(cfg))
+        reason = 'Календарь сейчас не продаёт билеты. Звёзды не списаны.'
+      }
       await tg('answerPreCheckoutQuery', {
         pre_checkout_query_id: pcq.id,
         ok,
@@ -978,6 +1014,28 @@ async function webhook(req: Request) {
           await logEvent(userId, 'purchase', null, { course: courseId, stars: paid.total_amount })
           const { data: course } = await db.from('courses').select('id,title').eq('id', courseId).maybeSingle()
           if (course) await notifyOpened(userId, course, s)
+        }
+      }
+    }
+
+    // Оплата билета календаря: запись в журнале и билет — обе операции можно повторять без дублей.
+    const ticketPay = paid && /^catchup:(\d+):\d+$/.exec(paid.invoice_payload ?? '')
+    if (ticketPay && Number(ticketPay[1]) === msg.from?.id) {
+      const userId = Number(ticketPay[1])
+      const charge = String(paid.telegram_payment_charge_id)
+      const ins = await db.from('payments').insert({ user_id: userId, course_id: null, stars: paid.total_amount, charge_id: charge, purpose: 'catchup' })
+      const duplicate = ins.error?.code === '23505'
+      if (ins.error && !duplicate) retry = true
+      else {
+        const { data: pay } = await db.from('payments').select('refunded_at').eq('charge_id', charge).maybeSingle()
+        // После возврата звёзд повторное уведомление билет не возвращает.
+        if (!pay?.refunded_at) {
+          const t = await db.from('advent_tickets').insert({ user_id: userId, source: 'stars', ref: `stars:${charge}` })
+          if (t.error && t.error.code !== '23505') retry = true
+          else if (!t.error) {
+            await logEvent(userId, 'purchase', null, { catchup: true, stars: paid.total_amount })
+            await tg('sendMessage', { chat_id: userId, text: '🎟 Билет получен. Открой календарь и выбери пропущенную дверь.' })
+          }
         }
       }
     }
@@ -1082,10 +1140,26 @@ async function health() {
 // у всех участников дверь №7 открывается в одну и ту же минуту. Все очки и награды считает сервер.
 
 const ADVENT_THEMES = ['standard', 'halloween', 'newyear']
+/** Чем можно заработать билет «догнать». Каждый способ проверяет сервер. */
+const CATCHUP_METHODS = ['quiz', 'invite', 'story', 'stars']
+/** Сколько билетов за переходы из сторис может получить один человек — защита от накрутки своими аккаунтами. */
+const STORY_TICKETS = 5
+const REWARD_KINDS = ['promo', 'message', 'link', 'video', 'lesson', 'course']
+
+interface CatchupCfg {
+  methods: string[]
+  stars: number
+}
+
+function catchupCfg(c: Row | undefined): CatchupCfg {
+  const methods = Array.isArray(c?.methods) ? c.methods.filter((m: unknown) => CATCHUP_METHODS.includes(String(m))) : CATCHUP_METHODS
+  return { methods, stars: int(c?.stars, 1, 10_000, 50) }
+}
 
 interface AdventCfg {
   title: string
   theme: string
+  catchup: CatchupCfg
   start: string
   days: number
   tz: number
@@ -1099,6 +1173,7 @@ function adventCfg(s: Settings): AdventCfg | null {
   return {
     title: str(a.title, 60) || 'Адвент-календарь',
     theme: ADVENT_THEMES.includes(a.theme) ? a.theme : 'standard',
+    catchup: catchupCfg(a.catchup),
     start: a.start,
     days: int(a.days, 1, 60, 24),
     tz: clampTz(a.tz ?? 300),
@@ -1153,6 +1228,44 @@ async function adventSummary(row: Row, s: Settings) {
   }
 }
 
+/** Начало кампании как момент времени: полночь первого дня по поясу календаря. */
+const campaignSince = (cfg: AdventCfg) => new Date(Date.parse(`${cfg.start}T00:00:00Z`) - cfg.tz * 60_000).toISOString()
+
+/** Начисляет билеты за то, что уже сделано: уроки с квизом без ошибок и приглашённые друзья. Повторно ничего не дублирует. */
+async function syncTickets(row: Row, cfg: AdventCfg) {
+  const since = campaignSince(cfg)
+  const fresh: Row[] = []
+  if (cfg.catchup.methods.includes('quiz')) {
+    const { data } = await db.from('progress').select('lesson_id,score,total').eq('user_id', row.id).gte('completed_at', since)
+    for (const p of data ?? []) if (p.total > 0 && p.score === p.total) fresh.push({ user_id: row.id, source: 'quiz', ref: `quiz:${row.id}:${p.lesson_id}` })
+  }
+  if (cfg.catchup.methods.includes('invite')) {
+    // Друг засчитывается, только когда прошёл проверку подписки (ref_rewarded) и пришёл во время кампании.
+    const { data } = await db.from('users').select('id').eq('referred_by', row.id).eq('ref_rewarded', true).gte('created_at', since)
+    for (const u of data ?? []) fresh.push({ user_id: row.id, source: 'invite', ref: `invite:${u.id}` })
+  }
+  if (fresh.length) await db.from('advent_tickets').upsert(fresh, { onConflict: 'ref', ignoreDuplicates: true })
+}
+
+async function ticketStats(userId: number) {
+  const { data } = await db.from('advent_tickets').select('source,used_at,revoked_at').eq('user_id', userId)
+  const live = (data ?? []).filter((t) => !t.revoked_at)
+  const earned: Record<string, number> = { quiz: 0, invite: 0, story: 0, stars: 0, admin: 0 }
+  for (const t of live) earned[t.source] = (earned[t.source] ?? 0) + 1
+  return { available: live.filter((t) => !t.used_at).length, used: live.filter((t) => t.used_at).length, earned }
+}
+
+/** Кто-то открыл приложение по ссылке из сторис — автору сторис билет. Себе и дважды от одного человека — нельзя. */
+async function storyVisit(ownerId: number, visitorId: number, s: Settings) {
+  const cfg = adventCfg(s)
+  if (!cfg || !cfg.catchup.methods.includes('story') || ownerId === visitorId) return
+  if (adventClosed(cfg, adventToday(cfg))) return
+  const { count } = await db.from('advent_tickets').select('id', { count: 'exact', head: true }).eq('user_id', ownerId).eq('source', 'story')
+  if ((count ?? 0) >= STORY_TICKETS) return
+  const { error } = await db.from('advent_tickets').insert({ user_id: ownerId, source: 'story', ref: `story:${ownerId}:${visitorId}` })
+  if (!error) await tg('sendMessage', { chat_id: ownerId, text: '🎟 По ссылке из твоей сторис зашёл человек — у тебя билет, чтобы догнать пропущенную дверь календаря.' })
+}
+
 function needAdvent(s: Settings) {
   const cfg = adventCfg(s)
   if (!cfg) throw new HttpError(404, 'advent_off')
@@ -1164,11 +1277,13 @@ async function advent(body: Row) {
   const cfg = needAdvent(await getSettings())
   const today = adventToday(cfg)
   const closed = adventClosed(cfg, today)
-  const [doors, opens, rewards, codes] = await Promise.all([
+  await syncTickets(row, cfg)
+  const [doors, opens, rewards, codes, tickets] = await Promise.all([
     db.from('advent_doors').select('day,kind,title,emoji').lte('day', cfg.days).order('day'),
     db.from('advent_opens').select('day,score,total,xp,late').eq('user_id', row.id),
-    db.from('advent_rewards').select('id,doors,title,description,emoji,stock').order('doors').order('position'),
+    db.from('advent_rewards').select('id,doors,title,description,emoji,stock,kind,payload').order('doors').order('position'),
     db.from('reward_codes').select('code,reward_id,status,redeemed_at').eq('user_id', row.id),
+    ticketStats(row.id),
   ])
   if (doors.error || rewards.error) throw new HttpError(500, 'db')
   const opened = new Map((opens.data ?? []).map((o) => [o.day, o]))
@@ -1188,11 +1303,35 @@ async function advent(body: Row) {
       const state = o ? 'open' : d.day > today ? 'locked' : closed ? 'missed' : d.day === today ? 'today' : 'late'
       return { day: d.day, kind: d.kind, title: d.day <= today ? d.title : null, emoji: d.day <= today ? d.emoji : null, state, xp: o?.xp ?? null }
     }),
+    // Содержимое приза (текст, ссылка, урок) отдаём только тому, кому он уже выдан.
     rewards: (rewards.data ?? []).map((r) => {
       const c = mine.get(r.id)
-      return { ...r, code: c?.code ?? null, redeemed: c?.status === 'redeemed' }
+      const kind = r.kind ?? 'promo'
+      return {
+        id: r.id,
+        doors: r.doors,
+        title: r.title,
+        description: r.description,
+        emoji: r.emoji,
+        stock: r.stock,
+        kind,
+        issued: !!c,
+        code: c && kind === 'promo' ? c.code : null,
+        redeemed: c?.status === 'redeemed',
+        content: c ? rewardContent(kind, r.payload) : null,
+      }
     }),
+    catchup: { methods: cfg.catchup.methods, stars: cfg.catchup.stars, tickets: tickets.available, used: tickets.used, earned: tickets.earned },
   }
+}
+
+function rewardContent(kind: string, payload: Row | null) {
+  const p = payload ?? {}
+  if (kind === 'message') return { text: String(p.text ?? '') }
+  if (kind === 'link' || kind === 'video') return { url: String(p.url ?? ''), label: String(p.label ?? '') }
+  if (kind === 'lesson') return { lesson_id: Number(p.lesson_id) || null }
+  if (kind === 'course') return { course_id: Number(p.course_id) || null }
+  return null
 }
 
 /** Дверь, человек и день кампании. Будущую дверь не отдаём даже по прямому запросу. */
@@ -1268,7 +1407,13 @@ async function issueCodes(row: Row, opened: number, s: Settings) {
       const code = genCode()
       const { error } = await db.from('reward_codes').insert({ code, user_id: row.id, reward_id: r.id })
       if (!error) {
-        fresh.push({ reward_id: r.id, code, title: r.title, emoji: r.emoji })
+        const kind = r.kind ?? 'promo'
+        // Доступ к уроку или курсу открываем сразу, в момент выдачи.
+        if (kind === 'lesson' && Number(r.payload?.lesson_id)) {
+          await db.from('lesson_access').upsert({ user_id: row.id, lesson_id: Number(r.payload.lesson_id), source: 'advent' }, { onConflict: 'user_id,lesson_id', ignoreDuplicates: true })
+        }
+        if (kind === 'course' && Number(r.payload?.course_id)) await grantAccess(row.id, Number(r.payload.course_id), 'advent')
+        fresh.push({ reward_id: r.id, code: kind === 'promo' ? code : null, kind, title: r.title, emoji: r.emoji, content: rewardContent(kind, r.payload) })
         break
       }
       // 23505 по (user_id, reward_id) — код уже выдан параллельным запросом; по code — редкое совпадение, пробуем снова.
@@ -1277,11 +1422,18 @@ async function issueCodes(row: Row, opened: number, s: Settings) {
   }
   // Код дублируем в чат с ботом: так он не потеряется, даже если человек закроет приложение.
   if (fresh.length) {
-    const lines = fresh.map((c) => `${c.emoji} <b>${escapeHtml(c.title)}</b>\nКод: <code>${c.code}</code>`).join('\n\n')
+    const detail = (c: Row) => {
+      if (c.kind === 'promo') return `Код: <code>${c.code}</code>`
+      if (c.kind === 'message') return escapeHtml(c.content?.text ?? '')
+      if (c.kind === 'link' || c.kind === 'video') return escapeHtml(c.content?.url ?? '')
+      return 'Уже открыт в приложении.'
+    }
+    const lines = fresh.map((c) => `${escapeHtml(c.emoji)} <b>${escapeHtml(c.title)}</b>\n${detail(c)}`).join('\n\n')
+    const hasCode = fresh.some((c) => c.kind === 'promo')
     await tg('sendMessage', {
       chat_id: row.id,
       parse_mode: 'HTML',
-      text: `Награда открыта!\n\n${lines}\n\nПокажи код на кассе. Он одноразовый.`,
+      text: `Награда открыта!\n\n${lines}${hasCode ? '\n\nПокажи код на кассе. Он одноразовый.' : ''}`,
       ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть календарь', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
     })
   }
@@ -1307,9 +1459,14 @@ async function adventOpen(body: Row) {
     score = Math.min(int(body.score, 0, 100_000, 0), total)
   }
   const xp = doorXp(door, score, late)
-  const { data, error } = await db.rpc('advent_open', { p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp, p_late: late })
+  // Пропущенная дверь открывается только за билет; билет списывается в той же транзакции.
+  if (late) await syncTickets(row, cfg)
+  const { data, error } = late
+    ? await db.rpc('advent_open_late', { p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp })
+    : await db.rpc('advent_open', { p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp, p_late: false })
   if (error) throw new HttpError(500, 'db')
   const res = Array.isArray(data) ? data[0] : data
+  if (late && res && !res.ticket) throw new HttpError(402, 'need_ticket')
   const inserted = !!res?.inserted
   const newCodes = inserted ? await issueCodes(row, res.opened, s) : []
   if (inserted) await logEvent(row.id, 'advent_open', null, { day: door.day, kind: door.kind, score, late })
@@ -1379,8 +1536,102 @@ async function adminAdvent(body: Row) {
   await member(body, true)
   const { data, error } = await db.rpc('advent_summary')
   if (error) throw new HttpError(500, 'db')
-  const theme = (await getSettings()).advent?.theme
-  return { ...data, theme: ADVENT_THEMES.includes(theme) ? theme : 'standard' }
+  const s = await getSettings()
+  const a = s.advent ?? {}
+  const [full, doors] = await Promise.all([
+    db.from('advent_rewards').select('*').order('doors').order('position'),
+    db.from('advent_doors').select('day', { count: 'exact', head: true }),
+  ])
+  return {
+    ...data,
+    theme: ADVENT_THEMES.includes(a.theme) ? a.theme : 'standard',
+    settings: {
+      enabled: !!a.enabled,
+      title: str(a.title, 60) || 'Адвент-календарь',
+      start: typeof a.start === 'string' ? a.start : '',
+      days: int(a.days, 1, 60, 24),
+      catchup: catchupCfg(a.catchup),
+    },
+    doors_defined: doors.count ?? 0,
+    reward_list: full.data ?? [],
+  }
+}
+
+// Настройки календаря: число дней, название, старт, включение, способы догнать и цена билета.
+async function adminAdventSave(body: Row) {
+  await member(body, true)
+  const input = body.settings ?? {}
+  const s = await getSettings(true)
+  const prev = s.advent ?? { enabled: false }
+  const start = str(input.start, 10)
+  if (start && !/^\d{4}-\d{2}-\d{2}$/.test(start)) throw new HttpError(400, 'bad_date')
+  const next = {
+    ...prev,
+    title: str(input.title, 60) || prev.title || 'Адвент-календарь',
+    start: start || prev.start,
+    days: int(input.days, 1, 60, prev.days ?? 24),
+    enabled: input.enabled == null ? !!prev.enabled : !!input.enabled,
+    catchup: catchupCfg(input.catchup ?? prev.catchup),
+  }
+  await setSetting('advent', next)
+  return { ok: true }
+}
+
+// Приз: вид и содержимое проверяем до записи — пустую ссылку или несуществующий курс сохранить нельзя.
+async function cleanReward(input: Row) {
+  const kind = REWARD_KINDS.includes(input.kind) ? input.kind : 'promo'
+  const title = str(input.title, 80)
+  if (!title) throw new HttpError(400, 'title_required')
+  const p = input.payload ?? {}
+  let payload: Row = {}
+  if (kind === 'message') {
+    const text = typeof p.text === 'string' ? p.text.trim().slice(0, 2000) : ''
+    if (!text) throw new HttpError(400, 'reward_payload')
+    payload = { text }
+  } else if (kind === 'link' || kind === 'video') {
+    const url = httpsUrl(p.url)
+    if (!url) throw new HttpError(400, 'reward_payload')
+    payload = { url, label: str(p.label, 40) }
+  } else if (kind === 'lesson') {
+    const { data } = await db.from('lessons').select('id').eq('id', Number(p.lesson_id)).maybeSingle()
+    if (!data) throw new HttpError(400, 'reward_payload')
+    payload = { lesson_id: data.id }
+  } else if (kind === 'course') {
+    const { data } = await db.from('courses').select('id').eq('id', Number(p.course_id)).maybeSingle()
+    if (!data) throw new HttpError(400, 'reward_payload')
+    payload = { course_id: data.id }
+  }
+  return {
+    title,
+    description: str(input.description, 300),
+    emoji: [...str(input.emoji, 16)].slice(0, 8).join('') || '🎁',
+    doors: int(input.doors, 1, 60, 1),
+    stock: input.stock == null || input.stock === '' ? null : int(input.stock, 0, 1_000_000, 0),
+    position: int(input.position, 0, 999, 0),
+    kind,
+    payload,
+  }
+}
+
+async function adminAdventRewardSave(body: Row) {
+  await member(body, true)
+  const input = body.reward ?? {}
+  const clean = await cleanReward(input)
+  const id = Number(input.id)
+  const query = id ? db.from('advent_rewards').update(clean).eq('id', id) : db.from('advent_rewards').insert(clean)
+  const { data, error } = await query.select('*').single()
+  if (error) throw new HttpError(500, 'db')
+  return data
+}
+
+// Выданный приз не удаляем: у людей остались коды и доступы, а статистика потеряла бы смысл.
+async function adminAdventRewardDelete(body: Row) {
+  await member(body, true)
+  const id = Number(body.id)
+  const { count } = await db.from('reward_codes').select('code', { count: 'exact', head: true }).eq('reward_id', id)
+  if ((count ?? 0) > 0) throw new HttpError(409, 'reward_issued')
+  await db.from('advent_rewards').delete().eq('id', id)
+  return { ok: true }
 }
 
 // Оформление календаря меняется у всех сразу; остальные настройки адвента не трогаем.
@@ -1466,6 +1717,10 @@ const routes: Record<string, (body: Row) => Promise<unknown>> = {
   advent_open: adventOpen,
   admin_advent: adminAdvent,
   admin_advent_theme: adminAdventTheme,
+  admin_advent_save: adminAdventSave,
+  admin_advent_reward_save: adminAdventRewardSave,
+  admin_advent_reward_delete: adminAdventRewardDelete,
+  advent_ticket_invoice: adventTicketInvoice,
   // Без Telegram: страница кассира проверяет PIN точки, а не подпись пользователя.
   redeem,
   redeem_points: redeemPoints,

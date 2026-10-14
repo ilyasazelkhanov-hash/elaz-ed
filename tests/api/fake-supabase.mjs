@@ -8,9 +8,13 @@ const KEYS = {
   access_requests: ['user_id', 'course_id'],
   progress: ['user_id', 'lesson_id'],
   likes: ['user_id', 'lesson_id'],
+  lesson_access: ['user_id', 'lesson_id'],
+  advent_opens: ['user_id', 'day'],
+  advent_tickets: ['ref'],
+  reward_codes: ['code'],
 }
-const UNIQUE = { payments: ['charge_id'] }
-const AUTO_ID = ['payments', 'events', 'courses', 'lessons']
+const UNIQUE = { payments: ['charge_id'], advent_tickets: ['ref'] }
+const AUTO_ID = ['payments', 'events', 'courses', 'lessons', 'advent_tickets', 'advent_rewards']
 
 export const state = {
   tables: {},
@@ -79,6 +83,10 @@ class Query {
   }
   gt(k, v) {
     this.filters.push((r) => r[k] > v)
+    return this
+  }
+  lte(k, v) {
+    this.filters.push((r) => r[k] <= v)
     return this
   }
   gte(k, v) {
@@ -193,6 +201,22 @@ export function createClient() {
     from: (name) => new Query(name),
     // Функции базы здесь не проверяются: их логика живёт в миграциях.
     rpc: async (name, args) => {
+      // Двери календаря: та же логика, что в SQL-функциях advent_open и advent_open_late.
+      if (name === 'advent_open' || name === 'advent_open_late') {
+        const opens = table('advent_opens')
+        const count = () => table('advent_opens').filter((o) => o.user_id === args.p_user).length
+        if (opens.some((o) => o.user_id === args.p_user && o.day === args.p_day)) return { data: [{ inserted: false, opened: count(), ticket: true }], error: null }
+        if (name === 'advent_open_late') {
+          const t = table('advent_tickets').find((x) => x.user_id === args.p_user && !x.used_at && !x.revoked_at)
+          if (!t) return { data: [{ inserted: false, opened: count(), ticket: false }], error: null }
+          t.used_at = new Date().toISOString()
+          t.used_day = args.p_day
+        }
+        opens.push({ user_id: args.p_user, day: args.p_day, score: args.p_score, total: args.p_total, xp: args.p_xp, late: name === 'advent_open_late' })
+        const u = table('users').find((x) => x.id === args.p_user)
+        if (u) u.xp = (u.xp ?? 0) + args.p_xp
+        return { data: [{ inserted: true, opened: count(), ticket: true }], error: null }
+      }
       if (!['apply_star_payment', 'apply_star_refund'].includes(name)) return { data: null, error: null }
       // Модель атомарного контракта RPC: ошибки не оставляют частичных изменений таблиц.
       const before = structuredClone(state.tables)

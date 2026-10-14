@@ -162,6 +162,18 @@ export interface AdventCell {
   xp: number | null
 }
 
+/** Вид приза: промокод с погашением на кассе, текст, ссылка, видео, урок или курс. */
+export type RewardKind = 'promo' | 'message' | 'link' | 'video' | 'lesson' | 'course'
+
+/** Содержимое приза — приходит только тому, кому приз уже выдан. */
+export interface RewardContent {
+  text?: string
+  url?: string
+  label?: string
+  lesson_id?: number | null
+  course_id?: number | null
+}
+
 export interface AdventReward {
   id: number
   doors: number
@@ -169,8 +181,26 @@ export interface AdventReward {
   description: string
   emoji: string
   stock: number | null
+  /** Старый сервер вид не присылает — тогда это промокод. */
+  kind?: RewardKind
+  issued?: boolean
+  /** Только у промокода. */
   code: string | null
   redeemed: boolean
+  content?: RewardContent | null
+}
+
+/** Чем можно заработать билет «догнать». */
+export type CatchupMethod = 'quiz' | 'invite' | 'story' | 'stars'
+
+export interface AdventCatchup {
+  methods: CatchupMethod[]
+  /** Цена билета в звёздах. */
+  stars: number
+  /** Свободные билеты. */
+  tickets: number
+  used: number
+  earned: Partial<Record<CatchupMethod | 'admin', number>>
 }
 
 export interface AdventState {
@@ -184,6 +214,7 @@ export interface AdventState {
   streak: number
   doors: AdventCell[]
   rewards: AdventReward[]
+  catchup?: AdventCatchup
 }
 
 export interface DoorQuestion {
@@ -212,9 +243,34 @@ export interface DoorView {
 
 export interface NewCode {
   reward_id: number
-  code: string
+  /** Только у промокода. */
+  code: string | null
+  kind?: RewardKind
   title: string
   emoji: string
+  content?: RewardContent | null
+}
+
+export interface AdventSettings {
+  enabled: boolean
+  title: string
+  /** Первый день, ГГГГ-ММ-ДД. */
+  start: string
+  days: number
+  catchup: { methods: CatchupMethod[]; stars: number }
+}
+
+/** Приз в редакторе админки — со всем содержимым. */
+export interface AdminReward {
+  id?: number
+  doors: number
+  title: string
+  description: string
+  emoji: string
+  stock: number | null
+  position: number
+  kind: RewardKind
+  payload: { text?: string; url?: string; label?: string; lesson_id?: number; course_id?: number }
 }
 
 export interface DoorResult {
@@ -235,6 +291,10 @@ export interface AdventAdmin {
   by_day: { day: number; title: string; kind: DoorKind; opens: number; late: number }[]
   rewards: { id: number; title: string; doors: number; stock: number | null; issued: number; redeemed: number }[]
   points: { name: string; redeemed: number }[]
+  settings?: AdventSettings
+  /** Сколько дверей заведено в таблице: дней не может быть больше, чем дверей. */
+  doors_defined?: number
+  reward_list?: AdminReward[]
 }
 
 export interface RedeemPoint {
@@ -349,6 +409,11 @@ export interface Api {
   adminAdvent(): Promise<AdventAdmin>
   /** Меняет оформление календаря у всех участников. */
   adminAdventTheme(theme: AdventThemeId): Promise<void>
+  /** Счёт на билет «догнать» в звёздах; null — демо, билет начисляется сразу. */
+  adventTicketInvoice(): Promise<string | null>
+  adminAdventSave(settings: Partial<AdventSettings>): Promise<void>
+  adminAdventRewardSave(reward: AdminReward): Promise<AdminReward>
+  adminAdventRewardDelete(id: number): Promise<void>
   redeemPoints(): Promise<RedeemPoint[]>
   /** check — только проверить код, не гасить. */
   redeemCheck(point: number, pin: string, code: string): Promise<RedeemCheck>

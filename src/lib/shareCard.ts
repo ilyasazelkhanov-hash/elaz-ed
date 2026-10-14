@@ -5,6 +5,8 @@ import type { CompleteResult, GradientName, Me, ShareKind } from './types'
 
 export interface ShareCard {
   kind: ShareKind
+  /** Своя ссылка вместо приглашения в приложение — например, ссылка из сторис календаря. */
+  link?: string
   gradient: GradientName
   /** Короткая метка в углу: «Урок пройден», «Стрик». */
   chip: string

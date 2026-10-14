@@ -1,11 +1,11 @@
 import { Check, ChevronLeft } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { formatCode, KIND_LABEL } from '../../lib/advent'
+import { KIND_LABEL } from '../../lib/advent'
 import { api, ApiError, errorText } from '../../lib/api'
 import { GRADIENTS, type Gradient } from '../../lib/game'
 import { sfx } from '../../lib/sfx'
-import { copyText, haptic, inTelegram } from '../../lib/tg'
+import { haptic, inTelegram } from '../../lib/tg'
 import type { DoorKind, DoorResult, DoorView } from '../../lib/types'
 import { Markdown } from '../../Markdown'
 import { useStore } from '../../store'
@@ -14,6 +14,7 @@ import { Arcade } from './Arcade'
 import { slide } from './Advent'
 import { Scratch } from './Scratch'
 import { themeOf, ThemeScene } from './themes'
+import { PromoCode, RewardBody } from './Catchup'
 
 const LOOK: Record<DoorKind, { g: Gradient; name: 'candy' | 'aurora' | 'sunset' | 'mint' }> = {
   quiz: { g: GRADIENTS.aurora, name: 'aurora' },
@@ -71,7 +72,7 @@ export function DoorScreen({ day }: { day: number }) {
     } catch (e) {
       guard(e)
       toast(errorText(e))
-      if (e instanceof ApiError && (e.code === 'advent_closed' || e.code === 'door_locked')) pop()
+      if (e instanceof ApiError && (e.code === 'advent_closed' || e.code === 'door_locked' || e.code === 'need_ticket')) pop()
       return null
     } finally {
       setBusy(false)
@@ -99,7 +100,7 @@ export function DoorScreen({ day }: { day: number }) {
             {door?.subtitle && <p className="mt-1.5 text-[15px] font-medium opacity-85">{door.subtitle}</p>}
             {door && !door.opened && (
               <p className="mx-auto mt-3 w-fit rounded-full bg-black/15 px-3 py-1 text-[12.5px] font-semibold">
-                {door.late ? 'Догоняешь: XP вполовину, серия не растёт' : `+${door.xp} XP${door.kind === 'quiz' ? ' и по 10 за верный ответ' : door.kind === 'arcade' ? ' и бонус за счёт' : ''}`}
+                {door.late ? 'Догоняешь за билет: XP вполовину, серия не растёт' : `+${door.xp} XP${door.kind === 'quiz' ? ' и по 10 за верный ответ' : door.kind === 'arcade' ? ' и бонус за счёт' : ''}`}
               </p>
             )}
           </div>
@@ -191,13 +192,6 @@ export function DoorScreen({ day }: { day: number }) {
 
 /** Итог открытия: XP и, если перешёл ступень, коды наград. */
 function ResultCard({ result }: { result: DoorResult }) {
-  const toast = useStore((s) => s.toast)
-  const copy = async (code: string) => {
-    if (await copyText(code)) {
-      haptic.success()
-      toast('Код скопирован', '📋')
-    }
-  }
   return (
     <motion.div initial={{ opacity: 0, y: -10, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="mb-5 rounded-[24px] border border-mint/30 bg-mint/10 p-4">
       <div className="flex items-center gap-3">
@@ -211,14 +205,18 @@ function ResultCard({ result }: { result: DoorResult }) {
         </div>
       </div>
       {result.new_codes.map((c) => (
-        <div key={c.code} className="mt-3 rounded-[18px] border border-violet/40 bg-violet/10 p-3.5">
+        <div key={c.reward_id} className="mt-3 rounded-[18px] border border-violet/40 bg-violet/10 p-3.5">
           <p className="flex items-center gap-2 text-[14px] font-semibold">
             <Emoji char={c.emoji} size={20} /> Награда: {c.title}
           </p>
-          <Tap onClick={() => copy(c.code)} className="mt-2 w-full rounded-[14px] border border-line bg-bg py-3 font-mono text-[22px] font-bold tracking-[0.18em]">
-            {formatCode(c.code)}
-          </Tap>
-          <p className="mt-2 text-[12.5px] text-mute">Покажи код на кассе. Он есть в календаре и в чате с ботом.</p>
+          {c.code ? (
+            <>
+              <PromoCode code={c.code} />
+              <p className="mt-2 text-[12.5px] text-mute">Покажи код на кассе. Он есть в календаре и в чате с ботом.</p>
+            </>
+          ) : (
+            <RewardBody kind={c.kind ?? 'message'} content={c.content} />
+          )}
         </div>
       ))}
     </motion.div>

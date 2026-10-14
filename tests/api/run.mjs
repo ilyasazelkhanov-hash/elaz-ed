@@ -142,7 +142,7 @@ test('встроенные методы объекта не считаются �
 
 test('админские адреса закрыты для обычного подписчика', async () => {
   await everyoneBoots()
-  for (const route of ['admin_list', 'admin_courses', 'admin_payments', 'admin_refund', 'admin_save', 'admin_delete', 'admin_course_save', 'admin_course_delete', 'admin_grant', 'admin_request', 'admin_analytics', 'admin_announce', 'admin_advent_theme']) {
+  for (const route of ['admin_list', 'admin_courses', 'admin_payments', 'admin_refund', 'admin_save', 'admin_delete', 'admin_course_save', 'admin_course_delete', 'admin_grant', 'admin_request', 'admin_analytics', 'admin_announce', 'admin_advent_theme', 'admin_advent_save', 'admin_advent_reward_save', 'admin_advent_reward_delete']) {
     assert.deepEqual(await call(route, { id: 1 }, BUYER), { status: 403, body: { error: 'forbidden' } }, route)
   }
   assert.equal(state.tables.courses.length, 2)
@@ -395,6 +395,189 @@ test('оформление календаря меняет только адми
   // Остальные настройки адвента не потерялись.
   assert.equal(advent.start, '2026-12-08')
   assert.equal(advent.enabled, false)
+})
+
+// ---------- Адвент: билеты «догнать» и призы ----------
+
+const DAY = 86_400_000
+// Сегодня — пятый день кампании по поясу календаря (UTC+5).
+const campaignStart = () => new Date(Date.now() + 300 * 60_000 - 4 * DAY).toISOString().slice(0, 10)
+// Функция кэширует настройки на 15 секунд — сдвигаем часы, чтобы она перечитала их после правки.
+const realNow = Date.now
+let skew = 0
+Date.now = () => realNow() + skew
+function adventOn(extra = {}) {
+  skew += 20_000
+  state.tables.settings.push({ key: 'advent', value: { enabled: true, start: campaignStart(), days: 10, tz: 300, grace: 3, catchup: { methods: ['quiz', 'invite', 'story', 'stars'], stars: 50 }, ...extra } })
+  state.tables.advent_doors = Array.from({ length: 10 }, (_, i) => ({ day: i + 1, kind: 'story', title: `Дверь ${i + 1}`, emoji: '🎁', xp: 30, quiz: [], body: 'текст', prize: '' }))
+  state.tables.advent_opens = []
+  state.tables.advent_tickets = []
+  state.tables.advent_rewards = []
+  state.tables.reward_codes = []
+  state.tables.lesson_access = []
+}
+const tickets = (id) => state.tables.advent_tickets.filter((t) => t.user_id === id)
+
+test('пропущенную дверь без билета не открыть, сегодняшнюю — можно', async () => {
+  await everyoneBoots()
+  adventOn()
+  assert.deepEqual(await call('advent_open', { day: 2 }, BUYER), { status: 402, body: { error: 'need_ticket' } })
+  assert.equal((await call('advent_open', { day: 5 }, BUYER)).status, 200)
+  assert.equal(state.tables.advent_opens.length, 1)
+})
+
+test('урок с квизом без ошибок даёт билет, им открывается одна пропущенная дверь', async () => {
+  await everyoneBoots()
+  adventOn()
+  const now = new Date().toISOString()
+  state.tables.progress.push({ user_id: BUYER, lesson_id: 11, score: 3, total: 3, completed_at: now })
+  // С ошибками и без квиза — не считается.
+  state.tables.progress.push({ user_id: BUYER, lesson_id: 12, score: 2, total: 3, completed_at: now }, { user_id: BUYER, lesson_id: 13, score: 0, total: 0, completed_at: now })
+  const state1 = await call('advent', {}, BUYER)
+  assert.equal(state1.body.catchup.tickets, 1)
+  assert.equal((await call('advent_open', { day: 2 }, BUYER)).status, 200)
+  assert.equal(state.tables.advent_opens.find((o) => o.day === 2).late, true)
+  assert.deepEqual(await call('advent_open', { day: 3 }, BUYER), { status: 402, body: { error: 'need_ticket' } })
+  // Повторный запрос состояния не начисляет билет за тот же урок второй раз.
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 0)
+  assert.equal(tickets(BUYER).length, 1)
+})
+
+test('урок, пройденный до старта календаря, билет не даёт', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.progress.push({ user_id: BUYER, lesson_id: 11, score: 3, total: 3, completed_at: new Date(Date.now() - 30 * DAY).toISOString() })
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 0)
+})
+
+test('приглашённый друг даёт билет, только когда прошёл проверку подписки', async () => {
+  await everyoneBoots()
+  adventOn()
+  const now = new Date().toISOString()
+  state.tables.users.push({ id: 50, first_name: 'Друг', referred_by: BUYER, ref_rewarded: false, created_at: now, subscribed: false, xp: 0 })
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 0)
+  state.tables.users.find((u) => u.id === 50).ref_rewarded = true
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 1)
+})
+
+test('переход по ссылке из сторис: билет автору, не себе и не дважды от одного человека', async () => {
+  await everyoneBoots()
+  adventOn()
+  calls.length = 0
+  await call('boot', { sp: `st${BUYER}` }, OTHER)
+  await call('boot', { sp: `st${BUYER}` }, OTHER)
+  await call('boot', { sp: `st${BUYER}` }, BUYER)
+  assert.deepEqual(tickets(BUYER).map((t) => t.source), ['story'])
+  assert.equal(sent('sendMessage').filter((c) => c.payload.chat_id === BUYER).length, 1)
+})
+
+test('способ, выключенный в настройках, билетов не даёт', async () => {
+  await everyoneBoots()
+  adventOn({ catchup: { methods: ['stars'], stars: 50 } })
+  state.tables.progress.push({ user_id: BUYER, lesson_id: 11, score: 3, total: 3, completed_at: new Date().toISOString() })
+  await call('boot', { sp: `st${BUYER}` }, OTHER)
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 0)
+})
+
+test('билет за звёзды: цена из настроек, повтор уведомления и возврат', async () => {
+  await everyoneBoots()
+  adventOn()
+  calls.length = 0
+  assert.equal((await call('advent_ticket_invoice', {}, BUYER)).status, 200)
+  const inv = sent('createInvoiceLink')[0].payload
+  assert.deepEqual(inv.prices, [{ label: 'Билет', amount: 50 }])
+  await hook({ pre_checkout_query: { id: 'q1', from: { id: BUYER }, currency: 'XTR', total_amount: 50, invoice_payload: inv.payload } })
+  await hook({ pre_checkout_query: { id: 'q2', from: { id: BUYER }, currency: 'XTR', total_amount: 1, invoice_payload: inv.payload } })
+  await hook({ pre_checkout_query: { id: 'q3', from: { id: OTHER }, currency: 'XTR', total_amount: 50, invoice_payload: inv.payload } })
+  assert.deepEqual(sent('answerPreCheckoutQuery').map((c) => c.payload.ok), [true, false, false])
+  const paid = { message: { chat: { id: BUYER, type: 'private' }, from: { id: BUYER }, successful_payment: { currency: 'XTR', total_amount: 50, invoice_payload: inv.payload, telegram_payment_charge_id: 'tk-1' } } }
+  assert.equal(await hook(paid), 200)
+  assert.equal(await hook(paid), 200)
+  assert.deepEqual(tickets(BUYER).map((t) => t.source), ['stars'])
+  assert.equal(state.tables.payments.length, 1)
+  assert.equal(state.tables.payments[0].purpose, 'catchup')
+  // Возврат: неиспользованный билет отзывается, повтор уведомления его не возвращает.
+  const pay = (await call('admin_payments', {}, ADMIN)).body.payments[0]
+  assert.equal(pay.course, 'Билет календаря')
+  await call('admin_refund', { id: pay.id }, ADMIN)
+  assert.ok(tickets(BUYER)[0].revoked_at)
+  await hook(paid)
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 0)
+  assert.equal(state.tables.course_access.length, 0)
+})
+
+test('возврат звёзд за уже потраченный билет дверь не закрывает', async () => {
+  await everyoneBoots()
+  adventOn()
+  const paid = { message: { chat: { id: BUYER, type: 'private' }, from: { id: BUYER }, successful_payment: { currency: 'XTR', total_amount: 50, invoice_payload: `catchup:${BUYER}:1`, telegram_payment_charge_id: 'tk-2' } } }
+  await hook(paid)
+  assert.equal((await call('advent_open', { day: 1 }, BUYER)).status, 200)
+  await call('admin_refund', { id: state.tables.payments[0].id }, ADMIN)
+  assert.equal(tickets(BUYER)[0].revoked_at ?? null, null)
+  assert.ok(state.tables.advent_opens.some((o) => o.user_id === BUYER && o.day === 1))
+})
+
+test('призы: код, сообщение, урок и курс выдаются по порогу; содержимое скрыто до выдачи', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.advent_rewards = [
+    { id: 1, doors: 1, title: 'Промокод', description: '', emoji: '🎟', stock: null, position: 0, kind: 'promo', payload: {} },
+    { id: 2, doors: 1, title: 'Секрет', description: '', emoji: '💬', stock: null, position: 0, kind: 'message', payload: { text: 'Тайное слово' } },
+    { id: 3, doors: 1, title: 'Урок', description: '', emoji: '📚', stock: null, position: 0, kind: 'lesson', payload: { lesson_id: 10 } },
+    { id: 4, doors: 2, title: 'Курс', description: '', emoji: '🎓', stock: null, position: 0, kind: 'course', payload: { course_id: 1 } },
+  ]
+  const before = (await call('advent', {}, BUYER)).body.rewards
+  assert.ok(before.every((r) => !r.issued && r.content === null && r.code === null))
+  assert.deepEqual(await call('lesson', { id: 10 }, BUYER), { status: 403, body: { error: 'course_locked' } })
+  const res = await call('advent_open', { day: 5 }, BUYER)
+  assert.deepEqual(res.body.new_codes.map((c) => c.kind).sort(), ['lesson', 'message', 'promo'])
+  const after = (await call('advent', {}, BUYER)).body.rewards
+  assert.match(after.find((r) => r.id === 1).code, /^[A-Z0-9]{4}-[A-Z0-9]{4}$/)
+  assert.deepEqual(after.find((r) => r.id === 2).content, { text: 'Тайное слово' })
+  assert.equal(after.find((r) => r.id === 2).code, null)
+  // Урок призом открыт, а весь курс — ещё нет.
+  assert.equal((await call('lesson', { id: 10 }, BUYER)).status, 200)
+  assert.equal(access(BUYER, 1).length, 0)
+  assert.equal(after.find((r) => r.id === 4).issued, false)
+})
+
+test('приз «курс» открывает курс после нужного числа дверей', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.advent_rewards = [{ id: 4, doors: 1, title: 'Курс', description: '', emoji: '🎓', stock: null, position: 0, kind: 'course', payload: { course_id: 1 } }]
+  await call('advent_open', { day: 5 }, BUYER)
+  assert.deepEqual(access(BUYER, 1).map((a) => a.source), ['advent'])
+})
+
+test('админ: приз с пустой ссылкой или чужим уроком не сохраняется, выданный — не удаляется', async () => {
+  await everyoneBoots()
+  adventOn()
+  const bad = [
+    { title: 'Видео', kind: 'video', doors: 2, payload: { url: 'javascript:alert(1)' } },
+    { title: 'Ссылка', kind: 'link', doors: 2, payload: { url: '' } },
+    { title: 'Урок', kind: 'lesson', doors: 2, payload: { lesson_id: 999 } },
+    { title: 'Сообщение', kind: 'message', doors: 2, payload: { text: '   ' } },
+  ]
+  for (const reward of bad) assert.deepEqual(await call('admin_advent_reward_save', { reward }, ADMIN), { status: 400, body: { error: 'reward_payload' } }, reward.kind)
+  const ok = await call('admin_advent_reward_save', { reward: { title: 'Видео', kind: 'video', doors: 1, stock: 5, payload: { url: 'https://youtu.be/abcdefghijk' } } }, ADMIN)
+  assert.equal(ok.status, 200)
+  assert.equal(ok.body.stock, 5)
+  assert.deepEqual((await call('admin_advent_reward_save', { reward: { title: 'x', kind: 'promo' } }, BUYER)).status, 403)
+  await call('advent_open', { day: 5 }, BUYER)
+  assert.deepEqual(await call('admin_advent_reward_delete', { id: ok.body.id }, ADMIN), { status: 409, body: { error: 'reward_issued' } })
+})
+
+test('админ: настройки календаря — дни, способы и цена билета, тема и старт сохраняются', async () => {
+  await everyoneBoots()
+  adventOn({ theme: 'halloween' })
+  const r = await call('admin_advent_save', { settings: { days: 14, catchup: { methods: ['quiz', 'hack'], stars: 75 } } }, ADMIN)
+  assert.equal(r.status, 200)
+  const a = state.tables.settings.find((s) => s.key === 'advent').value
+  assert.equal(a.days, 14)
+  assert.deepEqual(a.catchup, { methods: ['quiz'], stars: 75 })
+  assert.equal(a.theme, 'halloween')
+  assert.equal(a.start, campaignStart())
+  assert.deepEqual(await call('admin_advent_save', { settings: { start: '14.10.2026' } }, ADMIN), { status: 400, body: { error: 'bad_date' } })
 })
 
 // ---------- Настройка бота ----------

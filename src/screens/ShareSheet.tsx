@@ -32,7 +32,7 @@ function Body({ card }: { card: ShareCard }) {
   const [preview, setPreview] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const hosted = useRef<string | null>(null)
-  const link = appLink(card.lessonId)
+  const link = card.link ?? appLink(card.lessonId)
 
   useEffect(() => {
     let alive = true

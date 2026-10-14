@@ -4,6 +4,13 @@ import { useStore } from '../store'
  * Ссылка в приложение через бота: открывает урок (если указан) и засчитывает приглашение тому, кто поделился.
  * Пока бот не настроен, ссылки нет.
  */
+/** Ссылка для сторис адвента: переход по ней даёт автору билет «догнать», а новичок засчитывается как приглашённый. */
+export function storyLink() {
+  const { meta, me } = useStore.getState()
+  if (!meta.bot.username || !me) return null
+  return `https://t.me/${meta.bot.username}?${meta.bot.main_app ? 'startapp' : 'start'}=st${me.id}_r${me.id}`
+}
+
 export function appLink(lessonId?: number) {
   const { meta, me } = useStore.getState()
   if (!meta.bot.username) return null

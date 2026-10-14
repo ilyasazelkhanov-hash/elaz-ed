@@ -7,6 +7,7 @@ import type { AdventAdmin, AdventThemeId } from '../../lib/types'
 import { useStore } from '../../store'
 import { Spinner, Tap } from '../../ui'
 import { Header, sheet } from '../Admin'
+import { RewardsEditor, SettingsForm } from './AdventSetup'
 import { THEME_IDS, themeOf, ThemeScene } from './themes'
 
 const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0)
@@ -16,6 +17,9 @@ export function AdventAdminScreen() {
   const { guard, toast, setAdvent } = useStore.getState()
   const [data, setData] = useState<AdventAdmin | null>(null)
   const [saving, setSaving] = useState<AdventThemeId | null>(null)
+  // Перечитываем сводку после правки настроек или призов.
+  const [version, setVersion] = useState(0)
+  const refresh = () => setVersion((v) => v + 1)
 
   // Оформление меняется у всех участников сразу — поэтому с подтверждающим тостом.
   const pickTheme = async (id: AdventThemeId) => {
@@ -47,7 +51,7 @@ export function AdventAdminScreen() {
     return () => {
       alive = false
     }
-  }, [guard, toast])
+  }, [guard, toast, version])
 
   const peak = Math.max(1, ...(data?.by_day.map((d) => d.opens) ?? [1]))
 
@@ -89,6 +93,21 @@ export function AdventAdminScreen() {
                 )
               })}
             </div>
+
+            {data.settings && (
+              <>
+                <h2 className="mt-7 font-display text-[16px] font-semibold">Календарь</h2>
+                <SettingsForm key={version} initial={data.settings} doorsDefined={data.doors_defined ?? 0} onSaved={refresh} />
+              </>
+            )}
+
+            {data.reward_list && (
+              <>
+                <h2 className="mt-7 font-display text-[16px] font-semibold">Призы</h2>
+                <p className="mt-1 text-[12.5px] leading-snug text-mute">Промокод, сообщение, ссылка, видео, урок или курс. Выдаётся, когда человек откроет нужное число дверей.</p>
+                <RewardsEditor list={data.reward_list} onChanged={refresh} />
+              </>
+            )}
 
             <div className="mt-7 grid grid-cols-2 gap-2">
               <Tile value={data.participants} label="Участников" />
@@ -146,7 +165,7 @@ export function AdventAdminScreen() {
                 </div>
               </>
             )}
-            <p className="mt-6 text-[12.5px] leading-snug text-faint">Двери, награды и точки пока правятся через SQL — шаблоны в content/advent/.</p>
+            <p className="mt-6 text-[12.5px] leading-snug text-faint">Содержимое дверей и точки погашения пока правятся через SQL — шаблоны в content/advent/.</p>
           </div>
         )}
       </div>

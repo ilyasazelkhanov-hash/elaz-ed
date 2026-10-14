@@ -247,7 +247,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
 
 // ---------- Видео ----------
 
-function Video({ url }: { url: string }) {
+export function Video({ url }: { url: string }) {
   const yt = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/|live\/))([\w-]{11})/.exec(url)?.[1]
   const rt = /rutube\.ru\/video\/([a-f0-9]{32})/.exec(url)?.[1]
   const vk = /vk(?:video)?\.(?:com|ru)\/video(-?\d+)_(\d+)/.exec(url)

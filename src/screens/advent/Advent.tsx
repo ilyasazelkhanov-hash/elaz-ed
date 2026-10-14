@@ -1,13 +1,14 @@
-import { Check, ChevronLeft, Copy, Lock } from 'lucide-react'
+import { Check, ChevronLeft, Lock } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
-import { dayMonth, formatCode, KIND_LABEL } from '../../lib/advent'
+import { dayMonth, KIND_LABEL } from '../../lib/advent'
 import { api, isDemo } from '../../lib/api'
-import { copyText, haptic, inTelegram } from '../../lib/tg'
+import { haptic, inTelegram } from '../../lib/tg'
 import type { AdventCell, AdventReward, AdventState, AdventThemeId } from '../../lib/types'
 import { useStore } from '../../store'
 import { Bar, Emoji, Tap } from '../../ui'
 import { doorsWord } from './Banner'
+import { CatchupSheet, KIND_NAME, PromoCode, RewardBody } from './Catchup'
 import { DoorSkin, doorInk, doorShape, OpeningLeaf, THEME_IDS, themeOf, ThemeScene } from './themes'
 
 /** Дата двери: старт кампании + (день − 1). */
@@ -32,6 +33,31 @@ export function AdventScreen() {
   const onTop = useStore((s) => s.stack.at(-1)?.type === 'advent')
   const [data, setData] = useState<AdventState | null>(null)
   const [failed, setFailed] = useState(false)
+  const [catchup, setCatchup] = useState(false)
+
+  const apply = (d: AdventState) => {
+    setData(d)
+    setFailed(false)
+    setAdvent({
+      title: d.title,
+      theme: d.theme,
+      start: d.start,
+      days: d.days,
+      today: d.today,
+      opened: d.opened,
+      today_open: d.doors.some((c) => c.day === d.today && c.state === 'open'),
+      streak: d.streak,
+    })
+  }
+  // Перечитать после покупки билета: шторка ждёт, пока сервер его выдаст.
+  const reload = () =>
+    api
+      .advent()
+      .then((d) => {
+        apply(d)
+        return d
+      })
+      .catch(() => null)
 
   useEffect(() => {
     if (!onTop) return
@@ -101,6 +127,11 @@ export function AdventScreen() {
                 <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-sm" style={{ background: theme.chip }}>
                   <Emoji char={themeId === 'newyear' ? '🎁' : themeId === 'halloween' ? '🦇' : '🚪'} size={16} /> открыто {data.opened} из {data.days}
                 </span>
+                {data.catchup && data.catchup.methods.length > 0 && (
+                  <Tap feedback="soft" onClick={() => setCatchup(true)} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-sm" style={{ background: theme.chip }}>
+                    <Emoji char="🎟" size={16} /> билетов {data.catchup.tickets}
+                  </Tap>
+                )}
               </div>
             )}
           </div>
@@ -139,10 +170,29 @@ export function AdventScreen() {
 
               <div className="grid grid-cols-4 gap-2.5">
                 {data.doors.map((cell, i) => (
-                  <DoorCell key={`${themeId}-${cell.day}`} cell={cell} index={i} theme={themeId} onOpen={() => push({ type: 'door', day: cell.day })} onLocked={() => locked(cell)} />
+                  <DoorCell
+                    key={`${themeId}-${cell.day}`}
+                    cell={cell}
+                    index={i}
+                    theme={themeId}
+                    needTicket={cell.state === 'late' && (data.catchup?.tickets ?? 0) < 1}
+                    onNeedTicket={() => {
+                      haptic.error()
+                      setCatchup(true)
+                    }}
+                    onOpen={() => push({ type: 'door', day: cell.day })}
+                    onLocked={() => locked(cell)}
+                  />
                 ))}
               </div>
-              <p className="mt-3 text-center text-[12.5px] leading-snug text-faint">Пропущенную дверь можно догнать — за половину XP. Серия растёт, только если открывать в свой день.</p>
+              <p className="mt-3 text-center text-[12.5px] leading-snug text-faint">
+                Пропущенную дверь можно догнать за билет — за половину XP. Серия растёт, только если открывать в свой день.{' '}
+                {data.catchup && data.catchup.methods.length > 0 && (
+                  <button type="button" onClick={() => setCatchup(true)} className="font-semibold text-ink underline underline-offset-2">
+                    Как получить билет
+                  </button>
+                )}
+              </p>
 
               {data.rewards.length > 0 && (
                 <>
@@ -158,6 +208,8 @@ export function AdventScreen() {
           )}
         </div>
       </div>
+
+      {data && <CatchupSheet open={catchup} onClose={() => setCatchup(false)} data={data} reload={reload} />}
 
       {!inTelegram && (
         <Tap onClick={pop} aria-label="Назад" className="absolute left-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/30 text-white backdrop-blur-md" style={{ top: 'calc(var(--top) + 10px)' }}>
@@ -197,7 +249,18 @@ function ThemePicker({ value, onPick }: { value: AdventThemeId; onPick: (id: Adv
 }
 
 /** Дверь в календаре. Открытие — короткая анимация (створка или крышка), потом экран двери. */
-function DoorCell({ cell, index, theme, onOpen, onLocked }: { cell: AdventCell; index: number; theme: AdventThemeId; onOpen: () => void; onLocked: () => void }) {
+interface DoorCellProps {
+  cell: AdventCell
+  index: number
+  theme: AdventThemeId
+  /** Пропущенная дверь, а билетов нет — вместо открытия показываем, как их получить. */
+  needTicket: boolean
+  onNeedTicket: () => void
+  onOpen: () => void
+  onLocked: () => void
+}
+
+function DoorCell({ cell, index, theme, needTicket, onNeedTicket, onOpen, onLocked }: DoorCellProps) {
   const [opening, setOpening] = useState(false)
   const [nudge, setNudge] = useState(0)
   const t = themeOf(theme)
@@ -213,6 +276,10 @@ function DoorCell({ cell, index, theme, onOpen, onLocked }: { cell: AdventCell; 
     if (cell.state === 'open') {
       haptic.tap()
       return onOpen()
+    }
+    if (needTicket) {
+      setNudge((n) => n + 1)
+      return onNeedTicket()
     }
     if (opening) return
     haptic.heavy()
@@ -296,44 +363,36 @@ function DoorCell({ cell, index, theme, onOpen, onLocked }: { cell: AdventCell; 
 }
 
 function RewardRow({ reward, opened }: { reward: AdventReward; opened: number }) {
-  const toast = useStore((s) => s.toast)
+  const kind = reward.kind ?? 'promo'
+  // Старый сервер не присылает issued — тогда выданным считаем приз с кодом.
+  const issued = reward.issued ?? !!reward.code
   const left = Math.max(0, reward.doors - opened)
-  const copy = async () => {
-    if (reward.code && (await copyText(reward.code))) {
-      haptic.success()
-      toast('Код скопирован', '📋')
-    }
-  }
   return (
-    <div className={`rounded-[22px] border p-4 ${reward.code && !reward.redeemed ? 'border-violet/40 bg-violet/10' : 'border-line bg-card'}`}>
+    <div className={`rounded-[22px] border p-4 ${issued && !reward.redeemed ? 'border-violet/40 bg-violet/10' : 'border-line bg-card'}`}>
       <div className="flex items-center gap-3">
         <Emoji char={reward.emoji} size={34} />
         <div className="min-w-0 flex-1">
           <p className="font-display text-[15px] font-semibold leading-tight">{reward.title}</p>
           <p className="mt-0.5 text-[13px] leading-snug text-mute">
             {reward.description || `За ${reward.doors} ${doorsWord(reward.doors)}`}
-            {reward.stock != null && !reward.code ? ' · количество ограничено' : ''}
+            {reward.stock != null && !issued ? ' · количество ограничено' : ''}
           </p>
         </div>
-        {!reward.code && <span className="tabular shrink-0 text-[12.5px] font-semibold text-mute">{left > 0 ? `${opened}/${reward.doors}` : '…'}</span>}
+        {issued ? (
+          <span className="shrink-0 rounded-full bg-veil/8 px-2.5 py-1 text-[11.5px] font-semibold text-mute">{reward.redeemed ? 'Погашен' : KIND_NAME[kind]}</span>
+        ) : (
+          <span className="tabular shrink-0 text-[12.5px] font-semibold text-mute">{left > 0 ? `${opened}/${reward.doors}` : '…'}</span>
+        )}
       </div>
-      {!reward.code && left > 0 && <Bar progress={opened / reward.doors} className="mt-3" />}
-      {!reward.code && left === 0 && <p className="mt-2 text-[12.5px] text-faint">Награды этой ступени закончились.</p>}
-      {reward.code && (
-        <div className="mt-3 flex items-center gap-2">
-          <div className={`flex-1 rounded-[16px] border border-line bg-bg px-4 py-3 text-center font-mono text-[22px] font-bold tracking-[0.18em] ${reward.redeemed ? 'text-faint line-through' : ''}`}>
-            {formatCode(reward.code)}
-          </div>
-          {reward.redeemed ? (
-            <span className="rounded-full bg-veil/8 px-3 py-2 text-[12px] font-semibold text-mute">Погашен</span>
-          ) : (
-            <Tap onClick={copy} aria-label="Скопировать код" className="grid h-[52px] w-[52px] place-items-center rounded-[16px] border border-line bg-card">
-              <Copy size={18} />
-            </Tap>
-          )}
-        </div>
+      {!issued && left > 0 && <Bar progress={opened / reward.doors} className="mt-3" />}
+      {!issued && left === 0 && <p className="mt-2 text-[12.5px] text-faint">Награды этой ступени закончились.</p>}
+      {issued && kind === 'promo' && reward.code && (
+        <>
+          <PromoCode code={reward.code} redeemed={reward.redeemed} />
+          {!reward.redeemed && <p className="mt-2 text-[12.5px] text-mute">Покажи код на кассе. Он одноразовый и продублирован в чате с ботом.</p>}
+        </>
       )}
-      {reward.code && !reward.redeemed && <p className="mt-2 text-[12.5px] text-mute">Покажи код на кассе. Он одноразовый и продублирован в чате с ботом.</p>}
+      {issued && kind !== 'promo' && <RewardBody kind={kind} content={reward.content} />}
     </div>
   )
 }

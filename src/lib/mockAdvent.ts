@@ -3,7 +3,7 @@
 import seed from './adventSeed.json'
 import { adventStreak, doorXp } from './advent'
 import { ApiError } from './errors'
-import type { AdventAdmin, AdventThemeId, AdventState, AdventSummary, Api, DoorKind, DoorView, Me, NewCode, RedeemCheck, RedeemPoint } from './types'
+import type { AdminReward, AdventAdmin, AdventSettings, AdventThemeId, AdventState, AdventSummary, Api, DoorKind, DoorView, Me, NewCode, RedeemCheck, RedeemPoint } from './types'
 
 const KEY = 'elaz-ed-demo-advent-v1'
 const DEMO_DAY = 7
@@ -35,12 +35,27 @@ interface Opened {
 
 interface AdventDemo {
   theme?: AdventThemeId
+  /** Билеты «догнать»: в демо их можно только купить, и то условно. */
+  tickets?: number
+  used?: number
+  bought?: number
+  settings?: AdventSettings
+  rewardList?: AdminReward[]
   opens: Record<number, Opened>
   codes: Record<number, { code: string; redeemed: boolean }>
 }
 
 const DOORS = seed.doors as Door[]
-const REWARDS = seed.rewards.map((r, i) => ({ ...r, id: i + 1 }))
+// Призы демо показывают разные виды: промокод, сообщение, видео.
+const DEMO_KINDS: Pick<AdminReward, 'kind' | 'payload'>[] = [
+  { kind: 'message', payload: { text: 'Промпт-пак: «Ты — редактор. Сократи текст на треть, сохрани факты и голос автора».' } },
+  { kind: 'video', payload: { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', label: 'Смотреть разбор' } },
+  { kind: 'promo', payload: {} },
+  { kind: 'promo', payload: {} },
+]
+type DemoReward = AdminReward & { id: number }
+const SEED_REWARDS: DemoReward[] = seed.rewards.map((r, i) => ({ ...r, id: i + 1, position: i, ...DEMO_KINDS[i % DEMO_KINDS.length] }))
+const rewards = (): DemoReward[] => (state.rewardList as DemoReward[] | undefined) ?? SEED_REWARDS
 
 function load(): AdventDemo {
   try {
@@ -107,11 +122,11 @@ function code() {
 function issue(): NewCode[] {
   const opened = Object.keys(state.opens).length
   const fresh: NewCode[] = []
-  for (const r of REWARDS) {
+  for (const r of rewards()) {
     if (r.doors > opened || state.codes[r.id]) continue
     const c = code()
     state.codes[r.id] = { code: c, redeemed: false }
-    fresh.push({ reward_id: r.id, code: c, title: r.title, emoji: r.emoji })
+    fresh.push({ reward_id: r.id, code: r.kind === 'promo' ? c : null, kind: r.kind, title: r.title, emoji: r.emoji, content: r.kind === 'promo' ? null : r.payload })
   }
   return fresh
 }
@@ -134,13 +149,17 @@ export function resetAdventDemo() {
   save()
 }
 
+function settings(): AdventSettings {
+  return state.settings ?? { enabled: true, title: TITLE, start: start(), days: DAYS, catchup: { methods: ['quiz', 'invite', 'story', 'stars'], stars: 50 } }
+}
+
 /** В демо тему можно менять прямо из календаря — она хранится вместе с демо-прогрессом. */
 export function setAdventThemeDemo(theme: AdventThemeId) {
   state.theme = theme
   save()
 }
 
-type AdventApi = Pick<Api, 'advent' | 'adventDoor' | 'adventOpen' | 'adminAdvent' | 'adminAdventTheme' | 'redeemPoints' | 'redeemCheck' | 'redeem'>
+type AdventApi = Pick<Api, 'advent' | 'adventDoor' | 'adventOpen' | 'adminAdvent' | 'adminAdventTheme' | 'adventTicketInvoice' | 'adminAdventSave' | 'adminAdventRewardSave' | 'adminAdventRewardDelete' | 'redeemPoints' | 'redeemCheck' | 'redeem'>
 
 /** me и addXp приходят из основного демо: XP у человека общий. */
 export function makeAdventMock(me: () => Me, addXp: (n: number) => void): AdventApi {
@@ -148,7 +167,7 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
     const want = raw.toUpperCase().replace(/[^A-Z0-9]/g, '')
     const hit = Object.entries(state.codes).find(([, c]) => c.code.replace('-', '') === want)
     if (!hit) throw new ApiError('code_not_found', 404)
-    const reward = REWARDS.find((r) => r.id === Number(hit[0]))!
+    const reward = rewards().find((r) => r.id === Number(hit[0]))!
     return { entry: hit[1], reward }
   }
   const checkPin = (point: number, pin: string) => {
@@ -168,7 +187,11 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
           const st = o ? 'open' : d.day > DEMO_DAY ? 'locked' : d.day === DEMO_DAY ? 'today' : 'late'
           return { day: d.day, kind: d.kind, title: visible ? d.title : null, emoji: visible ? d.emoji : null, state: st, xp: o?.xp ?? null }
         }),
-        rewards: REWARDS.map((r) => ({ ...r, code: state.codes[r.id]?.code ?? null, redeemed: !!state.codes[r.id]?.redeemed })),
+        rewards: rewards().map((r) => {
+          const c = state.codes[r.id]
+          return { id: r.id, doors: r.doors, title: r.title, description: r.description, emoji: r.emoji, stock: r.stock, kind: r.kind, issued: !!c, code: c && r.kind === 'promo' ? c.code : null, redeemed: !!c?.redeemed, content: c && r.kind !== 'promo' ? r.payload : null }
+        }),
+        catchup: { methods: settings().catchup.methods, stars: settings().catchup.stars, tickets: state.tickets ?? 0, used: state.used ?? 0, earned: { stars: state.bought ?? 0 } },
       }
     },
 
@@ -183,6 +206,12 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
       const prev = state.opens[day]
       if (prev) return { already: true, gained: 0, score: prev.score, total: prev.total, opened: null, new_codes: [], door: view(d), me: me() }
       const late = day < DEMO_DAY
+      // Пропущенная дверь — только за билет, как на сервере.
+      if (late) {
+        if (!state.tickets) throw new ApiError('need_ticket', 402)
+        state.tickets -= 1
+        state.used = (state.used ?? 0) + 1
+      }
       let score = 0
       let total = 0
       if (d.kind === 'quiz') {
@@ -201,6 +230,36 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
       return { already: false, gained: xp, score, total, opened: Object.keys(state.opens).length, new_codes: fresh, door: view(d), me: me() }
     },
 
+    async adventTicketInvoice() {
+      await wait(400)
+      state.tickets = (state.tickets ?? 0) + 1
+      state.bought = (state.bought ?? 0) + 1
+      save()
+      return null
+    },
+
+    async adminAdventSave(next) {
+      await wait(250)
+      state.settings = { ...settings(), ...next, catchup: { ...settings().catchup, ...next.catchup } }
+      save()
+    },
+
+    async adminAdventRewardSave(reward) {
+      await wait(250)
+      const list = [...rewards()]
+      const saved: DemoReward = { ...reward, id: reward.id ?? Math.max(0, ...list.map((r) => r.id ?? 0)) + 1 }
+      state.rewardList = reward.id ? list.map((r) => (r.id === reward.id ? saved : r)) : [...list, saved]
+      save()
+      return saved
+    },
+
+    async adminAdventRewardDelete(id) {
+      await wait(200)
+      if (state.codes[id]) throw new ApiError('reward_issued', 409)
+      state.rewardList = rewards().filter((r) => r.id !== id)
+      save()
+    },
+
     async adminAdventTheme(theme) {
       await wait(200)
       setAdventThemeDemo(theme)
@@ -213,8 +272,11 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
         participants: 312,
         opens: 2140 + Object.keys(state.opens).length,
         by_day: DOORS.filter((d) => d.day <= DEMO_DAY).map((d) => ({ day: d.day, title: d.title, kind: d.kind, opens: Math.max(40, 300 - d.day * 22), late: 6 + d.day })),
-        rewards: REWARDS.map((r) => ({ id: r.id, title: r.title, doors: r.doors, stock: r.stock, issued: r.doors <= 7 ? 180 - r.doors * 12 : 0, redeemed: r.doors <= 7 ? 90 - r.doors * 8 : 0 })),
+        rewards: rewards().map((r) => ({ id: r.id, title: r.title, doors: r.doors, stock: r.stock, issued: r.doors <= 7 ? 180 - r.doors * 12 : 0, redeemed: r.doors <= 7 ? 90 - r.doors * 8 : 0 })),
         points: [{ name: DEMO_POINT.name, redeemed: 37 }],
+        settings: settings(),
+        doors_defined: DOORS.length,
+        reward_list: rewards(),
       }
     },
 

@@ -73,6 +73,14 @@ const httpApi: Api = {
   adminAdventTheme: async (theme) => {
     await call('admin_advent_theme', { theme })
   },
+  adventTicketInvoice: async () => (await call<{ link: string }>('advent_ticket_invoice')).link,
+  adminAdventSave: async (settings) => {
+    await call('admin_advent_save', { settings })
+  },
+  adminAdventRewardSave: (reward) => call('admin_advent_reward_save', { reward }),
+  adminAdventRewardDelete: async (id) => {
+    await call('admin_advent_reward_delete', { id })
+  },
   redeemPoints: async () => (await call<{ points: RedeemPoint[] }>('redeem_points')).points,
   redeemCheck: (point, pin, code) => call('redeem', { point, pin, code, check: true }),
   redeem: (point, pin, code) => call('redeem', { point, pin, code }),
@@ -114,6 +122,14 @@ export function errorText(e: unknown) {
       return 'Не нашёл такого @username. Человек должен хотя бы раз открыть приложение'
     case 'not_for_sale':
       return 'Этот курс не продаётся за звёзды'
+    case 'need_ticket':
+      return 'Нужен билет, чтобы догнать эту дверь'
+    case 'reward_payload':
+      return 'Проверь содержимое приза: текст, ссылку, урок или курс'
+    case 'reward_issued':
+      return 'Этот приз уже выдавали — удалить нельзя. Поставь лимит 0'
+    case 'bad_date':
+      return 'Дата старта — в формате ГГГГ-ММ-ДД'
     case 'paid_only':
       return 'Этот курс открывается за звёзды'
     case 'already_open':
