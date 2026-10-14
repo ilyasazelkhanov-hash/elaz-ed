@@ -1,8 +1,8 @@
-import { Check, CirclePlay, Lock, Share2, Snowflake, Star } from 'lucide-react'
+import { Check, CirclePlay, Lock, Search, Share2, Snowflake, Star, X } from 'lucide-react'
 import { AnimatePresence, animate, motion, useMotionValue, useTransform, type MotionValue } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText } from '../lib/api'
-import { dailyReward, days, GRADIENTS, lessonsWord, levelOf } from '../lib/game'
+import { dailyReward, days, GRADIENTS, iconFor, lessonsWord, levelOf } from '../lib/game'
 import { sfx } from '../lib/sfx'
 import { streakCard } from '../lib/shareCard'
 import { haptic } from '../lib/tg'
@@ -16,6 +16,9 @@ export function Home() {
   const courses = useStore((s) => s.courses)
   const setTab = useStore((s) => s.setTab)
   const [cat, setCat] = useState('Все')
+  const [query, setQuery] = useState('')
+  const [onlyNew, setOnlyNew] = useState(false)
+  const [shown, setShown] = useState(PAGE)
 
   const stories = useMemo(() => feed.filter((c) => c.kind === 'story'), [feed])
   // Уроки закрытых курсов живут на странице курса, а не в общей ленте.
@@ -25,7 +28,19 @@ export function Home() {
     return pinned.length ? pinned : lessons.slice(0, 3)
   }, [lessons])
   const cats = useMemo(() => ['Все', ...new Set(lessons.map((c) => c.category))], [lessons])
-  const list = cat === 'Все' ? lessons : lessons.filter((c) => c.category === cat)
+  const counts = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const c of lessons) map.set(c.category, (map.get(c.category) ?? 0) + 1)
+    return map
+  }, [lessons])
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return lessons.filter((c) => (cat === 'Все' || c.category === cat) && (!onlyNew || !c.completed) && (!q || `${c.title} ${c.subtitle} ${c.category}`.toLowerCase().includes(q)))
+  }, [lessons, cat, query, onlyNew])
+  const left = lessons.filter((c) => !c.completed).length
+
+  // Сменился фильтр — снова показываем первую порцию.
+  useEffect(() => setShown(PAGE), [cat, query, onlyNew])
   const lvl = levelOf(me.xp)
 
   return (
@@ -98,27 +113,71 @@ export function Home() {
 
       <SectionTitle count={lessons.length}>Все уроки</SectionTitle>
 
-      {cats.length > 2 && (
-        <div className="no-bar mb-3.5 flex gap-2 overflow-x-auto px-5">
-          {cats.map((c) => (
-            <Tap key={c} feedback="select" onClick={() => setCat(c)} className={`relative h-10 shrink-0 rounded-full px-4 text-[13.5px] font-semibold ${cat === c ? 'text-on-inverse' : 'text-mute'}`}>
-              {cat === c ? (
-                <motion.span layoutId="chip" className="absolute inset-0 rounded-full bg-inverse" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />
-              ) : (
-                <span className="absolute inset-0 rounded-full border border-line bg-card/70" />
-              )}
-              <span className="relative">{c}</span>
-            </Tap>
-          ))}
+      {lessons.length > 6 && (
+        <div className="mx-5 mb-3 flex items-center gap-2">
+          <label className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-full border border-line bg-card/80 px-4">
+            <Search size={17} className="shrink-0 text-faint" />
+            <input id="feed-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Найти урок" enterKeyHint="search" className="min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-faint" />
+            {query && (
+              <button type="button" aria-label="Очистить поиск" onClick={() => setQuery('')} className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-veil/8 text-mute">
+                <X size={14} />
+              </button>
+            )}
+          </label>
+          <Tap feedback="select" onClick={() => setOnlyNew((v) => !v)} aria-pressed={onlyNew} className={`tabular h-11 shrink-0 rounded-full border px-4 text-[13.5px] font-semibold ${onlyNew ? 'border-violet/60 bg-violet/15 text-ink' : 'border-line bg-card/80 text-mute'}`}>
+            Новые {left}
+          </Tap>
         </div>
       )}
 
-      {lessons.length > 0 ? (
-        <div className="mx-5 overflow-hidden rounded-[24px] border border-line bg-card/80">
-          {list.map((c, i) => (
-            <LessonRow key={c.id} card={c} index={i} />
-          ))}
+      {/* Фильтры прилипают к верху: категорию можно сменить из любого места длинного списка. */}
+      {cats.length > 2 && (
+        <div className="sticky z-10 -mt-1 mb-2 bg-bg/85 py-2 backdrop-blur-md" style={{ top: 'var(--top)' }}>
+          <div className="no-bar flex gap-2 overflow-x-auto px-5">
+            {cats.map((c) => (
+              <Tap key={c} feedback="select" onClick={() => setCat(c)} className={`relative h-10 shrink-0 rounded-full px-4 text-[13.5px] font-semibold ${cat === c ? 'text-on-inverse' : 'text-mute'}`}>
+                {cat === c ? (
+                  <motion.span layoutId="chip" className="absolute inset-0 rounded-full bg-inverse" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />
+                ) : (
+                  <span className="absolute inset-0 rounded-full border border-line bg-card/70" />
+                )}
+                <span className="tabular relative">
+                  {c} <span className="opacity-55">{c === 'Все' ? lessons.length : counts.get(c)}</span>
+                </span>
+              </Tap>
+            ))}
+          </div>
         </div>
+      )}
+
+      {lessons.length > 0 && list.length === 0 ? (
+        <div className="mx-5 rounded-[24px] border border-dashed border-veil/15 px-6 py-8 text-center">
+          <p className="font-display text-[15px] font-semibold">Ничего не нашлось</p>
+          <p className="mt-1.5 text-[13.5px] text-mute">Попробуй другое слово или сбрось фильтры.</p>
+          <Tap
+            onClick={() => {
+              setQuery('')
+              setCat('Все')
+              setOnlyNew(false)
+            }}
+            className="mt-4 h-10 rounded-full border border-line bg-card px-5 text-[13.5px] font-semibold"
+          >
+            Сбросить
+          </Tap>
+        </div>
+      ) : lessons.length > 0 ? (
+        <>
+          <div className="mx-5 overflow-hidden rounded-[24px] border border-line bg-card/80">
+            {list.slice(0, shown).map((c, i) => (
+              <LessonRow key={c.id} card={c} index={i} />
+            ))}
+          </div>
+          {list.length > shown && (
+            <Tap onClick={() => setShown((n) => n + PAGE)} className="tabular mx-5 mt-3 h-12 w-[calc(100%-40px)] rounded-[18px] border border-line bg-card/80 text-[14px] font-semibold">
+              Показать ещё {Math.min(PAGE, list.length - shown)} из {list.length - shown}
+            </Tap>
+          )}
+        </>
       ) : (
         <div className="mx-5 rounded-[26px] border border-dashed border-veil/15 px-6 py-10 text-center">
           <Emoji char="🛠️" size={44} className="mx-auto" />
@@ -129,6 +188,9 @@ export function Home() {
     </div>
   )
 }
+
+/** Сколько уроков показываем за раз: длинный список грузится порциями. */
+const PAGE = 12
 
 function SectionTitle({ children, count }: { children: string; count?: number }) {
   return (
@@ -308,9 +370,12 @@ function StoryBubble({ card, index }: { card: Card; index: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.05 * index }}
     >
-      <div className="rounded-full p-[2.5px]" style={{ background: seen ? 'var(--track-strong)' : g.css }}>
+      <div className={seen ? 'rounded-full p-[2.5px]' : 'relative rounded-full p-[2.5px]'} style={{ background: seen ? 'var(--track-strong)' : g.css }}>
         <div className="rounded-full bg-bg p-[2.5px]">
-          <EmojiTile emoji={card.emoji} gradient={card.gradient} size={60} radius={30} />
+          <div className={`relative grid h-[60px] w-[60px] place-items-center overflow-hidden rounded-full ${seen ? 'opacity-60 saturate-50' : ''}`} style={{ background: g.css }}>
+            <Pattern name={card.gradient} full />
+            <Emoji char={iconFor(card)} size={36} animated={!seen} className="relative drop-shadow-[0_3px_4px_rgb(0_0_0/0.25)]" />
+          </div>
         </div>
       </div>
       <p className={`mt-1.5 line-clamp-2 text-center text-[11px] font-medium leading-tight ${seen ? 'text-faint' : 'text-ink'}`}>{card.title}</p>
@@ -402,15 +467,11 @@ function HeroCard({ card, active, single, index, step, scrollX }: HeroProps) {
       style={{ background: g.css, color: g.ink, boxShadow: `0 14px 30px -16px ${g.glow}` }}
     >
       <Pattern name={card.gradient} />
-      {card.cover_url ? (
-        <img src={card.cover_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45 mix-blend-luminosity" />
-      ) : (
-        <motion.div className="absolute -bottom-2 -right-1" style={{ x: emojiX, rotate: emojiRotate }}>
-          <div className="floaty">
-            <Emoji char={card.emoji} size={128} animated={active} />
-          </div>
-        </motion.div>
-      )}
+      <motion.div className="absolute -bottom-2 -right-1" style={{ x: emojiX, rotate: emojiRotate }}>
+        <div className="floaty">
+          <Emoji char={iconFor(card)} size={128} animated={active} />
+        </div>
+      </motion.div>
       <div className="relative flex h-full flex-col">
         <div className="flex items-center gap-1.5">
           <span className="rounded-full bg-black/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider">{card.category}</span>
@@ -420,9 +481,9 @@ function HeroCard({ card, active, single, index, step, scrollX }: HeroProps) {
             </span>
           )}
         </div>
-        <h3 className="mt-3 max-w-[82%] font-display text-[21px] font-semibold leading-[1.14]">{card.title}</h3>
+        <h3 className="mt-3 line-clamp-3 max-w-[82%] font-display text-[20px] font-semibold leading-[1.14]">{card.title}</h3>
         {card.subtitle && (
-          <p className="mt-2 max-w-[64%] text-[13.5px] font-medium leading-snug opacity-85">
+          <p className="mt-2 line-clamp-2 max-w-[62%] text-[13.5px] font-medium leading-snug opacity-85">
             <Typed text={card.subtitle} active={active} />
           </p>
         )}
@@ -487,7 +548,7 @@ function LessonRow({ card, index }: { card: Card; index: number }) {
       transition={{ delay: Math.min(index, 8) * 0.04 }}
       className="flex w-full items-center gap-3.5 border-b border-line p-3 text-left last:border-b-0 active:bg-veil/5"
     >
-      <EmojiTile emoji={card.emoji} gradient={card.gradient} size={54} radius={17} />
+      <EmojiTile emoji={iconFor(card)} gradient={card.gradient} size={54} radius={17} />
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-[15px] font-semibold leading-snug">{card.title}</p>
         <p className="mt-1 flex items-center gap-1.5 text-[12.5px] text-mute">

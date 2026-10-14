@@ -1,4 +1,4 @@
-import { ChevronRight, FlaskConical, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX } from 'lucide-react'
+import { AtSign, ChevronRight, FlaskConical, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX } from 'lucide-react'
 import { motion, useMotionTemplate, useTransform } from 'motion/react'
 import { useState } from 'react'
 import { isDemo } from '../lib/api'
@@ -8,6 +8,7 @@ import { track } from '../lib/track'
 import { ACHIEVEMENTS, GRADIENTS, lessonsWord, LEVELS, levelOf } from '../lib/game'
 import { resetDemo } from '../lib/mock'
 import { sfx } from '../lib/sfx'
+import { addShortcut, INSTAGRAM } from '../lib/install'
 import { haptic, inTelegram, openLink, shareLink } from '../lib/tg'
 import { getMode, setMode, type ThemeMode } from '../lib/theme'
 import { useTilt } from '../lib/tilt'
@@ -15,9 +16,6 @@ import type { Me } from '../lib/types'
 import { useStore } from '../store'
 import { Avatar, Counter, Emoji, Pattern, Sheet, Tap } from '../ui'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const wa: any = window.Telegram?.WebApp
-const canAddToHome = !!wa?.addToHomeScreen && !!wa?.isVersionAtLeast?.('8.0') && ['android', 'ios'].includes(wa?.platform)
 
 const THEMES: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
   { id: 'auto', label: 'Авто', icon: SunMoon },
@@ -160,7 +158,16 @@ export function Profile() {
             setSound(!sound)
           }}
         />
-        {canAddToHome && <Item icon={<Smartphone size={19} />} label="Добавить на экран «Домой»" onClick={() => wa.addToHomeScreen()} />}
+        <Item
+          icon={<Smartphone size={19} />}
+          label="Ярлык на экран"
+          onClick={async () => {
+            const result = await addShortcut()
+            if (result === 'hint-telegram') toast('Ярлык ставится с телефона: открой приложение в мобильном Telegram')
+            if (result === 'hint-browser') toast('Открой меню браузера и выбери «Установить» или «На экран Домой»')
+          }}
+        />
+        <Item icon={<AtSign size={19} />} label={`Instagram ${INSTAGRAM.handle}`} onClick={() => openLink(INSTAGRAM.url)} />
         {meta.channel.invite && <Item icon={<Megaphone size={19} />} label={meta.channel.title ? `Канал «${meta.channel.title}»` : 'Канал'} onClick={() => openLink(meta.channel.invite!)} />}
         {me.is_admin && <Item icon={<Settings2 size={19} />} label="Админка" onClick={() => push({ type: 'admin' })} />}
         {isDemo && (
@@ -175,7 +182,9 @@ export function Profile() {
         )}
       </div>
 
-      <p className="mt-6 text-center text-[12px] text-faint">Elaz Ed{isDemo ? ' · демо-режим' : ''}</p>
+      <p className="mt-6 text-center text-[12px] text-faint">
+        Elaz Ed{isDemo ? ' · демо-режим' : ''} · автор в Instagram {INSTAGRAM.handle}
+      </p>
 
       <Sheet open={!!picked} onClose={() => setOpen(null)}>
         {picked && (

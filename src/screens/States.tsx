@@ -1,6 +1,7 @@
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { errorText } from '../lib/api'
+import { INSTAGRAM } from '../lib/install'
 import { haptic, openLink } from '../lib/tg'
 import { useStore } from '../store'
 import { Cta, Emoji, Spinner, Tap } from '../ui'
@@ -46,6 +47,15 @@ export function Splash() {
         <motion.div className="h-full w-1/2 rounded-full" style={{ background: 'var(--aurora)' }} animate={{ x: ['-100%', '200%'] }} transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }} />
       </div>
     </Frame>
+  )
+}
+
+/** Подпись автора со ссылкой на его Instagram. */
+function Author() {
+  return (
+    <button type="button" onClick={() => openLink(INSTAGRAM.url)} className="mt-6 text-[13px] text-mute underline underline-offset-4">
+      Автор в Instagram: {INSTAGRAM.handle}
+    </button>
   )
 }
 
@@ -114,6 +124,7 @@ export function Gate() {
           {busy ? <Spinner size={18} /> : 'Я подписался'}
         </Tap>
       </div>
+      <Author />
     </Frame>
   )
 }
@@ -159,6 +170,7 @@ export function Outside() {
           Посмотреть демо
         </a>
       </div>
+      <Author />
     </Frame>
   )
 }
