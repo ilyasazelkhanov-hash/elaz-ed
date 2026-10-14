@@ -1,0 +1,321 @@
+{
+  "checked_at": "2026-10-13T19:48:48.319Z",
+  "health": {
+    "ok": true,
+    "token": true,
+    "db": true,
+    "channel": "Эл вещает",
+    "app_url": "https://elaz-ed.vercel.app"
+  },
+  "authentication": {
+    "status": 401,
+    "error": "no_auth"
+  },
+  "assets": {
+    "count": 50,
+    "passed": 50,
+    "bytes": 3405892
+  },
+  "checks": [
+    {
+      "file": "approute-604w.webp",
+      "status": 200,
+      "bytes": 11264,
+      "match": true
+    },
+    {
+      "file": "arloui-604w.webp",
+      "status": 200,
+      "bytes": 3886,
+      "match": true
+    },
+    {
+      "file": "agentation-604w.webp",
+      "status": 200,
+      "bytes": 8068,
+      "match": true
+    },
+    {
+      "file": "astryx-604w.webp",
+      "status": 200,
+      "bytes": 12348,
+      "match": true
+    },
+    {
+      "file": "appica-604w.webp",
+      "status": 200,
+      "bytes": 13876,
+      "match": true
+    },
+    {
+      "file": "blocks-so-604w.webp",
+      "status": 200,
+      "bytes": 10152,
+      "match": true
+    },
+    {
+      "file": "claude-resets-512w.webp",
+      "status": 200,
+      "bytes": 9838,
+      "match": true
+    },
+    {
+      "file": "bloub-604w.webp",
+      "status": 200,
+      "bytes": 6294,
+      "match": true
+    },
+    {
+      "file": "codenotch-604w.webp",
+      "status": 200,
+      "bytes": 26438,
+      "match": true
+    },
+    {
+      "file": "blocks21-604w.webp",
+      "status": 200,
+      "bytes": 10304,
+      "match": true
+    },
+    {
+      "file": "dprofile-604w.webp",
+      "status": 200,
+      "bytes": 2502,
+      "match": true
+    },
+    {
+      "file": "doodle-icons-604w.webp",
+      "status": 200,
+      "bytes": 7104,
+      "match": true
+    },
+    {
+      "file": "duckai-604w.webp",
+      "status": 200,
+      "bytes": 7800,
+      "match": true
+    },
+    {
+      "file": "codex-reset-512w.webp",
+      "status": 200,
+      "bytes": 13214,
+      "match": true
+    },
+    {
+      "file": "dotmatrix-604w.webp",
+      "status": 200,
+      "bytes": 12386,
+      "match": true
+    },
+    {
+      "file": "fonts-1-480w.webp",
+      "status": 200,
+      "bytes": 30664,
+      "match": true
+    },
+    {
+      "file": "fonts-2-480w.webp",
+      "status": 200,
+      "bytes": 24276,
+      "match": true
+    },
+    {
+      "file": "fonts-4-480w.webp",
+      "status": 200,
+      "bytes": 16912,
+      "match": true
+    },
+    {
+      "file": "fontshare-604w.webp",
+      "status": 200,
+      "bytes": 6532,
+      "match": true
+    },
+    {
+      "file": "fonts-3-480w.webp",
+      "status": 200,
+      "bytes": 28010,
+      "match": true
+    },
+    {
+      "file": "google-foresight-604w.webp",
+      "status": 200,
+      "bytes": 16952,
+      "match": true
+    },
+    {
+      "file": "gfonts-604w.webp",
+      "status": 200,
+      "bytes": 13684,
+      "match": true
+    },
+    {
+      "file": "geometric-604w.webp",
+      "status": 200,
+      "bytes": 8418,
+      "match": true
+    },
+    {
+      "file": "genery-604w.webp",
+      "status": 200,
+      "bytes": 15320,
+      "match": true
+    },
+    {
+      "file": "gsap-skills-604w.webp",
+      "status": 200,
+      "bytes": 6952,
+      "match": true
+    },
+    {
+      "file": "inspora-512w.webp",
+      "status": 200,
+      "bytes": 8540,
+      "match": true
+    },
+    {
+      "file": "iconify-604w.webp",
+      "status": 200,
+      "bytes": 12028,
+      "match": true
+    },
+    {
+      "file": "iconimate-604w.webp",
+      "status": 200,
+      "bytes": 11334,
+      "match": true
+    },
+    {
+      "file": "heroui-604w.webp",
+      "status": 200,
+      "bytes": 8934,
+      "match": true
+    },
+    {
+      "file": "icons3d-604w.webp",
+      "status": 200,
+      "bytes": 8214,
+      "match": true
+    },
+    {
+      "file": "last30days-604w.webp",
+      "status": 200,
+      "bytes": 10532,
+      "match": true
+    },
+    {
+      "file": "limitreset-512w.webp",
+      "status": 200,
+      "bytes": 9608,
+      "match": true
+    },
+    {
+      "file": "mobbin-604w.webp",
+      "status": 200,
+      "bytes": 14784,
+      "match": true
+    },
+    {
+      "file": "meigen-604w.webp",
+      "status": 200,
+      "bytes": 21494,
+      "match": true
+    },
+    {
+      "file": "morphicons-604w.webp",
+      "status": 200,
+      "bytes": 8308,
+      "match": true
+    },
+    {
+      "file": "replicate-604w.webp",
+      "status": 200,
+      "bytes": 15892,
+      "match": true
+    },
+    {
+      "file": "onepromptdesign-604w.webp",
+      "status": 200,
+      "bytes": 18872,
+      "match": true
+    },
+    {
+      "file": "recent-512w.webp",
+      "status": 200,
+      "bytes": 14982,
+      "match": true
+    },
+    {
+      "file": "page-mascot-604w.webp",
+      "status": 200,
+      "bytes": 10820,
+      "match": true
+    },
+    {
+      "file": "refero-604w.webp",
+      "status": 200,
+      "bytes": 26542,
+      "match": true
+    },
+    {
+      "file": "shadcn-604w.webp",
+      "status": 200,
+      "bytes": 10938,
+      "match": true
+    },
+    {
+      "file": "seedance-sheet-896w.webp",
+      "status": 200,
+      "bytes": 75272,
+      "match": true
+    },
+    {
+      "file": "sigma-604w.webp",
+      "status": 200,
+      "bytes": 6212,
+      "match": true
+    },
+    {
+      "file": "shaders-604w.webp",
+      "status": 200,
+      "bytes": 10628,
+      "match": true
+    },
+    {
+      "file": "seedance.mp4",
+      "status": 200,
+      "bytes": 1162437,
+      "match": true
+    },
+    {
+      "file": "sileo-604w.webp",
+      "status": 200,
+      "bytes": 5080,
+      "match": true
+    },
+    {
+      "file": "uprock-604w.webp",
+      "status": 200,
+      "bytes": 9348,
+      "match": true
+    },
+    {
+      "file": "socialposts-512w.webp",
+      "status": 200,
+      "bytes": 21418,
+      "match": true
+    },
+    {
+      "file": "tweakcn-604w.webp",
+      "status": 200,
+      "bytes": 11398,
+      "match": true
+    },
+    {
+      "file": "slide-system-2026-08-22.zip",
+      "status": 200,
+      "bytes": 1569083,
+      "match": true
+    }
+  ]
+}

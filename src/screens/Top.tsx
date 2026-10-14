@@ -46,7 +46,7 @@ export function Top() {
         : 'Пройди урок, чтобы попасть в таблицу'
 
   return (
-    <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 18px)', paddingBottom: 'calc(120px + var(--bottom))' }}>
+    <div data-tab-scroll className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 18px)', paddingBottom: 'calc(120px + var(--bottom))' }}>
       <div className="px-5">
         <h1 className="font-display text-[26px] font-semibold leading-tight">Рейтинг</h1>
         <p className="mt-1 text-[14px] text-mute">Подписчики канала по XP</p>

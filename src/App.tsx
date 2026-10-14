@@ -1,6 +1,6 @@
 import { House, Trophy, User } from 'lucide-react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
 import { bindBack, initTelegram, inTelegram, startParam } from './lib/tg'
 import { applyTheme, watchTheme } from './lib/theme'
@@ -19,7 +19,7 @@ import { enableSparks, Tap, Toasts } from './ui'
 
 // Админку видит один человек — незачем грузить её всем.
 const AdminScreen = lazy(() => import('./screens/Admin').then((m) => ({ default: m.AdminScreen })))
-const EditorScreen = lazy(() => import('./screens/Admin').then((m) => ({ default: m.EditorScreen })))
+const EditorScreen = lazy(() => import('./screens/AdminEditor').then((m) => ({ default: m.EditorScreen })))
 const AnalyticsScreen = lazy(() => import('./screens/Analytics').then((m) => ({ default: m.AnalyticsScreen })))
 const CoursesAdminScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CoursesAdminScreen })))
 const CourseEditorScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CourseEditorScreen })))
@@ -74,6 +74,16 @@ function Shell() {
 
   useEffect(() => bindBack(stack.length > 0 ? pop : null), [stack.length, pop])
 
+  // Полоса под системными кнопками проявляется, только когда под неё что-то уехало.
+  const scrim = useRef<HTMLDivElement>(null)
+  const onScroll = (e: UIEvent<HTMLDivElement>) => {
+    const el = e.target as HTMLElement
+    if (scrim.current && el.dataset.tabScroll !== undefined) scrim.current.dataset.on = String(el.scrollTop > 6)
+  }
+  useEffect(() => {
+    if (scrim.current) scrim.current.dataset.on = 'false'
+  }, [tab])
+
   // Прямая ссылка на урок: t.me/бот?start=l12
   useEffect(() => {
     const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
@@ -86,13 +96,14 @@ function Shell() {
   return (
     <motion.div className="relative z-10 h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={tab} className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
+        <motion.div key={tab} onScrollCapture={onScroll} className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
           {tab === 'home' && <Home />}
           {tab === 'top' && <Top />}
           {tab === 'profile' && <Profile />}
         </motion.div>
       </AnimatePresence>
 
+      <div ref={scrim} className="glass top-scrim pointer-events-none absolute inset-x-0 top-0 z-20" />
       <Nav />
 
       <AnimatePresence>
@@ -181,13 +192,15 @@ const TABS: { id: Tab; label: string; icon: typeof House }[] = [
 function Nav() {
   const tab = useStore((s) => s.tab)
   const setTab = useStore((s) => s.setTab)
+  // Повторное нажатие на открытую вкладку возвращает к началу экрана.
+  const toTop = () => document.querySelector('[data-tab-scroll]')?.scrollTo({ top: 0, behavior: 'smooth' })
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center" style={{ paddingBottom: 'calc(14px + var(--bottom))' }}>
       <nav className="pointer-events-auto flex gap-1 rounded-full border border-line bg-float/85 p-1.5 shadow-[var(--shadow-float)] backdrop-blur-xl">
         {TABS.map(({ id, label, icon: Icon }) => {
           const active = tab === id
           return (
-            <Tap key={id} feedback="select" onClick={() => setTab(id)} aria-label={label} className={`relative flex h-11 items-center gap-2 rounded-full px-4 ${active ? 'text-white' : 'text-mute'}`}>
+            <Tap key={id} feedback="select" onClick={() => (active ? toTop() : setTab(id))} aria-label={label} className={`relative flex h-11 items-center gap-2 rounded-full px-4 ${active ? 'text-white' : 'text-mute'}`}>
               {active && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-full" style={{ background: 'var(--aurora)' }} transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
               <Icon size={19} strokeWidth={2.2} className="relative" />
               <AnimatePresence initial={false}>

@@ -94,7 +94,7 @@ const rows = [
 
 ## Установка
 
-[Скачать исходный архив системы](https://proninlearn.ru/downloads/slide-system-2026-08-22.zip). В исходной публикации архив занимает 1,5 МБ и содержит папку slide-system с 230 файлами.
+[Скачать исходный архив системы](https://dcdepwdxvadhludnubis.supabase.co/storage/v1/object/public/learning-content/slide-system-2026-08-22.zip). В исходной публикации архив занимает 1,5 МБ и содержит папку slide-system с 230 файлами.
 
 Передай агенту путь к скачанному архиву. Попроси распаковать его в рабочую папку, проверить Node.js 20 или новее, установить зависимости и браузер Chromium для Playwright. Затем запустить Storybook и \`npm run check\`.
 

@@ -9,7 +9,7 @@ Telegram Mini App для подписчиков канала: уроки, сто
 | --- | --- |
 | Интерфейс (React + Vite + Tailwind + Motion) | `src/`, хостинг — Vercel |
 | API и вебхук бота | `supabase/functions/api/index.ts`, Supabase Edge Function |
-| База | Supabase, проект `elaz-ed` (`vllpxpmadouknwawpakm`), схема — `supabase/migrations/` |
+| База | Supabase, проект `dcdepwdxvadhludnubis`, схема — `supabase/migrations/` |
 
 Таблицы закрыты RLS без политик: читать и писать может только Edge Function.
 Каждый запрос подписан `initData` Telegram, сервер проверяет подпись токеном бота и подписку через `getChatMember`.
@@ -40,6 +40,15 @@ npm run dev
 
 Урок — Markdown, сторис — слайды через строку `---`.
 Кнопка «Анонсировать в канале» отправляет пост со ссылкой на урок.
+
+В ленте материал выглядит как пост: тема, заголовок, пара строк и обложка, если она задана в редакторе.
+Стартовый каталог (64 материала и курс) собирается из `content/elaz-ed-2026-10/` — см. README в этой папке.
+
+## Код интерфейса
+
+- `src/screens/Home.tsx` — главная; её части лежат в `src/screens/home/`: бонус дня и стрик, карусель «В фокусе», лента.
+- `src/screens/Admin.tsx` — список материалов, `AdminEditor.tsx` — редактор урока и сторис.
+- `src/ui.tsx` — общие компоненты, `src/index.css` — цвета и темы: менять их только через переменные.
 
 ## Админка
 
