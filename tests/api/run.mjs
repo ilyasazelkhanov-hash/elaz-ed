@@ -762,6 +762,55 @@ test('вебхук ставится на адрес своего проекта,
   assert.ok(!JSON.stringify(await res.json()).includes(TOKEN))
 })
 
+test('напоминание о двери: утренний пуш с подсказкой и вечернее напоминание', async () => {
+  await everyoneBoots()
+  adventOn()
+  state.tables.settings.push({ key: 'cron_key', value: 'secret-cron' })
+  calls.length = 0
+
+  // Без ключа — 401
+  const bad = await handler(new Request(`${SUPABASE_URL}/functions/v1/api/advent_push`, { method: 'POST' }))
+  assert.equal(bad.status, 401)
+
+  // Утренний пуш
+  const res = await handler(new Request(`${SUPABASE_URL}/functions/v1/api/advent_push`, {
+    method: 'POST',
+    headers: { 'x-cron-key': 'secret-cron' },
+    body: JSON.stringify({ type: 'morning' }),
+  }))
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  assert.equal(body.ok, true)
+  assert.equal(body.day, 5)
+
+  // Сообщение содержит HTML и кнопку
+  const msgs = sent('sendMessage')
+  assert.ok(msgs.length > 0)
+  assert.equal(msgs[0].payload.parse_mode, 'HTML')
+  assert.match(msgs[0].payload.text, /Адвент-календарь: Дверь №5 открыта/)
+  assert.ok(msgs[0].payload.reply_markup.inline_keyboard[0][0].web_app.url.includes('sp=advent'))
+
+  // Повторный вызов в тот же день — already_completed
+  calls.length = 0
+  const again = await handler(new Request(`${SUPABASE_URL}/functions/v1/api/advent_push`, {
+    method: 'POST',
+    headers: { 'x-cron-key': 'secret-cron' },
+  }))
+  assert.equal((await again.json()).reason, 'already_completed')
+  assert.equal(sent('sendMessage').length, 0)
+
+  // Вечерний пуш
+  const eve = await handler(new Request(`${SUPABASE_URL}/functions/v1/api/advent_push`, {
+    method: 'POST',
+    headers: { 'x-cron-key': 'secret-cron' },
+    body: JSON.stringify({ type: 'evening' }),
+  }))
+  assert.equal(eve.status, 200)
+  const eveMsgs = sent('sendMessage')
+  assert.ok(eveMsgs.length > 0)
+  assert.match(eveMsgs[0].payload.text, /закроется через несколько часов/)
+})
+
 // ---------- Запуск ----------
 
 let failed = 0

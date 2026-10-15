@@ -97,6 +97,20 @@ export function downloadFile(url: string, fileName: string) {
 export const canShareMessage = inTelegram && supports('8.0') && typeof wa?.shareMessage === 'function'
 export const canPayStars = inTelegram && supports('6.1') && typeof wa?.openInvoice === 'function'
 
+/** Запрос разрешения на отправку сообщений и пуш-уведомлений от бота (Telegram WebApp 6.9+). */
+export function requestWriteAccess(): Promise<boolean> {
+  if (wa?.requestWriteAccess && inTelegram && supports('6.9')) {
+    return new Promise((resolve) => {
+      try {
+        wa.requestWriteAccess((allowed: boolean) => resolve(!!allowed))
+      } catch {
+        resolve(false)
+      }
+    })
+  }
+  return Promise.resolve(false)
+}
+
 /** Отправка заранее подготовленного сообщения: Telegram сам покажет выбор чата. */
 export function shareMessage(id: string): Promise<boolean> {
   return new Promise((resolve) => {

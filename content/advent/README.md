@@ -45,20 +45,34 @@
    ```
 
    До даты старта на главной висит баннер «Скоро открытие». Через `days + grace` дней после старта баннер исчезает сам.
-5. Ежедневное напоминание о новой двери. Нужны расширения `pg_cron` и `pg_net` (Supabase → Database → Extensions). 05:00 UTC = 10:00 в Алматы:
+5. Ежедневные пуши и напоминания. Нужны расширения `pg_cron` и `pg_net` (Supabase → Database → Extensions).
+   - **Утренний пуш (открытие двери):** 05:00 UTC = 10:00 в Алматы:
 
    ```sql
-   select cron.schedule('advent-push', '0 5 * * *', $$
+   select cron.schedule('advent-push-morning', '0 5 * * *', $$
      select net.http_post(
        url := 'https://<проект>.supabase.co/functions/v1/api/advent_push',
        headers := jsonb_build_object('Content-Type', 'application/json',
          'x-cron-key', (select value #>> '{}' from public.settings where key = 'cron_key')),
-       body := '{}'::jsonb
+       body := '{"type":"morning"}'::jsonb
      );
    $$);
    ```
 
-   Рассылка идёт в фоне по 25 сообщений в секунду, не больше 3000 человек за запуск, и пропускает тех, кто уже открыл дверь. Повторный вызов в тот же день ничего не шлёт. Сообщение дойдёт только тем, кто хоть раз писал боту или нажимал /start.
+   - **Вечернее напоминание («Дверь скоро закроется, не потеряй стрик»):** 14:00 UTC = 19:00 в Алматы, мягко напоминает только тем, кто ещё не открыл сегодняшнюю дверь:
+
+   ```sql
+   select cron.schedule('advent-push-evening', '0 14 * * *', $$
+     select net.http_post(
+       url := 'https://<проект>.supabase.co/functions/v1/api/advent_push',
+       headers := jsonb_build_object('Content-Type', 'application/json',
+         'x-cron-key', (select value #>> '{}' from public.settings where key = 'cron_key')),
+       body := '{"type":"evening"}'::jsonb
+     );
+   $$);
+   ```
+
+   Рассылка поддерживает курсорную очередь (пачки по 1000 подписчиков со скоростью 25 сообщений/сек) и автоматически пропускает тех, кто уже открыл дверь дня. Сообщения форматируются в HTML с подсказками по типу двери (квиз, аркада, скретч, история) и интерактивной кнопкой Mini App.
 6. Страница кассира: `https://<app_url>/?redeem`. Открывается в обычном браузере на телефоне или планшете кассира; точка и PIN запоминаются до закрытия вкладки.
 
 ## Демо
@@ -68,7 +82,6 @@
 ## Пока не сделано
 
 - Командный зачёт и карточка итогов (Wrapped) для сторис.
-- Рассылка больше 3000 человек — нужна очередь (несколько запусков cron с курсором).
 
 ## Билеты «догнать» и призы (миграция 010)
 

@@ -372,8 +372,9 @@ async function notifyOpened(userId: number, course: Row, s: Settings) {
   if (!s.app_url) return
   await tg('sendMessage', {
     chat_id: userId,
-    text: `Курс «${course.title}» открыт. Заходи.`,
-    reply_markup: { inline_keyboard: [[{ text: 'Открыть курс', web_app: { url: `${s.app_url}/?sp=c${course.id}` } }]] },
+    parse_mode: 'HTML',
+    text: `🎉 <b>Доступ к курсу открыт!</b>\n\nКурс <b>«${escapeHtml(course.title)}»</b> теперь разблокирован в твоём профиле. Все уроки, практические задания и квизы доступны для изучения.`,
+    reply_markup: { inline_keyboard: [[{ text: '📚 Начать обучение', web_app: { url: `${s.app_url}/?sp=c${course.id}` } }]] },
   })
 }
 
@@ -956,8 +957,14 @@ async function adminAnnounce(body: Row) {
   if (!les || !les.published) throw new HttpError(400, 'not_published')
   if (!s.channel?.id || !s.bot?.username) throw new HttpError(400, 'not_ready')
   const link = `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=l${les.id}`
-  const meta = les.kind === 'story' ? 'Сторис' : `${les.minutes} мин · +${les.xp} XP`
-  const text = `${escapeHtml(les.emoji)} <b>${escapeHtml(les.title)}</b>\n${escapeHtml(les.subtitle)}\n\n${meta}`
+  const cat = les.category ? `#${escapeHtml(String(les.category).replace(/[\s-]+/g, '_'))}` : ''
+  const meta = les.kind === 'story' ? '⚡ Короткая история' : `⏱ ${les.minutes} мин · ⚡ +${les.xp} XP`
+  const text = [
+    `${escapeHtml(les.emoji)} <b>${escapeHtml(les.title)}</b>`,
+    les.subtitle ? `${escapeHtml(les.subtitle)}` : '',
+    '',
+    [meta, cat].filter(Boolean).join('  '),
+  ].filter((line, i) => i === 2 || line !== '').join('\n')
   const r = await tg('sendMessage', {
     chat_id: s.channel.id,
     text,
@@ -1161,7 +1168,12 @@ async function webhook(req: Request) {
           if (t.error && t.error.code !== '23505') retry = true
           else if (!t.error) {
             await logEvent(userId, 'purchase', null, { catchup: true, stars: paid.total_amount })
-            await tg('sendMessage', { chat_id: userId, text: '🎟 Билет получен. Открой календарь и выбери пропущенную дверь.' })
+            await tg('sendMessage', {
+              chat_id: userId,
+              parse_mode: 'HTML',
+              text: '🎟 <b>Билет успешно получен!</b>\n\nЗвёзды списаны, билет уже на твоём балансе. Открой календарь и выбери любую пропущенную дверь, чтобы наверстать прогресс.',
+              ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: '🚀 Открыть календарь', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
+            })
           }
         }
       }
@@ -1583,20 +1595,22 @@ async function awardOnOpen(row: Row, opened: number, day: number, today: number,
 }
 
 // Приз дублируем в чат с ботом: так он не потеряется, даже если человек закроет приложение.
-async function notifyRewards(userId: number, fresh: Row[], s: Settings, heading = 'Награда открыта!') {
+async function notifyRewards(userId: number, fresh: Row[], s: Settings, heading = '🎉 <b>Поздравляем! Награда получена:</b>') {
   const detail = (c: Row) => {
-    if (c.kind === 'promo') return `Код: <code>${c.code}</code>`
+    if (c.kind === 'promo') return `🎟 Код: <code>${c.code}</code>\n<i>(Покажи этот код на кассе — он одноразовый)</i>`
     if (c.kind === 'message') return escapeHtml(c.content?.text ?? '')
     if (c.kind === 'link' || c.kind === 'video') return escapeHtml(c.content?.url ?? '')
+    if (c.kind === 'course') return '🎓 Доступ к курсу уже открыт в твоём профиле!'
+    if (c.kind === 'lesson') return '📖 Урок уже разблокирован в приложении.'
     return 'Уже открыт в приложении.'
   }
-  const lines = fresh.map((c) => `${escapeHtml(c.emoji)} <b>${escapeHtml(c.title)}</b>\n${detail(c)}`).join('\n\n')
+  const lines = fresh.map((c) => `${escapeHtml(c.emoji)} <b>${escapeHtml(c.title)}</b>\n${detail(c)}`).join('\n\n───────────────\n\n')
   const hasCode = fresh.some((c) => c.kind === 'promo')
   await tg('sendMessage', {
     chat_id: userId,
     parse_mode: 'HTML',
-    text: `${heading}\n\n${lines}${hasCode ? '\n\nПокажи код на кассе. Он одноразовый.' : ''}`,
-    ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть календарь', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
+    text: `${heading}\n\n${lines}${hasCode ? '\n\n💡 <i>Код сохранён в календаре — ты всегда можешь открыть его снова.</i>' : ''}`,
+    ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: '🎁 Мои награды в календаре', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
   })
 }
 
@@ -1997,7 +2011,19 @@ async function adminAdventTicketGrant(body: Row) {
   const rows = Array.from({ length: count }, (_, i) => ({ user_id: user.id, source: 'admin', ref: `admin:${user.id}:${stamp}:${i}` }))
   const { error } = await db.from('advent_tickets').insert(rows)
   if (error) throw new HttpError(500, 'db')
-  await tg('sendMessage', { chat_id: user.id, text: `🎟 Автор календаря выдал тебе ${count === 1 ? 'билет' : `билеты: ${count}`} — можно догнать пропущенные двери.` })
+  const s = await getSettings()
+  const appUrl = typeof s.app_url === 'string' ? s.app_url : ''
+  await tg('sendMessage', {
+    chat_id: user.id,
+    parse_mode: 'HTML',
+    text: [
+      `🎟 <b>Тебе начислены билеты календаря!</b>`,
+      '',
+      `Автор календаря выдал тебе ${count === 1 ? 'билет' : `билеты: <b>${count} шт.</b>`}`,
+      `Теперь ты можешь открыть пропущенные двери и забрать награды! 🚪✨`,
+    ].join('\n'),
+    ...(appUrl ? { reply_markup: { inline_keyboard: [[{ text: '✨ Открыть календарь', web_app: { url: `${appUrl}/?sp=advent` } }]] } } : {}),
+  })
   return { name: user.first_name || username, count }
 }
 
@@ -2063,10 +2089,11 @@ async function adminAdventTheme(body: Row) {
   return { ok: true }
 }
 
-// ---------- Напоминание о новой двери (вызывает cron) ----------
-// Telegram пропускает около 30 сообщений в секунду; шлём по 25 и ждём секунду. 3000 человек — примерно 2 минуты.
+// ---------- Напоминание о новой двери и вечерний пуш (вызывает cron / pg_net) ----------
+// Telegram пропускает около 30 сообщений в секунду; шлём пачками по 25 с паузой в 1 сек.
+// Поддерживает курсорную очередь: база любого размера обрабатывается без обрыва и таймаутов.
 
-const PUSH_LIMIT = 3000
+const PUSH_BATCH = 1000
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void }
 
@@ -2078,33 +2105,117 @@ async function adventPush(req: Request) {
   const today = adventToday(cfg)
   await runDueDraws(cfg, today, s)
   if (today < 1 || today > cfg.days) return json({ ok: true, sent: 0, reason: 'out_of_range' })
-  // Повторный вызов cron в тот же день ничего не шлёт.
-  if (s.advent_push_day === today) return json({ ok: true, sent: 0, reason: 'already' })
-  await setSetting('advent_push_day', today)
-  const [door, done, users] = await Promise.all([
-    db.from('advent_doors').select('title,emoji').eq('day', today).maybeSingle(),
+
+  const url = new URL(req.url)
+  let bodyJson: Row = {}
+  try {
+    bodyJson = await req.json()
+  } catch {
+    /* запрос без JSON-тела */
+  }
+
+  const type = String(bodyJson.type ?? url.searchParams.get('type') ?? 'morning')
+  const isEvening = type === 'evening'
+  const reset = bodyJson.reset === true || url.searchParams.get('reset') === '1'
+
+  // Состояние рассылки хранится отдельно для утреннего и вечернего пушей.
+  const stateKey = isEvening ? 'advent_push_evening' : 'advent_push_morning'
+  const state: Row = s[stateKey] ?? {}
+  const dayChanged = state.day !== today
+
+  if (dayChanged || reset) {
+    state.day = today
+    state.cursor = 0
+    state.done = false
+    state.sent = 0
+  } else if (state.done) {
+    return json({ ok: true, sent: 0, reason: 'already_completed', day: today, type })
+  }
+
+  const cursor = Number(state.cursor) || 0
+
+  const [door, done, usersRes] = await Promise.all([
+    db.from('advent_doors').select('title,emoji,kind,xp').eq('day', today).maybeSingle(),
     db.from('advent_opens').select('user_id').eq('day', today),
-    db.from('users').select('id').eq('subscribed', true).order('id').limit(PUSH_LIMIT),
+    db.from('users').select('id').eq('subscribed', true).gt('id', cursor).order('id').limit(PUSH_BATCH),
   ])
+
   if (!door.data) return json({ ok: true, sent: 0, reason: 'no_door' })
+  const users = usersRes.data ?? []
+  if (!users.length) {
+    state.done = true
+    await setSetting(stateKey, state)
+    if (!isEvening) await setSetting('advent_push_day', today)
+    return json({ ok: true, sent: 0, reason: 'completed', day: today, type })
+  }
+
   const skip = new Set((done.data ?? []).map((o) => o.user_id))
-  const ids = (users.data ?? []).map((u) => u.id).filter((id) => !skip.has(id))
-  const text = `${door.data.emoji} Дверь №${today} открыта: ${door.data.title}`
-  const markup = { inline_keyboard: [[{ text: 'Открыть дверь', web_app: { url: `${s.app_url}/?sp=advent` } }]] }
+  const ids = users.map((u) => u.id).filter((id) => !skip.has(id))
+
+  const kindHints: Record<string, string> = {
+    quiz: '🧠 Внутри квиз: ответь без ошибок и получи билет «догнать»!',
+    arcade: '🎮 Внутри аркада: набери комбо очков и забери максимум XP!',
+    scratch: '✨ Внутри скретч-карта: сотри слой и забери скрытую награду!',
+    story: '📖 Вдохновляющая история и свежий инсайт.',
+  }
+  const hint = kindHints[door.data.kind] ?? 'Загляни внутрь и забери награду!'
+  const xpBadge = door.data.xp ? ` · <b>+${door.data.xp} XP</b>` : ''
+
+  const text = isEvening
+    ? [
+        `⏳ <b>Дверь №${today} закроется через несколько часов!</b>`,
+        '',
+        `${door.data.emoji} <b>«${escapeHtml(door.data.title)}»</b>${xpBadge}`,
+        `Не упусти шанс забрать XP и защитить свой стрик без траты заморозки или билета! 🔥`,
+      ].join('\n')
+    : [
+        `🎄 <b>Адвент-календарь: Дверь №${today} открыта!</b>`,
+        '',
+        `${door.data.emoji} <b>«${escapeHtml(door.data.title)}»</b>${xpBadge}`,
+        hint,
+        '',
+        `⚡ <i>Открой дверь сегодня, чтобы забрать максимум XP и не прерывать новогодний стрик!</i>`,
+      ].join('\n')
+
+  const markup = {
+    inline_keyboard: [
+      [{ text: isEvening ? `🚪 Успеть открыть дверь №${today}` : `✨ Открыть дверь №${today}`, web_app: { url: `${s.app_url}/?sp=advent` } }],
+    ],
+  }
+
+  const nextCursor = users[users.length - 1].id
+  const isLastBatch = users.length < PUSH_BATCH
+
   const send = async () => {
     let sent = 0
     for (let i = 0; i < ids.length; i += 25) {
-      const res = await Promise.all(ids.slice(i, i + 25).map((id) => tg('sendMessage', { chat_id: id, text, reply_markup: markup })))
+      const res = await Promise.all(
+        ids.slice(i, i + 25).map((id) => tg('sendMessage', { chat_id: id, text, parse_mode: 'HTML', reply_markup: markup }))
+      )
       sent += res.filter((r) => r.ok).length
       if (i + 25 < ids.length) await new Promise((r) => setTimeout(r, 1000))
     }
-    console.log('advent_push', today, sent, '/', ids.length)
+    state.cursor = nextCursor
+    state.done = isLastBatch
+    state.sent = (state.sent || 0) + sent
+    state.updated_at = new Date().toISOString()
+    await setSetting(stateKey, state)
+    if (!isEvening && isLastBatch) await setSetting('advent_push_day', today)
+    console.log('advent_push', type, today, sent, '/', ids.length, 'cursor:', nextCursor, 'done:', isLastBatch)
   }
-  // Рассылка идёт в фоне: cron (pg_net) не ждёт ответа дольше нескольких секунд, а Supabase держит
-  // функцию живой до конца waitUntil. Без EdgeRuntime (локальный запуск) — ждём сами.
+
   if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(send())
   else await send()
-  return json({ ok: true, queued: ids.length, truncated: (users.data ?? []).length === PUSH_LIMIT })
+
+  return json({
+    ok: true,
+    type,
+    day: today,
+    queued: ids.length,
+    batch_size: users.length,
+    cursor: nextCursor,
+    done: isLastBatch,
+  })
 }
 
 // ---------- Роутер ----------
