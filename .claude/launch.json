@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "employees-video-studio",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "videos/elaz-ed-employees-claude", "run", "dev", "--", "--port=3311", "--no-open"],
+      "port": 3311
     }
   ]
 }

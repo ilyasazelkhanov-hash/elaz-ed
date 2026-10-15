@@ -241,6 +241,36 @@ function aliveStreak(row: Row) {
   return gap <= 1 || (gap === 2 && row.freezes > 0) ? row.streak : 0
 }
 
+// Уровни дублируют src/lib/game.ts: бот показывает тот же уровень, что и вкладка профиля.
+const LEVELS = [
+  { xp: 0, title: 'Новичок', emoji: '🐣' },
+  { xp: 100, title: 'Искатель', emoji: '🧭' },
+  { xp: 250, title: 'Вайбкодер', emoji: '⚡' },
+  { xp: 500, title: 'Промптер', emoji: '🧠' },
+  { xp: 900, title: 'Билдер', emoji: '🛠️' },
+  { xp: 1500, title: 'Архитектор', emoji: '🚀' },
+  { xp: 2500, title: 'Нейромаг', emoji: '🔮' },
+  { xp: 4000, title: 'Легенда', emoji: '👑' },
+]
+
+function levelOf(xp: number) {
+  let i = 0
+  while (i + 1 < LEVELS.length && xp >= LEVELS[i + 1].xp) i++
+  const cur = LEVELS[i]
+  const next = LEVELS[i + 1] ?? null
+  return { index: i + 1, title: cur.title, emoji: cur.emoji, next, left: next ? next.xp - xp : 0 }
+}
+
+// Команда из текста сообщения: без @имени бота и аргументов, в нижнем регистре.
+function botCmd(text: string) {
+  return (text.trim().split(/\s+/)[0] ?? '').split('@')[0].toLowerCase()
+}
+
+function botSender(msg: Row): number {
+  const id = Number(msg?.from?.id ?? msg?.chat?.id)
+  return Number.isInteger(id) && id > 0 ? id : 0
+}
+
 async function buildMe(row: Row) {
   const day = localDay(tzOf(row))
   // Место считаем среди подписчиков — так же, как строится таблица рейтинга.
@@ -938,6 +968,93 @@ async function adminAnnounce(body: Row) {
   return { ok: true }
 }
 
+// ---------- Бот: команды профиля и новостей ----------
+
+// /profile (и псевдоним /me): та же аналитика, что во вкладке профиля — XP, уровень, стрик, место.
+async function handleProfile(chatId: number, userId: number, s: Settings) {
+  const appUrl = typeof s.app_url === 'string' ? s.app_url : ''
+  try {
+    const { data: row } = await db.from('users').select('*').eq('id', userId).maybeSingle()
+    if (!row) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: 'Профиля пока нет. Открой приложение один раз через /start — тогда появится статистика.',
+        ...(appUrl
+          ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть OG CRE8R²', web_app: { url: appUrl } }]] } }
+          : {}),
+      })
+      return
+    }
+    const me = await buildMe(row)
+    const lvl = levelOf(me.xp)
+    const achTotal = 9
+    const achGot = Array.isArray(me.achievements) ? me.achievements.length : 0
+    const lines = [
+      `<b>${escapeHtml(me.name)}</b> — ${escapeHtml(lvl.emoji)} ${escapeHtml(lvl.title)}, уровень ${lvl.index}`,
+      `⚡ ${me.xp} XP · 🏆 место ${me.rank}`,
+      `🔥 стрик ${me.streak} · лучший ${me.best_streak}`,
+      `📚 уроков: ${me.lessons_done} · 🏅 ачивки ${achGot}/${achTotal}`,
+      `🤝 приглашено: ${me.invited} · ❄️ заморозки: ${me.freezes}`,
+      lvl.next ? `До уровня «${escapeHtml(lvl.next.title)}» осталось ${lvl.left} XP.` : 'Максимальный уровень.',
+      me.daily_claimed ? 'Бонус дня уже забран.' : 'Бонус дня ждёт в приложении.',
+    ]
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: lines.join('\n'),
+      parse_mode: 'HTML',
+      ...(appUrl
+        ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть профиль', web_app: { url: appUrl } }]] } }
+        : {}),
+    })
+  } catch (e) {
+    console.error('profile_cmd', e)
+    await tg('sendMessage', { chat_id: chatId, text: 'Не получилось достать профиль. Загляни чуть позже.' })
+  }
+}
+
+// /news: три свежих опубликованных урока из общей ленты (без уроков закрытых курсов).
+async function handleNews(chatId: number, s: Settings) {
+  const appUrl = typeof s.app_url === 'string' ? s.app_url : ''
+  const botName = s.bot?.username ? String(s.bot.username) : ''
+  try {
+    const { data, error } = await db
+      .from('lessons')
+      .select('id,title,subtitle,emoji,minutes,xp,published_at')
+      .eq('published', true)
+      .eq('kind', 'lesson')
+      .is('course_id', null)
+      .order('published_at', { ascending: false })
+      .limit(3)
+    if (error) throw error
+    const items = data ?? []
+    if (!items.length) {
+      await tg('sendMessage', { chat_id: chatId, text: 'Пока пусто. Первый урок появится здесь сразу после анонса.' })
+      return
+    }
+    const lines = items.map((l: Row, i: number) => {
+      const title = escapeHtml(String(l.title ?? 'Без названия'))
+      const sub = str(l.subtitle, 120)
+      const meta = `${Number(l.minutes) || 3} мин · +${Number(l.xp) || 0} XP`
+      return `${i + 1}. ${escapeHtml(String(l.emoji ?? '✨'))} <b>${title}</b>\n${sub ? `${escapeHtml(sub)}\n` : ''}${escapeHtml(meta)}`
+    })
+    const payload: Row = { chat_id: chatId, text: `Свежее в OG CRE8R²:\n\n${lines.join('\n\n')}`, parse_mode: 'HTML' }
+    if (appUrl) {
+      payload.reply_markup = {
+        inline_keyboard: items.map((l: Row) => [{ text: `Открыть: ${String(l.title ?? '').slice(0, 24) || 'урок'}`, web_app: { url: `${appUrl}/?sp=l${l.id}` } }]),
+      }
+    } else if (botName) {
+      const mainApp = !!s.bot?.main_app
+      payload.reply_markup = {
+        inline_keyboard: items.map((l: Row) => [{ text: `Открыть: ${String(l.title ?? '').slice(0, 24) || 'урок'}`, url: `https://t.me/${botName}?${mainApp ? 'startapp' : 'start'}=l${l.id}` }]),
+      }
+    }
+    await tg('sendMessage', payload)
+  } catch (e) {
+    console.error('news_cmd', e)
+    await tg('sendMessage', { chat_id: chatId, text: 'Не получилось достать новости. Загляни чуть позже.' })
+  }
+}
+
 // ---------- Бот ----------
 
 async function webhook(req: Request) {
@@ -950,7 +1067,8 @@ async function webhook(req: Request) {
     const s = await getSettings()
 
     const msg = update.message
-    if (msg?.chat?.type === 'private' && typeof msg.text === 'string' && msg.text.startsWith('/start')) {
+    const cmd = msg?.chat?.type === 'private' && typeof msg.text === 'string' ? botCmd(msg.text) : ''
+    if (cmd === '/start') {
       const payload = msg.text.split(/\s+/)[1]?.replace(/[^\w-]/g, '').slice(0, 64) ?? ''
       const appUrl = s.app_url
       if (appUrl) {
@@ -964,8 +1082,17 @@ async function webhook(req: Request) {
       }
     }
 
-    if (msg?.chat?.type === 'private' && typeof msg.text === 'string' && msg.text.startsWith('/paysupport')) {
+    if (cmd === '/paysupport') {
       await tg('sendMessage', { chat_id: msg.chat.id, text: 'Вопрос по оплате? Напиши @elazart — разберёмся и вернём звёзды, если курс не открылся.' })
+    }
+
+    if (cmd === '/profile' || cmd === '/me') {
+      const userId = botSender(msg)
+      if (userId) await handleProfile(msg.chat.id, userId, s)
+    }
+
+    if (cmd === '/news') {
+      await handleNews(msg.chat.id, s)
     }
 
     // Telegram ждёт ответа на проверку перед оплатой не дольше 10 секунд.
@@ -1115,6 +1242,8 @@ async function setup() {
   await tg('setMyCommands', {
     commands: [
       { command: 'start', description: 'Открыть OG CRE8R²' },
+      { command: 'profile', description: 'Мой прогресс' },
+      { command: 'news', description: 'Три свежие новости' },
       { command: 'paysupport', description: 'Вопрос по оплате' },
     ],
   })
