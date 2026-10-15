@@ -651,7 +651,6 @@ alter table public.users
 create index users_subscribed_xp_idx on public.users (xp desc) where subscribed;
 
 
-
 -- Адвент-календарь: двери по дням, игры (квиз, скретч, аркада), коды наград и погашение на кассе.
 -- Включается настройкой settings.advent (см. внизу). Пока enabled = false, приложение работает как раньше.
 
@@ -815,5 +814,197 @@ insert into public.settings (key, value) values
   ('advent', '{"enabled": false, "title": "Адвент-календарь", "start": "2026-12-08", "days": 24, "tz": 300, "grace": 3, "push_hour": 10}'::jsonb),
   ('cron_key', to_jsonb(encode(extensions.gen_random_bytes(24), 'hex')))
 on conflict (key) do nothing;
+
+
+-- Адвент: билеты «догнать» и призы разных видов.
+-- Пропущенную дверь можно открыть только за билет. Билет дают проверяемые действия:
+-- урок с квизом без ошибок, приглашённый друг, переход по ссылке из сторис, оплата звёздами.
+
+-- Вид приза и его содержимое. promo — уникальный код с погашением на кассе (как раньше),
+-- message — текст, link и video — ссылка, lesson и course — доступ к уроку или курсу.
+alter table public.advent_rewards
+  add column if not exists kind text not null default 'promo' check (kind in ('promo', 'message', 'link', 'video', 'lesson', 'course')),
+  add column if not exists payload jsonb not null default '{}';
+
+-- Курс может открыть приз календаря.
+alter table public.course_access drop constraint if exists course_access_source_check;
+alter table public.course_access add constraint course_access_source_check check (source in ('stars', 'admin', 'invites', 'advent'));
+
+-- Отдельный урок закрытого курса, открытый призом — без доступа ко всему курсу.
+create table if not exists public.lesson_access (
+  user_id bigint not null references public.users (id) on delete cascade,
+  lesson_id bigint not null references public.lessons (id) on delete cascade,
+  source text not null default 'advent',
+  granted_at timestamptz not null default now(),
+  primary key (user_id, lesson_id)
+);
+alter table public.lesson_access enable row level security;
+
+-- Оплата звёздами бывает за курс и за билет календаря.
+alter table public.payments add column if not exists purpose text not null default 'course' check (purpose in ('course', 'catchup'));
+
+-- Билеты. ref уникален: одно действие (друг, урок, оплата, переход из сторис) не даёт второй билет.
+create table if not exists public.advent_tickets (
+  id bigint generated always as identity primary key,
+  user_id bigint not null references public.users (id) on delete cascade,
+  source text not null check (source in ('quiz', 'invite', 'story', 'stars', 'admin')),
+  ref text not null unique,
+  created_at timestamptz not null default now(),
+  used_day integer,
+  used_at timestamptz,
+  -- Звёзды за билет вернули, а билет не был потрачен.
+  revoked_at timestamptz
+);
+create index if not exists advent_tickets_free_idx on public.advent_tickets (user_id) where used_at is null and revoked_at is null;
+alter table public.advent_tickets enable row level security;
+
+-- Открыть пропущенную дверь за билет. Билет, запись открытия и XP — в одной транзакции:
+-- билет не списывается без открытия и дверь не открывается без билета.
+create or replace function public.advent_open_late(p_user bigint, p_day integer, p_score integer, p_total integer, p_xp integer)
+returns table (inserted boolean, opened integer, ticket boolean)
+language plpgsql
+set search_path = ''
+as $$
+declare
+  t bigint;
+begin
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('advent:' || p_user::text, 0));
+  if exists (select 1 from public.advent_opens where user_id = p_user and day = p_day) then
+    return query select false, (select count(*)::integer from public.advent_opens o where o.user_id = p_user), true;
+    return;
+  end if;
+  select id into t from public.advent_tickets
+    where user_id = p_user and used_at is null and revoked_at is null
+    order by id limit 1 for update;
+  if t is null then
+    return query select false, (select count(*)::integer from public.advent_opens o where o.user_id = p_user), false;
+    return;
+  end if;
+  update public.advent_tickets set used_at = now(), used_day = p_day where id = t;
+  insert into public.advent_opens (user_id, day, score, total, xp, late) values (p_user, p_day, p_score, p_total, p_xp, true);
+  update public.users set xp = xp + p_xp where id = p_user;
+  return query select true, (select count(*)::integer from public.advent_opens o where o.user_id = p_user), true;
+end;
+$$;
+
+revoke execute on function public.advent_open_late(bigint, integer, integer, integer, integer) from public, anon, authenticated;
+grant execute on function public.advent_open_late(bigint, integer, integer, integer, integer) to service_role;
+
+
+-- Адвент: как выдаётся приз.
+-- threshold — за N открытых дверей (как раньше);
+-- day       — открывшим дверь одного из дней day_from..day_to, пока не кончится лимит;
+-- instant   — мгновенный выигрыш при открытии двери в окне дней: шанс подстраивается под темп,
+--             чтобы весь лимит разошёлся к концу окна, а не в первый день;
+-- draw      — розыгрыш после day_to: случайные победители среди открывших двери в окне,
+--             каждая открытая дверь — один шанс.
+alter table public.advent_rewards
+  add column if not exists mode text not null default 'threshold' check (mode in ('threshold', 'day', 'instant', 'draw')),
+  add column if not exists day_from integer check (day_from between 1 and 60),
+  add column if not exists day_to integer check (day_to between 1 and 60),
+  add column if not exists drawn_at timestamptz;
+
+-- Случайное число в [0, 1) из криптографического генератора — для честного розыгрыша.
+create or replace function public.advent_random()
+returns double precision
+language sql
+volatile
+set search_path = ''
+as $$
+  select (('x' || encode(extensions.gen_random_bytes(7), 'hex'))::bit(56)::bigint)::double precision / 72057594037927936.0;
+$$;
+
+-- Выдать приз человеку. Лимит, повтор и сам код проверяются под блокировкой строки приза:
+-- при любой гонке лишний приз не выпадет, а один человек не получит один приз дважды.
+-- Возвращает код или null, если приз закончился или уже выдан этому человеку.
+create or replace function public.advent_grant(p_user bigint, p_reward bigint)
+returns text
+language plpgsql
+set search_path = ''
+as $$
+declare
+  r public.advent_rewards%rowtype;
+  abc constant text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  b bytea;
+  c text;
+  i integer;
+begin
+  select * into r from public.advent_rewards where id = p_reward for update;
+  if not found then
+    return null;
+  end if;
+  if exists (select 1 from public.reward_codes where user_id = p_user and reward_id = p_reward) then
+    return null;
+  end if;
+  if r.stock is not null and (select count(*) from public.reward_codes where reward_id = p_reward) >= r.stock then
+    return null;
+  end if;
+  loop
+    b := extensions.gen_random_bytes(8);
+    c := '';
+    for i in 0..7 loop
+      c := c || substr(abc, (get_byte(b, i) % length(abc)) + 1, 1);
+    end loop;
+    c := substr(c, 1, 4) || '-' || substr(c, 5, 4);
+    exit when not exists (select 1 from public.reward_codes where code = c);
+  end loop;
+  insert into public.reward_codes (code, user_id, reward_id) values (c, p_user, p_reward);
+  if r.kind = 'lesson' and (r.payload ->> 'lesson_id') is not null then
+    insert into public.lesson_access (user_id, lesson_id, source) values (p_user, (r.payload ->> 'lesson_id')::bigint, 'advent') on conflict do nothing;
+  end if;
+  if r.kind = 'course' and (r.payload ->> 'course_id') is not null then
+    insert into public.course_access (user_id, course_id, source) values (p_user, (r.payload ->> 'course_id')::bigint, 'advent') on conflict do nothing;
+  end if;
+  return c;
+end;
+$$;
+
+-- Розыгрыш: победители среди открывших двери окна, шанс пропорционален числу открытых дверей.
+-- Взвешенная выборка без повторов (ключ random^(1/вес)). Повторный вызов ничего не меняет.
+create or replace function public.advent_draw(p_reward bigint)
+returns table (winner_id bigint, winner_code text)
+language plpgsql
+set search_path = ''
+as $$
+declare
+  r public.advent_rewards%rowtype;
+  slots integer;
+  w record;
+  c text;
+begin
+  select * into r from public.advent_rewards where id = p_reward for update;
+  if not found or r.mode <> 'draw' or r.drawn_at is not null then
+    return;
+  end if;
+  slots := coalesce(r.stock, 1) - (select count(*) from public.reward_codes rc where rc.reward_id = p_reward);
+  for w in
+    select e.uid
+    from (
+      select o.user_id as uid, count(*) as n
+      from public.advent_opens o
+      where o.day between coalesce(r.day_from, 1) and coalesce(r.day_to, 60)
+        and not exists (select 1 from public.reward_codes rc where rc.reward_id = p_reward and rc.user_id = o.user_id)
+      group by o.user_id
+    ) e
+    order by power(public.advent_random() + 1e-12, 1.0 / e.n) desc
+    limit greatest(slots, 0)
+  loop
+    c := public.advent_grant(w.uid, p_reward);
+    if c is not null then
+      winner_id := w.uid;
+      winner_code := c;
+      return next;
+    end if;
+  end loop;
+  update public.advent_rewards set drawn_at = now() where id = p_reward;
+end;
+$$;
+
+revoke execute on function public.advent_random() from public, anon, authenticated;
+revoke execute on function public.advent_grant(bigint, bigint) from public, anon, authenticated;
+revoke execute on function public.advent_draw(bigint) from public, anon, authenticated;
+grant execute on function public.advent_random() to service_role;
+grant execute on function public.advent_grant(bigint, bigint) to service_role;
+grant execute on function public.advent_draw(bigint) to service_role;
 
 commit;
