@@ -31,7 +31,9 @@ async function call<T>(route: string, payload: Record<string, unknown> = {}, kee
 const httpApi: Api = {
   boot: (force) => call('boot', { force: !!force, sp: startParam, platform, theme: document.documentElement.dataset.theme ?? '' }),
   lesson: (id) => call('lesson', { id }),
-  complete: (id, answers) => call('complete', { id, answers }),
+  quizStart: (id) => call('quiz_start', { id }),
+  quizAnswer: (attemptId, index, answer) => call('quiz_answer', { attemptId, index, answer }),
+  complete: (id, answers, attemptId) => call('complete', { id, answers, attemptId }),
   daily: () => call('daily'),
   like: (id) => call('like', { id }),
   top: () => call('top'),
@@ -121,6 +123,8 @@ export const api: Api = isDemo ? demoApi : httpApi
 export function errorText(e: unknown) {
   const code = e instanceof ApiError ? e.code : typeof e === 'string' ? e : ''
   switch (code) {
+    case 'platform_not_ready':
+      return 'Клуб обновляется. Попробуй открыть приложение немного позже'
     case 'network':
       return 'Нет связи. Проверь интернет'
     case 'locked':
@@ -149,7 +153,16 @@ export function errorText(e: unknown) {
     case 'already_drawn':
       return 'Розыгрыш уже прошёл'
     case 'quiz_required':
-      return 'Добавь хотя бы один вопрос с двумя вариантами'
+      return 'Нужно пройти квиз: ответь на все вопросы'
+    case 'quiz_answer_locked':
+    case 'quiz_answers_mismatch':
+      return 'Ответ уже сохранён. Открой урок заново, чтобы продолжить'
+    case 'quiz_sequence':
+      return 'Сначала ответь на предыдущий вопрос'
+    case 'quiz_answer_invalid':
+      return 'Не получилось отправить ответ. Открой урок заново'
+    case 'quiz_not_found':
+      return 'Попытка не найдена. Открой квиз заново'
     case 'prize_required':
       return 'Напиши, что под защитным слоем'
     case 'door_opened':

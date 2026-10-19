@@ -1,0 +1,56 @@
+{
+  "name": "azelkhanov-master",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5180",
+    "build": "node scripts/validate.mjs && tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4180",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:server-types": "tsc -p tsconfig.server.json",
+    "test:concurrency": "node tests/concurrency.mjs",
+    "test:ui": "node tests/browser.mjs",
+    "test:touch": "node tests/touch.mjs",
+    "test:games": "node tests/games-browser.mjs",
+    "client:create": "node scripts/client.mjs create",
+    "client:update": "node scripts/client.mjs update",
+    "og:sync": "node scripts/sync-og.mjs",
+    "validate": "node scripts/validate.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/onest": "5.3.1",
+    "@fontsource-variable/unbounded": "5.3.0",
+    "canvas-confetti": "1.9.4",
+    "lucide-react": "1.56.0",
+    "motion": "14.2.0",
+    "qrcode": "1.5.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
+    "three": "0.186.1",
+    "zustand": "5.0.15"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
+    "@playwright/test": "1.64.1",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/canvas-confetti": "1.9.0",
+    "@types/qrcode": "1.5.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.186.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "embedded-postgres": "18.4.0-beta.17",
+    "pg": "8.16.3",
+    "prettier": "3.9.10",
+    "supabase": "2.121.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.4"
+  }
+}

@@ -1,0 +1,6 @@
+project_id = "azelkhanov-master"
+
+[functions.master-api]
+# Telegram HMAC / OIDC session / webhook secret are validated by our handler.
+verify_jwt = false
+

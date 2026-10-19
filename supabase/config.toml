@@ -1,0 +1,7 @@
+project_id = "og-cre8r"
+
+[functions.api]
+verify_jwt = false
+
+[functions.az-master-api]
+verify_jwt = false

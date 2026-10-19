@@ -1,6 +1,8 @@
 import { create } from 'zustand'
-import { api, ApiError } from './lib/api'
+import { api, ApiError, isDemo } from './lib/api'
 import { achievement } from './lib/game'
+import { projectProgress } from './lib/journey'
+import { demoPlatformXp } from './lib/experience'
 import type { ShareCard } from './lib/shareCard'
 import type { AdminCourse, AdventSummary, Card, CompleteResult, Course, Kind, Lesson, Me, Meta } from './lib/types'
 
@@ -25,6 +27,8 @@ export type Overlay =
   | { type: 'stories'; id: number }
   | { type: 'course'; id: number; from?: Inset }
   | { type: 'lab' }
+  | { type: 'journey' | 'club' | 'services' }
+  | { type: 'academy'; path?: string }
   | { type: 'admin' }
   | { type: 'analytics' }
   | { type: 'courses-admin' }
@@ -91,6 +95,7 @@ function loadSeen(): number[] {
 }
 
 let toastId = 0
+const isDemoProgress = (me: Me) => isDemo ? projectProgress(me, demoPlatformXp()) : me
 
 declare global {
   interface Window {
@@ -118,7 +123,7 @@ export const useStore = create<Store>((set, get) => ({
       const b = await api.boot(force)
       const meta = { channel: b.channel, bot: b.bot }
       if (b.status === 'ok') {
-        set({ phase: 'ok', me: b.me, feed: b.feed, courses: b.courses ?? [], advent: b.advent ?? null, meta, errorCode: null })
+        set({ phase: 'ok', me: isDemoProgress(b.me), feed: b.feed, courses: b.courses ?? [], advent: b.advent ?? null, meta, errorCode: null })
         if (b.new_achievements?.length) get().unlocked(b.new_achievements)
       } else set({ phase: b.status, meta, stack: [], reward: null })
       return b.status
@@ -132,7 +137,7 @@ export const useStore = create<Store>((set, get) => ({
   setTab: (tab) => set({ tab }),
   push: (overlay) => set((s) => ({ stack: [...s.stack, overlay] })),
   pop: () => set((s) => ({ stack: s.stack.slice(0, -1) })),
-  setMe: (me) => set({ me }),
+  setMe: (me) => set({ me: isDemoProgress(me) }),
   setAdvent: (advent) => set({ advent }),
   patchCard: (id, patch) => set((s) => ({ feed: s.feed.map((c) => (c.id === id ? { ...c, ...patch } : c)) })),
   setReward: (reward) => set({ reward }),

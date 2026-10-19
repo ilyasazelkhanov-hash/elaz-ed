@@ -2,12 +2,12 @@ import { Check, ChevronLeft, Copy, Eye, Heart, Play, Send, X } from 'lucide-reac
 import { AnimatePresence, motion, useMotionValue } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { api, ApiError, errorText } from '../lib/api'
-import { comboPoints, GRADIENTS, iconFor, quizScore } from '../lib/game'
+import { GRADIENTS, iconFor } from '../lib/game'
 import { appLink } from '../lib/links'
 import { sfx } from '../lib/sfx'
 import { copyText, haptic, inTelegram, openLink, shareLink } from '../lib/tg'
 import { track } from '../lib/track'
-import type { Lesson, QuizQuestion } from '../lib/types'
+import type { Lesson, LessonQuizAttempt, QuizQuestion } from '../lib/types'
 import { Markdown } from '../Markdown'
 import { useStore, type Inset } from '../store'
 import { Cta, Emoji, Pattern, Tap } from '../ui'
@@ -23,6 +23,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [failed, setFailed] = useState<false | 'load' | 'locked'>(false)
   const [answers, setAnswers] = useState<number[] | null>(null)
+  const [quizResult, setQuizResult] = useState<LessonQuizAttempt | null>(null)
   const [busy, setBusy] = useState(false)
   const scroller = useRef<HTMLDivElement>(null)
   const quizRef = useRef<HTMLDivElement>(null)
@@ -49,7 +50,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const likes = lesson?.likes ?? card?.likes ?? 0
   const quiz = lesson?.quiz ?? []
   const quizPending = !completed && quiz.length > 0 && !answers
-  const bonus = answers ? quizScore(quiz.map((q) => q.correct), answers).bonus : 0
+  const bonus = quizResult?.bonus ?? 0
 
   const onScroll = () => {
     const el = scroller.current
@@ -61,7 +62,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
     setBusy(true)
     try {
       const fromXp = me.xp
-      const res = await api.complete(id, answers ?? [])
+      const res = await api.complete(id, answers ?? [], quizResult?.attemptId)
       setMe(res.me)
       patchCard(id, { completed: true })
       setLesson({ ...lesson, completed: true })
@@ -195,7 +196,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
 
               {quiz.length > 0 && (
                 <div ref={quizRef} className="mt-8 scroll-mt-6">
-                  <Quiz quiz={quiz} practice={completed && !answers} onDone={setAnswers} />
+                  <Quiz lessonId={id} quiz={quiz} practice={completed && !answers} onDone={(attempt) => { setAnswers(attempt.answers); setQuizResult(attempt) }} />
                 </div>
               )}
             </motion.div>
@@ -275,51 +276,92 @@ export function Video({ url }: { url: string }) {
 
 // ---------- Квиз: по одному вопросу, серия верных ответов поднимает награду ----------
 
-function Quiz({ quiz, practice, onDone }: { quiz: QuizQuestion[]; practice: boolean; onDone: (answers: number[]) => void }) {
+function Quiz({ lessonId, quiz: initialQuiz, practice, onDone }: { lessonId: number; quiz: QuizQuestion[]; practice: boolean; onDone: (attempt: LessonQuizAttempt) => void }) {
   const [step, setStep] = useState(0)
-  const [answers, setAnswers] = useState<number[]>([])
-  const [combo, setCombo] = useState(0)
-  const [points, setPoints] = useState(0)
+  const [attempt, setAttempt] = useState<LessonQuizAttempt | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
+  const [reload, setReload] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+  const sending = useRef(false)
+  const onDoneRef = useRef(onDone)
+  onDoneRef.current = onDone
   const [pop, setPop] = useState<{ id: number; text: string } | null>(null)
   const [shake, setShake] = useState(0)
   const reveal = useRef<HTMLDivElement>(null)
+  const quiz = attempt?.questions ?? initialQuiz
+  const answers = attempt?.answers ?? []
+  const combo = attempt?.combo ?? 0
+  const points = attempt?.bonus ?? 0
   const done = step >= quiz.length
   const q = quiz[Math.min(step, quiz.length - 1)]
   const picked = answers[step]
-  const answered = picked !== undefined
-  const score = answers.filter((a, i) => a === quiz[i]?.correct).length
+  const feedback = attempt?.feedback[step]
+  const answered = !!feedback
+  const score = attempt?.score ?? 0
 
-  const pick = (i: number) => {
-    if (answered) return
-    setAnswers([...answers, i])
-    if (i === q.correct) {
-      const next = combo + 1
-      const gain = comboPoints(next)
-      setCombo(next)
-      setPoints((p) => p + gain)
-      setPop({ id: Date.now(), text: `+${gain}` })
-      haptic.success()
-      sfx.good(next)
-    } else {
-      setCombo(0)
-      setShake((s) => s + 1)
-      haptic.error()
-      sfx.bad()
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    setFailed(false)
+    api.quizStart(lessonId).then(value => {
+      if (!alive) return
+      setAttempt(value)
+      setStep(value.done ? value.questions.length : Math.max(0, value.answers.length - 1))
+      if (value.done) onDoneRef.current(value)
+    }).catch(error => {
+      useStore.getState().guard(error)
+      if (alive) setFailed(true)
+    }).finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [lessonId, reload])
+
+  const pick = async (i: number) => {
+    if (!attempt || answered || sending.current) return
+    sending.current = true
+    setSubmitting(true)
+    try {
+      const result = await api.quizAnswer(attempt.attemptId, step, i)
+      setAttempt({ ...attempt, answers: [...attempt.answers, result.answer], feedback: [...attempt.feedback, result], done: result.done, score: result.score, bonus: result.bonus, combo: result.combo })
+      if (result.correct) {
+        setPop({ id: Date.now(), text: `+${result.gained}` })
+        haptic.success()
+        sfx.good(result.combo)
+      } else {
+        setShake((s) => s + 1)
+        haptic.error()
+        sfx.bad()
+      }
+    } catch (error) {
+      useStore.getState().guard(error)
+      useStore.getState().toast(errorText(error))
+      // A response can be lost after the server committed. Resume before another pick.
+      setReload(value => value + 1)
+    } finally {
+      sending.current = false
+      setSubmitting(false)
     }
   }
 
   const next = () => {
     const last = step === quiz.length - 1
     setStep(step + 1)
-    if (last) onDone(answers)
+    if (last && attempt?.done) onDone(attempt)
   }
+
+  if (loading || failed || !attempt) return (
+    <div className="rounded-[26px] border border-line bg-card p-5 text-center" role="status">
+      <p className="text-[14px] text-mute">{loading ? 'Загружаем квиз…' : 'Не получилось загрузить квиз'}</p>
+      {!loading && <Tap onClick={() => setReload(value => value + 1)} className="mt-3 rounded-xl bg-violet/15 px-4 py-2 text-[14px]">Повторить</Tap>}
+    </div>
+  )
 
   return (
     <div className="rounded-[26px] border border-line bg-card p-4">
       <div className="flex items-center gap-2.5">
         <Emoji char="🕹️" size={22} />
         <p className="font-display text-[15px] font-semibold">Квиз</p>
-        {practice && <span className="rounded-full bg-veil/8 px-2 py-0.5 text-[11px] font-semibold text-mute">тренировка</span>}
+        {(attempt.practice || practice) && <span className="rounded-full bg-veil/8 px-2 py-0.5 text-[11px] font-semibold text-mute">тренировка</span>}
         <div className="ml-auto flex items-center gap-2">
           <AnimatePresence>
             {combo >= 2 && !done && (
@@ -357,9 +399,9 @@ function Quiz({ quiz, practice, onDone }: { quiz: QuizQuestion[]; practice: bool
       </div>
 
       <div className="mt-3.5 flex gap-1.5">
-        {quiz.map((item, i) => {
+        {quiz.map((_, i) => {
           const a = answers[i]
-          const color = a === undefined ? 'var(--track)' : a === item.correct ? 'var(--color-mint)' : 'var(--color-rose)'
+          const color = a === undefined ? 'var(--track)' : attempt.feedback[i]?.correct ? 'var(--color-mint)' : 'var(--color-rose)'
           return <motion.div key={i} animate={{ scaleY: i === step ? 1.6 : 1 }} className="h-1.5 flex-1 rounded-full transition-colors duration-300" style={{ background: color }} />
         })}
       </div>
@@ -372,7 +414,7 @@ function Quiz({ quiz, practice, onDone }: { quiz: QuizQuestion[]; practice: bool
               {score} из {quiz.length}
             </p>
             <p className="mt-1 text-[14px] text-mute">
-              {practice ? 'Тренировка без XP — урок уже засчитан.' : score === quiz.length ? `Чисто. Бонус +${points} XP` : score > 0 ? `Бонус +${points} XP` : 'Бывает. XP за урок всё равно твои.'}
+              {attempt.practice || practice ? 'Тренировка без XP — урок уже засчитан.' : score === quiz.length ? `Чисто. Бонус +${points} XP` : score > 0 ? `Бонус +${points} XP` : 'Бывает. XP за урок всё равно твои.'}
             </p>
           </motion.div>
         ) : (
@@ -390,14 +432,14 @@ function Quiz({ quiz, practice, onDone }: { quiz: QuizQuestion[]; practice: bool
             <p className="selectable mt-1.5 text-[17px] font-semibold leading-snug">{q.q}</p>
             <motion.div key={shake} animate={shake ? { x: [0, -9, 9, -6, 6, 0] } : {}} transition={{ duration: 0.36 }} className="mt-4 space-y-2">
               {q.options.map((opt, i) => {
-                const right = answered && i === q.correct
-                const wrong = answered && i === picked && i !== q.correct
+                const right = answered && i === feedback.correctIndex
+                const wrong = answered && i === picked && i !== feedback.correctIndex
                 return (
                   <Tap
                     key={i}
                     feedback="none"
                     onClick={() => pick(i)}
-                    disabled={answered}
+                    disabled={answered || submitting}
                     className={`flex w-full items-center gap-3 rounded-[18px] border p-3.5 text-left text-[15px] font-medium transition-colors ${
                       right ? 'border-mint/50 bg-mint/12 text-ink' : wrong ? 'border-rose/50 bg-rose/12 text-ink' : answered ? 'border-line bg-card2/50 text-faint' : 'border-line bg-card2 text-ink'
                     }`}
@@ -414,6 +456,7 @@ function Quiz({ quiz, practice, onDone }: { quiz: QuizQuestion[]; practice: bool
                 )
               })}
             </motion.div>
+            {submitting && <p role="status" className="mt-3 text-[13px] text-mute">Сохраняем ответ…</p>}
 
             <AnimatePresence>
               {answered && (
@@ -425,7 +468,7 @@ function Quiz({ quiz, practice, onDone }: { quiz: QuizQuestion[]; practice: bool
                   onAnimationComplete={() => reveal.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
                   className="scroll-mb-36 overflow-hidden"
                 >
-                  {q.explain && <p className="mt-3.5 rounded-[16px] bg-veil/5 p-3.5 text-[14px] leading-snug text-mute">{q.explain}</p>}
+                  {feedback?.explain && <p className="mt-3.5 rounded-[16px] bg-veil/5 p-3.5 text-[14px] leading-snug text-mute">{feedback.explain}</p>}
                   <Tap onClick={next} className="mt-3.5 h-12 w-full rounded-[18px] bg-inverse font-display text-[13.5px] font-semibold text-on-inverse">
                     {step === quiz.length - 1 ? 'Готово' : 'Дальше'}
                   </Tap>

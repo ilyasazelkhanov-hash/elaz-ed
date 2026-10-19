@@ -1,4 +1,4 @@
-<!doctype html><meta charset="utf-8"><title>OG CRE8R² — пакет контента</title><style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px}textarea{width:100%;height:300px;font:12px monospace}h2{margin-top:56px}h3{margin-top:32px}</style><h1>OG CRE8R²: сервер и материалы</h1><p>Целевой Supabase: dcdepwdxvadhludnubis. 64 материала ленты, 20 уроков курса. Схема для пустого проекта применяется только к проверенному пустому проекту. Секретов здесь нет.</p><h2>Обновление работающего проекта — выполнять по порядку</h2><h3>Шаг 1. SQL: миграции 008_user_tz_rating.sql, 009_advent.sql</h3><textarea id="step1" aria-label="Шаг 1. SQL: миграции 008_user_tz_rating.sql, 009_advent.sql" readonly>-- Часовой пояс человека хранится на сервере: бонус дня больше нельзя забрать повторно сменой пояса в запросе.
+<!doctype html><meta charset="utf-8"><title>OG CRE8R² — пакет контента</title><style>body{font:16px system-ui;max-width:960px;margin:40px auto;padding:0 20px}textarea{width:100%;height:300px;font:12px monospace}h2{margin-top:56px}h3{margin-top:32px}</style><h1>OG CRE8R²: сервер и материалы</h1><p>Целевой Supabase: dcdepwdxvadhludnubis. 64 материала ленты, 20 уроков курса. Схема для пустого проекта применяется только к проверенному пустому проекту. Секретов здесь нет.</p><h2>Обновление работающего проекта — выполнять по порядку</h2><h3>Шаг 1. SQL: миграции 008_user_tz_rating.sql, 009_advent.sql, 010_advent_catchup_rewards.sql, 011_advent_prize_modes.sql</h3><textarea id="step1" aria-label="Шаг 1. SQL: миграции 008_user_tz_rating.sql, 009_advent.sql, 010_advent_catchup_rewards.sql, 011_advent_prize_modes.sql" readonly>-- Часовой пояс человека хранится на сервере: бонус дня больше нельзя забрать повторно сменой пояса в запросе.
 -- Пояс меняется не чаще раза в 20 часов (см. syncTz в Edge Function).
 alter table public.users
   add column tz integer check (tz between -720 and 840),
@@ -170,6 +170,196 @@ insert into public.settings (key, value) values
   ('advent', '{"enabled": false, "title": "Адвент-календарь", "start": "2026-12-08", "days": 24, "tz": 300, "grace": 3, "push_hour": 10}'::jsonb),
   ('cron_key', to_jsonb(encode(extensions.gen_random_bytes(24), 'hex')))
 on conflict (key) do nothing;
+
+-- Адвент: билеты «догнать» и призы разных видов.
+-- Пропущенную дверь можно открыть только за билет. Билет дают проверяемые действия:
+-- урок с квизом без ошибок, приглашённый друг, переход по ссылке из сторис, оплата звёздами.
+
+-- Вид приза и его содержимое. promo — уникальный код с погашением на кассе (как раньше),
+-- message — текст, link и video — ссылка, lesson и course — доступ к уроку или курсу.
+alter table public.advent_rewards
+  add column if not exists kind text not null default 'promo' check (kind in ('promo', 'message', 'link', 'video', 'lesson', 'course')),
+  add column if not exists payload jsonb not null default '{}';
+
+-- Курс может открыть приз календаря.
+alter table public.course_access drop constraint if exists course_access_source_check;
+alter table public.course_access add constraint course_access_source_check check (source in ('stars', 'admin', 'invites', 'advent'));
+
+-- Отдельный урок закрытого курса, открытый призом — без доступа ко всему курсу.
+create table if not exists public.lesson_access (
+  user_id bigint not null references public.users (id) on delete cascade,
+  lesson_id bigint not null references public.lessons (id) on delete cascade,
+  source text not null default 'advent',
+  granted_at timestamptz not null default now(),
+  primary key (user_id, lesson_id)
+);
+alter table public.lesson_access enable row level security;
+
+-- Оплата звёздами бывает за курс и за билет календаря.
+alter table public.payments add column if not exists purpose text not null default 'course' check (purpose in ('course', 'catchup'));
+
+-- Билеты. ref уникален: одно действие (друг, урок, оплата, переход из сторис) не даёт второй билет.
+create table if not exists public.advent_tickets (
+  id bigint generated always as identity primary key,
+  user_id bigint not null references public.users (id) on delete cascade,
+  source text not null check (source in ('quiz', 'invite', 'story', 'stars', 'admin')),
+  ref text not null unique,
+  created_at timestamptz not null default now(),
+  used_day integer,
+  used_at timestamptz,
+  -- Звёзды за билет вернули, а билет не был потрачен.
+  revoked_at timestamptz
+);
+create index if not exists advent_tickets_free_idx on public.advent_tickets (user_id) where used_at is null and revoked_at is null;
+alter table public.advent_tickets enable row level security;
+
+-- Открыть пропущенную дверь за билет. Билет, запись открытия и XP — в одной транзакции:
+-- билет не списывается без открытия и дверь не открывается без билета.
+create or replace function public.advent_open_late(p_user bigint, p_day integer, p_score integer, p_total integer, p_xp integer)
+returns table (inserted boolean, opened integer, ticket boolean)
+language plpgsql
+set search_path = ''
+as $$
+declare
+  t bigint;
+begin
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('advent:' || p_user::text, 0));
+  if exists (select 1 from public.advent_opens where user_id = p_user and day = p_day) then
+    return query select false, (select count(*)::integer from public.advent_opens o where o.user_id = p_user), true;
+    return;
+  end if;
+  select id into t from public.advent_tickets
+    where user_id = p_user and used_at is null and revoked_at is null
+    order by id limit 1 for update;
+  if t is null then
+    return query select false, (select count(*)::integer from public.advent_opens o where o.user_id = p_user), false;
+    return;
+  end if;
+  update public.advent_tickets set used_at = now(), used_day = p_day where id = t;
+  insert into public.advent_opens (user_id, day, score, total, xp, late) values (p_user, p_day, p_score, p_total, p_xp, true);
+  update public.users set xp = xp + p_xp where id = p_user;
+  return query select true, (select count(*)::integer from public.advent_opens o where o.user_id = p_user), true;
+end;
+$$;
+
+revoke execute on function public.advent_open_late(bigint, integer, integer, integer, integer) from public, anon, authenticated;
+grant execute on function public.advent_open_late(bigint, integer, integer, integer, integer) to service_role;
+
+-- Адвент: как выдаётся приз.
+-- threshold — за N открытых дверей (как раньше);
+-- day       — открывшим дверь одного из дней day_from..day_to, пока не кончится лимит;
+-- instant   — мгновенный выигрыш при открытии двери в окне дней: шанс подстраивается под темп,
+--             чтобы весь лимит разошёлся к концу окна, а не в первый день;
+-- draw      — розыгрыш после day_to: случайные победители среди открывших двери в окне,
+--             каждая открытая дверь — один шанс.
+alter table public.advent_rewards
+  add column if not exists mode text not null default 'threshold' check (mode in ('threshold', 'day', 'instant', 'draw')),
+  add column if not exists day_from integer check (day_from between 1 and 60),
+  add column if not exists day_to integer check (day_to between 1 and 60),
+  add column if not exists drawn_at timestamptz;
+
+-- Случайное число в [0, 1) из криптографического генератора — для честного розыгрыша.
+create or replace function public.advent_random()
+returns double precision
+language sql
+volatile
+set search_path = ''
+as $$
+  select (('x' || encode(extensions.gen_random_bytes(7), 'hex'))::bit(56)::bigint)::double precision / 72057594037927936.0;
+$$;
+
+-- Выдать приз человеку. Лимит, повтор и сам код проверяются под блокировкой строки приза:
+-- при любой гонке лишний приз не выпадет, а один человек не получит один приз дважды.
+-- Возвращает код или null, если приз закончился или уже выдан этому человеку.
+create or replace function public.advent_grant(p_user bigint, p_reward bigint)
+returns text
+language plpgsql
+set search_path = ''
+as $$
+declare
+  r public.advent_rewards%rowtype;
+  abc constant text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  b bytea;
+  c text;
+  i integer;
+begin
+  select * into r from public.advent_rewards where id = p_reward for update;
+  if not found then
+    return null;
+  end if;
+  if exists (select 1 from public.reward_codes where user_id = p_user and reward_id = p_reward) then
+    return null;
+  end if;
+  if r.stock is not null and (select count(*) from public.reward_codes where reward_id = p_reward) &gt;= r.stock then
+    return null;
+  end if;
+  loop
+    b := extensions.gen_random_bytes(8);
+    c := '';
+    for i in 0..7 loop
+      c := c || substr(abc, (get_byte(b, i) % length(abc)) + 1, 1);
+    end loop;
+    c := substr(c, 1, 4) || '-' || substr(c, 5, 4);
+    exit when not exists (select 1 from public.reward_codes where code = c);
+  end loop;
+  insert into public.reward_codes (code, user_id, reward_id) values (c, p_user, p_reward);
+  if r.kind = 'lesson' and (r.payload -&gt;&gt; 'lesson_id') is not null then
+    insert into public.lesson_access (user_id, lesson_id, source) values (p_user, (r.payload -&gt;&gt; 'lesson_id')::bigint, 'advent') on conflict do nothing;
+  end if;
+  if r.kind = 'course' and (r.payload -&gt;&gt; 'course_id') is not null then
+    insert into public.course_access (user_id, course_id, source) values (p_user, (r.payload -&gt;&gt; 'course_id')::bigint, 'advent') on conflict do nothing;
+  end if;
+  return c;
+end;
+$$;
+
+-- Розыгрыш: победители среди открывших двери окна, шанс пропорционален числу открытых дверей.
+-- Взвешенная выборка без повторов (ключ random^(1/вес)). Повторный вызов ничего не меняет.
+create or replace function public.advent_draw(p_reward bigint)
+returns table (winner_id bigint, winner_code text)
+language plpgsql
+set search_path = ''
+as $$
+declare
+  r public.advent_rewards%rowtype;
+  slots integer;
+  w record;
+  c text;
+begin
+  select * into r from public.advent_rewards where id = p_reward for update;
+  if not found or r.mode &lt;&gt; 'draw' or r.drawn_at is not null then
+    return;
+  end if;
+  slots := coalesce(r.stock, 1) - (select count(*) from public.reward_codes rc where rc.reward_id = p_reward);
+  for w in
+    select e.uid
+    from (
+      select o.user_id as uid, count(*) as n
+      from public.advent_opens o
+      where o.day between coalesce(r.day_from, 1) and coalesce(r.day_to, 60)
+        and not exists (select 1 from public.reward_codes rc where rc.reward_id = p_reward and rc.user_id = o.user_id)
+      group by o.user_id
+    ) e
+    order by power(public.advent_random() + 1e-12, 1.0 / e.n) desc
+    limit greatest(slots, 0)
+  loop
+    c := public.advent_grant(w.uid, p_reward);
+    if c is not null then
+      winner_id := w.uid;
+      winner_code := c;
+      return next;
+    end if;
+  end loop;
+  update public.advent_rewards set drawn_at = now() where id = p_reward;
+end;
+$$;
+
+revoke execute on function public.advent_random() from public, anon, authenticated;
+revoke execute on function public.advent_grant(bigint, bigint) from public, anon, authenticated;
+revoke execute on function public.advent_draw(bigint) from public, anon, authenticated;
+grant execute on function public.advent_random() to service_role;
+grant execute on function public.advent_grant(bigint, bigint) to service_role;
+grant execute on function public.advent_draw(bigint) to service_role;
 </textarea><h3>Шаг 2. Edge Function api — заменить код целиком</h3><textarea id="api" aria-label="Шаг 2. Edge Function api — заменить код целиком" readonly>// OG CRE8R² API: проверка подписи Telegram, доступ по подписке на канал, XP, стрики, админка, вебхук бота.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -413,6 +603,36 @@ function aliveStreak(row: Row) {
   return gap &lt;= 1 || (gap === 2 &amp;&amp; row.freezes &gt; 0) ? row.streak : 0
 }
 
+// Уровни дублируют src/lib/game.ts: бот показывает тот же уровень, что и вкладка профиля.
+const LEVELS = [
+  { xp: 0, title: 'Новичок', emoji: '🐣' },
+  { xp: 100, title: 'Искатель', emoji: '🧭' },
+  { xp: 250, title: 'Вайбкодер', emoji: '⚡' },
+  { xp: 500, title: 'Промптер', emoji: '🧠' },
+  { xp: 900, title: 'Билдер', emoji: '🛠️' },
+  { xp: 1500, title: 'Архитектор', emoji: '🚀' },
+  { xp: 2500, title: 'Нейромаг', emoji: '🔮' },
+  { xp: 4000, title: 'Легенда', emoji: '👑' },
+]
+
+function levelOf(xp: number) {
+  let i = 0
+  while (i + 1 &lt; LEVELS.length &amp;&amp; xp &gt;= LEVELS[i + 1].xp) i++
+  const cur = LEVELS[i]
+  const next = LEVELS[i + 1] ?? null
+  return { index: i + 1, title: cur.title, emoji: cur.emoji, next, left: next ? next.xp - xp : 0 }
+}
+
+// Команда из текста сообщения: без @имени бота и аргументов, в нижнем регистре.
+function botCmd(text: string) {
+  return (text.trim().split(/\s+/)[0] ?? '').split('@')[0].toLowerCase()
+}
+
+function botSender(msg: Row): number {
+  const id = Number(msg?.from?.id ?? msg?.chat?.id)
+  return Number.isInteger(id) &amp;&amp; id &gt; 0 ? id : 0
+}
+
 async function buildMe(row: Row) {
   const day = localDay(tzOf(row))
   // Место считаем среди подписчиков — так же, как строится таблица рейтинга.
@@ -471,7 +691,9 @@ async function hasAccess(userId: number, courseId: number) {
 // Урок из курса открыт, если он помечен бесплатным, у человека есть доступ к курсу или это админ.
 async function canRead(row: Row, les: Row): Promise&lt;boolean&gt; {
   if (!les.course_id || les.free_preview || row.is_admin) return true
-  return hasAccess(row.id, les.course_id)
+  if (await hasAccess(row.id, les.course_id)) return true
+  const { data } = await db.from('lesson_access').select('lesson_id').eq('user_id', row.id).eq('lesson_id', les.id).maybeSingle()
+  return !!data
 }
 
 async function buildCourses(row: Row, feed: Row[]) {
@@ -512,8 +734,9 @@ async function notifyOpened(userId: number, course: Row, s: Settings) {
   if (!s.app_url) return
   await tg('sendMessage', {
     chat_id: userId,
-    text: `Курс «${course.title}» открыт. Заходи.`,
-    reply_markup: { inline_keyboard: [[{ text: 'Открыть курс', web_app: { url: `${s.app_url}/?sp=c${course.id}` } }]] },
+    parse_mode: 'HTML',
+    text: `🎉 &lt;b&gt;Доступ к курсу открыт!&lt;/b&gt;\n\nКурс &lt;b&gt;«${escapeHtml(course.title)}»&lt;/b&gt; теперь разблокирован в твоём профиле. Все уроки, практические задания и квизы доступны для изучения.`,
+    reply_markup: { inline_keyboard: [[{ text: '📚 Начать обучение', web_app: { url: `${s.app_url}/?sp=c${course.id}` } }]] },
   })
 }
 
@@ -533,8 +756,14 @@ async function decideRequest(courseId: number, userId: number, approve: boolean)
 async function markRefunded(chargeId: string) {
   const { data: p, error } = await db.rpc('apply_star_refund', { p_charge: chargeId })
   if (error || !p) throw new HttpError(500, 'db')
+  // Билет за возвращённые звёзды отзываем, если он ещё не потрачен.
+  await db.from('advent_tickets').update({ revoked_at: new Date().toISOString() }).eq('ref', `stars:${chargeId}`).is('used_at', null).is('revoked_at', null)
   if (!p.new_refund || !p.user_id) return
   await logEvent(p.user_id, 'refund', null, { course: p.course_id, stars: p.stars })
+  if (!p.course_id) {
+    await tg('sendMessage', { chat_id: p.user_id, text: 'Звёзды за билет календаря возвращены. Если билет не был потрачен, он отменён.' })
+    return
+  }
   const { data: course } = await db.from('courses').select('title').eq('id', p.course_id).maybeSingle()
   await tg('sendMessage', { chat_id: p.user_id, text: `Звёзды за курс «${course?.title ?? ''}» возвращены. Доступ к курсу закрыт.` })
 }
@@ -573,6 +802,8 @@ async function boot(body: Row) {
     return { status: 'locked', ...meta }
   }
   row = await syncTz(row, body.tz)
+  const storyOwner = Number(/(?:^|_)st(\d+)/.exec(typeof body.sp === 'string' ? body.sp : '')?.[1] ?? 0)
+  if (storyOwner) await storyVisit(storyOwner, row.id, s)
   if (row.referred_by &amp;&amp; !row.ref_rewarded) {
     const { data: referrer } = await db.rpc('reward_referral', { p_user: row.id })
     if (referrer) await logEvent(row.id, 'referral', null, { by: referrer })
@@ -693,7 +924,7 @@ async function like(body: Row) {
 }
 
 // События с клиента: только из белого списка и небольшими пачками.
-const CLIENT_EVENTS = ['share', 'copy', 'story_open', 'theme', 'lab']
+const CLIENT_EVENTS = ['share', 'copy', 'story_open', 'theme', 'lab', 'catchup']
 
 async function track(body: Row) {
   const row = await member(body)
@@ -820,6 +1051,25 @@ async function courseInvoice(body: Row) {
   })
   if (!r.ok) throw new HttpError(502, 'telegram')
   await logEvent(row.id, 'invoice', null, { course: id, stars: c.price_stars })
+  return { link: r.result }
+}
+
+// Билет календаря за звёзды. Выдаёт его вебхук после подтверждения оплаты Telegram.
+async function adventTicketInvoice(body: Row) {
+  const row = await member(body)
+  const cfg = needAdvent(await getSettings())
+  if (!cfg.catchup.methods.includes('stars')) throw new HttpError(400, 'not_for_sale')
+  if (adventClosed(cfg, adventToday(cfg))) throw new HttpError(403, 'advent_closed')
+  const r = await tg('createInvoiceLink', {
+    title: 'Билет календаря',
+    description: 'Открывает одну пропущенную дверь адвент-календаря.',
+    payload: `catchup:${row.id}:${Date.now()}`,
+    provider_token: '',
+    currency: 'XTR',
+    prices: [{ label: 'Билет', amount: cfg.catchup.stars }],
+  })
+  if (!r.ok) throw new HttpError(502, 'telegram')
+  await logEvent(row.id, 'invoice', null, { catchup: true, stars: cfg.catchup.stars })
   return { link: r.result }
 }
 
@@ -971,7 +1221,7 @@ async function adminPayments(body: Row) {
   await member(body, true)
   const { data, error } = await db
     .from('payments')
-    .select('id,user_id,course_id,stars,created_at,refunded_at,users(first_name,username),courses(title)')
+    .select('id,user_id,course_id,stars,created_at,refunded_at,purpose,users(first_name,username),courses(title)')
     .order('created_at', { ascending: false })
     .limit(100)
   if (error) throw new HttpError(500, 'db')
@@ -986,7 +1236,7 @@ async function adminPayments(body: Row) {
       refunded: !!p.refunded_at,
       name: p.users?.first_name || 'Без имени',
       username: p.users?.username ?? null,
-      course: p.courses?.title ?? 'Курс удалён',
+      course: p.purpose === 'catchup' ? 'Билет календаря' : p.courses?.title ?? 'Курс удалён',
     })),
   }
 }
@@ -1069,8 +1319,14 @@ async function adminAnnounce(body: Row) {
   if (!les || !les.published) throw new HttpError(400, 'not_published')
   if (!s.channel?.id || !s.bot?.username) throw new HttpError(400, 'not_ready')
   const link = `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=l${les.id}`
-  const meta = les.kind === 'story' ? 'Сторис' : `${les.minutes} мин · +${les.xp} XP`
-  const text = `${escapeHtml(les.emoji)} &lt;b&gt;${escapeHtml(les.title)}&lt;/b&gt;\n${escapeHtml(les.subtitle)}\n\n${meta}`
+  const cat = les.category ? `#${escapeHtml(String(les.category).replace(/[\s-]+/g, '_'))}` : ''
+  const meta = les.kind === 'story' ? '⚡ Короткая история' : `⏱ ${les.minutes} мин · ⚡ +${les.xp} XP`
+  const text = [
+    `${escapeHtml(les.emoji)} &lt;b&gt;${escapeHtml(les.title)}&lt;/b&gt;`,
+    les.subtitle ? `${escapeHtml(les.subtitle)}` : '',
+    '',
+    [meta, cat].filter(Boolean).join('  '),
+  ].filter((line, i) =&gt; i === 2 || line !== '').join('\n')
   const r = await tg('sendMessage', {
     chat_id: s.channel.id,
     text,
@@ -1079,6 +1335,93 @@ async function adminAnnounce(body: Row) {
   })
   if (!r.ok) throw new HttpError(502, 'telegram')
   return { ok: true }
+}
+
+// ---------- Бот: команды профиля и новостей ----------
+
+// /profile (и псевдоним /me): та же аналитика, что во вкладке профиля — XP, уровень, стрик, место.
+async function handleProfile(chatId: number, userId: number, s: Settings) {
+  const appUrl = typeof s.app_url === 'string' ? s.app_url : ''
+  try {
+    const { data: row } = await db.from('users').select('*').eq('id', userId).maybeSingle()
+    if (!row) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: 'Профиля пока нет. Открой приложение один раз через /start — тогда появится статистика.',
+        ...(appUrl
+          ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть OG CRE8R²', web_app: { url: appUrl } }]] } }
+          : {}),
+      })
+      return
+    }
+    const me = await buildMe(row)
+    const lvl = levelOf(me.xp)
+    const achTotal = 9
+    const achGot = Array.isArray(me.achievements) ? me.achievements.length : 0
+    const lines = [
+      `&lt;b&gt;${escapeHtml(me.name)}&lt;/b&gt; — ${escapeHtml(lvl.emoji)} ${escapeHtml(lvl.title)}, уровень ${lvl.index}`,
+      `⚡ ${me.xp} XP · 🏆 место ${me.rank}`,
+      `🔥 стрик ${me.streak} · лучший ${me.best_streak}`,
+      `📚 уроков: ${me.lessons_done} · 🏅 ачивки ${achGot}/${achTotal}`,
+      `🤝 приглашено: ${me.invited} · ❄️ заморозки: ${me.freezes}`,
+      lvl.next ? `До уровня «${escapeHtml(lvl.next.title)}» осталось ${lvl.left} XP.` : 'Максимальный уровень.',
+      me.daily_claimed ? 'Бонус дня уже забран.' : 'Бонус дня ждёт в приложении.',
+    ]
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: lines.join('\n'),
+      parse_mode: 'HTML',
+      ...(appUrl
+        ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть профиль', web_app: { url: appUrl } }]] } }
+        : {}),
+    })
+  } catch (e) {
+    console.error('profile_cmd', e)
+    await tg('sendMessage', { chat_id: chatId, text: 'Не получилось достать профиль. Загляни чуть позже.' })
+  }
+}
+
+// /news: три свежих опубликованных урока из общей ленты (без уроков закрытых курсов).
+async function handleNews(chatId: number, s: Settings) {
+  const appUrl = typeof s.app_url === 'string' ? s.app_url : ''
+  const botName = s.bot?.username ? String(s.bot.username) : ''
+  try {
+    const { data, error } = await db
+      .from('lessons')
+      .select('id,title,subtitle,emoji,minutes,xp,published_at')
+      .eq('published', true)
+      .eq('kind', 'lesson')
+      .is('course_id', null)
+      .order('published_at', { ascending: false })
+      .limit(3)
+    if (error) throw error
+    const items = data ?? []
+    if (!items.length) {
+      await tg('sendMessage', { chat_id: chatId, text: 'Пока пусто. Первый урок появится здесь сразу после анонса.' })
+      return
+    }
+    const lines = items.map((l: Row, i: number) =&gt; {
+      const title = escapeHtml(String(l.title ?? 'Без названия'))
+      const sub = str(l.subtitle, 120)
+      const meta = `${Number(l.minutes) || 3} мин · +${Number(l.xp) || 0} XP`
+      return `${i + 1}. ${escapeHtml(String(l.emoji ?? '✨'))} &lt;b&gt;${title}&lt;/b&gt;\n${sub ? `${escapeHtml(sub)}\n` : ''}${escapeHtml(meta)}`
+    })
+    const payload: Row = { chat_id: chatId, text: `Свежее в OG CRE8R²:\n\n${lines.join('\n\n')}`, parse_mode: 'HTML' }
+    if (appUrl) {
+      payload.reply_markup = {
+        inline_keyboard: items.map((l: Row) =&gt; [{ text: `Открыть: ${String(l.title ?? '').slice(0, 24) || 'урок'}`, web_app: { url: `${appUrl}/?sp=l${l.id}` } }]),
+      }
+    } else if (botName) {
+      const mainApp = !!s.bot?.main_app
+      payload.reply_markup = {
+        inline_keyboard: items.map((l: Row) =&gt; [{ text: `Открыть: ${String(l.title ?? '').slice(0, 24) || 'урок'}`, url: `https://t.me/${botName}?${mainApp ? 'startapp' : 'start'}=l${l.id}` }]),
+      }
+    }
+    await tg('sendMessage', payload)
+  } catch (e) {
+    console.error('news_cmd', e)
+    await tg('sendMessage', { chat_id: chatId, text: 'Не получилось достать новости. Загляни чуть позже.' })
+  }
 }
 
 // ---------- Бот ----------
@@ -1093,7 +1436,8 @@ async function webhook(req: Request) {
     const s = await getSettings()
 
     const msg = update.message
-    if (msg?.chat?.type === 'private' &amp;&amp; typeof msg.text === 'string' &amp;&amp; msg.text.startsWith('/start')) {
+    const cmd = msg?.chat?.type === 'private' &amp;&amp; typeof msg.text === 'string' ? botCmd(msg.text) : ''
+    if (cmd === '/start') {
       const payload = msg.text.split(/\s+/)[1]?.replace(/[^\w-]/g, '').slice(0, 64) ?? ''
       const appUrl = s.app_url
       if (appUrl) {
@@ -1107,8 +1451,17 @@ async function webhook(req: Request) {
       }
     }
 
-    if (msg?.chat?.type === 'private' &amp;&amp; typeof msg.text === 'string' &amp;&amp; msg.text.startsWith('/paysupport')) {
+    if (cmd === '/paysupport') {
       await tg('sendMessage', { chat_id: msg.chat.id, text: 'Вопрос по оплате? Напиши @elazart — разберёмся и вернём звёзды, если курс не открылся.' })
+    }
+
+    if (cmd === '/profile' || cmd === '/me') {
+      const userId = botSender(msg)
+      if (userId) await handleProfile(msg.chat.id, userId, s)
+    }
+
+    if (cmd === '/news') {
+      await handleNews(msg.chat.id, s)
     }
 
     // Telegram ждёт ответа на проверку перед оплатой не дольше 10 секунд.
@@ -1125,6 +1478,13 @@ async function webhook(req: Request) {
           ok = false
           reason = 'Курс уже открыт. Звёзды не списаны.'
         }
+      }
+      // Билет календаря: цена из настроек, календарь должен быть открыт.
+      const t = /^catchup:(\d+):\d+$/.exec(pcq.invoice_payload ?? '')
+      if (t &amp;&amp; pcq.currency === 'XTR' &amp;&amp; Number(t[1]) === pcq.from?.id) {
+        const cfg = adventCfg(s)
+        ok = !!cfg &amp;&amp; cfg.catchup.methods.includes('stars') &amp;&amp; cfg.catchup.stars === pcq.total_amount &amp;&amp; !adventClosed(cfg, adventToday(cfg))
+        reason = 'Календарь сейчас не продаёт билеты. Звёзды не списаны.'
       }
       await tg('answerPreCheckoutQuery', {
         pre_checkout_query_id: pcq.id,
@@ -1150,6 +1510,33 @@ async function webhook(req: Request) {
           await logEvent(userId, 'purchase', null, { course: courseId, stars: paid.total_amount })
           const { data: course } = await db.from('courses').select('id,title').eq('id', courseId).maybeSingle()
           if (course) await notifyOpened(userId, course, s)
+        }
+      }
+    }
+
+    // Оплата билета календаря: запись в журнале и билет — обе операции можно повторять без дублей.
+    const ticketPay = paid &amp;&amp; /^catchup:(\d+):\d+$/.exec(paid.invoice_payload ?? '')
+    if (ticketPay &amp;&amp; Number(ticketPay[1]) === msg.from?.id) {
+      const userId = Number(ticketPay[1])
+      const charge = String(paid.telegram_payment_charge_id)
+      const ins = await db.from('payments').insert({ user_id: userId, course_id: null, stars: paid.total_amount, charge_id: charge, purpose: 'catchup' })
+      const duplicate = ins.error?.code === '23505'
+      if (ins.error &amp;&amp; !duplicate) retry = true
+      else {
+        const { data: pay } = await db.from('payments').select('refunded_at').eq('charge_id', charge).maybeSingle()
+        // После возврата звёзд повторное уведомление билет не возвращает.
+        if (!pay?.refunded_at) {
+          const t = await db.from('advent_tickets').insert({ user_id: userId, source: 'stars', ref: `stars:${charge}` })
+          if (t.error &amp;&amp; t.error.code !== '23505') retry = true
+          else if (!t.error) {
+            await logEvent(userId, 'purchase', null, { catchup: true, stars: paid.total_amount })
+            await tg('sendMessage', {
+              chat_id: userId,
+              parse_mode: 'HTML',
+              text: '🎟 &lt;b&gt;Билет успешно получен!&lt;/b&gt;\n\nЗвёзды списаны, билет уже на твоём балансе. Открой календарь и выбери любую пропущенную дверь, чтобы наверстать прогресс.',
+              ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: '🚀 Открыть календарь', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
+            })
+          }
         }
       }
     }
@@ -1229,6 +1616,8 @@ async function setup() {
   await tg('setMyCommands', {
     commands: [
       { command: 'start', description: 'Открыть OG CRE8R²' },
+      { command: 'profile', description: 'Мой прогресс' },
+      { command: 'news', description: 'Три свежие новости' },
       { command: 'paysupport', description: 'Вопрос по оплате' },
     ],
   })
@@ -1253,8 +1642,30 @@ async function health() {
 // Двери открываются по календарю кампании (пояс из settings.advent.tz), а не по поясу человека:
 // у всех участников дверь №7 открывается в одну и ту же минуту. Все очки и награды считает сервер.
 
+const ADVENT_THEMES = ['standard', 'halloween', 'newyear']
+/** Чем можно заработать билет «догнать». Каждый способ проверяет сервер. */
+const CATCHUP_METHODS = ['quiz', 'invite', 'story', 'stars']
+/** Сколько билетов за переходы из сторис может получить один человек — защита от накрутки своими аккаунтами. */
+const STORY_TICKETS = 5
+const REWARD_KINDS = ['promo', 'message', 'link', 'video', 'lesson', 'course']
+/** Как выдаётся приз: за N дверей, в выбранные дни, мгновенный выигрыш или розыгрыш после окна. */
+const REWARD_MODES = ['threshold', 'day', 'instant', 'draw']
+const DOOR_KINDS = ['quiz', 'scratch', 'arcade', 'story']
+
+interface CatchupCfg {
+  methods: string[]
+  stars: number
+}
+
+function catchupCfg(c: Row | undefined): CatchupCfg {
+  const methods = Array.isArray(c?.methods) ? c.methods.filter((m: unknown) =&gt; CATCHUP_METHODS.includes(String(m))) : CATCHUP_METHODS
+  return { methods, stars: int(c?.stars, 1, 10_000, 50) }
+}
+
 interface AdventCfg {
   title: string
+  theme: string
+  catchup: CatchupCfg
   start: string
   days: number
   tz: number
@@ -1267,6 +1678,8 @@ function adventCfg(s: Settings): AdventCfg | null {
   if (!a?.enabled || typeof a.start !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(a.start)) return null
   return {
     title: str(a.title, 60) || 'Адвент-календарь',
+    theme: ADVENT_THEMES.includes(a.theme) ? a.theme : 'standard',
+    catchup: catchupCfg(a.catchup),
     start: a.start,
     days: int(a.days, 1, 60, 24),
     tz: clampTz(a.tz ?? 300),
@@ -1311,6 +1724,7 @@ async function adventSummary(row: Row, s: Settings) {
   const opens = data ?? []
   return {
     title: cfg.title,
+    theme: cfg.theme,
     start: cfg.start,
     days: cfg.days,
     today,
@@ -1318,6 +1732,44 @@ async function adventSummary(row: Row, s: Settings) {
     today_open: opens.some((o) =&gt; o.day === today),
     streak: adventStreak(opens, today),
   }
+}
+
+/** Начало кампании как момент времени: полночь первого дня по поясу календаря. */
+const campaignSince = (cfg: AdventCfg) =&gt; new Date(Date.parse(`${cfg.start}T00:00:00Z`) - cfg.tz * 60_000).toISOString()
+
+/** Начисляет билеты за то, что уже сделано: уроки с квизом без ошибок и приглашённые друзья. Повторно ничего не дублирует. */
+async function syncTickets(row: Row, cfg: AdventCfg) {
+  const since = campaignSince(cfg)
+  const fresh: Row[] = []
+  if (cfg.catchup.methods.includes('quiz')) {
+    const { data } = await db.from('progress').select('lesson_id,score,total').eq('user_id', row.id).gte('completed_at', since)
+    for (const p of data ?? []) if (p.total &gt; 0 &amp;&amp; p.score === p.total) fresh.push({ user_id: row.id, source: 'quiz', ref: `quiz:${row.id}:${p.lesson_id}` })
+  }
+  if (cfg.catchup.methods.includes('invite')) {
+    // Друг засчитывается, только когда прошёл проверку подписки (ref_rewarded) и пришёл во время кампании.
+    const { data } = await db.from('users').select('id').eq('referred_by', row.id).eq('ref_rewarded', true).gte('created_at', since)
+    for (const u of data ?? []) fresh.push({ user_id: row.id, source: 'invite', ref: `invite:${u.id}` })
+  }
+  if (fresh.length) await db.from('advent_tickets').upsert(fresh, { onConflict: 'ref', ignoreDuplicates: true })
+}
+
+async function ticketStats(userId: number) {
+  const { data } = await db.from('advent_tickets').select('source,used_at,revoked_at').eq('user_id', userId)
+  const live = (data ?? []).filter((t) =&gt; !t.revoked_at)
+  const earned: Record&lt;string, number&gt; = { quiz: 0, invite: 0, story: 0, stars: 0, admin: 0 }
+  for (const t of live) earned[t.source] = (earned[t.source] ?? 0) + 1
+  return { available: live.filter((t) =&gt; !t.used_at).length, used: live.filter((t) =&gt; t.used_at).length, earned }
+}
+
+/** Кто-то открыл приложение по ссылке из сторис — автору сторис билет. Себе и дважды от одного человека — нельзя. */
+async function storyVisit(ownerId: number, visitorId: number, s: Settings) {
+  const cfg = adventCfg(s)
+  if (!cfg || !cfg.catchup.methods.includes('story') || ownerId === visitorId) return
+  if (adventClosed(cfg, adventToday(cfg))) return
+  const { count } = await db.from('advent_tickets').select('id', { count: 'exact', head: true }).eq('user_id', ownerId).eq('source', 'story')
+  if ((count ?? 0) &gt;= STORY_TICKETS) return
+  const { error } = await db.from('advent_tickets').insert({ user_id: ownerId, source: 'story', ref: `story:${ownerId}:${visitorId}` })
+  if (!error) await tg('sendMessage', { chat_id: ownerId, text: '🎟 По ссылке из твоей сторис зашёл человек — у тебя билет, чтобы догнать пропущенную дверь календаря.' })
 }
 
 function needAdvent(s: Settings) {
@@ -1331,17 +1783,31 @@ async function advent(body: Row) {
   const cfg = needAdvent(await getSettings())
   const today = adventToday(cfg)
   const closed = adventClosed(cfg, today)
-  const [doors, opens, rewards, codes] = await Promise.all([
+  await syncTickets(row, cfg)
+  await runDueDraws(cfg, today, await getSettings())
+  const [doors, opens, rewards, codes, tickets] = await Promise.all([
     db.from('advent_doors').select('day,kind,title,emoji').lte('day', cfg.days).order('day'),
     db.from('advent_opens').select('day,score,total,xp,late').eq('user_id', row.id),
-    db.from('advent_rewards').select('id,doors,title,description,emoji,stock').order('doors').order('position'),
+    db.from('advent_rewards').select('id,doors,title,description,emoji,stock,kind,payload,mode,day_from,day_to,drawn_at').order('doors').order('position'),
     db.from('reward_codes').select('code,reward_id,status,redeemed_at').eq('user_id', row.id),
+    ticketStats(row.id),
   ])
   if (doors.error || rewards.error) throw new HttpError(500, 'db')
   const opened = new Map((opens.data ?? []).map((o) =&gt; [o.day, o]))
   const mine = new Map((codes.data ?? []).map((c) =&gt; [c.reward_id, c]))
+  // Сколько осталось у призов с лимитом — показываем в календаре: «осталось 9 из 13».
+  const issued = new Map&lt;number, number&gt;()
+  await Promise.all(
+    (rewards.data ?? [])
+      .filter((r) =&gt; r.stock != null)
+      .map(async (r) =&gt; {
+        const { count } = await db.from('reward_codes').select('code', { count: 'exact', head: true }).eq('reward_id', r.id)
+        issued.set(r.id, count ?? 0)
+      }),
+  )
   return {
     title: cfg.title,
+    theme: cfg.theme,
     start: cfg.start,
     days: cfg.days,
     today,
@@ -1354,11 +1820,42 @@ async function advent(body: Row) {
       const state = o ? 'open' : d.day &gt; today ? 'locked' : closed ? 'missed' : d.day === today ? 'today' : 'late'
       return { day: d.day, kind: d.kind, title: d.day &lt;= today ? d.title : null, emoji: d.day &lt;= today ? d.emoji : null, state, xp: o?.xp ?? null }
     }),
+    // Содержимое приза (текст, ссылка, урок) отдаём только тому, кому он уже выдан.
     rewards: (rewards.data ?? []).map((r) =&gt; {
       const c = mine.get(r.id)
-      return { ...r, code: c?.code ?? null, redeemed: c?.status === 'redeemed' }
+      const kind = r.kind ?? 'promo'
+      return {
+        id: r.id,
+        doors: r.doors,
+        title: r.title,
+        description: r.description,
+        emoji: r.emoji,
+        stock: r.stock,
+        kind,
+        issued: !!c,
+        code: c &amp;&amp; kind === 'promo' ? c.code : null,
+        redeemed: c?.status === 'redeemed',
+        content: c ? rewardContent(kind, r.payload) : null,
+        mode: r.mode ?? 'threshold',
+        day_from: r.day_from ?? null,
+        day_to: r.day_to ?? null,
+        left: r.stock != null ? Math.max(0, r.stock - (issued.get(r.id) ?? 0)) : null,
+        drawn: !!r.drawn_at,
+        // Шансы в розыгрыше: сколько дверей окна человек уже открыл.
+        entries: r.mode === 'draw' ? (opens.data ?? []).filter((o) =&gt; inWindow(r, o.day)).length : null,
+      }
     }),
+    catchup: { methods: cfg.catchup.methods, stars: cfg.catchup.stars, tickets: tickets.available, used: tickets.used, earned: tickets.earned },
   }
+}
+
+function rewardContent(kind: string, payload: Row | null) {
+  const p = payload ?? {}
+  if (kind === 'message') return { text: String(p.text ?? '') }
+  if (kind === 'link' || kind === 'video') return { url: String(p.url ?? ''), label: String(p.label ?? '') }
+  if (kind === 'lesson') return { lesson_id: Number(p.lesson_id) || null }
+  if (kind === 'course') return { course_id: Number(p.course_id) || null }
+  return null
 }
 
 /** Дверь, человек и день кампании. Будущую дверь не отдаём даже по прямому запросу. */
@@ -1402,56 +1899,107 @@ async function adventDoor(body: Row) {
   return doorView(door, open, cfg, today)
 }
 
-// Коды без похожих символов (0/O, 1/I/L): кассиру проще прочитать с экрана.
-const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-
-function genCode() {
-  const bytes = crypto.getRandomValues(new Uint32Array(8))
-  const s = [...bytes].map((b) =&gt; CODE_ABC[b % CODE_ABC.length]).join('')
-  return `${s.slice(0, 4)}-${s.slice(4)}`
-}
-
+// Коды генерирует база (advent_grant): без похожих символов 0/O, 1/I/L — кассиру проще прочитать с экрана.
 const normCode = (v: unknown) =&gt; {
   const s = str(v, 20).toUpperCase().replace(/[^A-Z0-9]/g, '')
   return s.length === 8 ? `${s.slice(0, 4)}-${s.slice(4)}` : s
 }
 
-/** Выдаёт коды за все пройденные ступени, которых у человека ещё нет. Лимит stock проверяется до выдачи. */
-async function issueCodes(row: Row, opened: number, s: Settings) {
+/** Случайное число [0, 1) из криптографического генератора. */
+const secureRandom = () =&gt; crypto.getRandomValues(new Uint32Array(1))[0] / 4_294_967_296
+
+const inWindow = (r: Row, day: number) =&gt; day &gt;= (r.day_from ?? 1) &amp;&amp; day &lt;= (r.day_to ?? 60)
+
+/**
+ * Шанс мгновенного выигрыша при этом открытии. Темп считаем по открытиям в окне:
+ * сколько уже было в день и сколько, значит, ещё будет до конца окна. Остаток делим на ожидаемые
+ * открытия — так лимит расходится равномерно, а в последний день окна разыгрывается всё, что осталось.
+ */
+async function instantChance(r: Row, today: number, left: number) {
+  const from = r.day_from ?? 1
+  const to = r.day_to ?? 60
+  const span = to - from + 1
+  const elapsed = Math.min(Math.max(today - from + 1, 1), span)
+  const { count } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).gte('day', from).lte('day', to)
+  const rate = (count ?? 0) / elapsed
+  const expected = rate * (span - elapsed) + 1
+  return Math.min(1, left / expected)
+}
+
+/** Призы, которые можно получить этим открытием двери: за N дверей, подарок дня, мгновенный выигрыш. */
+async function awardOnOpen(row: Row, opened: number, day: number, today: number, s: Settings) {
   const [rewards, mine] = await Promise.all([
-    db.from('advent_rewards').select('*').lte('doors', opened).order('doors'),
+    db.from('advent_rewards').select('*').order('doors').order('position'),
     db.from('reward_codes').select('reward_id').eq('user_id', row.id),
   ])
   const have = new Set((mine.data ?? []).map((c) =&gt; c.reward_id))
   const fresh: Row[] = []
   for (const r of rewards.data ?? []) {
     if (have.has(r.id)) continue
-    if (r.stock != null) {
+    const mode = r.mode ?? 'threshold'
+    let take = false
+    if (mode === 'threshold') take = opened &gt;= r.doors
+    else if (mode === 'day') take = inWindow(r, day)
+    else if (mode === 'instant' &amp;&amp; inWindow(r, day) &amp;&amp; r.stock != null) {
       const { count } = await db.from('reward_codes').select('code', { count: 'exact', head: true }).eq('reward_id', r.id)
-      if ((count ?? 0) &gt;= r.stock) continue
+      const left = r.stock - (count ?? 0)
+      take = left &gt; 0 &amp;&amp; secureRandom() &lt; (await instantChance(r, today, left))
     }
-    for (let attempt = 0; attempt &lt; 3; attempt++) {
-      const code = genCode()
-      const { error } = await db.from('reward_codes').insert({ code, user_id: row.id, reward_id: r.id })
-      if (!error) {
-        fresh.push({ reward_id: r.id, code, title: r.title, emoji: r.emoji })
-        break
-      }
-      // 23505 по (user_id, reward_id) — код уже выдан параллельным запросом; по code — редкое совпадение, пробуем снова.
-      if (error.code !== '23505' || error.message.includes('user_id')) break
-    }
+    if (!take) continue
+    // Лимит и повтор проверяет база под блокировкой: лишний приз не выпадет даже при одновременных открытиях.
+    const { data: code, error } = await db.rpc('advent_grant', { p_user: row.id, p_reward: r.id })
+    if (error || !code) continue
+    const kind = r.kind ?? 'promo'
+    fresh.push({ reward_id: r.id, code: kind === 'promo' ? code : null, kind, mode, title: r.title, emoji: r.emoji, content: rewardContent(kind, r.payload) })
   }
-  // Код дублируем в чат с ботом: так он не потеряется, даже если человек закроет приложение.
-  if (fresh.length) {
-    const lines = fresh.map((c) =&gt; `${c.emoji} &lt;b&gt;${escapeHtml(c.title)}&lt;/b&gt;\nКод: &lt;code&gt;${c.code}&lt;/code&gt;`).join('\n\n')
-    await tg('sendMessage', {
-      chat_id: row.id,
-      parse_mode: 'HTML',
-      text: `Награда открыта!\n\n${lines}\n\nПокажи код на кассе. Он одноразовый.`,
-      ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть календарь', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
-    })
-  }
+  if (fresh.length) await notifyRewards(row.id, fresh, s)
   return fresh
+}
+
+// Приз дублируем в чат с ботом: так он не потеряется, даже если человек закроет приложение.
+async function notifyRewards(userId: number, fresh: Row[], s: Settings, heading = '🎉 &lt;b&gt;Поздравляем! Награда получена:&lt;/b&gt;') {
+  const detail = (c: Row) =&gt; {
+    if (c.kind === 'promo') return `🎟 Код: &lt;code&gt;${c.code}&lt;/code&gt;\n&lt;i&gt;(Покажи этот код на кассе — он одноразовый)&lt;/i&gt;`
+    if (c.kind === 'message') return escapeHtml(c.content?.text ?? '')
+    if (c.kind === 'link' || c.kind === 'video') return escapeHtml(c.content?.url ?? '')
+    if (c.kind === 'course') return '🎓 Доступ к курсу уже открыт в твоём профиле!'
+    if (c.kind === 'lesson') return '📖 Урок уже разблокирован в приложении.'
+    return 'Уже открыт в приложении.'
+  }
+  const lines = fresh.map((c) =&gt; `${escapeHtml(c.emoji)} &lt;b&gt;${escapeHtml(c.title)}&lt;/b&gt;\n${detail(c)}`).join('\n\n───────────────\n\n')
+  const hasCode = fresh.some((c) =&gt; c.kind === 'promo')
+  await tg('sendMessage', {
+    chat_id: userId,
+    parse_mode: 'HTML',
+    text: `${heading}\n\n${lines}${hasCode ? '\n\n💡 &lt;i&gt;Код сохранён в календаре — ты всегда можешь открыть его снова.&lt;/i&gt;' : ''}`,
+    ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: '🎁 Мои награды в календаре', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
+  })
+}
+
+/** Розыгрыш одного приза: победителей выбирает база, мы сообщаем им в чат. */
+async function runDraw(reward: Row, s: Settings) {
+  const { data, error } = await db.rpc('advent_draw', { p_reward: reward.id })
+  if (error) throw new HttpError(500, 'db')
+  const winners: Row[] = Array.isArray(data) ? data : []
+  const kind = reward.kind ?? 'promo'
+  for (const w of winners) {
+    await notifyRewards(
+      w.winner_id,
+      [{ reward_id: reward.id, code: kind === 'promo' ? w.winner_code : null, kind, title: reward.title, emoji: reward.emoji, content: rewardContent(kind, reward.payload) }],
+      s,
+      'Ты выиграл в розыгрыше календаря!',
+    )
+  }
+  return winners.length
+}
+
+/** Розыгрыши, у которых окно уже закончилось, проводятся при первом же обращении к календарю. */
+async function runDueDraws(cfg: AdventCfg, today: number, s: Settings) {
+  const { data } = await db.from('advent_rewards').select('*').eq('mode', 'draw').is('drawn_at', null)
+  for (const r of data ?? []) {
+    const end = Math.min(r.day_to ?? cfg.days, cfg.days)
+    if (today &gt; end) await runDraw(r, s)
+  }
 }
 
 async function adventOpen(body: Row) {
@@ -1473,11 +2021,16 @@ async function adventOpen(body: Row) {
     score = Math.min(int(body.score, 0, 100_000, 0), total)
   }
   const xp = doorXp(door, score, late)
-  const { data, error } = await db.rpc('advent_open', { p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp, p_late: late })
+  // Пропущенная дверь открывается только за билет; билет списывается в той же транзакции.
+  if (late) await syncTickets(row, cfg)
+  const { data, error } = late
+    ? await db.rpc('advent_open_late', { p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp })
+    : await db.rpc('advent_open', { p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp, p_late: false })
   if (error) throw new HttpError(500, 'db')
   const res = Array.isArray(data) ? data[0] : data
+  if (late &amp;&amp; res &amp;&amp; !res.ticket) throw new HttpError(402, 'need_ticket')
   const inserted = !!res?.inserted
-  const newCodes = inserted ? await issueCodes(row, res.opened, s) : []
+  const newCodes = inserted ? await awardOnOpen(row, res.opened, door.day, today, s) : []
   if (inserted) await logEvent(row.id, 'advent_open', null, { day: door.day, kind: door.kind, score, late })
   const after = { score, total, xp, late }
   return {
@@ -1545,13 +2098,364 @@ async function adminAdvent(body: Row) {
   await member(body, true)
   const { data, error } = await db.rpc('advent_summary')
   if (error) throw new HttpError(500, 'db')
+  const s = await getSettings()
+  const a = s.advent ?? {}
+  const [full, doors] = await Promise.all([
+    db.from('advent_rewards').select('*').order('doors').order('position'),
+    db.from('advent_doors').select('day', { count: 'exact', head: true }),
+  ])
+  return {
+    ...data,
+    theme: ADVENT_THEMES.includes(a.theme) ? a.theme : 'standard',
+    settings: {
+      enabled: !!a.enabled,
+      title: str(a.title, 60) || 'Адвент-календарь',
+      start: typeof a.start === 'string' ? a.start : '',
+      days: int(a.days, 1, 60, 24),
+      catchup: catchupCfg(a.catchup),
+    },
+    doors_defined: doors.count ?? 0,
+    reward_list: full.data ?? [],
+  }
+}
+
+// Настройки календаря: число дней, название, старт, включение, способы догнать и цена билета.
+async function adminAdventSave(body: Row) {
+  await member(body, true)
+  const input = body.settings ?? {}
+  const s = await getSettings(true)
+  const prev = s.advent ?? { enabled: false }
+  const start = str(input.start, 10)
+  if (start &amp;&amp; !/^\d{4}-\d{2}-\d{2}$/.test(start)) throw new HttpError(400, 'bad_date')
+  const next = {
+    ...prev,
+    title: str(input.title, 60) || prev.title || 'Адвент-календарь',
+    start: start || prev.start,
+    days: int(input.days, 1, 60, prev.days ?? 24),
+    enabled: input.enabled == null ? !!prev.enabled : !!input.enabled,
+    catchup: catchupCfg(input.catchup ?? prev.catchup),
+  }
+  await setSetting('advent', next)
+  return { ok: true }
+}
+
+// Приз: вид и содержимое проверяем до записи — пустую ссылку или несуществующий курс сохранить нельзя.
+async function cleanReward(input: Row) {
+  const kind = REWARD_KINDS.includes(input.kind) ? input.kind : 'promo'
+  const title = str(input.title, 80)
+  if (!title) throw new HttpError(400, 'title_required')
+  const p = input.payload ?? {}
+  let payload: Row = {}
+  if (kind === 'message') {
+    const text = typeof p.text === 'string' ? p.text.trim().slice(0, 2000) : ''
+    if (!text) throw new HttpError(400, 'reward_payload')
+    payload = { text }
+  } else if (kind === 'link' || kind === 'video') {
+    const url = httpsUrl(p.url)
+    if (!url) throw new HttpError(400, 'reward_payload')
+    payload = { url, label: str(p.label, 40) }
+  } else if (kind === 'lesson') {
+    const { data } = await db.from('lessons').select('id').eq('id', Number(p.lesson_id)).maybeSingle()
+    if (!data) throw new HttpError(400, 'reward_payload')
+    payload = { lesson_id: data.id }
+  } else if (kind === 'course') {
+    const { data } = await db.from('courses').select('id').eq('id', Number(p.course_id)).maybeSingle()
+    if (!data) throw new HttpError(400, 'reward_payload')
+    payload = { course_id: data.id }
+  }
+  const mode = REWARD_MODES.includes(input.mode) ? input.mode : 'threshold'
+  const windowed = mode !== 'threshold'
+  const dayFrom = windowed ? int(input.day_from, 1, 60, 1) : null
+  const dayTo = windowed ? int(input.day_to, 1, 60, dayFrom ?? 1) : null
+  if (windowed &amp;&amp; dayTo! &lt; dayFrom!) throw new HttpError(400, 'bad_window')
+  // Мгновенный выигрыш и розыгрыш без лимита не имеют смысла: «выпадет всем» — это подарок дня.
+  if ((mode === 'instant' || mode === 'draw') &amp;&amp; !(Number(input.stock) &gt;= 1)) throw new HttpError(400, 'stock_required')
+  return {
+    title,
+    description: str(input.description, 300),
+    emoji: [...str(input.emoji, 16)].slice(0, 8).join('') || '🎁',
+    mode,
+    day_from: dayFrom,
+    day_to: dayTo,
+    doors: int(input.doors, 1, 60, 1),
+    stock: input.stock == null || input.stock === '' ? null : int(input.stock, 0, 1_000_000, 0),
+    position: int(input.position, 0, 999, 0),
+    kind,
+    payload,
+  }
+}
+
+async function adminAdventRewardSave(body: Row) {
+  await member(body, true)
+  const input = body.reward ?? {}
+  const clean = await cleanReward(input)
+  const id = Number(input.id)
+  const query = id ? db.from('advent_rewards').update(clean).eq('id', id) : db.from('advent_rewards').insert(clean)
+  const { data, error } = await query.select('*').single()
+  if (error) throw new HttpError(500, 'db')
   return data
 }
 
-// ---------- Напоминание о новой двери (вызывает cron) ----------
-// Telegram пропускает около 30 сообщений в секунду; шлём по 25 и ждём секунду. 3000 человек — примерно 2 минуты.
+// Розыгрыш вручную — например, раньше конца окна. Повторно не проводится.
+async function adminAdventDraw(body: Row) {
+  await member(body, true)
+  const { data: r } = await db.from('advent_rewards').select('*').eq('id', Number(body.id)).maybeSingle()
+  if (!r || r.mode !== 'draw') throw new HttpError(404, 'not_found')
+  if (r.drawn_at) throw new HttpError(409, 'already_drawn')
+  return { winners: await runDraw(r, await getSettings()) }
+}
 
-const PUSH_LIMIT = 3000
+// ---------- Двери календаря ----------
+
+function cleanDoor(input: Row) {
+  const day = int(input.day, 1, 60, 0)
+  if (!day) throw new HttpError(400, 'bad_day')
+  const title = str(input.title, 80)
+  if (!title) throw new HttpError(400, 'title_required')
+  const kind = DOOR_KINDS.includes(input.kind) ? input.kind : 'quiz'
+  const quiz = (Array.isArray(input.quiz) ? input.quiz : [])
+    .slice(0, 10)
+    .map((q: Row) =&gt; {
+      const options = (Array.isArray(q?.options) ? q.options : []).map((o: unknown) =&gt; str(o, 160)).filter(Boolean).slice(0, 4)
+      return { q: str(q?.q, 300), options, correct: int(q?.correct, 0, Math.max(0, options.length - 1), 0), explain: str(q?.explain, 400) }
+    })
+    .filter((q: { q: string; options: string[] }) =&gt; q.q &amp;&amp; q.options.length &gt;= 2)
+  if (kind === 'quiz' &amp;&amp; quiz.length === 0) throw new HttpError(400, 'quiz_required')
+  const prize = str(input.prize, 500)
+  if (kind === 'scratch' &amp;&amp; !prize) throw new HttpError(400, 'prize_required')
+  return {
+    day,
+    kind,
+    title,
+    subtitle: str(input.subtitle, 160),
+    emoji: [...str(input.emoji, 16)].slice(0, 8).join('') || '🎁',
+    body: typeof input.body === 'string' ? input.body.slice(0, 20_000) : '',
+    quiz: kind === 'quiz' ? quiz : [],
+    prize: kind === 'scratch' ? prize : '',
+    arcade: kind === 'arcade' ? { seconds: int(input.arcade?.seconds, 10, 120, 30), cap: int(input.arcade?.cap, 1, 1000, 40) } : {},
+    xp: int(input.xp, 0, 500, 30),
+    updated_at: new Date().toISOString(),
+  }
+}
+
+async function adminAdventDoors(body: Row) {
+  await member(body, true)
+  const { data, error } = await db.from('advent_doors').select('*').order('day')
+  if (error) throw new HttpError(500, 'db')
+  return { doors: data ?? [] }
+}
+
+async function adminAdventDoorSave(body: Row) {
+  await member(body, true)
+  const clean = cleanDoor(body.door ?? {})
+  const { data, error } = await db.from('advent_doors').upsert(clean, { onConflict: 'day' }).select('*').single()
+  if (error) throw new HttpError(500, 'db')
+  return data
+}
+
+// Открытую кем-то дверь не удаляем: у людей пропали бы XP и прогресс.
+async function adminAdventDoorDelete(body: Row) {
+  await member(body, true)
+  const day = Number(body.day)
+  const { count } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).eq('day', day)
+  if ((count ?? 0) &gt; 0) throw new HttpError(409, 'door_opened')
+  await db.from('advent_doors').delete().eq('day', day)
+  return { ok: true }
+}
+
+// ---------- Ход календаря для админа ----------
+
+/**
+ * Сводка для корректировки: билеты «догнать» (откуда пришли, сколько потрачено, кто открывал окно
+ * и какие способы выбирал) и темп призов с окном — сколько выдано против ожидаемого к сегодняшнему дню.
+ */
+async function adminAdventPulse(body: Row) {
+  await member(body, true)
+  const s = await getSettings()
+  const cfg = adventCfg(s)
+  const a = s.advent ?? {}
+  const days = int(a.days, 1, 60, 24)
+  const today = cfg ? adventToday(cfg) : 0
+  const [tickets, events, rewards, codes] = await Promise.all([
+    db.from('advent_tickets').select('source,used_at,revoked_at'),
+    db.from('events').select('user_id,props').eq('name', 'catchup').limit(5000),
+    db.from('advent_rewards').select('id,title,emoji,mode,stock,day_from,day_to,drawn_at').order('id'),
+    db.from('reward_codes').select('reward_id,status'),
+  ])
+  const bySource: Record&lt;string, { earned: number; used: number; revoked: number }&gt; = {}
+  for (const t of tickets.data ?? []) {
+    const b = (bySource[t.source] ??= { earned: 0, used: 0, revoked: 0 })
+    if (t.revoked_at) b.revoked++
+    else {
+      b.earned++
+      if (t.used_at) b.used++
+    }
+  }
+  const opened = new Set&lt;number&gt;()
+  const tries: Record&lt;string, number&gt; = {}
+  for (const e of events.data ?? []) {
+    if (e.props?.step === 'open') opened.add(e.user_id)
+    if (e.props?.step === 'try' &amp;&amp; typeof e.props?.method === 'string') tries[e.props.method] = (tries[e.props.method] ?? 0) + 1
+  }
+  const issued = new Map&lt;number, { issued: number; redeemed: number }&gt;()
+  for (const c of codes.data ?? []) {
+    const x = issued.get(c.reward_id) ?? { issued: 0, redeemed: 0 }
+    x.issued++
+    if (c.status === 'redeemed') x.redeemed++
+    issued.set(c.reward_id, x)
+  }
+  return {
+    today,
+    days,
+    catchup: { sheet_users: opened.size, tries, sources: bySource },
+    // Ожидание: лимит, равномерно разложенный по дням окна. Сильно впереди — призы кончатся рано, сильно позади — останутся.
+    pacing: (rewards.data ?? []).map((r) =&gt; {
+      const from = r.day_from ?? 1
+      const to = r.day_to ?? days
+      const span = Math.max(1, to - from + 1)
+      const elapsed = Math.min(Math.max(today - from + 1, 0), span)
+      return {
+        id: r.id,
+        title: r.title,
+        emoji: r.emoji,
+        mode: r.mode ?? 'threshold',
+        stock: r.stock,
+        day_from: r.day_from,
+        day_to: r.day_to,
+        drawn: !!r.drawn_at,
+        issued: issued.get(r.id)?.issued ?? 0,
+        redeemed: issued.get(r.id)?.redeemed ?? 0,
+        expected: r.mode === 'instant' &amp;&amp; r.stock != null ? Math.round((r.stock * elapsed) / span) : null,
+      }
+    }),
+  }
+}
+
+/** Кто что получил: приз, человек, код, погашение. Последние 500 — с фильтром по призу. */
+async function adminAdventWinners(body: Row) {
+  await member(body, true)
+  let q = db
+    .from('reward_codes')
+    .select('code,status,issued_at,redeemed_at,reward_id,users(id,first_name,username),advent_rewards(title,emoji,kind),advent_points(name)')
+    .order('issued_at', { ascending: false })
+    .limit(500)
+  if (Number(body.reward_id) &gt; 0) q = q.eq('reward_id', Number(body.reward_id))
+  const { data, error } = await q
+  if (error) throw new HttpError(500, 'db')
+  return {
+    // deno-lint-ignore no-explicit-any
+    winners: (data ?? []).map((c: any) =&gt; ({
+      code: c.code,
+      status: c.status,
+      issued_at: c.issued_at,
+      redeemed_at: c.redeemed_at,
+      reward_id: c.reward_id,
+      reward: c.advent_rewards?.title ?? 'Приз удалён',
+      emoji: c.advent_rewards?.emoji ?? '🎁',
+      kind: c.advent_rewards?.kind ?? 'promo',
+      user_id: c.users?.id ?? null,
+      name: c.users?.first_name || 'Без имени',
+      username: c.users?.username ?? null,
+      point: c.advent_points?.name ?? null,
+    })),
+  }
+}
+
+/** Ручная корректировка: выдать человеку билеты «догнать» — например, если что-то пошло не так. */
+async function adminAdventTicketGrant(body: Row) {
+  await member(body, true)
+  const username = str(body.username, 64).replace(/^@/, '')
+  const count = int(body.count, 1, 10, 1)
+  if (!username) throw new HttpError(400, 'user_not_found')
+  const { data: user } = await db.from('users').select('id,first_name').ilike('username', username.replace(/[\\%_]/g, '\\$&amp;')).maybeSingle()
+  if (!user) throw new HttpError(404, 'user_not_found')
+  const stamp = Date.now()
+  const rows = Array.from({ length: count }, (_, i) =&gt; ({ user_id: user.id, source: 'admin', ref: `admin:${user.id}:${stamp}:${i}` }))
+  const { error } = await db.from('advent_tickets').insert(rows)
+  if (error) throw new HttpError(500, 'db')
+  const s = await getSettings()
+  const appUrl = typeof s.app_url === 'string' ? s.app_url : ''
+  await tg('sendMessage', {
+    chat_id: user.id,
+    parse_mode: 'HTML',
+    text: [
+      `🎟 &lt;b&gt;Тебе начислены билеты календаря!&lt;/b&gt;`,
+      '',
+      `Автор календаря выдал тебе ${count === 1 ? 'билет' : `билеты: &lt;b&gt;${count} шт.&lt;/b&gt;`}`,
+      `Теперь ты можешь открыть пропущенные двери и забрать награды! 🚪✨`,
+    ].join('\n'),
+    ...(appUrl ? { reply_markup: { inline_keyboard: [[{ text: '✨ Открыть календарь', web_app: { url: `${appUrl}/?sp=advent` } }]] } } : {}),
+  })
+  return { name: user.first_name || username, count }
+}
+
+// ---------- Точки погашения ----------
+
+async function adminAdventPoints(body: Row) {
+  await member(body, true)
+  const [points, used] = await Promise.all([db.from('advent_points').select('id,name,locked_until').order('id'), db.from('reward_codes').select('point_id').not('point_id', 'is', null)])
+  const counts = new Map&lt;number, number&gt;()
+  for (const u of used.data ?? []) counts.set(u.point_id, (counts.get(u.point_id) ?? 0) + 1)
+  return {
+    points: (points.data ?? []).map((p) =&gt; ({ id: p.id, name: p.name, locked: !!p.locked_until &amp;&amp; Date.parse(p.locked_until) &gt; Date.now(), redeemed: counts.get(p.id) ?? 0 })),
+  }
+}
+
+// PIN храним только как sha256(`&lt;id&gt;:&lt;pin&gt;`) — у новой точки id появляется после вставки, поэтому хеш пишем вторым шагом.
+async function adminAdventPointSave(body: Row) {
+  await member(body, true)
+  const name = str(body.name, 60)
+  if (!name) throw new HttpError(400, 'title_required')
+  const pin = str(body.pin, 12)
+  if (pin &amp;&amp; !/^\d{4,8}$/.test(pin)) throw new HttpError(400, 'bad_pin_format')
+  let id = Number(body.id)
+  if (!id) {
+    if (!pin) throw new HttpError(400, 'bad_pin_format')
+    const { data, error } = await db.from('advent_points').insert({ name, pin_hash: '' }).select('id').single()
+    if (error || !data) throw new HttpError(500, 'db')
+    id = data.id
+  }
+  const patch: Row = { name }
+  if (pin) Object.assign(patch, { pin_hash: await sha256Hex(`${id}:${pin}`), fails: 0, locked_until: null })
+  const { error } = await db.from('advent_points').update(patch).eq('id', id)
+  if (error) throw new HttpError(500, 'db')
+  return { id }
+}
+
+// Точку с погашениями не удаляем: в журнале «где погашен» осталась бы пустота. Можно сменить PIN.
+async function adminAdventPointDelete(body: Row) {
+  await member(body, true)
+  const id = Number(body.id)
+  const { count } = await db.from('reward_codes').select('code', { count: 'exact', head: true }).eq('point_id', id)
+  if ((count ?? 0) &gt; 0) throw new HttpError(409, 'point_used')
+  await db.from('advent_points').delete().eq('id', id)
+  return { ok: true }
+}
+
+// Выданный приз не удаляем: у людей остались коды и доступы, а статистика потеряла бы смысл.
+async function adminAdventRewardDelete(body: Row) {
+  await member(body, true)
+  const id = Number(body.id)
+  const { count } = await db.from('reward_codes').select('code', { count: 'exact', head: true }).eq('reward_id', id)
+  if ((count ?? 0) &gt; 0) throw new HttpError(409, 'reward_issued')
+  await db.from('advent_rewards').delete().eq('id', id)
+  return { ok: true }
+}
+
+// Оформление календаря меняется у всех сразу; остальные настройки адвента не трогаем.
+async function adminAdventTheme(body: Row) {
+  await member(body, true)
+  if (!ADVENT_THEMES.includes(body.theme)) throw new HttpError(400, 'bad_theme')
+  const s = await getSettings(true)
+  await setSetting('advent', { ...(s.advent ?? { enabled: false }), theme: body.theme })
+  return { ok: true }
+}
+
+// ---------- Напоминание о новой двери и вечерний пуш (вызывает cron / pg_net) ----------
+// Telegram пропускает около 30 сообщений в секунду; шлём пачками по 25 с паузой в 1 сек.
+// Поддерживает курсорную очередь: база любого размера обрабатывается без обрыва и таймаутов.
+
+const PUSH_BATCH = 1000
 
 declare const EdgeRuntime: { waitUntil(p: Promise&lt;unknown&gt;): void }
 
@@ -1561,34 +2465,119 @@ async function adventPush(req: Request) {
   const cfg = adventCfg(s)
   if (!cfg || !s.app_url) return json({ ok: true, sent: 0, reason: 'off' })
   const today = adventToday(cfg)
+  await runDueDraws(cfg, today, s)
   if (today &lt; 1 || today &gt; cfg.days) return json({ ok: true, sent: 0, reason: 'out_of_range' })
-  // Повторный вызов cron в тот же день ничего не шлёт.
-  if (s.advent_push_day === today) return json({ ok: true, sent: 0, reason: 'already' })
-  await setSetting('advent_push_day', today)
-  const [door, done, users] = await Promise.all([
-    db.from('advent_doors').select('title,emoji').eq('day', today).maybeSingle(),
+
+  const url = new URL(req.url)
+  let bodyJson: Row = {}
+  try {
+    bodyJson = await req.json()
+  } catch {
+    /* запрос без JSON-тела */
+  }
+
+  const type = String(bodyJson.type ?? url.searchParams.get('type') ?? 'morning')
+  const isEvening = type === 'evening'
+  const reset = bodyJson.reset === true || url.searchParams.get('reset') === '1'
+
+  // Состояние рассылки хранится отдельно для утреннего и вечернего пушей.
+  const stateKey = isEvening ? 'advent_push_evening' : 'advent_push_morning'
+  const state: Row = s[stateKey] ?? {}
+  const dayChanged = state.day !== today
+
+  if (dayChanged || reset) {
+    state.day = today
+    state.cursor = 0
+    state.done = false
+    state.sent = 0
+  } else if (state.done) {
+    return json({ ok: true, sent: 0, reason: 'already_completed', day: today, type })
+  }
+
+  const cursor = Number(state.cursor) || 0
+
+  const [door, done, usersRes] = await Promise.all([
+    db.from('advent_doors').select('title,emoji,kind,xp').eq('day', today).maybeSingle(),
     db.from('advent_opens').select('user_id').eq('day', today),
-    db.from('users').select('id').eq('subscribed', true).order('id').limit(PUSH_LIMIT),
+    db.from('users').select('id').eq('subscribed', true).gt('id', cursor).order('id').limit(PUSH_BATCH),
   ])
+
   if (!door.data) return json({ ok: true, sent: 0, reason: 'no_door' })
+  const users = usersRes.data ?? []
+  if (!users.length) {
+    state.done = true
+    await setSetting(stateKey, state)
+    if (!isEvening) await setSetting('advent_push_day', today)
+    return json({ ok: true, sent: 0, reason: 'completed', day: today, type })
+  }
+
   const skip = new Set((done.data ?? []).map((o) =&gt; o.user_id))
-  const ids = (users.data ?? []).map((u) =&gt; u.id).filter((id) =&gt; !skip.has(id))
-  const text = `${door.data.emoji} Дверь №${today} открыта: ${door.data.title}`
-  const markup = { inline_keyboard: [[{ text: 'Открыть дверь', web_app: { url: `${s.app_url}/?sp=advent` } }]] }
+  const ids = users.map((u) =&gt; u.id).filter((id) =&gt; !skip.has(id))
+
+  const kindHints: Record&lt;string, string&gt; = {
+    quiz: '🧠 Внутри квиз: ответь без ошибок и получи билет «догнать»!',
+    arcade: '🎮 Внутри аркада: набери комбо очков и забери максимум XP!',
+    scratch: '✨ Внутри скретч-карта: сотри слой и забери скрытую награду!',
+    story: '📖 Вдохновляющая история и свежий инсайт.',
+  }
+  const hint = kindHints[door.data.kind] ?? 'Загляни внутрь и забери награду!'
+  const xpBadge = door.data.xp ? ` · &lt;b&gt;+${door.data.xp} XP&lt;/b&gt;` : ''
+
+  const text = isEvening
+    ? [
+        `⏳ &lt;b&gt;Дверь №${today} закроется через несколько часов!&lt;/b&gt;`,
+        '',
+        `${door.data.emoji} &lt;b&gt;«${escapeHtml(door.data.title)}»&lt;/b&gt;${xpBadge}`,
+        `Не упусти шанс забрать XP и защитить свой стрик без траты заморозки или билета! 🔥`,
+      ].join('\n')
+    : [
+        `🎄 &lt;b&gt;Адвент-календарь: Дверь №${today} открыта!&lt;/b&gt;`,
+        '',
+        `${door.data.emoji} &lt;b&gt;«${escapeHtml(door.data.title)}»&lt;/b&gt;${xpBadge}`,
+        hint,
+        '',
+        `⚡ &lt;i&gt;Открой дверь сегодня, чтобы забрать максимум XP и не прерывать новогодний стрик!&lt;/i&gt;`,
+      ].join('\n')
+
+  const markup = {
+    inline_keyboard: [
+      [{ text: isEvening ? `🚪 Успеть открыть дверь №${today}` : `✨ Открыть дверь №${today}`, web_app: { url: `${s.app_url}/?sp=advent` } }],
+    ],
+  }
+
+  const nextCursor = users[users.length - 1].id
+  const isLastBatch = users.length &lt; PUSH_BATCH
+
   const send = async () =&gt; {
     let sent = 0
     for (let i = 0; i &lt; ids.length; i += 25) {
-      const res = await Promise.all(ids.slice(i, i + 25).map((id) =&gt; tg('sendMessage', { chat_id: id, text, reply_markup: markup })))
+      const res = await Promise.all(
+        ids.slice(i, i + 25).map((id) =&gt; tg('sendMessage', { chat_id: id, text, parse_mode: 'HTML', reply_markup: markup }))
+      )
       sent += res.filter((r) =&gt; r.ok).length
       if (i + 25 &lt; ids.length) await new Promise((r) =&gt; setTimeout(r, 1000))
     }
-    console.log('advent_push', today, sent, '/', ids.length)
+    state.cursor = nextCursor
+    state.done = isLastBatch
+    state.sent = (state.sent || 0) + sent
+    state.updated_at = new Date().toISOString()
+    await setSetting(stateKey, state)
+    if (!isEvening &amp;&amp; isLastBatch) await setSetting('advent_push_day', today)
+    console.log('advent_push', type, today, sent, '/', ids.length, 'cursor:', nextCursor, 'done:', isLastBatch)
   }
-  // Рассылка идёт в фоне: cron (pg_net) не ждёт ответа дольше нескольких секунд, а Supabase держит
-  // функцию живой до конца waitUntil. Без EdgeRuntime (локальный запуск) — ждём сами.
+
   if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(send())
   else await send()
-  return json({ ok: true, queued: ids.length, truncated: (users.data ?? []).length === PUSH_LIMIT })
+
+  return json({
+    ok: true,
+    type,
+    day: today,
+    queued: ids.length,
+    batch_size: users.length,
+    cursor: nextCursor,
+    done: isLastBatch,
+  })
 }
 
 // ---------- Роутер ----------
@@ -1621,6 +2610,21 @@ const routes: Record&lt;string, (body: Row) =&gt; Promise&lt;unknown&gt;&gt; = {
   advent_door: adventDoor,
   advent_open: adventOpen,
   admin_advent: adminAdvent,
+  admin_advent_theme: adminAdventTheme,
+  admin_advent_save: adminAdventSave,
+  admin_advent_reward_save: adminAdventRewardSave,
+  admin_advent_reward_delete: adminAdventRewardDelete,
+  admin_advent_draw: adminAdventDraw,
+  admin_advent_pulse: adminAdventPulse,
+  admin_advent_winners: adminAdventWinners,
+  admin_advent_ticket_grant: adminAdventTicketGrant,
+  admin_advent_points: adminAdventPoints,
+  admin_advent_point_save: adminAdventPointSave,
+  admin_advent_point_delete: adminAdventPointDelete,
+  admin_advent_doors: adminAdventDoors,
+  admin_advent_door_save: adminAdventDoorSave,
+  admin_advent_door_delete: adminAdventDoorDelete,
+  advent_ticket_invoice: adventTicketInvoice,
   // Без Telegram: страница кассира проверяет PIN точки, а не подпись пользователя.
   redeem,
   redeem_points: redeemPoints,
@@ -2298,7 +3302,6 @@ alter table public.users
 create index users_subscribed_xp_idx on public.users (xp desc) where subscribed;
 
 
-
 -- Адвент-календарь: двери по дням, игры (квиз, скретч, аркада), коды наград и погашение на кассе.
 -- Включается настройкой settings.advent (см. внизу). Пока enabled = false, приложение работает как раньше.
 
@@ -2462,6 +3465,198 @@ insert into public.settings (key, value) values
   ('advent', '{"enabled": false, "title": "Адвент-календарь", "start": "2026-12-08", "days": 24, "tz": 300, "grace": 3, "push_hour": 10}'::jsonb),
   ('cron_key', to_jsonb(encode(extensions.gen_random_bytes(24), 'hex')))
 on conflict (key) do nothing;
+
+
+-- Адвент: билеты «догнать» и призы разных видов.
+-- Пропущенную дверь можно открыть только за билет. Билет дают проверяемые действия:
+-- урок с квизом без ошибок, приглашённый друг, переход по ссылке из сторис, оплата звёздами.
+
+-- Вид приза и его содержимое. promo — уникальный код с погашением на кассе (как раньше),
+-- message — текст, link и video — ссылка, lesson и course — доступ к уроку или курсу.
+alter table public.advent_rewards
+  add column if not exists kind text not null default 'promo' check (kind in ('promo', 'message', 'link', 'video', 'lesson', 'course')),
+  add column if not exists payload jsonb not null default '{}';
+
+-- Курс может открыть приз календаря.
+alter table public.course_access drop constraint if exists course_access_source_check;
+alter table public.course_access add constraint course_access_source_check check (source in ('stars', 'admin', 'invites', 'advent'));
+
+-- Отдельный урок закрытого курса, открытый призом — без доступа ко всему курсу.
+create table if not exists public.lesson_access (
+  user_id bigint not null references public.users (id) on delete cascade,
+  lesson_id bigint not null references public.lessons (id) on delete cascade,
+  source text not null default 'advent',
+  granted_at timestamptz not null default now(),
+  primary key (user_id, lesson_id)
+);
+alter table public.lesson_access enable row level security;
+
+-- Оплата звёздами бывает за курс и за билет календаря.
+alter table public.payments add column if not exists purpose text not null default 'course' check (purpose in ('course', 'catchup'));
+
+-- Билеты. ref уникален: одно действие (друг, урок, оплата, переход из сторис) не даёт второй билет.
+create table if not exists public.advent_tickets (
+  id bigint generated always as identity primary key,
+  user_id bigint not null references public.users (id) on delete cascade,
+  source text not null check (source in ('quiz', 'invite', 'story', 'stars', 'admin')),
+  ref text not null unique,
+  created_at timestamptz not null default now(),
+  used_day integer,
+  used_at timestamptz,
+  -- Звёзды за билет вернули, а билет не был потрачен.
+  revoked_at timestamptz
+);
+create index if not exists advent_tickets_free_idx on public.advent_tickets (user_id) where used_at is null and revoked_at is null;
+alter table public.advent_tickets enable row level security;
+
+-- Открыть пропущенную дверь за билет. Билет, запись открытия и XP — в одной транзакции:
+-- билет не списывается без открытия и дверь не открывается без билета.
+create or replace function public.advent_open_late(p_user bigint, p_day integer, p_score integer, p_total integer, p_xp integer)
+returns table (inserted boolean, opened integer, ticket boolean)
+language plpgsql
+set search_path = ''
+as $$
+declare
+  t bigint;
+begin
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('advent:' || p_user::text, 0));
+  if exists (select 1 from public.advent_opens where user_id = p_user and day = p_day) then
+    return query select false, (select count(*)::integer from public.advent_opens o where o.user_id = p_user), true;
+    return;
+  end if;
+  select id into t from public.advent_tickets
+    where user_id = p_user and used_at is null and revoked_at is null
+    order by id limit 1 for update;
+  if t is null then
+    return query select false, (select count(*)::integer from public.advent_opens o where o.user_id = p_user), false;
+    return;
+  end if;
+  update public.advent_tickets set used_at = now(), used_day = p_day where id = t;
+  insert into public.advent_opens (user_id, day, score, total, xp, late) values (p_user, p_day, p_score, p_total, p_xp, true);
+  update public.users set xp = xp + p_xp where id = p_user;
+  return query select true, (select count(*)::integer from public.advent_opens o where o.user_id = p_user), true;
+end;
+$$;
+
+revoke execute on function public.advent_open_late(bigint, integer, integer, integer, integer) from public, anon, authenticated;
+grant execute on function public.advent_open_late(bigint, integer, integer, integer, integer) to service_role;
+
+
+-- Адвент: как выдаётся приз.
+-- threshold — за N открытых дверей (как раньше);
+-- day       — открывшим дверь одного из дней day_from..day_to, пока не кончится лимит;
+-- instant   — мгновенный выигрыш при открытии двери в окне дней: шанс подстраивается под темп,
+--             чтобы весь лимит разошёлся к концу окна, а не в первый день;
+-- draw      — розыгрыш после day_to: случайные победители среди открывших двери в окне,
+--             каждая открытая дверь — один шанс.
+alter table public.advent_rewards
+  add column if not exists mode text not null default 'threshold' check (mode in ('threshold', 'day', 'instant', 'draw')),
+  add column if not exists day_from integer check (day_from between 1 and 60),
+  add column if not exists day_to integer check (day_to between 1 and 60),
+  add column if not exists drawn_at timestamptz;
+
+-- Случайное число в [0, 1) из криптографического генератора — для честного розыгрыша.
+create or replace function public.advent_random()
+returns double precision
+language sql
+volatile
+set search_path = ''
+as $$
+  select (('x' || encode(extensions.gen_random_bytes(7), 'hex'))::bit(56)::bigint)::double precision / 72057594037927936.0;
+$$;
+
+-- Выдать приз человеку. Лимит, повтор и сам код проверяются под блокировкой строки приза:
+-- при любой гонке лишний приз не выпадет, а один человек не получит один приз дважды.
+-- Возвращает код или null, если приз закончился или уже выдан этому человеку.
+create or replace function public.advent_grant(p_user bigint, p_reward bigint)
+returns text
+language plpgsql
+set search_path = ''
+as $$
+declare
+  r public.advent_rewards%rowtype;
+  abc constant text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  b bytea;
+  c text;
+  i integer;
+begin
+  select * into r from public.advent_rewards where id = p_reward for update;
+  if not found then
+    return null;
+  end if;
+  if exists (select 1 from public.reward_codes where user_id = p_user and reward_id = p_reward) then
+    return null;
+  end if;
+  if r.stock is not null and (select count(*) from public.reward_codes where reward_id = p_reward) &gt;= r.stock then
+    return null;
+  end if;
+  loop
+    b := extensions.gen_random_bytes(8);
+    c := '';
+    for i in 0..7 loop
+      c := c || substr(abc, (get_byte(b, i) % length(abc)) + 1, 1);
+    end loop;
+    c := substr(c, 1, 4) || '-' || substr(c, 5, 4);
+    exit when not exists (select 1 from public.reward_codes where code = c);
+  end loop;
+  insert into public.reward_codes (code, user_id, reward_id) values (c, p_user, p_reward);
+  if r.kind = 'lesson' and (r.payload -&gt;&gt; 'lesson_id') is not null then
+    insert into public.lesson_access (user_id, lesson_id, source) values (p_user, (r.payload -&gt;&gt; 'lesson_id')::bigint, 'advent') on conflict do nothing;
+  end if;
+  if r.kind = 'course' and (r.payload -&gt;&gt; 'course_id') is not null then
+    insert into public.course_access (user_id, course_id, source) values (p_user, (r.payload -&gt;&gt; 'course_id')::bigint, 'advent') on conflict do nothing;
+  end if;
+  return c;
+end;
+$$;
+
+-- Розыгрыш: победители среди открывших двери окна, шанс пропорционален числу открытых дверей.
+-- Взвешенная выборка без повторов (ключ random^(1/вес)). Повторный вызов ничего не меняет.
+create or replace function public.advent_draw(p_reward bigint)
+returns table (winner_id bigint, winner_code text)
+language plpgsql
+set search_path = ''
+as $$
+declare
+  r public.advent_rewards%rowtype;
+  slots integer;
+  w record;
+  c text;
+begin
+  select * into r from public.advent_rewards where id = p_reward for update;
+  if not found or r.mode &lt;&gt; 'draw' or r.drawn_at is not null then
+    return;
+  end if;
+  slots := coalesce(r.stock, 1) - (select count(*) from public.reward_codes rc where rc.reward_id = p_reward);
+  for w in
+    select e.uid
+    from (
+      select o.user_id as uid, count(*) as n
+      from public.advent_opens o
+      where o.day between coalesce(r.day_from, 1) and coalesce(r.day_to, 60)
+        and not exists (select 1 from public.reward_codes rc where rc.reward_id = p_reward and rc.user_id = o.user_id)
+      group by o.user_id
+    ) e
+    order by power(public.advent_random() + 1e-12, 1.0 / e.n) desc
+    limit greatest(slots, 0)
+  loop
+    c := public.advent_grant(w.uid, p_reward);
+    if c is not null then
+      winner_id := w.uid;
+      winner_code := c;
+      return next;
+    end if;
+  end loop;
+  update public.advent_rewards set drawn_at = now() where id = p_reward;
+end;
+$$;
+
+revoke execute on function public.advent_random() from public, anon, authenticated;
+revoke execute on function public.advent_grant(bigint, bigint) from public, anon, authenticated;
+revoke execute on function public.advent_draw(bigint) from public, anon, authenticated;
+grant execute on function public.advent_random() to service_role;
+grant execute on function public.advent_grant(bigint, bigint) to service_role;
+grant execute on function public.advent_draw(bigint) to service_role;
 
 commit;
 </textarea><h3>84 материала</h3><textarea id="content" aria-label="84 материала" readonly>-- Пакет content_import:elaz-ed-2026-10-v1: только вставки. Существующие уроки и прогресс сохраняются.

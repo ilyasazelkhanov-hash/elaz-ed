@@ -1,0 +1,29 @@
+{
+  "id": "og-cre8r",
+  "name": "OG CRE8R²",
+  "preset": "club",
+  "modules": [
+    "content",
+    "progress",
+    "learning",
+    "events",
+    "retention",
+    "commerce"
+  ],
+  "navigation": [
+    "home",
+    "learning",
+    "profile"
+  ],
+  "homeBlocks": [
+    "learning",
+    "content",
+    "events"
+  ],
+  "locale": "ru",
+  "timezone": "Asia/Qyzylorda",
+  "currency": "KZT",
+  "access": "channel",
+  "version": "1.0.0",
+  "apiPublicPath": "/platform-api"
+}

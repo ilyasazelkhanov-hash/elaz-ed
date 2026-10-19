@@ -5,34 +5,61 @@ import { emojiCode, NOTO } from './lib/emoji'
 import { GRADIENTS } from './lib/game'
 import { haptic } from './lib/tg'
 import type { GradientName } from './lib/types'
+import { useDocumentVisible, useElementVisible, usePrefersReducedMotion } from './lib/visibility'
 import { useStore } from './store'
 
 // ---------- Эмодзи ----------
+
+const animatedEmojiLoads = new Map<string, Promise<boolean>>()
+
+function loadEmojiAnimation(url: string) {
+  const cached = animatedEmojiLoads.get(url)
+  if (cached) return cached
+  const loaded = new Promise<boolean>((resolve) => {
+    const image = new Image()
+    image.decoding = 'async'
+    const finish = (available: boolean) => {
+      image.onload = image.onerror = null
+      resolve(available)
+    }
+    image.onload = () => finish(true)
+    image.onerror = () => finish(false)
+    image.src = url
+  })
+  // Cache failures for this page too: missing assets must not retry per card/scroll.
+  animatedEmojiLoads.set(url, loaded)
+  return loaded
+}
 
 /**
  * Единые эмодзи на всех платформах: статичный SVG сразу, анимация догружается поверх.
  * Если картинки нет или сеть её не отдала — показываем системный эмодзи.
  */
 export function Emoji({ char, size = 24, animated = false, className = '' }: { char: string; size?: number; animated?: boolean; className?: string }) {
-  const [stage, setStage] = useState(0)
-  const [moving, setMoving] = useState(false)
+  const [fallback, setFallback] = useState({ char, stage: 0 })
+  const [animationUrl, setAnimationUrl] = useState<string>()
+  const imageRef = useRef<HTMLImageElement>(null)
+  const reduce = usePrefersReducedMotion(animated)
+  const stage = fallback.char === char ? fallback.stage : 0
   const code = emojiCode(char, stage === 0)
+  const webpUrl = `${NOTO}/${code}/512.webp`
+  const canAnimate = animated && !reduce && stage <= 1
+  const nearViewport = useElementVisible(imageRef, canAnimate, '120px')
+  const inViewport = useElementVisible(imageRef, canAnimate)
+  const documentVisible = useDocumentVisible(canAnimate)
+  const moving = canAnimate && inViewport && documentVisible && animationUrl === webpUrl
+  const shouldLoad = canAnimate && nearViewport && documentVisible
 
   useEffect(() => {
-    setStage(0)
-    setMoving(false)
-  }, [char])
-
-  useEffect(() => {
-    if (!animated || stage > 1) return
+    if (!shouldLoad) return
     let alive = true
-    const img = new Image()
-    img.onload = () => alive && setMoving(true)
-    img.src = `${NOTO}/${code}/512.webp`
+    void loadEmojiAnimation(webpUrl).then((available) => {
+      if (alive && available) setAnimationUrl(webpUrl)
+    })
     return () => {
       alive = false
     }
-  }, [animated, code, stage])
+  }, [shouldLoad, webpUrl])
 
   if (stage > 1) {
     return (
@@ -43,14 +70,24 @@ export function Emoji({ char, size = 24, animated = false, className = '' }: { c
   }
   return (
     <img
+      ref={imageRef}
       src={`${NOTO}/${code}/${moving ? '512.webp' : 'emoji.svg'}`}
       width={size}
       height={size}
       alt={char}
+      loading="lazy"
+      decoding="async"
       draggable={false}
       className={`pointer-events-none shrink-0 select-none ${className}`}
       style={{ width: size, height: size }}
-      onError={() => (moving ? setMoving(false) : setStage((s) => s + 1))}
+      onError={() => {
+        if (moving) {
+          animatedEmojiLoads.set(webpUrl, Promise.resolve(false))
+          setAnimationUrl(undefined)
+        } else {
+          setFallback({ char, stage: stage + 1 })
+        }
+      }}
     />
   )
 }

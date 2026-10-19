@@ -1,0 +1,25 @@
+{
+  "id": "azelkhanov",
+  "name": "Azelkhanov",
+  "preset": "club",
+  "modules": [
+    "content",
+    "learning",
+    "campaigns",
+    "progress",
+    "loyalty",
+    "commerce",
+    "events",
+    "community",
+    "team",
+    "retention",
+    "analytics"
+  ],
+  "navigation": ["home", "campaigns", "loyalty", "community", "profile"],
+  "homeBlocks": ["wallet", "stories", "hero", "missions", "events", "content"],
+  "locale": "ru",
+  "timezone": "Asia/Qyzylorda",
+  "currency": "KZT",
+  "access": "telegram",
+  "version": "1.0.0"
+}

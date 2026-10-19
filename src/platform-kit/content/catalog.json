@@ -1,0 +1,1794 @@
+[
+  {
+    "id": "story-welcome",
+    "kind": "story",
+    "module": "content",
+    "title": "Место, где вы — свои",
+    "subtitle": "Знакомимся с вашим новым пространством",
+    "body": "Знакомимся с вашим новым пространством",
+    "tag": "НАЧНИТЕ ЗДЕСЬ",
+    "cover": "cobalt",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "slides": [
+        {
+          "title": "Вы здесь не случайно.",
+          "body": "Здесь встречаются любопытные люди, хорошие идеи и маленькие поводы улыбнуться.",
+          "art": "orbit"
+        },
+        {
+          "title": "Действуйте. Открывайте. Растите.",
+          "body": "Пройдите задание, загляните на встречу, поделитесь идеей — за каждое действие получайте прогресс.",
+          "art": "star"
+        },
+        {
+          "title": "Лучшее — впереди.",
+          "body": "Забирайте привилегии, собирайте впечатления и создавайте свою историю вместе с нами.",
+          "art": "gift"
+        }
+      ]
+    }
+  },
+  {
+    "id": "story-week",
+    "kind": "story",
+    "module": "content",
+    "title": "Планы на неделю",
+    "subtitle": "Три хороших повода зайти",
+    "body": "Три хороших повода зайти",
+    "tag": "ДЛЯ ВАС",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "slides": [
+        {
+          "title": "Ваша новая традиция",
+          "body": "Каждый день — небольшое открытие. Сегодня начните с задания дня.",
+          "art": "star"
+        },
+        {
+          "title": "Встретимся?",
+          "body": "В афише появились новые встречи. Количество мест ограничено.",
+          "art": "orbit"
+        }
+      ]
+    }
+  },
+  {
+    "id": "story-people",
+    "kind": "story",
+    "module": "content",
+    "title": "Люди клуба",
+    "subtitle": "Истории тех, кто рядом",
+    "body": "Истории тех, кто рядом",
+    "tag": "ДЛЯ ВАС",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "slides": [
+        {
+          "title": "У каждого — своя история.",
+          "body": "Расскажите в сообществе, что вас вдохновляет. Возможно, именно ваша идея объединит нас завтра.",
+          "art": "flower"
+        }
+      ]
+    }
+  },
+  {
+    "id": "story-gifts",
+    "kind": "story",
+    "module": "content",
+    "title": "Маленькие радости",
+    "subtitle": "Что можно получить за баллы",
+    "body": "Что можно получить за баллы",
+    "tag": "ДЛЯ ВАС",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "slides": [
+        {
+          "title": "Хорошее возвращается.",
+          "body": "За участие вы получаете баллы. Обменивайте их на подарки и сохраняйте купоны в профиле.",
+          "art": "gift"
+        }
+      ]
+    }
+  },
+  {
+    "id": "article-slow",
+    "kind": "article",
+    "module": "content",
+    "title": "Искусство замечать хорошее",
+    "subtitle": "Пять маленьких привычек, которые делают обычный день особенным.",
+    "body": "## Внимание — новая привилегия\n\nИногда достаточно замедлиться, чтобы заметить то, что уже рядом: приятный разговор, новый маршрут или вкус любимого напитка.\n\n### Попробуйте сегодня\n\n1. Пройдите привычный путь по новой улице.\n2. Напишите человеку, с которым давно не общались.\n3. Сохраните одну хорошую идею и сделайте первый шаг.\n\nБольшие перемены начинаются с небольших действий. Поделитесь своим открытием в сообществе.",
+    "tag": "ОБРАЗ ЖИЗНИ",
+    "cover": "flower",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {}
+  },
+  {
+    "id": "article-guide",
+    "kind": "article",
+    "module": "content",
+    "title": "Ваш гид по клубным привилегиям",
+    "subtitle": "Баллы, впечатления и подарки: как всё устроено.",
+    "body": "## Каждый шаг имеет значение\n\nОткрывайте задания, посещайте встречи и участвуйте в жизни сообщества. За проверенные действия начисляются баллы.\n\n**XP** показывает ваш прогресс. **Баллы** можно обменять на подарки. Это разные счётчики.\n\nПодарок появится в вашем кошельке. Покажите код сотруднику — он подтвердит получение. У каждого купона есть срок действия.",
+    "tag": "ГИД ПО КЛУБУ",
+    "cover": "gift",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {}
+  },
+  {
+    "id": "article-story",
+    "kind": "article",
+    "module": "content",
+    "title": "Люди, которые создают атмосферу",
+    "subtitle": "Знакомимся с теми, кто делает привычное необычным.",
+    "body": "## Пространство начинается с людей\n\nНам нравятся люди, которым не всё равно. Которые придумывают, пробуют, делятся и помогают другим расти.\n\nРасскажите о себе в разделе «Сообщество»: чем вы занимаетесь и какую идею хотите воплотить?",
+    "tag": "ЛЮДИ",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {}
+  },
+  {
+    "id": "course-first",
+    "kind": "course",
+    "module": "learning",
+    "title": "Навык видеть возможности",
+    "subtitle": "Три коротких урока, одно новое начало.",
+    "body": "Программа из трёх коротких уроков: найдите идею, превратите её в план и сделайте первый шаг. После прохождения — именной сертификат.",
+    "tag": "БЕСПЛАТНЫЙ КУРС",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "lessonIds": [
+        "lesson-1",
+        "lesson-2",
+        "lesson-3"
+      ],
+      "stars": 0
+    }
+  },
+  {
+    "id": "course-pro",
+    "kind": "course",
+    "module": "learning",
+    "title": "Творческая практика PRO",
+    "subtitle": "Переходите от вдохновения к системе.",
+    "body": "Закрытая программа с практикой, проверкой наставником и обратной связью.",
+    "tag": "УГЛУБЛЁННЫЙ КУРС",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 250,
+    "capacity": null,
+    "data": {
+      "lessonIds": [
+        "lesson-pro"
+      ],
+      "stars": 250
+    }
+  },
+  {
+    "id": "lesson-1",
+    "kind": "lesson",
+    "module": "learning",
+    "title": "01. Замечать возможности",
+    "subtitle": "Идея ближе, чем кажется.",
+    "body": "## Большие идеи вырастают из наблюдений\n\nОбратите внимание на то, что люди делают каждый день. Где им неудобно? Что радует? Что они хотели бы изменить?\n\nЗапишите три наблюдения. Выберите одно, которое можете проверить за день.\n\n**Практика:** опишите свою идею одним предложением и отправьте её наставнику.",
+    "tag": "УРОК · 4 МИН",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "courseId": "course-first",
+      "order": 1,
+      "dripDays": 0,
+      "xp": 40,
+      "questions": [
+        {
+          "question": "С чего лучше начать новый проект?",
+          "options": [
+            "С небольшой проверяемой идеи",
+            "С покупки всех инструментов",
+            "С идеального логотипа"
+          ],
+          "correct": 0,
+          "explain": "Маленький проверяемый шаг помогает получить обратную связь раньше."
+        }
+      ]
+    }
+  },
+  {
+    "id": "lesson-2",
+    "kind": "lesson",
+    "module": "learning",
+    "title": "02. Первый прототип",
+    "subtitle": "Покажите идею миру.",
+    "body": "## Сделайте идею видимой\n\nПервый прототип может быть схемой, бумажным макетом или простым интерактивным экраном.\n\nПокажите его одному человеку. Спросите: что понятно, что вызывает вопросы, что хочется попробовать?",
+    "tag": "УРОК · 6 МИН",
+    "cover": "cobalt",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "courseId": "course-first",
+      "order": 2,
+      "dripDays": 0,
+      "xp": 50,
+      "questions": [
+        {
+          "question": "Зачем нужен прототип?",
+          "options": [
+            "Чтобы сразу продавать дорого",
+            "Чтобы быстро проверить предположение",
+            "Чтобы заменить разговор с пользователем"
+          ],
+          "correct": 1,
+          "explain": "Прототип отвечает на конкретный вопрос, а не доказывает совершенство идеи."
+        }
+      ]
+    }
+  },
+  {
+    "id": "lesson-3",
+    "kind": "lesson",
+    "module": "learning",
+    "title": "03. От проверки к привычке",
+    "subtitle": "Маленькие действия дают большие результаты.",
+    "body": "## Регулярность важнее рывка\n\nВыберите понятный ритм: один шаг каждый день. В конце недели посмотрите, чему научились.\n\nПоблагодарите тех, кто помогал. И начните следующий цикл.",
+    "tag": "УРОК · 5 МИН",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "courseId": "course-first",
+      "order": 3,
+      "dripDays": 0,
+      "xp": 60,
+      "questions": [
+        {
+          "question": "Что помогает продолжать?",
+          "options": [
+            "Ждать вдохновения",
+            "Делать небольшой шаг регулярно",
+            "Не показывать результат до идеала"
+          ],
+          "correct": 1,
+          "explain": "Регулярная практика превращает отдельные попытки в навык."
+        }
+      ]
+    }
+  },
+  {
+    "id": "lesson-pro",
+    "kind": "lesson",
+    "module": "learning",
+    "title": "Система творческого роста",
+    "subtitle": "Соберите личную систему практики.",
+    "body": "## Ваш следующий уровень\n\nВыберите проект на месяц. Разделите его на четыре недельные цели. Для каждой определите маленький измеримый результат.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "courseId": "course-pro",
+      "order": 1,
+      "dripDays": 0,
+      "xp": 80,
+      "questions": []
+    }
+  },
+  {
+    "id": "campaign-october",
+    "kind": "campaign",
+    "module": "campaigns",
+    "title": "Сезон маленьких радостей",
+    "subtitle": "Открывайте новое каждый день. Соберите свою историю.",
+    "body": "24 открытия, задания и подарки. Сегодня — идеальный день, чтобы начать. Пропущенные задания остаются доступны до конца сезона.",
+    "tag": "НОВЫЙ СЕЗОН",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "startsAt": "2026-10-01T04:04:09.225Z",
+      "endsAt": "2026-10-24T04:04:09.226Z",
+      "days": 24,
+      "game": "mixed"
+    }
+  },
+  {
+    "id": "campaign-weekend",
+    "kind": "campaign",
+    "module": "campaigns",
+    "title": "Выходные с характером",
+    "subtitle": "Три дня для себя, друзей и новых впечатлений.",
+    "body": "Три дня для себя, друзей и новых впечатлений.",
+    "tag": "СПЕЦПРОЕКТ",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "startsAt": "2026-10-16T04:04:09.226Z",
+      "endsAt": "2026-10-18T04:04:09.226Z",
+      "days": 3,
+      "game": "memory"
+    }
+  },
+  {
+    "id": "mission-quiz",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Вопрос с изюминкой",
+    "subtitle": "Проверьте интуицию за минуту",
+    "body": "Проверьте интуицию за минуту",
+    "tag": "ЗАДАНИЕ 01",
+    "cover": "cobalt",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 1,
+      "game": "quiz",
+      "xp": 25,
+      "questions": [
+        {
+          "question": "Какое действие приносит самый долгий эффект?",
+          "options": [
+            "Небольшая привычка каждый день",
+            "Один грандиозный рывок",
+            "Бесконечное планирование"
+          ],
+          "correct": 0,
+          "explain": "Регулярные небольшие действия складываются в устойчивый результат."
+        }
+      ]
+    }
+  },
+  {
+    "id": "mission-scratch",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Сотрите границы",
+    "subtitle": "Ваш сюрприз под защитным слоем",
+    "body": "Ваш сюрприз под защитным слоем",
+    "tag": "ЗАДАНИЕ 02",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 2,
+      "game": "scratch",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-wheel",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Колесо впечатлений",
+    "subtitle": "Один поворот — новое открытие",
+    "body": "Один поворот — новое открытие",
+    "tag": "ЗАДАНИЕ 03",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 3,
+      "game": "wheel",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-memory",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Найдите пару",
+    "subtitle": "Небольшая тренировка внимания",
+    "body": "Небольшая тренировка внимания",
+    "tag": "ЗАДАНИЕ 04",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 4,
+      "game": "memory",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-reaction",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Поймайте момент",
+    "subtitle": "На старт. Внимание. Сейчас!",
+    "body": "На старт. Внимание. Сейчас!",
+    "tag": "ЗАДАНИЕ 05",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 5,
+      "game": "reaction",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-arcade",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Поймайте настроение",
+    "subtitle": "Соберите как можно больше искр",
+    "body": "Соберите как можно больше искр",
+    "tag": "ЗАДАНИЕ 06",
+    "cover": "flower",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 6,
+      "game": "arcade",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "reward-coffee",
+    "kind": "reward",
+    "module": "loyalty",
+    "title": "Напиток за наш счёт",
+    "subtitle": "Ваш любимый вкус — наш маленький комплимент.",
+    "body": "Ваш любимый вкус — наш маленький комплимент.",
+    "tag": "150 БАЛЛОВ",
+    "cover": "cup",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 150,
+    "capacity": 100,
+    "data": {
+      "pointsCost": 150,
+      "expiresDays": 30,
+      "pointIds": [
+        "main"
+      ],
+      "campaignId": null
+    }
+  },
+  {
+    "id": "reward-tote",
+    "kind": "reward",
+    "module": "loyalty",
+    "title": "Вещи с историей",
+    "subtitle": "Фирменный шоппер для больших планов.",
+    "body": "Фирменный шоппер для больших планов.",
+    "tag": "450 БАЛЛОВ",
+    "cover": "bag",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 450,
+    "capacity": 30,
+    "data": {
+      "pointsCost": 450,
+      "expiresDays": 30,
+      "pointIds": [
+        "main"
+      ],
+      "campaignId": null
+    }
+  },
+  {
+    "id": "reward-pass",
+    "kind": "reward",
+    "module": "loyalty",
+    "title": "Билет в новое",
+    "subtitle": "Приглашение на закрытую встречу клуба.",
+    "body": "Приглашение на закрытую встречу клуба.",
+    "tag": "300 БАЛЛОВ",
+    "cover": "ticket",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 300,
+    "capacity": 20,
+    "data": {
+      "pointsCost": 300,
+      "expiresDays": 60,
+      "pointIds": [
+        "main"
+      ],
+      "campaignId": null
+    }
+  },
+  {
+    "id": "product-cup",
+    "kind": "product",
+    "module": "commerce",
+    "title": "Everyday cup",
+    "subtitle": "Та самая чашка для ваших утренних ритуалов.",
+    "body": "Та самая чашка для ваших утренних ритуалов.",
+    "tag": "THE EVERYDAY COLLECTION",
+    "cover": "cup",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 7900,
+    "capacity": 50,
+    "data": {
+      "variants": [
+        {
+          "name": "Кобальт",
+          "price": 7900
+        },
+        {
+          "name": "Молочный",
+          "price": 7900
+        }
+      ],
+      "unit": "шт."
+    }
+  },
+  {
+    "id": "product-tote",
+    "kind": "product",
+    "module": "commerce",
+    "title": "Carry your ideas",
+    "subtitle": "Плотный хлопок. Много места для вдохновения.",
+    "body": "Плотный хлопок. Много места для вдохновения.",
+    "tag": "СОЗДАНО ДЛЯ ВАС",
+    "cover": "bag",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 5900,
+    "capacity": 50,
+    "data": {
+      "variants": [
+        {
+          "name": "Натуральный",
+          "price": 5900
+        },
+        {
+          "name": "Чёрный",
+          "price": 5900
+        }
+      ]
+    }
+  },
+  {
+    "id": "product-notebook",
+    "kind": "product",
+    "module": "commerce",
+    "title": "A new chapter",
+    "subtitle": "Блокнот для того, что ещё не придумано.",
+    "body": "Блокнот для того, что ещё не придумано.",
+    "tag": "НОВИНКА",
+    "cover": "notebook",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 3900,
+    "capacity": 100,
+    "data": {
+      "variants": [
+        {
+          "name": "Лайм",
+          "price": 3900
+        },
+        {
+          "name": "Кобальт",
+          "price": 3900
+        }
+      ]
+    }
+  },
+  {
+    "id": "service-session",
+    "kind": "service",
+    "module": "commerce",
+    "title": "Творческая сессия 1:1",
+    "subtitle": "Вместе найдём следующий шаг для вашей идеи.",
+    "body": "Вместе найдём следующий шаг для вашей идеи.",
+    "tag": "ЛИЧНАЯ ВСТРЕЧА",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 25000,
+    "capacity": null,
+    "data": {
+      "variants": [
+        {
+          "name": "60 минут",
+          "price": 25000
+        }
+      ],
+      "briefFields": [
+        {
+          "id": "project",
+          "label": "Ваш проект",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "goal",
+          "label": "Что хотите получить",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "id": "contact",
+          "label": "Как с вами связаться",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "time",
+          "label": "Удобное время",
+          "type": "text",
+          "required": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "event-talk",
+    "kind": "event",
+    "module": "events",
+    "title": "Разговоры, которые вдохновляют",
+    "subtitle": "Знакомимся, обмениваемся идеями и смотрим на привычное по-новому.",
+    "body": "Знакомимся, обмениваемся идеями и смотрим на привычное по-новому.",
+    "tag": "18 ДЕК · 18:30",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": 24,
+    "data": {
+      "startsAt": "2026-10-31T13:30:00.000Z",
+      "location": "OG CRE8R² Space · зал 01",
+      "pointId": "main",
+      "agenda": [
+        "18:30 — знакомство",
+        "19:00 — разговор с гостем",
+        "20:00 — идеи и общение"
+      ]
+    }
+  },
+  {
+    "id": "event-workshop",
+    "kind": "event",
+    "module": "events",
+    "title": "Сделаем что-то настоящее",
+    "subtitle": "Практическая встреча для тех, кто любит пробовать.",
+    "body": "Практическая встреча для тех, кто любит пробовать.",
+    "tag": "20 ДЕК · 12:00",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": 12,
+    "data": {
+      "startsAt": "2026-11-07T07:00:00.000Z",
+      "location": "OG CRE8R² Space · мастерская",
+      "pointId": "main",
+      "agenda": [
+        "12:00 — знакомство с материалами",
+        "12:30 — практика",
+        "14:00 — показываем результат"
+      ]
+    }
+  },
+  {
+    "id": "slot-consult",
+    "kind": "slot",
+    "module": "events",
+    "title": "Личная консультация",
+    "subtitle": "Один час фокуса на вашей задаче.",
+    "body": "Один час фокуса на вашей задаче.",
+    "tag": "21 ДЕК · 15:00",
+    "cover": "cobalt",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": 1,
+    "data": {
+      "startsAt": "2026-10-24T10:00:00.000Z",
+      "location": "Онлайн · ссылка после подтверждения",
+      "pointId": "main"
+    }
+  },
+  {
+    "id": "team-creators",
+    "kind": "team",
+    "module": "team",
+    "title": "Создатели",
+    "subtitle": "Из идей — в действие.",
+    "body": "Из идей — в действие.",
+    "tag": "КОМАНДА 01",
+    "cover": "cobalt",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "goal": 5000
+    }
+  },
+  {
+    "id": "team-explorers",
+    "kind": "team",
+    "module": "team",
+    "title": "Исследователи",
+    "subtitle": "Всегда на шаг ближе к новому.",
+    "body": "Всегда на шаг ближе к новому.",
+    "tag": "КОМАНДА 02",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "goal": 5000
+    }
+  },
+  {
+    "id": "poll-next",
+    "kind": "poll",
+    "module": "team",
+    "title": "Какая встреча будет следующей?",
+    "subtitle": "Ваш голос определяет наши планы.",
+    "body": "Ваш голос определяет наши планы.",
+    "tag": "ГОЛОС КОМАНДЫ",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "options": [
+        "Творческая мастерская",
+        "Спортивный день",
+        "Разговор с экспертом",
+        "Волонтёрская акция"
+      ]
+    }
+  },
+  {
+    "id": "program-onboarding",
+    "kind": "program",
+    "module": "team",
+    "title": "Ваши первые семь дней",
+    "subtitle": "Знакомство с командой, ценностями и возможностями.",
+    "body": "Знакомство с командой, ценностями и возможностями.",
+    "tag": "ДОБРО ПОЖАЛОВАТЬ",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "courseId": "course-first",
+      "teamId": null,
+      "steps": [
+        "Расскажите о себе",
+        "Пройдите вводный курс",
+        "Познакомьтесь с коллегами",
+        "Посетите первую встречу"
+      ]
+    }
+  },
+  {
+    "id": "mission-07",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Идея, которую стоит сохранить",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 07",
+    "cover": "cobalt",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 7,
+      "game": "quiz",
+      "xp": 25,
+      "questions": [
+        {
+          "question": "Что помогает идее вырасти?",
+          "options": [
+            "Небольшие действия и обратная связь",
+            "Бесконечное ожидание",
+            "Сравнение со всеми вокруг"
+          ],
+          "correct": 0,
+          "explain": "Пробуйте, замечайте результат и делайте следующий небольшой шаг."
+        }
+      ]
+    }
+  },
+  {
+    "id": "mission-08",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Маленькое открытие",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 08",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 8,
+      "game": "scratch",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-09",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Ваш удачный поворот",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 09",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 9,
+      "game": "wheel",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-10",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Внимание к деталям",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 10",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 10,
+      "game": "memory",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-11",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Время действовать",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 11",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 11,
+      "game": "reaction",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-12",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Ещё немного искр",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 12",
+    "cover": "flower",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 12,
+      "game": "arcade",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-13",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Что делает день лучше?",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 13",
+    "cover": "cobalt",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 13,
+      "game": "quiz",
+      "xp": 25,
+      "questions": [
+        {
+          "question": "Что помогает идее вырасти?",
+          "options": [
+            "Небольшие действия и обратная связь",
+            "Бесконечное ожидание",
+            "Сравнение со всеми вокруг"
+          ],
+          "correct": 0,
+          "explain": "Пробуйте, замечайте результат и делайте следующий небольшой шаг."
+        }
+      ]
+    }
+  },
+  {
+    "id": "mission-14",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Подарите себе минуту",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 14",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 14,
+      "game": "scratch",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-15",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Новый виток вдохновения",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 15",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 15,
+      "game": "wheel",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-16",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Найдите общее",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 16",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 16,
+      "game": "memory",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-17",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Чувствуйте момент",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 17",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 17,
+      "game": "reaction",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-18",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Энергия нового дня",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 18",
+    "cover": "flower",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 18,
+      "game": "arcade",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-19",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Хороший вопрос",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 19",
+    "cover": "cobalt",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 19,
+      "game": "quiz",
+      "xp": 25,
+      "questions": [
+        {
+          "question": "Что помогает идее вырасти?",
+          "options": [
+            "Небольшие действия и обратная связь",
+            "Бесконечное ожидание",
+            "Сравнение со всеми вокруг"
+          ],
+          "correct": 0,
+          "explain": "Пробуйте, замечайте результат и делайте следующий небольшой шаг."
+        }
+      ]
+    }
+  },
+  {
+    "id": "mission-20",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Всё только начинается",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 20",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 20,
+      "game": "scratch",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-21",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Радости по кругу",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 21",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 21,
+      "game": "wheel",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-22",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Соберите картину",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 22",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 22,
+      "game": "memory",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-23",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Здесь и сейчас",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 23",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 23,
+      "game": "reaction",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "mission-24",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Финальная искра",
+    "subtitle": "Небольшое действие — новая страница вашей истории.",
+    "body": "Небольшое действие — новая страница вашей истории.",
+    "tag": "ЗАДАНИЕ 24",
+    "cover": "flower",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-october",
+      "day": 24,
+      "game": "arcade",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "weekend-1",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Встречайте новое",
+    "subtitle": "Три маленьких открытия для ваших выходных.",
+    "body": "Три маленьких открытия для ваших выходных.",
+    "tag": "ДЕНЬ 1",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-weekend",
+      "day": 1,
+      "game": "memory",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "weekend-2",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Один хороший момент",
+    "subtitle": "Три маленьких открытия для ваших выходных.",
+    "body": "Три маленьких открытия для ваших выходных.",
+    "tag": "ДЕНЬ 2",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-weekend",
+      "day": 2,
+      "game": "scratch",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "weekend-3",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Воспоминания рядом",
+    "subtitle": "Три маленьких открытия для ваших выходных.",
+    "body": "Три маленьких открытия для ваших выходных.",
+    "tag": "ДЕНЬ 3",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-weekend",
+      "day": 3,
+      "game": "reaction",
+      "xp": 25,
+      "questions": []
+    }
+  },
+  {
+    "id": "campaign-weekly",
+    "kind": "campaign",
+    "module": "campaigns",
+    "title": "Четыре недели хороших привычек",
+    "subtitle": "Одна новая идея каждую неделю.",
+    "body": "Одна новая идея каждую неделю.",
+    "tag": "НЕДЕЛЬНЫЙ ЧЕЛЛЕНДЖ",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "startsAt": "2026-10-01T04:04:09.226Z",
+      "endsAt": "2026-10-28T04:04:09.226Z",
+      "days": 28,
+      "game": "mixed"
+    }
+  },
+  {
+    "id": "weekly-1",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Посмотрите под другим углом",
+    "subtitle": "Задание недели. Откройте его в удобный момент.",
+    "body": "Задание недели. Откройте его в удобный момент.",
+    "tag": "НЕДЕЛЯ 1",
+    "cover": "lime",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-weekly",
+      "day": 1,
+      "game": "reaction",
+      "xp": 40,
+      "questions": []
+    }
+  },
+  {
+    "id": "weekly-2",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Найдите свою пару",
+    "subtitle": "Задание недели. Откройте его в удобный момент.",
+    "body": "Задание недели. Откройте его в удобный момент.",
+    "tag": "НЕДЕЛЯ 2",
+    "cover": "lilac",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-weekly",
+      "day": 8,
+      "game": "memory",
+      "xp": 40,
+      "questions": []
+    }
+  },
+  {
+    "id": "weekly-3",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Откройте маленькую радость",
+    "subtitle": "Задание недели. Откройте его в удобный момент.",
+    "body": "Задание недели. Откройте его в удобный момент.",
+    "tag": "НЕДЕЛЯ 3",
+    "cover": "peach",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-weekly",
+      "day": 15,
+      "game": "scratch",
+      "xp": 40,
+      "questions": []
+    }
+  },
+  {
+    "id": "weekly-4",
+    "kind": "mission",
+    "module": "campaigns",
+    "title": "Соберите новые идеи",
+    "subtitle": "Задание недели. Откройте его в удобный момент.",
+    "body": "Задание недели. Откройте его в удобный момент.",
+    "tag": "НЕДЕЛЯ 4",
+    "cover": "cobalt",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "campaignId": "campaign-weekly",
+      "day": 22,
+      "game": "arcade",
+      "xp": 40,
+      "questions": []
+    }
+  },
+  {
+    "id": "club-membership",
+    "kind": "course",
+    "module": "learning",
+    "title": "Клуб · 30 дней",
+    "subtitle": "Демо: регулярная подписка Telegram Stars",
+    "body": "Демонстрационный клуб: ежемесячный разбор, библиотека приёмов и подготовка к встрече. Подписка на 30 дней с автоматическим продлением в Telegram. Стоимость и содержание редактирует организатор.",
+    "tag": "КЛУБ",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 490,
+    "capacity": null,
+    "data": {
+      "subscription": true,
+      "periodDays": 30
+    }
+  },
+  {
+    "id": "service-miniapp-brief",
+    "kind": "service",
+    "module": "commerce",
+    "title": "Обсудить Mini App",
+    "subtitle": "Обсуждение проекта, без оплаты",
+    "body": "Обсуждение проекта, без оплаты",
+    "tag": "ДЛЯ ВАС",
+    "cover": "notebook",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "purpose": "miniapp-brief",
+      "briefFields": [
+        {
+          "id": "company",
+          "label": "Компания или проект",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "contact",
+          "label": "Контакт для связи",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "goal",
+          "label": "Задача проекта",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "id": "industry",
+          "label": "Отрасль",
+          "type": "text",
+          "required": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "club-review",
+    "kind": "lesson",
+    "module": "learning",
+    "title": "Ежемесячный разбор",
+    "subtitle": "Материал клуба",
+    "body": "Разберите одну свою работу: сформулируйте цель, выпишите три наблюдения и выберите одно улучшение.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "notebook",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "courseId": "club-membership",
+      "order": 0,
+      "xp": 20
+    }
+  },
+  {
+    "id": "club-library",
+    "kind": "lesson",
+    "module": "learning",
+    "title": "Библиотека приёмов",
+    "subtitle": "Материал клуба",
+    "body": "Приём недели: начните с результата для зрителя, уберите лишнее и проверьте ясность на одном примере.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "notebook",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "courseId": "club-membership",
+      "order": 1,
+      "xp": 20
+    }
+  },
+  {
+    "id": "club-preparation",
+    "kind": "lesson",
+    "module": "learning",
+    "title": "Подготовка к встрече",
+    "subtitle": "Материал клуба",
+    "body": "Запишите вопрос, приложите контекст и опишите, какое решение хотите принять. Это материал для подготовки, а не обещание назначенной встречи.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "notebook",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "courseId": "club-membership",
+      "order": 2,
+      "xp": 20
+    }
+  },
+  {
+    "id": "coffee-flat-white",
+    "kind": "product",
+    "module": "commerce",
+    "title": "Флэт уайт",
+    "subtitle": "Двойной эспрессо и молоко. Самовывоз после подтверждения.",
+    "body": "Двойной эспрессо и молоко. Самовывоз после подтверждения.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "cup",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 1400,
+    "capacity": 30,
+    "data": {
+      "industry": "coffee",
+      "variants": [
+        {
+          "name": "250 мл",
+          "price": 1400
+        }
+      ]
+    }
+  },
+  {
+    "id": "coffee-filter",
+    "kind": "product",
+    "module": "commerce",
+    "title": "Фильтр дня",
+    "subtitle": "Чёрный кофе из текущего зерна. Уточните у бариста состав.",
+    "body": "Чёрный кофе из текущего зерна. Уточните у бариста состав.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "cup",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 1000,
+    "capacity": 30,
+    "data": {
+      "industry": "coffee",
+      "variants": [
+        {
+          "name": "300 мл",
+          "price": 1000
+        }
+      ]
+    }
+  },
+  {
+    "id": "fashion-everyday",
+    "kind": "product",
+    "module": "commerce",
+    "title": "Городской слой",
+    "subtitle": "Редакторский образ: свободная рубашка и прямой силуэт. Наличие подтверждает менеджер.",
+    "body": "Редакторский образ: свободная рубашка и прямой силуэт. Наличие подтверждает менеджер.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "bag",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "industry": "fashion",
+      "variants": [
+        {
+          "name": "Консультация по образу",
+          "price": 0
+        }
+      ]
+    }
+  },
+  {
+    "id": "construction-consultation",
+    "kind": "service",
+    "module": "commerce",
+    "title": "Осмотр и обсуждение объекта",
+    "subtitle": "Заявка без оплаты. Состав работ и смету согласовываем отдельно.",
+    "body": "Заявка без оплаты. Состав работ и смету согласовываем отдельно.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "notebook",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "industry": "construction",
+      "estimateRates": [
+        {
+          "label": "Базовый",
+          "price": 45000
+        },
+        {
+          "label": "Расширенный",
+          "price": 80000
+        }
+      ],
+      "briefFields": [
+        {
+          "id": "project",
+          "label": "Объект и адрес",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "goal",
+          "label": "Работы и пожелания",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "id": "contact",
+          "label": "Контакт",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "time",
+          "label": "Сроки",
+          "type": "text",
+          "required": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "company-welcome",
+    "kind": "article",
+    "module": "content",
+    "title": "Первые ориентиры",
+    "subtitle": "Дни 1–7: познакомьтесь с пространством и командой.",
+    "body": "Найдите профиль коллеги в разделе команды. Прочитайте правила пространства. Запишите, к кому обратитесь с первым рабочим вопросом. После знакомства отметьте материал завершённым.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "industry": "company",
+      "xp": 15
+    }
+  },
+  {
+    "id": "company-habits",
+    "kind": "article",
+    "module": "content",
+    "title": "Рабочий ритм",
+    "subtitle": "Дни 8–14: закрепите понятный способ совместной работы.",
+    "body": "Сформулируйте ожидаемый результат вашей задачи. Обсудите срок с руководителем. Разделите задачу на три шага и выберите ближайший. После этого завершите материал.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "industry": "company",
+      "xp": 15
+    }
+  },
+  {
+    "id": "company-practice",
+    "kind": "article",
+    "module": "content",
+    "title": "Первая самостоятельная задача",
+    "subtitle": "Дни 15–30: соберите результат и обратную связь.",
+    "body": "Покажите коллегам результат первой самостоятельной задачи. Запишите, что получилось и что улучшите. Поблагодарите человека, который помог, в разделе команды.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "orbit",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "industry": "company",
+      "xp": 15
+    }
+  },
+  {
+    "id": "fashion-early",
+    "kind": "product",
+    "module": "commerce",
+    "title": "Капсула клуба",
+    "subtitle": "Раннее знакомство с новой подборкой для действующих участников клуба.",
+    "body": "Раннее знакомство с новой подборкой для действующих участников клуба.",
+    "tag": "ДЛЯ ВАС",
+    "cover": "bag",
+    "published": true,
+    "publishAt": null,
+    "audience": "all",
+    "price": 0,
+    "capacity": null,
+    "data": {
+      "industry": "fashion",
+      "earlyAccessPlanId": "club-membership"
+    }
+  }
+]

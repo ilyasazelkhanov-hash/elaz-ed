@@ -5,9 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run academy:content && tsc --noEmit && vite build && node scripts/academy-prerender.mjs",
     "test:api": "node --experimental-transform-types --no-warnings tests/api/run.mjs",
-    "preview": "vite preview"
+    "test:database": "node --experimental-strip-types --test tests/api/quiz-database.test.mjs",
+    "test:experience": "node --experimental-strip-types --test tests/experience.test.mjs",
+    "test:academy": "node --experimental-transform-types --no-warnings --test tests/academy-seed.test.mjs tests/academy-domain.test.mjs tests/academy-completion-domain.test.mjs tests/academy-seo.test.mjs tests/api/academy-database.test.mjs tests/api/academy-api.test.mjs tests/api/academy-completion.test.mjs tests/api/academy-files.test.mjs tests/api/academy-quiz-types.test.mjs tests/api/academy-public.test.mjs tests/academy-content.test.mjs tests/academy-locale.test.mjs tests/academy-performance.test.mjs",
+    "academy:seed": "node scripts/academy-seed.mjs",
+    "preview": "vite preview",
+    "academy:content": "node scripts/academy-content.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",
@@ -18,10 +23,15 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-markdown": "^10.1.0",
+    "qrcode": "1.5.4",
+    "three": "0.186.1",
     "remark-gfm": "^4.0.1",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
+    "@types/qrcode": "1.5.6",
+    "@types/three": "0.186.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^19.3.0",

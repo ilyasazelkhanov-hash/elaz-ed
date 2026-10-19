@@ -1,5 +1,7 @@
 # OG CRE8R²
 
+AI Academy: [аудит интеграции](docs/ai-academy/integration-audit.md), [реализация и проверки](docs/ai-academy/implementation-report.md), [API и правила публикации](docs/ai-academy/backend-contract.md). [Учебный пакет Core/VC-101](docs/ai-academy/authored-content.md). Локальный каталог: `/?demo#/academy`. Проверки: `npm run test:academy`; проверка исходного curriculum: `npm run academy:seed`.
+
 Telegram Mini App для подписчиков канала: уроки, сторис, квизы, XP, стрик, уровни, рейтинг.
 Бот — [@elazart_bot](https://t.me/elazart_bot).
 

@@ -2,9 +2,10 @@
 import seed from './seed.json'
 import { ApiError } from './errors'
 import { adventSummaryDemo, makeAdventMock, resetAdventDemo } from './mockAdvent'
-import { dailyReward, quizScore } from './game'
+import { dailyReward } from './game'
+import { demoPlatformXp } from './experience'
 import { tgUser } from './tg'
-import type { AdminCourse, Analytics, Api, Boot, Card, CompleteResult, Course, DailyResult, Lesson, LessonDraft, Me, Payment, TopUser } from './types'
+import type { AdminCourse, Analytics, Api, Boot, Card, CompleteResult, Course, DailyResult, Lesson, LessonDraft, LessonQuizAttempt, Me, Payment, QuizQuestion, TopUser } from './types'
 
 const KEY = 'elaz-ed-demo-v2'
 
@@ -24,6 +25,7 @@ interface DemoState {
   requests: number[]
   /** Условные покупки в демо. В старом сохранённом состоянии поля может не быть. */
   payments?: Payment[]
+  quizAttempts?: (LessonQuizAttempt & { lessonId: number; privateQuiz: QuizQuestion[] })[]
 }
 
 const today = () => {
@@ -144,12 +146,15 @@ const RIVALS: TopUser[] = [
 
 function me(): Me {
   const gap = state.lastClaim ? dayDiff(today(), state.lastClaim) : Infinity
+  const platformXp = demoPlatformXp()
   return {
     id: tgUser.id ?? 1,
     name: tgUser.first_name ?? 'Гость',
     username: null,
     photo: tgUser.photo_url ?? null,
-    xp: state.xp,
+    xp: state.xp + platformXp,
+    base_xp: state.xp,
+    platform_xp: platformXp,
     streak: gap <= 1 || (gap === 2 && state.freezes > 0) ? state.streak : 0,
     best_streak: state.best,
     daily_claimed: state.lastClaim === today(),
@@ -157,7 +162,7 @@ function me(): Me {
     // В опубликованном демо админки нет: она только у владельцев в настоящем приложении.
     is_admin: import.meta.env.DEV,
     achievements: state.achievements,
-    rank: RIVALS.filter((r) => r.xp > state.xp).length + 1,
+    rank: RIVALS.filter((r) => r.xp > state.xp + platformXp).length + 1,
     invited: 0,
     freezes: state.freezes,
   }
@@ -227,18 +232,62 @@ export const mockApi: Api = {
     const l = state.lessons.find((x) => x.id === id)
     if (!l) throw new Error('not_found')
     if (locked(l)) throw new ApiError('course_locked', 403)
-    return { ...l, completed: id in state.done, liked: state.liked.includes(id), score: state.done[id] ?? null }
+    return { ...l, quiz: l.quiz.map(q => ({ q: q.q, options: [...q.options] })), completed: id in state.done, liked: state.liked.includes(id), score: state.done[id] ?? null }
   },
 
-  async complete(id, answers): Promise<CompleteResult> {
+  async quizStart(id) {
+    await wait()
+    const l = state.lessons.find(x => x.id === id)
+    if (!l) throw new ApiError('not_found', 404)
+    if (locked(l)) throw new ApiError('course_locked', 403)
+    if (!l.quiz.length) throw new ApiError('quiz_not_found', 404)
+    const practice = id in state.done
+    const attempts = state.quizAttempts ??= []
+    let attempt = attempts.find(a => a.lessonId === id && a.practice === practice && (!practice || !a.done))
+    if (!attempt) {
+      attempt = { attemptId: crypto.randomUUID(), lessonId: id, privateQuiz: structuredClone(l.quiz), questions: l.quiz.map(q => ({ q: q.q, options: [...q.options] })), answers: [], feedback: [], practice, done: false, score: 0, bonus: 0, combo: 0 }
+      attempts.push(attempt)
+      save()
+    }
+    const { privateQuiz: _private, lessonId: _lesson, ...publicAttempt } = attempt
+    return structuredClone(publicAttempt)
+  },
+
+  async quizAnswer(attemptId, index, answer) {
+    await wait(150)
+    const attempt = state.quizAttempts?.find(a => a.attemptId === attemptId)
+    if (!attempt) throw new ApiError('quiz_not_found', 404)
+    const q = attempt.privateQuiz[index]
+    if (!Number.isInteger(index) || !Number.isInteger(answer) || !q || answer < 0 || answer >= q.options.length) throw new ApiError('quiz_answer_invalid', 400)
+    if (index < attempt.answers.length) {
+      if (attempt.answers[index] !== answer) throw new ApiError('quiz_answer_locked', 409)
+      return structuredClone(attempt.feedback[index])
+    }
+    if (index !== attempt.answers.length) throw new ApiError('quiz_sequence', 409)
+    const correct = answer === q.correct
+    attempt.combo = correct ? attempt.combo + 1 : 0
+    const gained = correct ? 10 + 5 * Math.min(attempt.combo - 1, 2) : 0
+    attempt.score += correct ? 1 : 0
+    attempt.bonus += gained
+    attempt.answers.push(answer)
+    attempt.done = attempt.answers.length === attempt.questions.length
+    const feedback = { attemptId, index, answer, correct, correctIndex: q.correct ?? -1, explain: q.explain ?? '', done: attempt.done, score: attempt.score, bonus: attempt.bonus, combo: attempt.combo, gained }
+    attempt.feedback.push(feedback)
+    save()
+    return structuredClone(feedback)
+  },
+
+  async complete(id, answers, attemptId): Promise<CompleteResult> {
     await wait(350)
     const l = state.lessons.find((x) => x.id === id)
     if (!l) throw new Error('not_found')
-    const { score, bonus } = quizScore(
-      l.quiz.map((q) => q.correct),
-      answers,
-    )
-    if (id in state.done) return { already: true, gained: 0, base: 0, bonus: 0, score, total: l.quiz.length, new_achievements: [], me: me() }
+    if (id in state.done && !attemptId) return { already: true, gained: 0, base: 0, bonus: 0, score: state.done[id], total: l.quiz.length, new_achievements: [], me: me() }
+    const attempt = state.quizAttempts?.find(a => a.lessonId === id && !a.practice && (!attemptId || a.attemptId === attemptId))
+    if ((l.quiz.length || attemptId) && !attempt?.done) throw new ApiError('quiz_required', 409)
+    if (attempt && (answers.length !== attempt.answers.length || answers.some((a, i) => a !== attempt.answers[i]))) throw new ApiError('quiz_answers_mismatch', 409)
+    const score = attempt?.score ?? 0
+    const bonus = attempt?.bonus ?? 0
+    if (id in state.done) return { already: true, gained: 0, base: 0, bonus: 0, score: state.done[id], total: l.quiz.length, new_achievements: [], me: me() }
     state.done[id] = score
     state.xp += l.xp + bonus
     const earned: string[] = []

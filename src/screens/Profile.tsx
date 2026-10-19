@@ -53,6 +53,16 @@ export function Profile() {
         <Stat emoji="🏆" value={me.rank} label="место" />
       </div>
 
+      <div className="mx-5 mt-4 grid grid-cols-2 gap-2">
+        <Tap onClick={() => push({type:'club'})} className="rounded-[22px] border border-line bg-card/80 p-4 text-left"><p className="font-display text-[14px]">Клуб OG ↗</p><p className="mt-2 text-[12px] text-mute">Доступ и подписка</p></Tap>
+        <Tap onClick={() => push({type:'services'})} className="rounded-[22px] border border-line bg-card/80 p-4 text-left"><p className="font-display text-[14px]">Для бизнеса ↗</p><p className="mt-2 text-[12px] text-mute">Примеры мини-аппок</p></Tap>
+      </div>
+
+      {(isDemo || import.meta.env.VITE_PLATFORM_ENABLED === 'true') && <Tap onClick={() => { const url = new URL(location.href); url.searchParams.set('platform', ''); location.href = url.href }} className="mx-5 mt-6 flex w-[calc(100%-40px)] items-center gap-3 rounded-[24px] border border-line bg-card2 p-5 text-left">
+        <FlaskConical size={24} className="text-violet" />
+        <div className="min-w-0 flex-1"><p className="font-display text-[15px] font-semibold">Клубное пространство</p><p className="mt-1 text-[13px] text-mute">Материалы, встречи и твой профиль</p></div><ChevronRight size={18}/>
+      </Tap>}
+
       <h2 className="mb-3 mt-7 px-5 font-display text-[15px] font-semibold">Путь</h2>
       <div className="no-bar flex overflow-x-auto px-5 pb-1">
         {LEVELS.map((l, i) => {

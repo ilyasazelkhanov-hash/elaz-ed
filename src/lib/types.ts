@@ -4,8 +4,18 @@ export type GradientName = 'aurora' | 'sunset' | 'mint' | 'ocean' | 'candy' | 'l
 export interface QuizQuestion {
   q: string
   options: string[]
-  correct: number
+  /** Editor/private seed only; member lessons omit this and explain entirely. */
+  correct?: number
   explain?: string
+}
+
+export interface QuizFeedback {
+  attemptId: string; index: number; answer: number; correct: boolean; correctIndex: number;
+  explain: string; done: boolean; score: number; bonus: number; combo: number; gained: number
+}
+export interface LessonQuizAttempt {
+  attemptId: string; questions: Pick<QuizQuestion, 'q' | 'options'>[]; answers: number[];
+  feedback: QuizFeedback[]; practice: boolean; done: boolean; score: number; bonus: number; combo: number
 }
 
 export interface Card {
@@ -52,6 +62,8 @@ export interface Me {
   photo: string | null
   xp: number
   streak: number
+  base_xp?: number
+  platform_xp?: number
   best_streak: number
   daily_claimed: boolean
   lessons_done: number
@@ -458,7 +470,9 @@ export type LessonDraft = Omit<Lesson, 'id' | 'completed' | 'liked' | 'views' | 
 export interface Api {
   boot(force?: boolean): Promise<Boot>
   lesson(id: number): Promise<Lesson>
-  complete(id: number, answers: number[]): Promise<CompleteResult>
+  quizStart(id: number): Promise<LessonQuizAttempt>
+  quizAnswer(attemptId: string, index: number, answer: number): Promise<QuizFeedback>
+  complete(id: number, answers: number[], attemptId?: string): Promise<CompleteResult>
   daily(): Promise<DailyResult>
   like(id: number): Promise<{ liked: boolean; likes: number }>
   top(): Promise<TopResult>

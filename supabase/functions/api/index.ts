@@ -1,5 +1,7 @@
 // OG CRE8R² API: проверка подписи Telegram, доступ по подписке на канал, XP, стрики, админка, вебхук бота.
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { handleAcademy, AcademyError } from './academy.ts'
+import { handleAcademyFiles } from './academy-files.ts'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -26,6 +28,7 @@ const CORS = {
 
 const GRADIENTS = ['aurora', 'sunset', 'mint', 'ocean', 'candy', 'lime']
 const SUB_TTL = 5 * 60_000
+const OG_PLATFORM_ENABLED = Deno.env.get('OG_PLATFORM_ENABLED') === 'true'
 const AUTH_TTL = 48 * 3600
 
 class HttpError extends Error {
@@ -241,23 +244,65 @@ function aliveStreak(row: Row) {
   return gap <= 1 || (gap === 2 && row.freezes > 0) ? row.streak : 0
 }
 
+// Уровни дублируют src/lib/game.ts: бот показывает тот же уровень, что и вкладка профиля.
+const LEVELS = [
+  { xp: 0, title: 'Новичок', emoji: '🐣' },
+  { xp: 100, title: 'Искатель', emoji: '🧭' },
+  { xp: 250, title: 'Вайбкодер', emoji: '⚡' },
+  { xp: 500, title: 'Промптер', emoji: '🧠' },
+  { xp: 900, title: 'Билдер', emoji: '🛠️' },
+  { xp: 1500, title: 'Архитектор', emoji: '🚀' },
+  { xp: 2500, title: 'Нейромаг', emoji: '🔮' },
+  { xp: 4000, title: 'Легенда', emoji: '👑' },
+]
+
+function levelOf(xp: number) {
+  let i = 0
+  while (i + 1 < LEVELS.length && xp >= LEVELS[i + 1].xp) i++
+  const cur = LEVELS[i]
+  const next = LEVELS[i + 1] ?? null
+  return { index: i + 1, title: cur.title, emoji: cur.emoji, next, left: next ? next.xp - xp : 0 }
+}
+
+// Команда из текста сообщения: без @имени бота и аргументов, в нижнем регистре.
+function botCmd(text: string) {
+  return (text.trim().split(/\s+/)[0] ?? '').split('@')[0].toLowerCase()
+}
+
+function botSender(msg: Row): number {
+  const id = Number(msg?.from?.id ?? msg?.chat?.id)
+  return Number.isInteger(id) && id > 0 ? id : 0
+}
+
 async function buildMe(row: Row) {
   const day = localDay(tzOf(row))
   // Место считаем среди подписчиков — так же, как строится таблица рейтинга.
   const { count } = await db.from('users').select('id', { count: 'exact', head: true }).eq('subscribed', true).gt('xp', row.xp)
+  let combined: Row | null = null
+  let combinedRank: number | null = null
+  if (OG_PLATFORM_ENABLED) {
+    const [progress, rating] = await Promise.all([
+      db.rpc('az_og_progress_summary', { p_actor: row.id }),
+      db.rpc('az_og_progress_top', { p_actor: row.id }),
+    ])
+    if (progress.error || rating.error || !progress.data) throw new HttpError(503, 'platform_not_ready')
+    combined = progress.data
+    combinedRank = rating.data?.rank ?? null
+  }
   return {
     id: row.id,
     name: row.first_name || 'Друг',
     username: row.username,
     photo: row.photo_url,
-    xp: row.xp,
+    xp: combined?.totalXp ?? row.xp,
+    ...(combined ? { base_xp: combined.baseXp, platform_xp: combined.platformXp } : {}),
     streak: aliveStreak(row),
     best_streak: row.best_streak,
     daily_claimed: !!row.last_claim && row.last_claim >= day,
     lessons_done: row.lessons_done,
     is_admin: row.is_admin,
     achievements: row.achievements ?? [],
-    rank: (count ?? 0) + 1,
+    rank: combinedRank ?? (count ?? 0) + 1,
     invited: row.invited,
     freezes: row.freezes ?? 0,
   }
@@ -342,8 +387,9 @@ async function notifyOpened(userId: number, course: Row, s: Settings) {
   if (!s.app_url) return
   await tg('sendMessage', {
     chat_id: userId,
-    text: `Курс «${course.title}» открыт. Заходи.`,
-    reply_markup: { inline_keyboard: [[{ text: 'Открыть курс', web_app: { url: `${s.app_url}/?sp=c${course.id}` } }]] },
+    parse_mode: 'HTML',
+    text: `🎉 <b>Доступ к курсу открыт!</b>\n\nКурс <b>«${escapeHtml(course.title)}»</b> теперь разблокирован в твоём профиле. Все уроки, практические задания и квизы доступны для изучения.`,
+    reply_markup: { inline_keyboard: [[{ text: '📚 Начать обучение', web_app: { url: `${s.app_url}/?sp=c${course.id}` } }]] },
   })
 }
 
@@ -447,6 +493,8 @@ async function lesson(body: Row) {
   ])
   return {
     ...data,
+    // Keys stay private even for completed lessons/practice and an admin's member view.
+    quiz: publicQuiz(data.quiz),
     quiz_count: data.quiz?.length ?? 0,
     has_video: !!data.video_url,
     completed: !!p.data,
@@ -455,27 +503,71 @@ async function lesson(body: Row) {
   }
 }
 
+function publicQuiz(quiz: unknown) {
+  return (Array.isArray(quiz) ? quiz : []).map((q: Row) => ({ q: q.q, options: q.options }))
+}
+
+function quizDbError(error: { message?: string } | null) {
+  if (!error) return
+  const code = ['quiz_not_found', 'quiz_answer_invalid', 'quiz_answer_locked', 'quiz_sequence', 'quiz_required', 'quiz_answers_mismatch'].find(code => error.message?.includes(code))
+  throw new HttpError(code === 'quiz_not_found' ? 404 : code === 'quiz_answer_invalid' ? 400 : code ? 409 : 500, code ?? 'db')
+}
+
+async function quizStart(body: Row) {
+  const row = await member(body)
+  const id = Number(body.id)
+  const { data: les } = await db.from('lessons').select('id,quiz,published,course_id,free_preview').eq('id', id).maybeSingle()
+  if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
+  if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
+  const { data, error } = await db.rpc('start_lesson_quiz', { p_user: row.id, p_lesson: id })
+  quizDbError(error)
+  if (!data) throw new HttpError(500, 'db')
+  return { attemptId: data.id, questions: publicQuiz(data.quiz), answers: data.answers, feedback: data.feedback,
+    practice: data.practice, done: !!data.completed_at, score: data.score, bonus: data.bonus, combo: data.combo }
+}
+
+async function quizAnswer(body: Row) {
+  const row = await member(body)
+  if (typeof body.attemptId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.attemptId) || !Number.isInteger(body.index) || !Number.isInteger(body.answer) || body.index < 0 || body.answer < 0) throw new HttpError(400, 'quiz_answer_invalid')
+  const { data: attempt, error: lookupError } = await db.from('lesson_quiz_attempts').select('lesson_id').eq('id', body.attemptId).eq('user_id', row.id).maybeSingle()
+  if (lookupError) throw new HttpError(500, 'db')
+  if (!attempt) throw new HttpError(404, 'quiz_not_found')
+  const { data: les } = await db.from('lessons').select('id,published,course_id,free_preview').eq('id', attempt.lesson_id).maybeSingle()
+  if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
+  if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
+  const { data, error } = await db.rpc('answer_lesson_quiz', { p_user: row.id, p_attempt: body.attemptId, p_index: body.index, p_answer: body.answer })
+  quizDbError(error)
+  if (!data) throw new HttpError(500, 'db')
+  return data
+}
+
 async function complete(body: Row) {
   const row = await member(body)
   const id = Number(body.id)
   const { data: les } = await db.from('lessons').select('id,kind,xp,quiz,published,course_id,free_preview').eq('id', id).maybeSingle()
   if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
   if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
-  const quiz: { correct: number }[] = Array.isArray(les.quiz) ? les.quiz : []
-  const answers: unknown[] = Array.isArray(body.answers) ? body.answers : []
-  // Серия верных ответов поднимает награду: 10, 15, дальше по 20. Ошибка сбрасывает серию.
-  let combo = 0
+  const { data: previous, error: progressError } = await db.from('progress').select('score,total').eq('user_id', row.id).eq('lesson_id', id).maybeSingle()
+  if (progressError) throw new HttpError(500, 'db')
+  if (body.attemptId !== undefined && (typeof body.attemptId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.attemptId))) throw new HttpError(400, 'quiz_answer_invalid')
+  let quiz: Row[] = Array.isArray(les.quiz) ? les.quiz : []
+  const query = db.from('lesson_quiz_attempts').select('*').eq('user_id', row.id).eq('lesson_id', id).eq('practice', false)
+  if (body.attemptId !== undefined) query.eq('id', body.attemptId)
+  const { data: attempt, error: attemptError } = await query.maybeSingle()
+  if (attemptError) throw new HttpError(500, 'db')
+  // Historical completions have no recorded attempt; keep them idempotent without regrading.
+  if (previous && !attempt && !body.attemptId) return { already: true, gained: 0, base: 0, bonus: 0, score: previous.score, total: previous.total, new_achievements: [], me: await buildMe(row) }
+  let answers: number[] = []
   let score = 0
   let bonus = 0
-  quiz.forEach((q, i) => {
-    if (Number(answers[i]) === q.correct) {
-      combo++
-      score++
-      bonus += 10 + 5 * Math.min(combo - 1, 2)
-    } else {
-      combo = 0
-    }
-  })
+  if (quiz.length || attempt || body.attemptId !== undefined) {
+    if (!attempt || !attempt.completed_at || attempt.answers.length !== attempt.quiz.length) throw new HttpError(409, 'quiz_required')
+    answers = attempt.answers
+    if (body.answers !== undefined && (!Array.isArray(body.answers) || body.answers.length !== answers.length || body.answers.some((value: unknown, index: number) => value !== answers[index]))) throw new HttpError(409, 'quiz_answers_mismatch')
+    quiz = attempt.quiz
+    score = attempt.score
+    bonus = attempt.bonus
+  }
   const gained = les.xp + bonus
   const { data: inserted, error } = await db.rpc('complete_lesson', {
     p_user: row.id,
@@ -485,7 +577,7 @@ async function complete(body: Row) {
     p_xp: gained,
   })
   // Раньше сбой базы выглядел как «урок уже пройден» и XP молча терялись.
-  if (error) throw new HttpError(500, 'db')
+  quizDbError(error)
   if (!inserted) return { already: true, gained: 0, base: 0, bonus: 0, score, total: quiz.length, new_achievements: [], me: await buildMe(row) }
 
   const earned: string[] = []
@@ -682,6 +774,11 @@ async function adventTicketInvoice(body: Row) {
 
 async function top(body: Row) {
   const row = await member(body)
+  if (OG_PLATFORM_ENABLED) {
+    const result = await db.rpc('az_og_progress_top', { p_actor: row.id })
+    if (result.error || !result.data) throw new HttpError(503, 'platform_not_ready')
+    return result.data
+  }
   // В рейтинге только подписчики: экран так и подписан, и отписавшиеся не занимают места.
   const { data } = await db
     .from('users')
@@ -926,8 +1023,14 @@ async function adminAnnounce(body: Row) {
   if (!les || !les.published) throw new HttpError(400, 'not_published')
   if (!s.channel?.id || !s.bot?.username) throw new HttpError(400, 'not_ready')
   const link = `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=l${les.id}`
-  const meta = les.kind === 'story' ? 'Сторис' : `${les.minutes} мин · +${les.xp} XP`
-  const text = `${escapeHtml(les.emoji)} <b>${escapeHtml(les.title)}</b>\n${escapeHtml(les.subtitle)}\n\n${meta}`
+  const cat = les.category ? `#${escapeHtml(String(les.category).replace(/[\s-]+/g, '_'))}` : ''
+  const meta = les.kind === 'story' ? '⚡ Короткая история' : `⏱ ${les.minutes} мин · ⚡ +${les.xp} XP`
+  const text = [
+    `${escapeHtml(les.emoji)} <b>${escapeHtml(les.title)}</b>`,
+    les.subtitle ? `${escapeHtml(les.subtitle)}` : '',
+    '',
+    [meta, cat].filter(Boolean).join('  '),
+  ].filter((line, i) => i === 2 || line !== '').join('\n')
   const r = await tg('sendMessage', {
     chat_id: s.channel.id,
     text,
@@ -938,19 +1041,118 @@ async function adminAnnounce(body: Row) {
   return { ok: true }
 }
 
+// ---------- Бот: команды профиля и новостей ----------
+
+// /profile (и псевдоним /me): та же аналитика, что во вкладке профиля — XP, уровень, стрик, место.
+async function handleProfile(chatId: number, userId: number, s: Settings) {
+  const appUrl = typeof s.app_url === 'string' ? s.app_url : ''
+  try {
+    const { data: row } = await db.from('users').select('*').eq('id', userId).maybeSingle()
+    if (!row) {
+      await tg('sendMessage', {
+        chat_id: chatId,
+        text: 'Профиля пока нет. Открой приложение один раз через /start — тогда появится статистика.',
+        ...(appUrl
+          ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть OG CRE8R²', web_app: { url: appUrl } }]] } }
+          : {}),
+      })
+      return
+    }
+    const me = await buildMe(row)
+    const lvl = levelOf(me.xp)
+    const achTotal = 9
+    const achGot = Array.isArray(me.achievements) ? me.achievements.length : 0
+    const lines = [
+      `<b>${escapeHtml(me.name)}</b> — ${escapeHtml(lvl.emoji)} ${escapeHtml(lvl.title)}, уровень ${lvl.index}`,
+      `⚡ ${me.xp} XP · 🏆 место ${me.rank}`,
+      `🔥 стрик ${me.streak} · лучший ${me.best_streak}`,
+      `📚 уроков: ${me.lessons_done} · 🏅 ачивки ${achGot}/${achTotal}`,
+      `🤝 приглашено: ${me.invited} · ❄️ заморозки: ${me.freezes}`,
+      lvl.next ? `До уровня «${escapeHtml(lvl.next.title)}» осталось ${lvl.left} XP.` : 'Максимальный уровень.',
+      me.daily_claimed ? 'Бонус дня уже забран.' : 'Бонус дня ждёт в приложении.',
+    ]
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: lines.join('\n'),
+      parse_mode: 'HTML',
+      ...(appUrl
+        ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть профиль', web_app: { url: appUrl } }]] } }
+        : {}),
+    })
+  } catch (e) {
+    console.error('profile_cmd', e)
+    await tg('sendMessage', { chat_id: chatId, text: 'Не получилось достать профиль. Загляни чуть позже.' })
+  }
+}
+
+// /news: три свежих опубликованных урока из общей ленты (без уроков закрытых курсов).
+async function handleNews(chatId: number, s: Settings) {
+  const appUrl = typeof s.app_url === 'string' ? s.app_url : ''
+  const botName = s.bot?.username ? String(s.bot.username) : ''
+  try {
+    const { data, error } = await db
+      .from('lessons')
+      .select('id,title,subtitle,emoji,minutes,xp,published_at')
+      .eq('published', true)
+      .eq('kind', 'lesson')
+      .is('course_id', null)
+      .order('published_at', { ascending: false })
+      .limit(3)
+    if (error) throw error
+    const items = data ?? []
+    if (!items.length) {
+      await tg('sendMessage', { chat_id: chatId, text: 'Пока пусто. Первый урок появится здесь сразу после анонса.' })
+      return
+    }
+    const lines = items.map((l: Row, i: number) => {
+      const title = escapeHtml(String(l.title ?? 'Без названия'))
+      const sub = str(l.subtitle, 120)
+      const meta = `${Number(l.minutes) || 3} мин · +${Number(l.xp) || 0} XP`
+      return `${i + 1}. ${escapeHtml(String(l.emoji ?? '✨'))} <b>${title}</b>\n${sub ? `${escapeHtml(sub)}\n` : ''}${escapeHtml(meta)}`
+    })
+    const payload: Row = { chat_id: chatId, text: `Свежее в OG CRE8R²:\n\n${lines.join('\n\n')}`, parse_mode: 'HTML' }
+    if (appUrl) {
+      payload.reply_markup = {
+        inline_keyboard: items.map((l: Row) => [{ text: `Открыть: ${String(l.title ?? '').slice(0, 24) || 'урок'}`, web_app: { url: `${appUrl}/?sp=l${l.id}` } }]),
+      }
+    } else if (botName) {
+      const mainApp = !!s.bot?.main_app
+      payload.reply_markup = {
+        inline_keyboard: items.map((l: Row) => [{ text: `Открыть: ${String(l.title ?? '').slice(0, 24) || 'урок'}`, url: `https://t.me/${botName}?${mainApp ? 'startapp' : 'start'}=l${l.id}` }]),
+      }
+    }
+    await tg('sendMessage', payload)
+  } catch (e) {
+    console.error('news_cmd', e)
+    await tg('sendMessage', { chat_id: chatId, text: 'Не получилось достать новости. Загляни чуть позже.' })
+  }
+}
+
 // ---------- Бот ----------
 
 async function webhook(req: Request) {
   if (!BOT_TOKEN) return json({ ok: false }, 503)
   if (req.headers.get('x-telegram-bot-api-secret-token') !== (await webhookSecret())) return json({ ok: false }, 401)
   const update = await req.json().catch(() => ({}))
+  // One Telegram bot has one webhook. New module invoices use UUID payloads;
+  // legacy course:/catchup: payments and bot commands stay on their existing path.
+  const platformPayload = update.pre_checkout_query?.invoice_payload ?? update.message?.successful_payment?.invoice_payload ?? update.message?.refunded_payment?.invoice_payload
+  if (typeof platformPayload === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(platformPayload)) {
+    const appUrl = Deno.env.get('APP_URL')
+    if (!appUrl) return json({ ok:false, error:'platform_not_configured' },503)
+    const [{createHandler},{createGateway}] = await Promise.all([import('../_shared/handler.ts'),import('../_shared/gateway.ts')])
+    const names = ['ADMIN_TELEGRAM_IDS','OIDC_CLIENT_ID','OIDC_CLIENT_SECRET','ALLOWED_ORIGINS','CRON_SECRET','INTEGRATION_WEBHOOK_SECRET','ADMIN_RETURN_PATH','API_PUBLIC_PATH']
+    const env = {...Object.fromEntries(names.map(name=>[name,Deno.env.get(name)||''])),APP_URL:appUrl,BOT_TOKEN,SUPABASE_URL,ADMIN_TELEGRAM_IDS:Deno.env.get('ADMIN_TELEGRAM_IDS')||'',WEBHOOK_SECRET:await webhookSecret()}
+    return await createHandler({env,gateway:createGateway(SUPABASE_URL,serviceKey())})(new Request(`${SUPABASE_URL}/functions/v1/az-master-api/v1/webhook`,{method:'POST',headers:{'Content-Type':'application/json','x-telegram-bot-api-secret-token':env.WEBHOOK_SECRET},body:JSON.stringify(update)}))
+  }
   // Оплату нельзя потерять: если базу не удалось обновить, отвечаем ошибкой — Telegram пришлёт уведомление ещё раз.
   let retry = false
   try {
     const s = await getSettings()
 
     const msg = update.message
-    if (msg?.chat?.type === 'private' && typeof msg.text === 'string' && msg.text.startsWith('/start')) {
+    const cmd = msg?.chat?.type === 'private' && typeof msg.text === 'string' ? botCmd(msg.text) : ''
+    if (cmd === '/start') {
       const payload = msg.text.split(/\s+/)[1]?.replace(/[^\w-]/g, '').slice(0, 64) ?? ''
       const appUrl = s.app_url
       if (appUrl) {
@@ -964,8 +1166,17 @@ async function webhook(req: Request) {
       }
     }
 
-    if (msg?.chat?.type === 'private' && typeof msg.text === 'string' && msg.text.startsWith('/paysupport')) {
+    if (cmd === '/paysupport') {
       await tg('sendMessage', { chat_id: msg.chat.id, text: 'Вопрос по оплате? Напиши @elazart — разберёмся и вернём звёзды, если курс не открылся.' })
+    }
+
+    if (cmd === '/profile' || cmd === '/me') {
+      const userId = botSender(msg)
+      if (userId) await handleProfile(msg.chat.id, userId, s)
+    }
+
+    if (cmd === '/news') {
+      await handleNews(msg.chat.id, s)
     }
 
     // Telegram ждёт ответа на проверку перед оплатой не дольше 10 секунд.
@@ -1034,7 +1245,12 @@ async function webhook(req: Request) {
           if (t.error && t.error.code !== '23505') retry = true
           else if (!t.error) {
             await logEvent(userId, 'purchase', null, { catchup: true, stars: paid.total_amount })
-            await tg('sendMessage', { chat_id: userId, text: '🎟 Билет получен. Открой календарь и выбери пропущенную дверь.' })
+            await tg('sendMessage', {
+              chat_id: userId,
+              parse_mode: 'HTML',
+              text: '🎟 <b>Билет успешно получен!</b>\n\nЗвёзды списаны, билет уже на твоём балансе. Открой календарь и выбери любую пропущенную дверь, чтобы наверстать прогресс.',
+              ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: '🚀 Открыть календарь', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
+            })
           }
         }
       }
@@ -1115,6 +1331,8 @@ async function setup() {
   await tg('setMyCommands', {
     commands: [
       { command: 'start', description: 'Открыть OG CRE8R²' },
+      { command: 'profile', description: 'Мой прогресс' },
+      { command: 'news', description: 'Три свежие новости' },
       { command: 'paysupport', description: 'Вопрос по оплате' },
     ],
   })
@@ -1454,20 +1672,22 @@ async function awardOnOpen(row: Row, opened: number, day: number, today: number,
 }
 
 // Приз дублируем в чат с ботом: так он не потеряется, даже если человек закроет приложение.
-async function notifyRewards(userId: number, fresh: Row[], s: Settings, heading = 'Награда открыта!') {
+async function notifyRewards(userId: number, fresh: Row[], s: Settings, heading = '🎉 <b>Поздравляем! Награда получена:</b>') {
   const detail = (c: Row) => {
-    if (c.kind === 'promo') return `Код: <code>${c.code}</code>`
+    if (c.kind === 'promo') return `🎟 Код: <code>${c.code}</code>\n<i>(Покажи этот код на кассе — он одноразовый)</i>`
     if (c.kind === 'message') return escapeHtml(c.content?.text ?? '')
     if (c.kind === 'link' || c.kind === 'video') return escapeHtml(c.content?.url ?? '')
+    if (c.kind === 'course') return '🎓 Доступ к курсу уже открыт в твоём профиле!'
+    if (c.kind === 'lesson') return '📖 Урок уже разблокирован в приложении.'
     return 'Уже открыт в приложении.'
   }
-  const lines = fresh.map((c) => `${escapeHtml(c.emoji)} <b>${escapeHtml(c.title)}</b>\n${detail(c)}`).join('\n\n')
+  const lines = fresh.map((c) => `${escapeHtml(c.emoji)} <b>${escapeHtml(c.title)}</b>\n${detail(c)}`).join('\n\n───────────────\n\n')
   const hasCode = fresh.some((c) => c.kind === 'promo')
   await tg('sendMessage', {
     chat_id: userId,
     parse_mode: 'HTML',
-    text: `${heading}\n\n${lines}${hasCode ? '\n\nПокажи код на кассе. Он одноразовый.' : ''}`,
-    ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: 'Открыть календарь', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
+    text: `${heading}\n\n${lines}${hasCode ? '\n\n💡 <i>Код сохранён в календаре — ты всегда можешь открыть его снова.</i>' : ''}`,
+    ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: '🎁 Мои награды в календаре', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
   })
 }
 
@@ -1868,7 +2088,19 @@ async function adminAdventTicketGrant(body: Row) {
   const rows = Array.from({ length: count }, (_, i) => ({ user_id: user.id, source: 'admin', ref: `admin:${user.id}:${stamp}:${i}` }))
   const { error } = await db.from('advent_tickets').insert(rows)
   if (error) throw new HttpError(500, 'db')
-  await tg('sendMessage', { chat_id: user.id, text: `🎟 Автор календаря выдал тебе ${count === 1 ? 'билет' : `билеты: ${count}`} — можно догнать пропущенные двери.` })
+  const s = await getSettings()
+  const appUrl = typeof s.app_url === 'string' ? s.app_url : ''
+  await tg('sendMessage', {
+    chat_id: user.id,
+    parse_mode: 'HTML',
+    text: [
+      `🎟 <b>Тебе начислены билеты календаря!</b>`,
+      '',
+      `Автор календаря выдал тебе ${count === 1 ? 'билет' : `билеты: <b>${count} шт.</b>`}`,
+      `Теперь ты можешь открыть пропущенные двери и забрать награды! 🚪✨`,
+    ].join('\n'),
+    ...(appUrl ? { reply_markup: { inline_keyboard: [[{ text: '✨ Открыть календарь', web_app: { url: `${appUrl}/?sp=advent` } }]] } } : {}),
+  })
   return { name: user.first_name || username, count }
 }
 
@@ -1934,10 +2166,11 @@ async function adminAdventTheme(body: Row) {
   return { ok: true }
 }
 
-// ---------- Напоминание о новой двери (вызывает cron) ----------
-// Telegram пропускает около 30 сообщений в секунду; шлём по 25 и ждём секунду. 3000 человек — примерно 2 минуты.
+// ---------- Напоминание о новой двери и вечерний пуш (вызывает cron / pg_net) ----------
+// Telegram пропускает около 30 сообщений в секунду; шлём пачками по 25 с паузой в 1 сек.
+// Поддерживает курсорную очередь: база любого размера обрабатывается без обрыва и таймаутов.
 
-const PUSH_LIMIT = 3000
+const PUSH_BATCH = 1000
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void }
 
@@ -1949,40 +2182,161 @@ async function adventPush(req: Request) {
   const today = adventToday(cfg)
   await runDueDraws(cfg, today, s)
   if (today < 1 || today > cfg.days) return json({ ok: true, sent: 0, reason: 'out_of_range' })
-  // Повторный вызов cron в тот же день ничего не шлёт.
-  if (s.advent_push_day === today) return json({ ok: true, sent: 0, reason: 'already' })
-  await setSetting('advent_push_day', today)
-  const [door, done, users] = await Promise.all([
-    db.from('advent_doors').select('title,emoji').eq('day', today).maybeSingle(),
+
+  const url = new URL(req.url)
+  let bodyJson: Row = {}
+  try {
+    bodyJson = await req.json()
+  } catch {
+    /* запрос без JSON-тела */
+  }
+
+  const type = String(bodyJson.type ?? url.searchParams.get('type') ?? 'morning')
+  const isEvening = type === 'evening'
+  const reset = bodyJson.reset === true || url.searchParams.get('reset') === '1'
+
+  // Состояние рассылки хранится отдельно для утреннего и вечернего пушей.
+  const stateKey = isEvening ? 'advent_push_evening' : 'advent_push_morning'
+  const state: Row = s[stateKey] ?? {}
+  const dayChanged = state.day !== today
+
+  if (dayChanged || reset) {
+    state.day = today
+    state.cursor = 0
+    state.done = false
+    state.sent = 0
+  } else if (state.done) {
+    return json({ ok: true, sent: 0, reason: 'already_completed', day: today, type })
+  }
+
+  const cursor = Number(state.cursor) || 0
+
+  const [door, done, usersRes] = await Promise.all([
+    db.from('advent_doors').select('title,emoji,kind,xp').eq('day', today).maybeSingle(),
     db.from('advent_opens').select('user_id').eq('day', today),
-    db.from('users').select('id').eq('subscribed', true).order('id').limit(PUSH_LIMIT),
+    db.from('users').select('id').eq('subscribed', true).gt('id', cursor).order('id').limit(PUSH_BATCH),
   ])
+
   if (!door.data) return json({ ok: true, sent: 0, reason: 'no_door' })
+  const users = usersRes.data ?? []
+  if (!users.length) {
+    state.done = true
+    await setSetting(stateKey, state)
+    if (!isEvening) await setSetting('advent_push_day', today)
+    return json({ ok: true, sent: 0, reason: 'completed', day: today, type })
+  }
+
   const skip = new Set((done.data ?? []).map((o) => o.user_id))
-  const ids = (users.data ?? []).map((u) => u.id).filter((id) => !skip.has(id))
-  const text = `${door.data.emoji} Дверь №${today} открыта: ${door.data.title}`
-  const markup = { inline_keyboard: [[{ text: 'Открыть дверь', web_app: { url: `${s.app_url}/?sp=advent` } }]] }
+  const ids = users.map((u) => u.id).filter((id) => !skip.has(id))
+
+  const kindHints: Record<string, string> = {
+    quiz: '🧠 Внутри квиз: ответь без ошибок и получи билет «догнать»!',
+    arcade: '🎮 Внутри аркада: набери комбо очков и забери максимум XP!',
+    scratch: '✨ Внутри скретч-карта: сотри слой и забери скрытую награду!',
+    story: '📖 Вдохновляющая история и свежий инсайт.',
+  }
+  const hint = kindHints[door.data.kind] ?? 'Загляни внутрь и забери награду!'
+  const xpBadge = door.data.xp ? ` · <b>+${door.data.xp} XP</b>` : ''
+
+  const text = isEvening
+    ? [
+        `⏳ <b>Дверь №${today} закроется через несколько часов!</b>`,
+        '',
+        `${door.data.emoji} <b>«${escapeHtml(door.data.title)}»</b>${xpBadge}`,
+        `Не упусти шанс забрать XP и защитить свой стрик без траты заморозки или билета! 🔥`,
+      ].join('\n')
+    : [
+        `🎄 <b>Адвент-календарь: Дверь №${today} открыта!</b>`,
+        '',
+        `${door.data.emoji} <b>«${escapeHtml(door.data.title)}»</b>${xpBadge}`,
+        hint,
+        '',
+        `⚡ <i>Открой дверь сегодня, чтобы забрать максимум XP и не прерывать новогодний стрик!</i>`,
+      ].join('\n')
+
+  const markup = {
+    inline_keyboard: [
+      [{ text: isEvening ? `🚪 Успеть открыть дверь №${today}` : `✨ Открыть дверь №${today}`, web_app: { url: `${s.app_url}/?sp=advent` } }],
+    ],
+  }
+
+  const nextCursor = users[users.length - 1].id
+  const isLastBatch = users.length < PUSH_BATCH
+
   const send = async () => {
     let sent = 0
     for (let i = 0; i < ids.length; i += 25) {
-      const res = await Promise.all(ids.slice(i, i + 25).map((id) => tg('sendMessage', { chat_id: id, text, reply_markup: markup })))
+      const res = await Promise.all(
+        ids.slice(i, i + 25).map((id) => tg('sendMessage', { chat_id: id, text, parse_mode: 'HTML', reply_markup: markup }))
+      )
       sent += res.filter((r) => r.ok).length
       if (i + 25 < ids.length) await new Promise((r) => setTimeout(r, 1000))
     }
-    console.log('advent_push', today, sent, '/', ids.length)
+    state.cursor = nextCursor
+    state.done = isLastBatch
+    state.sent = (state.sent || 0) + sent
+    state.updated_at = new Date().toISOString()
+    await setSetting(stateKey, state)
+    if (!isEvening && isLastBatch) await setSetting('advent_push_day', today)
+    console.log('advent_push', type, today, sent, '/', ids.length, 'cursor:', nextCursor, 'done:', isLastBatch)
   }
-  // Рассылка идёт в фоне: cron (pg_net) не ждёт ответа дольше нескольких секунд, а Supabase держит
-  // функцию живой до конца waitUntil. Без EdgeRuntime (локальный запуск) — ждём сами.
+
   if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(send())
   else await send()
-  return json({ ok: true, queued: ids.length, truncated: (users.data ?? []).length === PUSH_LIMIT })
+
+  return json({
+    ok: true,
+    type,
+    day: today,
+    queued: ids.length,
+    batch_size: users.length,
+    cursor: nextCursor,
+    done: isLastBatch,
+  })
 }
 
 // ---------- Роутер ----------
 
+async function academy(body: Row) {
+  const actor = await member(body)
+  if (typeof body.action !== 'string') throw new HttpError(400, 'academy_unknown_action')
+  try {
+    if (['file_upload','file_finalize','file_download','portfolio_list','portfolio_publish','portfolio_revoke'].includes(body.action)) return await handleAcademyFiles(db,{id:actor.id,is_admin:!!actor.is_admin},body.action,body.payload??{})
+    return await handleAcademy(db, { id: actor.id, is_admin: !!actor.is_admin }, body.action, body.payload ?? {})
+  } catch (error) {
+    if (error instanceof AcademyError) throw new HttpError(error.status, error.code)
+    throw error
+  }
+}
+
+const academyPublicLimits=new Map<string,{count:number;expires:number}>()
+async function academyPublic(req:Request){
+  const ip=(req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown').slice(0,128),now=Date.now()
+  if(academyPublicLimits.size>4096)for(const [key,value] of academyPublicLimits)if(value.expires<now)academyPublicLimits.delete(key)
+  const bucket=academyPublicLimits.get(ip)
+  if(bucket&&bucket.expires>now){if(bucket.count++>=30)throw new HttpError(429,'academy_rate_limited')}
+  else {
+    if(academyPublicLimits.size>=4096){for(const [key,value] of academyPublicLimits)if(value.expires<=now)academyPublicLimits.delete(key)}
+    if(academyPublicLimits.size>=4096)academyPublicLimits.delete(academyPublicLimits.keys().next().value!)
+    academyPublicLimits.set(ip,{count:1,expires:now+60000})
+  }
+  const raw=await req.text();if(raw.length>2000)throw new HttpError(400,'academy_invalid_payload')
+  let body:Row
+  try{body=JSON.parse(raw||'{}')}catch{throw new HttpError(400,'academy_invalid_payload')}
+  if(!body||Array.isArray(body)||typeof body!=='object'||!body.payload||Array.isArray(body.payload)||typeof body.payload!=='object')throw new HttpError(400,'academy_invalid_payload')
+  if(!['certificate_public','portfolio_public'].includes(body.action))throw new HttpError(404,'not_found')
+  const value=body.action==='certificate_public'?body.payload?.code:body.payload?.slug
+  if(typeof value!=='string'||!/^[A-Za-z0-9_-]{12,120}$/.test(value))throw new HttpError(400,'academy_invalid_payload')
+  try{return json(await handleAcademyFiles(db,null,body.action,body.payload??{}))}
+  catch(error){if(error instanceof AcademyError)throw new HttpError(error.status,error.code);throw error}
+}
+
 const routes: Record<string, (body: Row) => Promise<unknown>> = {
+  academy,
   boot,
   lesson,
+  quiz_start: quizStart,
+  quiz_answer: quizAnswer,
   complete,
   daily,
   like,
@@ -2036,6 +2390,7 @@ Deno.serve(async (req) => {
     if (route === 'setup') return await setup()
     if (route === 'health' || route === 'api') return await health()
     if (route === 'advent_push' && req.method === 'POST') return await adventPush(req)
+    if (route === 'academy_public' && req.method === 'POST') return await academyPublic(req)
     // Только собственные ключи: иначе адрес вроде /constructor попадал во встроенные методы объекта.
     const handler = Object.hasOwn(routes, route) ? routes[route] : null
     if (!handler || req.method !== 'POST') return json({ error: 'not_found' }, 404)
