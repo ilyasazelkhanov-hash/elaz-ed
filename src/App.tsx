@@ -24,6 +24,10 @@ const AnalyticsScreen = lazy(() => import('./screens/Analytics').then((m) => ({ 
 const CoursesAdminScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CoursesAdminScreen })))
 const CourseEditorScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CourseEditorScreen })))
 const LabScreen = lazy(() => import('./screens/Lab').then((m) => ({ default: m.LabScreen })))
+const JourneyScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.JourneyScreen })))
+const ClubScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.ClubScreen })))
+const ServicesScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.ServicesScreen })))
+const AcademyScreen = lazy(() => import('./screens/Academy').then((m) => ({ default: m.AcademyScreen })))
 // Адвент нужен только в сезон — грузим экраны календаря, игр и кассы по требованию.
 const AdventScreen = lazy(() => import('./screens/advent/Advent').then((m) => ({ default: m.AdventScreen })))
 const DoorScreen = lazy(() => import('./screens/advent/Door').then((m) => ({ default: m.DoorScreen })))
@@ -86,7 +90,10 @@ function Shell() {
   const reward = useStore((s) => s.reward)
   const pop = useStore((s) => s.pop)
 
-  useEffect(() => bindBack(stack.length > 0 ? pop : null), [stack.length, pop])
+  useEffect(() => bindBack(stack.length > 0 ? () => {
+    if (stack[stack.length - 1]?.type === 'academy') window.dispatchEvent(new Event('og:academy-back'))
+    else pop()
+  } : null), [stack, pop])
 
   // Полоса под системными кнопками проявляется, только когда под неё что-то уехало.
   const scrim = useRef<HTMLDivElement>(null)
@@ -100,6 +107,8 @@ function Shell() {
 
   // Прямая ссылка на урок: t.me/бот?start=l12
   useEffect(() => {
+    const academyPath = location.hash.startsWith('#/academy') ? location.hash.slice(1) : location.pathname.startsWith('/academy') ? location.pathname : null
+    if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
     const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
     const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
     if (id) useStore.getState().push({ type: 'lesson', id })
@@ -156,6 +165,10 @@ function overlayKey(o: Overlay, i: number) {
 
 function OverlayView({ overlay }: { overlay: Overlay }) {
   switch (overlay.type) {
+    case 'academy': return <Suspense fallback={null}><AcademyScreen path={overlay.path}/></Suspense>
+    case 'journey': return <Suspense fallback={null}><JourneyScreen/></Suspense>
+    case 'club': return <Suspense fallback={null}><ClubScreen/></Suspense>
+    case 'services': return <Suspense fallback={null}><ServicesScreen/></Suspense>
     case 'lesson':
       return <LessonScreen id={overlay.id} from={overlay.from} />
     case 'stories':

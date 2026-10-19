@@ -811,7 +811,179 @@ test('напоминание о двери: утренний пуш с подс�
   assert.match(eveMsgs[0].payload.text, /закроется через несколько часов/)
 })
 
+// ---------- Ordinary lesson quizzes: answer keys stay private until committed ----------
+function quizLesson() {
+  const questions = [
+    { q: 'First?', options: ['No', 'Yes'], correct: 1, explain: 'First explanation' },
+    { q: 'Second?', options: ['Yes', 'No'], correct: 0, explain: 'Second explanation' },
+    { q: 'Third?', options: ['No', 'Yes'], correct: 1, explain: 'Third explanation' },
+  ]
+  state.tables.lessons.push({ id: 20, kind: 'lesson', title: 'Secure quiz', course_id: null, published: true, xp: 50, quiz: questions })
+  return questions
+}
+
+test('ordinary public lesson never reveals answer keys or explanations, including completed practice', async () => {
+  await everyoneBoots()
+  quizLesson()
+  for (const completed of [false, true]) {
+    if (completed) state.tables.progress.push({ user_id: BUYER, lesson_id: 20, score: 1, total: 3 })
+    const res = await call('lesson', { id: 20 }, BUYER)
+    assert.equal(res.status, 200)
+    for (const question of res.body.quiz) {
+      assert.equal(Object.hasOwn(question, 'correct'), false)
+      assert.equal(Object.hasOwn(question, 'explain'), false)
+    }
+  }
+})
+
+test('old direct forged perfect answers cannot create progress, XP or catchup tickets', async () => {
+  await everyoneBoots()
+  quizLesson()
+  const xp = state.tables.users.find(u => u.id === BUYER).xp ?? 0
+  const res = await call('complete', { id: 20, answers: [1, 0, 1] }, BUYER)
+  assert.deepEqual(res, { status: 409, body: { error: 'quiz_required' } })
+  assert.equal(state.tables.progress.length, 0)
+  assert.equal(state.tables.users.find(u => u.id === BUYER).xp ?? 0, xp)
+  adventOn()
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 0)
+})
+
+test('reward attempt resumes and locks each answer before any feedback; sequence and actor enforced', async () => {
+  await everyoneBoots()
+  quizLesson()
+  const start = await call('quiz_start', { id: 20, practice: true }, BUYER)
+  assert.equal(start.status, 200)
+  assert.equal(start.body.practice, false)
+  assert.equal(start.body.questions[0].correct, undefined)
+  assert.equal(start.body.questions[0].explain, undefined)
+  const attemptId = start.body.attemptId
+  assert.equal((await call('quiz_start', { id: 20 }, BUYER)).body.attemptId, attemptId)
+  assert.equal((await call('quiz_answer', { attemptId, index: 1, answer: 0 }, BUYER)).body.error, 'quiz_sequence')
+  assert.equal((await call('quiz_answer', { attemptId, index: 0, answer: 1 }, OTHER)).status, 404)
+  const first = await call('quiz_answer', { attemptId, index: 0, answer: 0 }, BUYER)
+  assert.equal(first.status, 200)
+  assert.equal(first.body.correct, false)
+  assert.equal(first.body.correctIndex, 1)
+  assert.equal(first.body.explain, 'First explanation')
+  assert.equal((await call('quiz_answer', { attemptId, index: 0, answer: 1 }, BUYER)).body.error, 'quiz_answer_locked')
+  assert.deepEqual((await call('quiz_answer', { attemptId, index: 0, answer: 0 }, BUYER)).body, first.body)
+  const resumed = await call('quiz_start', { id: 20 }, BUYER)
+  assert.deepEqual(resumed.body.answers, [0])
+  assert.equal(resumed.body.feedback.length, 1)
+  assert.equal(resumed.body.questions[1].correct, undefined)
+  assert.equal((await call('complete', { id: 20, answers: [1, 0, 1], attemptId }, BUYER)).body.error, 'quiz_required')
+})
+
+test('completion derives score/combo from immutable snapshot and rewards only once', async () => {
+  await everyoneBoots()
+  quizLesson()
+  const attemptId = (await call('quiz_start', { id: 20 }, BUYER)).body.attemptId
+  for (const [index, answer] of [1, 0, 1].entries()) {
+    const res = await call('quiz_answer', { attemptId, index, answer }, BUYER)
+    assert.equal(res.status, 200)
+    assert.equal(res.body.score, index + 1)
+    assert.equal(res.body.gained, [10, 15, 20][index])
+  }
+  // Editor changes after start cannot rewrite already committed quiz grading.
+  state.tables.lessons.find(l => l.id === 20).quiz[0].correct = 0
+  const complete = await call('complete', { id: 20, answers: [1, 0, 1], attemptId }, BUYER)
+  assert.equal(complete.status, 200)
+  assert.equal(complete.body.score, 3)
+  assert.equal(complete.body.bonus, 45)
+  assert.equal(complete.body.gained, 95)
+  assert.equal(state.tables.progress.find(p => p.lesson_id === 20).score, 3)
+  const xp = state.tables.users.find(u => u.id === BUYER).xp
+  assert.equal((await call('complete', { id: 20, answers: [1, 0, 1] }, BUYER)).body.already, true)
+  assert.equal((await call('complete', { id: 20, answers: [0, 0, 1] }, BUYER)).body.error, 'quiz_answers_mismatch')
+  assert.equal(state.tables.users.find(u => u.id === BUYER).xp, xp)
+  adventOn()
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 1)
+})
+
+test('changed answer array and foreign or practice attempt cannot upgrade a first result', async () => {
+  await everyoneBoots()
+  quizLesson()
+  const attemptId = (await call('quiz_start', { id: 20 }, BUYER)).body.attemptId
+  for (const [index, answer] of [0, 0, 1].entries()) await call('quiz_answer', { attemptId, index, answer }, BUYER)
+  assert.equal((await call('complete', { id: 20, answers: [1, 0, 1], attemptId }, BUYER)).body.error, 'quiz_answers_mismatch')
+  const result = await call('complete', { id: 20, answers: [0, 0, 1] }, BUYER)
+  assert.equal(result.body.score, 2)
+  assert.equal(result.body.bonus, 25)
+  const practice = await call('quiz_start', { id: 20 }, BUYER)
+  assert.equal(practice.body.practice, true)
+  assert.notEqual(practice.body.attemptId, attemptId)
+  for (const [index, answer] of [1, 0, 1].entries()) await call('quiz_answer', { attemptId: practice.body.attemptId, index, answer }, BUYER)
+  assert.equal((await call('complete', { id: 20, answers: [1, 0, 1], attemptId: practice.body.attemptId }, BUYER)).body.error, 'quiz_required')
+  assert.equal(state.tables.progress.find(p => p.lesson_id === 20).score, 2)
+  adventOn()
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 0)
+})
+
+test('quiz requests reject malformed indexes/answers, locked lessons and DB errors without committing', async () => {
+  await everyoneBoots()
+  quizLesson()
+  assert.equal((await call('quiz_start', { id: 10 }, BUYER)).status, 403)
+  const attemptId = (await call('quiz_start', { id: 20 }, BUYER)).body.attemptId
+  for (const payload of [{ index: -1, answer: 0 }, { index: 0, answer: 9 }, { index: '0', answer: 1 }, { index: 0, answer: '1' }, { index: 0, answer: null }]) {
+    assert.equal((await call('quiz_answer', { attemptId, ...payload }, BUYER)).status, 400)
+  }
+  state.failNext = { table: 'lesson_quiz_attempts', op: 'answer' }
+  assert.equal((await call('quiz_answer', { attemptId, index: 0, answer: 1 }, BUYER)).status, 500)
+  assert.deepEqual((await call('quiz_start', { id: 20 }, BUYER)).body.answers, [])
+})
+
+test('new module payments share the OG webhook and await the private master payment handler', async () => {
+  const priorEnv=Deno.env.get, priorFetch=globalThis.fetch, recorded=[]
+  Deno.env.get=k=>k==='APP_URL'?'https://og.example':priorEnv(k)
+  globalThis.fetch=async(url,init)=>{
+    if(String(url).includes('/rest/v1/rpc/az_webhook')) {recorded.push(JSON.parse(init.body));return Response.json({preCheckoutId:'platform-pcq',accepted:true})}
+    return priorFetch(url,init)
+  }
+  try {
+    const secret=webhookSecret
+    const update={update_id:990,pre_checkout_query:{id:'platform-pcq',from:{id:BUYER},invoice_payload:'12345678-1234-1234-1234-123456789abc',currency:'XTR',total_amount:40}}
+    const res=await handler(new Request(`${SUPABASE_URL}/functions/v1/api/webhook`,{method:'POST',headers:{'content-type':'application/json','x-telegram-bot-api-secret-token':secret},body:JSON.stringify(update)}))
+    assert.equal(res.status,200);assert.deepEqual(recorded,[{p_update:update}])
+    assert.ok(sent('answerPreCheckoutQuery').some(c=>c.payload.pre_checkout_query_id==='platform-pcq'&&c.payload.ok===true))
+    assert.equal(state.tables.payments.length,0)
+  }finally{Deno.env.get=priorEnv;globalThis.fetch=priorFetch}
+})
+
+test('new module webhook database failure returns an error for Telegram retry', async () => {
+  const priorEnv=Deno.env.get,priorFetch=globalThis.fetch
+  Deno.env.get=k=>k==='APP_URL'?'https://og.example':priorEnv(k)
+  globalThis.fetch=async(url,init)=>String(url).includes('/rest/v1/rpc/az_webhook')?Response.json({message:'temporary_failure',code:'XX000'},{status:500}):priorFetch(url,init)
+  try{
+    const secret=webhookSecret
+    const res=await handler(new Request(`${SUPABASE_URL}/functions/v1/api/webhook`,{method:'POST',headers:{'content-type':'application/json','x-telegram-bot-api-secret-token':secret},body:JSON.stringify({update_id:991,message:{from:{id:BUYER},successful_payment:{invoice_payload:'12345678-1234-1234-1234-123456789abc'}}})}))
+    assert.ok(res.status>=400)
+  }finally{Deno.env.get=priorEnv;globalThis.fetch=priorFetch}
+})
+
 // ---------- Запуск ----------
+
+test('academy uses existing Telegram authentication and never trusts supplied actor', async () => {
+  assert.equal((await call('academy', { action:'catalog', payload:{} })).status,401)
+  assert.deepEqual(state.academyCalls,[])
+  await everyoneBoots()
+  const response=await call('academy',{action:'catalog',payload:{},actor_id:ADMIN,is_admin:true},BUYER)
+  assert.equal(response.status,200)
+  assert.equal(state.academyCalls[0].p_actor,BUYER)
+  assert.equal(state.academyCalls[0].p_action,'catalog')
+  assert.deepEqual(state.academyCalls[0].p_payload,{})
+})
+
+test('academy propagates SQL permission/conflict errors and rejects malformed actions', async () => {
+  await everyoneBoots()
+  state.academyReply={data:null,error:{message:'academy_forbidden'}}
+  assert.equal((await call('academy',{action:'admin_save',payload:{entity:{}}},BUYER)).status,403)
+  state.academyReply={data:null,error:{message:'academy_version_conflict'}}
+  assert.equal((await call('academy',{action:'admin_save',payload:{entity:{}}},ADMIN)).status,409)
+  const count=state.academyCalls.length
+  assert.equal((await call('academy',{action:'constructor',payload:{}},ADMIN)).status,400)
+  assert.equal((await call('academy',{action:'catalog',payload:[]},ADMIN)).status,400)
+  assert.equal(state.academyCalls.length,count)
+})
 
 let failed = 0
 for (const { name, fn } of tests) {

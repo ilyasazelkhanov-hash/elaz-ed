@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: { port: 5173, host: true },
   build: {
+    // Граф импортов нужен для сравнения реальной загрузки входов и ленивых экранов.
+    manifest: true,
     rolldownOptions: {
       output: {
         // Библиотеки лежат отдельно от кода приложения: после очередной выкладки телефон докачивает только изменившийся файл.

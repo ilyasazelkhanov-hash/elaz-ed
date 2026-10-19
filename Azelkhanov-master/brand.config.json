@@ -1,0 +1,29 @@
+{
+  "id": "azelkhanov",
+  "name": "Azelkhanov",
+  "tagline": "Больше, чем просто быть вместе.",
+  "logo": "/brand/Azelkhanov-full-logo-transparent.png",
+  "monogram": "/brand/Azelkhanov-monogram-AZ-transparent.png",
+  "wordmark": "/brand/Azelkhanov-wordmark-transparent.png",
+  "colors": {
+    "primary": "#245BFF",
+    "ink": "#0B1020",
+    "background": "#F2F1EE",
+    "accent": "#C5F277",
+    "surface": "#FFFFFF",
+    "muted": "#646B78"
+  },
+  "fonts": {
+    "body": "Onest Variable",
+    "display": "Unbounded Variable"
+  },
+  "dark": {
+    "background": "#101116",
+    "surface": "#191B23",
+    "ink": "#F3F4F7",
+    "muted": "#A5AAB7"
+  },
+  "defaultTheme": "dark",
+  "radius": 24,
+  "motion": "full"
+}

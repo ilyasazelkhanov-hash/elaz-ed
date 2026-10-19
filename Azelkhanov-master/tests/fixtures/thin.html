@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <button id="force-disabled">Проверить закрытый маршрут</button>
+    <script type="module">
+      import React from 'react'
+      import { createRoot } from 'react-dom/client'
+      import App from '/src/App.tsx'
+      import { presets } from '/src/platform/config.ts'
+      import brand from '/brand.config.json'
+      import { usePlatform } from '/src/platform/store.ts'
+      const config = {
+        ...presets.services,
+        id: 'thin-test',
+        modules: ['commerce', 'events'],
+        navigation: ['home', 'commerce', 'events', 'profile'],
+        homeBlocks: ['hero', 'commerce', 'events'],
+      }
+      createRoot(document.getElementById('root')).render(React.createElement(App, { config, brand }))
+      document.getElementById('force-disabled').onclick = () => usePlatform.getState().push({ type: 'learning' })
+    </script>
+  </body>
+</html>

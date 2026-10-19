@@ -1,0 +1,20 @@
+# Реализация AI Academy по пользовательскому ТЗ
+
+Источник: content/ai-academy/reference/AI_Academy_Codex_Implementation_TZ_2026.md.
+
+- Audit: complete — integration-audit.md.
+- Seed: complete — оригиналы сохранены; 9/28/112/448/147, 1 222 исходные связи. 744 сущности, 1 827 дедуплицированных связей с учётом refs, 27 зависимостей, 59 глав видео. Dry-run и локальные тесты выполнены.
+- Backend: complete locally — schema, RPC, роли, квизы разных типов, reviews, навыки, Stars-доступ, банк блоков, private files, public portfolio/verification, аналитика.
+- Frontend: complete locally — мобильный OG, каталог, обучение, библиотека, редактор, review, импорт, аудит, компетенции, банк блоков, drag reorder, RU/KK/EN, приватные вложения и публичные страницы.
+- Integration: complete locally — единый /academy API с Telegram auth, Home CTA, lazy overlay, demo persistence; без cloud release.
+- QA: passed — 58 Academy, 68 API, 8 старых quiz DB, 3 experience; browser 4 widths и PostgreSQL-backed учебный цикл с публичными страницами; TypeScript/Vite + 38 metadata pages. Подробности и границы в implementation-report.md.
+
+Ruling: для учебного дерева использовать aa_nodes с проверяемыми типами и FK, а не переименовывать/перезаполнять действующие lessons/courses — сохраняет совместимость OG.
+
+Ruling: отделить учебный прогресс академии от ранее предложенной новой экономики рангов — предоставленное ТЗ не является подтверждением изменения XP; outline не награждается.
+
+Ruling: первоначальные 448 занятий — учебные планы, не опубликованные лекции. Не создавать искусственных полных уроков и фиктивных оплаченных доступов для презентации.
+
+Ruling: облачный релиз и production migrations не выполняются во время локальной реализации; сначала проверяемые артефакты и отчёт.
+
+19 октября: добавлен отдельный пакет 32 наполненных занятий Core/VC-101 с 19 первоисточниками; 416 занятий остаются планами. Визуал/CTA переработаны под OG. authored-content.md содержит порядок импорта и проверки.

@@ -1,0 +1,376 @@
+{
+  "schemaVersion": 1,
+  "graphSource": "static-import-declarations (no manifest in snapshot)",
+  "notes": [
+    "gzipBytes is the sum of individually gzipped files, not measured transfer size.",
+    "The initial graph includes HTML scripts/styles and static imports; runtime lazy routes are excluded.",
+    "Explicit --include chunks add their static dependencies; they are a scenario inventory, not an observed request list.",
+    "Font faces use unicode-range: emitted font bytes do not imply downloads. Embedded font bytes are already included in CSS.",
+    "Without a manifest, CSS attached only to lazy chunks is not inferred; use the browser waterfall for that snapshot."
+  ],
+  "emitted": {
+    "js": {
+      "count": 63,
+      "bytes": 2572926,
+      "gzipBytes": 622620,
+      "files": [
+        "assets/Academy-75kfPp64.js",
+        "assets/AcademyPublic-B-IWpbI4.js",
+        "assets/Admin-CcO7py70.js",
+        "assets/Admin-Cuc2nyjF.js",
+        "assets/AdminCourses-wPMMLV4z.js",
+        "assets/AdminEditor-4TyLgarh.js",
+        "assets/Advent-BzE9y0To.js",
+        "assets/AdventAdmin-B7JMThTT.js",
+        "assets/Analytics-B2l3Z-3f.js",
+        "assets/App-CYa5hbzT.js",
+        "assets/Catchup-DlDxhC-y.js",
+        "assets/Detail-F1eYu-8X.js",
+        "assets/Door-DUI2LkL8.js",
+        "assets/Experience-zxjlfF3a.js",
+        "assets/Games-BkVzYWk4.js",
+        "assets/Lab-llsNsaxc.js",
+        "assets/Markdown-BKreqAHS.js",
+        "assets/MarkdownImpl-BbSl4nql.js",
+        "assets/PlatformSpace-BWV2LQuW.js",
+        "assets/Profile-C5Hm0ATT.js",
+        "assets/Redeem-C-4FWKKR.js",
+        "assets/Sculpture-Ckoa3L2-.js",
+        "assets/academy-BCn6Jb5T.js",
+        "assets/academy-BNM9ro3A.js",
+        "assets/academy-domain-CsILN-Ny.js",
+        "assets/academy-quiz-PNnl0Jhq.js",
+        "assets/academy-types-CFmTMOD5.js",
+        "assets/advent-DH4XsafP.js",
+        "assets/app.config-DbdKcmwf.js",
+        "assets/arrow-up-right-Cxg4nTTA.js",
+        "assets/book-open-Csst7dar.js",
+        "assets/catalog.normalized-BLT4Xz9k.js",
+        "assets/client-BAH1Lxtc.js",
+        "assets/confetti.module-eBcALTRV.js",
+        "assets/config-B3K95HyE.js",
+        "assets/copy-Bjpou0dR.js",
+        "assets/demo-CUR0P1By.js",
+        "assets/download-B5eBnywS.js",
+        "assets/experience-C1B0d79m.js",
+        "assets/eye-DXeXNiHu.js",
+        "assets/gift-DbSf8J43.js",
+        "assets/graduation-cap-Cf5hGkfB.js",
+        "assets/index-DdVfNU6Z.js",
+        "assets/lib-B8KhlitW.js",
+        "assets/mock-IhPbSIyy.js",
+        "assets/motion-D1zxU4Wr.js",
+        "assets/og-config-D2KhdzUA.js",
+        "assets/plus-BSQl1qzV.js",
+        "assets/react-BvB9BS1T.js",
+        "assets/refresh-cw-7d-lWzO6.js",
+        "assets/rolldown-runtime-hePW80VL.js",
+        "assets/send-DoN6XjJj.js",
+        "assets/share-2-CPsVI-b7.js",
+        "assets/shield-check-rT-4292N.js",
+        "assets/track-BHEmqWMX.js",
+        "assets/trash-DPLtjWyQ.js",
+        "assets/trophy-c7wU-XKb.js",
+        "assets/ui-B8cqo7cy.js",
+        "assets/ui-EBPEIbmL.js",
+        "assets/upload-BJRb1nvB.js",
+        "assets/user-plus-BRiEV53Y.js",
+        "assets/x-DhrhFasq.js",
+        "theme.js"
+      ]
+    },
+    "css": {
+      "count": 3,
+      "bytes": 220514,
+      "gzipBytes": 45344,
+      "files": [
+        "assets/PlatformSpace-BZvO014K.css",
+        "assets/academy-cetJvEPn.css",
+        "assets/index-_gSDn56Z.css"
+      ]
+    },
+    "externalFonts": {
+      "count": 11,
+      "bytes": 359220,
+      "gzipBytes": 355536,
+      "files": [
+        "assets/onest-cyrillic-ext-wght-normal-DOFToQv1.woff2",
+        "assets/onest-cyrillic-wght-normal-DayYxulF.woff2",
+        "assets/onest-latin-ext-wght-normal-QAhDxQuo.woff2",
+        "assets/onest-latin-wght-normal-Dun_Rd-l.woff2",
+        "assets/onest-math-wght-normal-Bl4ZGkZl.woff2",
+        "assets/onest-symbols-wght-normal-DxQzqQfC.woff2",
+        "assets/onest-vietnamese-wght-normal-BBxOatbv.woff2",
+        "assets/unbounded-cyrillic-wght-normal-C627f1f8.woff2",
+        "assets/unbounded-latin-ext-wght-normal-D6H-S6MW.woff2",
+        "assets/unbounded-latin-wght-normal-D5afBTBx.woff2",
+        "assets/unbounded-vietnamese-wght-normal-rat7GD3o.woff2"
+      ]
+    }
+  },
+  "htmlInitial": {
+    "js": {
+      "count": 4,
+      "bytes": 225411,
+      "gzipBytes": 70903,
+      "files": [
+        "assets/index-DdVfNU6Z.js",
+        "assets/react-BvB9BS1T.js",
+        "assets/rolldown-runtime-hePW80VL.js",
+        "theme.js"
+      ]
+    },
+    "css": {
+      "count": 1,
+      "bytes": 69295,
+      "gzipBytes": 16432,
+      "files": [
+        "assets/index-_gSDn56Z.css"
+      ]
+    }
+  },
+  "selectedScenario": {
+    "selectors": [
+      "App",
+      "Academy"
+    ],
+    "chunks": [
+      "assets/App-CYa5hbzT.js",
+      "assets/Academy-75kfPp64.js"
+    ],
+    "js": {
+      "count": 31,
+      "bytes": 679915,
+      "gzipBytes": 218274,
+      "files": [
+        "assets/Academy-75kfPp64.js",
+        "assets/App-CYa5hbzT.js",
+        "assets/Markdown-BKreqAHS.js",
+        "assets/academy-BCn6Jb5T.js",
+        "assets/academy-BNM9ro3A.js",
+        "assets/academy-quiz-PNnl0Jhq.js",
+        "assets/academy-types-CFmTMOD5.js",
+        "assets/advent-DH4XsafP.js",
+        "assets/arrow-up-right-Cxg4nTTA.js",
+        "assets/book-open-Csst7dar.js",
+        "assets/confetti.module-eBcALTRV.js",
+        "assets/copy-Bjpou0dR.js",
+        "assets/download-B5eBnywS.js",
+        "assets/experience-C1B0d79m.js",
+        "assets/eye-DXeXNiHu.js",
+        "assets/graduation-cap-Cf5hGkfB.js",
+        "assets/index-DdVfNU6Z.js",
+        "assets/motion-D1zxU4Wr.js",
+        "assets/og-config-D2KhdzUA.js",
+        "assets/plus-BSQl1qzV.js",
+        "assets/react-BvB9BS1T.js",
+        "assets/refresh-cw-7d-lWzO6.js",
+        "assets/rolldown-runtime-hePW80VL.js",
+        "assets/send-DoN6XjJj.js",
+        "assets/share-2-CPsVI-b7.js",
+        "assets/track-BHEmqWMX.js",
+        "assets/trash-DPLtjWyQ.js",
+        "assets/trophy-c7wU-XKb.js",
+        "assets/ui-EBPEIbmL.js",
+        "assets/x-DhrhFasq.js",
+        "theme.js"
+      ]
+    },
+    "css": {
+      "count": 1,
+      "bytes": 69295,
+      "gzipBytes": 16432,
+      "files": [
+        "assets/index-_gSDn56Z.css"
+      ]
+    }
+  },
+  "fonts": {
+    "faces": 12,
+    "bytesIncludingEmbedded": 361060,
+    "files": [
+      {
+        "family": "Onest Variable",
+        "weight": "100 900",
+        "display": "swap",
+        "unicodeRange": "U+460-52F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F",
+        "file": "assets/onest-cyrillic-ext-wght-normal-DOFToQv1.woff2",
+        "embedded": false,
+        "bytes": 10540,
+        "sha256": "268f03691b3d06e57abcf20f9277e314ea8784298983aab5b40c1b91965027e1"
+      },
+      {
+        "family": "Onest Variable",
+        "weight": "100 900",
+        "display": "swap",
+        "unicodeRange": "U+301,U+400-45F,U+490-491,U+4B0-4B1,U+2116",
+        "file": "assets/onest-cyrillic-wght-normal-DayYxulF.woff2",
+        "embedded": false,
+        "bytes": 15860,
+        "sha256": "68e5e01d6265bd68967746d4f5a9d18d0e6cbb5d15583c7082d6384ab1229b27"
+      },
+      {
+        "family": "Onest Variable",
+        "weight": "100 900",
+        "display": "swap",
+        "unicodeRange": "U+302-303,U+305,U+307-308,U+310,U+312,U+315,U+31A,U+326-327,U+32C,U+32F-330,U+332-333,U+338,U+33A,U+346,U+34D,U+391-3A1,U+3A3-3A9,U+3B1-3C9,U+3D1,U+3D5-3D6,U+3F0-3F1,U+3F4-3F5,U+2016-2017,U+2034-2038,U+203C,U+2040,U+2043,U+2047,U+2050,U+2057,U+205F,U+2070-2071,U+2074-208E,U+2090-209C,U+20D0-20DC,U+20E1,U+20E5-20EF,U+2100-2112,U+2114-2115,U+2117-2121,U+2123-214F,U+2190,U+2192,U+2194-21AE,U+21B0-21E5,U+21F1-21F2,U+21F4-2211,U+2213-2214,U+2216-22FF,U+2308-230B,U+2310,U+2319,U+231C-2321,U+2336-237A,U+237C,U+2395,U+239B-23B7,U+23D0,U+23DC-23E1,U+2474-2475,U+25AF,U+25B3,U+25B7,U+25BD,U+25C1,U+25CA,U+25CC,U+25FB,U+266D-266F,U+27C0-27FF,U+2900-2AFF,U+2B0E-2B11,U+2B30-2B4C,U+2BFE,U+3030,U+FF5B,U+FF5D,U+1D400-1D7FF,U+1EE??",
+        "file": "assets/onest-math-wght-normal-Bl4ZGkZl.woff2",
+        "embedded": false,
+        "bytes": 25480,
+        "sha256": "c74952a8c0c8c558c4f879f83773cf529d11350609f7073f5b2c5999dec46041"
+      },
+      {
+        "family": "Onest Variable",
+        "weight": "100 900",
+        "display": "swap",
+        "unicodeRange": "U+1-C,U+E-1F,U+7F-9F,U+20DD-20E0,U+20E2-20E4,U+2150-218F,U+2190,U+2192,U+2194-2199,U+21AF,U+21E6-21F0,U+21F3,U+2218-2219,U+2299,U+22C4-22C6,U+2300-243F,U+2440-244A,U+2460-24FF,U+25A0-27BF,U+28??,U+2921-2922,U+2981,U+29BF,U+29EB,U+2B??,U+4DC0-4DFF,U+FFF9-FFFB,U+10140-1018E,U+10190-1019C,U+101A0,U+101D0-101FD,U+102E0-102FB,U+10E60-10E7E,U+1D2C0-1D2D3,U+1D2E0-1D37F,U+1F0??,U+1F100-1F1AD,U+1F1E6-1F1FF,U+1F30D-1F30F,U+1F315,U+1F31C,U+1F31E,U+1F320-1F32C,U+1F336,U+1F378,U+1F37D,U+1F382,U+1F393-1F39F,U+1F3A7-1F3A8,U+1F3AC-1F3AF,U+1F3C2,U+1F3C4-1F3C6,U+1F3CA-1F3CE,U+1F3D4-1F3E0,U+1F3ED,U+1F3F1-1F3F3,U+1F3F5-1F3F7,U+1F408,U+1F415,U+1F41F,U+1F426,U+1F43F,U+1F441-1F442,U+1F444,U+1F446-1F449,U+1F44C-1F44E,U+1F453,U+1F46A,U+1F47D,U+1F4A3,U+1F4B0,U+1F4B3,U+1F4B9,U+1F4BB,U+1F4BF,U+1F4C8-1F4CB,U+1F4D6,U+1F4DA,U+1F4DF,U+1F4E3-1F4E6,U+1F4EA-1F4ED,U+1F4F7,U+1F4F9-1F4FB,U+1F4FD-1F4FE,U+1F503,U+1F507-1F50B,U+1F50D,U+1F512-1F513,U+1F53E-1F54A,U+1F54F-1F5FA,U+1F610,U+1F650-1F67F,U+1F687,U+1F68D,U+1F691,U+1F694,U+1F698,U+1F6AD,U+1F6B2,U+1F6B9-1F6BA,U+1F6BC,U+1F6C6-1F6CF,U+1F6D3-1F6D7,U+1F6E0-1F6EA,U+1F6F0-1F6F3,U+1F6F7-1F6FC,U+1F7??,U+1F800-1F80B,U+1F810-1F847,U+1F850-1F859,U+1F860-1F887,U+1F890-1F8AD,U+1F8B0-1F8BB,U+1F8C0-1F8C1,U+1F900-1F90B,U+1F93B,U+1F946,U+1F984,U+1F996,U+1F9E9,U+1FA00-1FA6F,U+1FA70-1FA7C,U+1FA80-1FA89,U+1FA8F-1FAC6,U+1FACE-1FADC,U+1FADF-1FAE9,U+1FAF0-1FAF8,U+1FB??",
+        "file": "assets/onest-symbols-wght-normal-DxQzqQfC.woff2",
+        "embedded": false,
+        "bytes": 18168,
+        "sha256": "2ec2d45d2ec0770e2c18cba2dba5126cf2dcff181d23ad192e9fffeb4af4b0b6"
+      },
+      {
+        "family": "Onest Variable",
+        "weight": "100 900",
+        "display": "swap",
+        "unicodeRange": "U+102-103,U+110-111,U+128-129,U+168-169,U+1A0-1A1,U+1AF-1B0,U+300-301,U+303-304,U+308-309,U+323,U+329,U+1EA0-1EF9,U+20AB",
+        "file": "assets/onest-vietnamese-wght-normal-BBxOatbv.woff2",
+        "embedded": false,
+        "bytes": 12400,
+        "sha256": "d852d4d094a3a46d701d16245deb7ca83b16b5bd69e20aa0aba089392ad69474"
+      },
+      {
+        "family": "Onest Variable",
+        "weight": "100 900",
+        "display": "swap",
+        "unicodeRange": "U+100-2BA,U+2BD-2C5,U+2C7-2CC,U+2CE-2D7,U+2DD-2FF,U+304,U+308,U+329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF",
+        "file": "assets/onest-latin-ext-wght-normal-QAhDxQuo.woff2",
+        "embedded": false,
+        "bytes": 28452,
+        "sha256": "14e7d3079b75860e2ab50efc6c318c398fdb46ede9b56e625f12ae70a3c5d9a4"
+      },
+      {
+        "family": "Onest Variable",
+        "weight": "100 900",
+        "display": "swap",
+        "unicodeRange": "U+??,U+131,U+152-153,U+2BB-2BC,U+2C6,U+2DA,U+2DC,U+304,U+308,U+329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD",
+        "file": "assets/onest-latin-wght-normal-Dun_Rd-l.woff2",
+        "embedded": false,
+        "bytes": 33760,
+        "sha256": "052df74533250c2e0ca0c4bdd32de594e107d99c1648e63820ef9c6142067828"
+      },
+      {
+        "family": "Unbounded Variable",
+        "weight": "200 900",
+        "display": "swap",
+        "unicodeRange": "U+460-52F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F",
+        "file": null,
+        "embedded": true,
+        "bytes": 1840,
+        "sha256": "f25c38d28da3d57b68419590e7165c382e99bab3548baf4a498af93f87d3e518"
+      },
+      {
+        "family": "Unbounded Variable",
+        "weight": "200 900",
+        "display": "swap",
+        "unicodeRange": "U+301,U+400-45F,U+490-491,U+4B0-4B1,U+2116",
+        "file": "assets/unbounded-cyrillic-wght-normal-C627f1f8.woff2",
+        "embedded": false,
+        "bytes": 31424,
+        "sha256": "e30bf6a6063b6a47232bbd657e24c7cf4fdaf76fc2c50d92d9ee63e2ad2087cf"
+      },
+      {
+        "family": "Unbounded Variable",
+        "weight": "200 900",
+        "display": "swap",
+        "unicodeRange": "U+102-103,U+110-111,U+128-129,U+168-169,U+1A0-1A1,U+1AF-1B0,U+300-301,U+303-304,U+308-309,U+323,U+329,U+1EA0-1EF9,U+20AB",
+        "file": "assets/unbounded-vietnamese-wght-normal-rat7GD3o.woff2",
+        "embedded": false,
+        "bytes": 13884,
+        "sha256": "aa6b9cba3768a781df88a462a85ca40c6644662bb7d59ab4375ad1ff64f51251"
+      },
+      {
+        "family": "Unbounded Variable",
+        "weight": "200 900",
+        "display": "swap",
+        "unicodeRange": "U+100-2BA,U+2BD-2C5,U+2C7-2CC,U+2CE-2D7,U+2DD-2FF,U+304,U+308,U+329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF",
+        "file": "assets/unbounded-latin-ext-wght-normal-D6H-S6MW.woff2",
+        "embedded": false,
+        "bytes": 118348,
+        "sha256": "845e1c9fe2e9a7bfbedfeb447fbeba4bc1b5ecd6246277910ccdaad35a7a532c"
+      },
+      {
+        "family": "Unbounded Variable",
+        "weight": "200 900",
+        "display": "swap",
+        "unicodeRange": "U+??,U+131,U+152-153,U+2BB-2BC,U+2C6,U+2DA,U+2DC,U+304,U+308,U+329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD",
+        "file": "assets/unbounded-latin-wght-normal-D5afBTBx.woff2",
+        "embedded": false,
+        "bytes": 50904,
+        "sha256": "22f9b928aa3928a896340422b54d690fbb5875c30eae4c106f029c61f2289fd6"
+      }
+    ]
+  },
+  "largestJs": [
+    {
+      "file": "assets/catalog.normalized-BLT4Xz9k.js",
+      "bytes": 702274,
+      "gzipBytes": 56402
+    },
+    {
+      "file": "assets/Sculpture-Ckoa3L2-.js",
+      "bytes": 540319,
+      "gzipBytes": 134126
+    },
+    {
+      "file": "assets/react-BvB9BS1T.js",
+      "bytes": 218766,
+      "gzipBytes": 67533
+    },
+    {
+      "file": "assets/lib-B8KhlitW.js",
+      "bytes": 154973,
+      "gzipBytes": 45872
+    },
+    {
+      "file": "assets/motion-D1zxU4Wr.js",
+      "bytes": 150768,
+      "gzipBytes": 49741
+    },
+    {
+      "file": "assets/App-CYa5hbzT.js",
+      "bytes": 119900,
+      "gzipBytes": 34991
+    },
+    {
+      "file": "assets/Academy-75kfPp64.js",
+      "bytes": 98457,
+      "gzipBytes": 25965
+    },
+    {
+      "file": "assets/PlatformSpace-BWV2LQuW.js",
+      "bytes": 78888,
+      "gzipBytes": 24183
+    },
+    {
+      "file": "assets/demo-CUR0P1By.js",
+      "bytes": 48935,
+      "gzipBytes": 15668
+    },
+    {
+      "file": "assets/mock-IhPbSIyy.js",
+      "bytes": 46656,
+      "gzipBytes": 15564
+    },
+    {
+      "file": "assets/AdventAdmin-B7JMThTT.js",
+      "bytes": 39842,
+      "gzipBytes": 10630
+    },
+    {
+      "file": "assets/Admin-CcO7py70.js",
+      "bytes": 39622,
+      "gzipBytes": 11766
+    }
+  ]
+}

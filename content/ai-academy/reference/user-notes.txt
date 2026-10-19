@@ -1,0 +1,415 @@
+# Пересмотр архитектуры AI Academy: 5 направлений действительно недостаточно
+
+Я пересмотрел предыдущую структуру, изучил темы из присланных тобой видео и сопоставил их с существующими образовательными программами.
+
+Мой вывод: нам нужно 9 самостоятельных направлений, один общий фундамент и несколько сквозных специализаций.
+
+Проблема предыдущей архитектуры не только в количестве. Мы смешали три разных категории: профессиональные навыки, способы использования ИИ и инструменты.
+
+Например, Vibe Coding и AI Engineering пересекаются, но это не одно и то же. Первый отвечает на вопрос «как создать продукт с ИИ», а второй — «как организовать надёжную разработку с агентами, тестированием и инженерными процессами».
+
+Аналогично, AI Creator производит визуальные материалы, тогда как AI Marketing отвечает за привлечение аудитории, продажи и измеримый результат.
+
+## 1. Новая архитектура: 9 направлений
+
+AI Foundations
+
+Общий фундамент для всех студентов
+
+01
+
+Vibe Coding
+
+Приложения, сайты, MVP
+
+02
+
+NEW
+
+AI Engineering
+
+Агентная разработка и DevTools
+
+03
+
+AI Automation
+
+Процессы и интеграции
+
+04
+
+AI Agents & RAG
+
+Ассистенты и базы знаний
+
+05
+
+AI Creator
+
+Изображения, видео, аудио
+
+06
+
+NEW
+
+AI Design & UX
+
+Интерфейсы и прототипы
+
+07
+
+NEW
+
+AI Marketing & Growth
+
+Продажи, реклама, GEO
+
+08
+
+NEW
+
+AI Data & Research
+
+Данные, аналитика, исследования
+
+09
+
+AI Business & Product
+
+Продукты, внедрение, стратегия
+
+AI Safety · Context Engineering · Evals · Monetization
+
+Сквозные компетенции, применяемые в разных направлениях
+
+Здесь четыре новых направления: AI Engineering, AI Design & UX, AI Marketing & Growth, AI Data & Research. Предыдущее «AI для бизнеса» также нужно существенно переработать.
+
+Не предлагаю превращать каждый популярный инструмент в направление. Это сделает академию трудно поддерживаемой. Направления должны отвечать за устойчивые профессиональные результаты, а инструменты — жить внутри модулей.
+
+## 2. Четыре новых направления: курсы и модули
+
+Эти направления я бы добавил в образовательную карту как полноценные программы Junior → Middle → Senior.
+
+### 02. AI Engineering & Developer Agents
+
+Для кого: разработчики, DevOps, технические специалисты, продвинутые вайбкодеры.
+
+Главное отличие от Vibe Coding — студент не просто создаёт приложение, а учится управлять инженерной средой, в которой агенты самостоятельно выполняют ограниченные задачи, а результат проверяется тестами и человеком.
+
+Junior
+
+ENG-101. AI Developer Foundations
+
+Модули: Git и CLI; устройство проекта и зависимости; основы Claude Code/Codex; инструкции `AGENTS.md` и `CLAUDE.md`; отладка и тестирование.
+
+Итог: внести проверяемую функциональную доработку в существующий репозиторий с помощью AI-агента.
+
+Middle
+
+ENG-201. Agentic Development Workflow
+
+Модули: context engineering; MCP и tools; skills; subagents; Git Worktrees; хуки; тесты; браузерная проверка.
+
+Итог: настроить повторяемый процесс разработки с автоматическими проверками и code review.
+
+Senior
+
+ENG-301. Agent Harness & Autonomous Software Engineering
+
+Модули: проектирование harness; многосессионные агенты; orchestration; verification loops; E2E; observability; безопасность; затраты и качество.
+
+Итог: спроектировать инженерную среду, способную выполнять длительные задачи с контролем качества и ограничением полномочий.
+
+Это направление напрямую подтверждается твоими референсами и работами Anthropic. В частности, компания отдельно исследует [harness-дизайн для долгих задач](https://www.anthropic.com/engineering/harness-design-long-running-apps?utm_source=chatgpt.com) и [context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents?utm_source=chatgpt.com).&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.anthropic.com\&sz=32)
+
+Anthropic
+
++1
+
+
+
+Новые дополнительные материалы:
+
+- [Anthropic — официальные Agent Skills с примерами](https://github.com/anthropics/skills?utm_source=chatgpt.com)
+- [Agent Skills — спецификация SKILL.md](https://agentskills.io/specification?utm_source=chatgpt.com)
+- [Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents?utm_source=chatgpt.com)
+
+### 06. AI Design & UX
+
+Для кого: продуктовые и графические дизайнеры, frontend-разработчики, основатели стартапов, UX-исследователи.
+
+Генерация картинок — только часть работы дизайнера. Здесь нужно отдельно учить проектированию интерфейсов, пользовательским исследованиям, прототипированию и дизайн-системам.
+
+Junior
+
+DS-101. AI-Assisted UI/UX Design
+
+Модули: исследование задачи; пользовательские сценарии; генерация wireframes; UI-прототипирование; тестирование удобства.
+
+Итог: интерактивный прототип приложения или сайта.
+
+Middle
+
+DS-201. AI Product Design & Design Systems
+
+Модули: UX-исследования; дизайн-системы; стили и компоненты; Figma Make; интеграция с кодом; accessibility.
+
+Итог: полноценный прототип с дизайн-системой, готовый к разработке.
+
+Senior
+
+DS-301. AI-Native Design Leadership
+
+Модули: масштабируемые дизайн-системы; AI-агенты в дизайн-процессе; UX-эксперименты; автоматизированный дизайн-QA; design-to-code.
+
+Итог: воспроизводимый процесс проектирования и проверки интерфейсов для команды.
+
+Референсы: [Figma Make — официальный практикум](https://help.figma.com/hc/en-us/articles/31304485164695-Create-a-Figma-Make-file?utm_source=chatgpt.com), [8 практических приёмов Figma Make](https://www.figma.com/blog/8-ways-to-build-with-figma-make/?utm_source=chatgpt.com) и [контекст, компоненты и данные для прототипов](https://www.figma.com/blog/introducing-make-kits-and-make-attachments/?utm_source=chatgpt.com).&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://help.figma.com\&sz=32)
+
+Help Center
+
++2
+
+
+
+### 07. AI Marketing & Growth
+
+Для кого: маркетологи, SMM, специалисты по продажам, предприниматели, агентства.
+
+AI Creator отвечает за производство контента. AI Marketing — за то, кому, где, зачем и с каким результатом этот контент показывать.
+
+Junior
+
+MK-101. AI Marketing Essentials
+
+Модули: аудитория и конкуренты; позиционирование; офферы и копирайтинг; контент-стратегия; публикация и базовая аналитика.
+
+Итог: маркетинговая стратегия и контент-план для конкретного бизнеса.
+
+Middle
+
+MK-201. AI Growth & Sales Automation
+
+Модули: рекламные кампании; лидогенерация; CRM; персонализация; A/B-тестирование; автоматизация воронок.
+
+Итог: работающая система привлечения и обработки лидов с измеримыми KPI.
+
+Senior
+
+MK-301. AI Growth Architecture & GEO
+
+Модули: AI Search; GEO/AEO; бренд в ответах AI; attribution; маркетинговые эксперименты; автономные growth workflows.
+
+Итог: система измерения и улучшения маркетинговых показателей, включая видимость бренда в AI-поиске.
+
+Проверенные курсы, которые особенно стоит изучить:
+
+- [HubSpot Academy — AI for Marketing](https://academy.hubspot.com/courses/AI-for-Marketers?content_language=English\&utm_source=chatgpt.com) — шесть уроков, 15 видео, четыре теста, бесплатно.&#x20;
+
+  [image](https://www.google.com/s2/favicons?domain=https://academy.hubspot.com\&sz=32)
+
+  HubSpot Academy
+
+- [Semrush Academy — AI Visibility Essentials](https://www.semrush.com/academy/courses/ai-visibility-essentials-with-semrush/?utm_source=chatgpt.com) — продвижение в AI-поиске, отслеживание упоминаний бренда, анализ видимости.&#x20;
+
+  [image](https://www.google.com/s2/favicons?domain=https://www.semrush.com\&sz=32)
+
+  Semrush Academy
+
+- [HubSpot — SEO in the Age of AI](https://academy.hubspot.com/courses/seo-in-the-age-of-ai-en?utm_source=chatgpt.com) — AEO, ChatGPT, Perplexity, Gemini и новая поисковая стратегия.&#x20;
+
+  [image](https://www.google.com/s2/favicons?domain=https://academy.hubspot.com\&sz=32)
+
+  HubSpot Academy
+
+
+
+### 08. AI Data & Research
+
+Для кого: аналитики, менеджеры, исследователи, финансисты, предприниматели, консультанты.
+
+Это, на мой взгляд, самое существенное упущение прежней версии. Работа с данными и достоверными исследованиями — самостоятельная прикладная компетенция, которую нельзя полностью заменить промптингом.
+
+Junior
+
+DT-101. AI Research & Data Literacy
+
+Модули: постановка исследовательских вопросов; Deep Research; проверка источников; документы и таблицы; основы визуализации.
+
+Итог: исследовательский отчёт с доказательной базой и проверенными данными.
+
+Middle
+
+DT-201. AI Data Analytics
+
+Модули: SQL и Python с AI; очистка данных; исследовательский анализ; визуализация; BI-дашборды; проверка выводов.
+
+Итог: воспроизводимое исследование реального датасета с дашбордом.
+
+Senior
+
+DT-301. Advanced Analytics & Decision Intelligence
+
+Модули: статистические выводы; эксперименты; прогнозирование; AI-assisted analytics; качество данных; управление аналитическими системами.
+
+Итог: аналитическая система поддержки принятия решений с проверкой методологии.
+
+Референсы:
+
+- [DataCamp — AI для аналитиков данных](https://www.datacamp.com/ru/courses/ai-for-data-analysts?utm_source=chatgpt.com) — 4 часа, 39 упражнений, анализ данных и проверка выводов.&#x20;
+
+  [image](https://www.google.com/s2/favicons?domain=https://www.datacamp.com\&sz=32)
+
+  DataCamp
+
+- [OpenAI Academy — Deep Research](https://academy.openai.com/public/clubs/work-users-ynjqu/resources/deep-research?utm_source=chatgpt.com) — исследовательские задачи, работа с источниками, подготовка аналитических отчётов.&#x20;
+
+  [image](https://www.google.com/s2/favicons?domain=https://academy.openai.com\&sz=32)
+
+  OpenAI Academy
+
+
+
+## 3. Что делать с предыдущими пятью направлениями
+
+Три из них я бы оставил в первоначальной логике: Vibe Coding, AI Automation и AI Agents & RAG. Они достаточно самостоятельны по аудитории и конечному продукту.
+
+А вот ещё два стоит уточнить.
+
+| Направление           | Что изменить                                                                                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AI Creator            | Сосредоточить на фото, видео, аудио, анимации, AI-персонажах и продакшене. Маркетинг, лидогенерацию и аналитические воронки перенести в AI Marketing.                   |
+| AI Business & Product | Разделить курсы на продуктивность, создание и управление AI-продуктами, корпоративное внедрение и AI-стратегию. Не превращать в ещё один общий курс по всем нейросетям. |
+
+Для бизнес-направления особенно полезен [From Product Manager to AI Product Manager](https://www.coursera.org/learn/ai-product-management?utm_source=chatgpt.com) — курс, обновлённый в октябре 2026 года, с темами AI-native управления продуктом, пользовательских сигналов, оценивания моделей, governance и мониторинга.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.coursera.org\&sz=32)
+
+Coursera
+
+
+
+## 4. Как распределить видео из твоего файла
+
+Главное, что показали присланные материалы: один большой видеоурок часто содержит занятия сразу для нескольких курсов и уровней.
+
+Поэтому в LMS я бы хранил один оригинальный источник, но несколько ссылок на конкретные таймкоды, связанные с разными модулями.
+
+| Видео из твоей подборки                                                                        | Уровень         | Где использовать                             |
+| ---------------------------------------------------------------------------------------------- | --------------- | -------------------------------------------- |
+| [Владилен Минин — Vibe Coding и Replit](https://youtu.be/q6w9KiI8URo?utm_source=chatgpt.com)   | Junior          | Vibe Coding; AI Foundations                  |
+| [Разработка приложения с нуля](https://youtu.be/jHB5kr0qAIA?utm_source=chatgpt.com)            | Junior / Middle | Vibe Coding; Automation; основы backend      |
+| [Большой практикум: от LLM до приложения](https://youtu.be/-q5VabXMWfk?utm_source=chatgpt.com) | Все три уровня  | Foundations; Vibe Coding; AI Engineering     |
+| [Claude Code: Telegram-боты и сайты](https://youtu.be/PZKCYLfOVh0?utm_source=chatgpt.com)      | Junior / Middle | Vibe Coding; AI Engineering; AI Business     |
+| [Roadmap вайбкодинга 2026](https://youtu.be/27btHDffb_Q?utm_source=chatgpt.com)                | Middle          | Vibe Coding; AI Engineering                  |
+| [Практикум Claude Code](https://youtu.be/Ai9woxKSbKY?utm_source=chatgpt.com)                   | Junior / Middle | AI Engineering; Agents; MCP                  |
+| [Pi Coding Agent](https://youtu.be/p3htNgFSPVs?utm_source=chatgpt.com)                         | Middle          | AI Engineering; agent harness                |
+| [Orca IDE](https://youtu.be/nL0HxmclDCw?utm_source=chatgpt.com)                                | Middle          | AI Engineering; Design-to-code               |
+| [Herdr — параллельные агенты](https://youtu.be/2aedkHEMSKA?utm_source=chatgpt.com)             | Senior          | AI Engineering; оркестрация                  |
+| [Будущее AI-разработки и harness](https://youtu.be/WT0yDhfOjaA?utm_source=chatgpt.com)         | Senior          | AI Engineering; AI Strategy                  |
+| [Архитектура AI-агентов](https://youtu.be/EHrqzvKmszo?utm_source=chatgpt.com)                  | Middle / Senior | AI Agents; Automation; Engineering           |
+| [MCP простыми словами](https://youtu.be/jgMmmMyW_B8?utm_source=chatgpt.com)                    | Junior / Middle | Foundations; Agents; Automation; Engineering |
+| [Создание AI-агента на Python](https://youtu.be/yQwtdUtaBQw?utm_source=chatgpt.com)            | Junior / Middle | Agents; AI Engineering                       |
+| [Эволюция агентов и skills](https://youtu.be/a-NIeMB-Hj8?utm_source=chatgpt.com)               | Senior          | Agents; AI Engineering; Architecture         |
+| [Hermes Agent: шесть уровней](https://youtu.be/XNcKUSL1CTE?utm_source=chatgpt.com)             | Middle / Senior | Agents; Automation; Productivity             |
+
+Классификацию здесь делал по твоим описаниям и таймкодам. В файле также есть блок про `AGENTS.md`, скиллы, Git Worktrees и Verification Loop без отдельной ссылки на видео — его содержание можно включить в AI Engineering, но сам источник пока нужно идентифицировать.
+
+### Пример переиспользования одного видео
+
+Видео по Claude Code можно разложить так:
+
+[Claude Code — исходный урок](https://youtu.be/Ai9woxKSbKY?utm_source=chatgpt.com)
+
+Исходный материал
+
+00:36
+
+ENG-101 · Установка и первая задача
+
+19:18
+
+ENG-201 · Контекст и спецификация проекта
+
+30:28
+
+AG-201 · Подключение MCP
+
+35:26
+
+ENG-301 · Оркестрация субагентов
+
+43:43
+
+ENG-201 · Использование Agent Skills
+
+Это гораздо эффективнее, чем хранить копию одного четырёхчасового видео внутри трёх разных курсов.
+
+## 5. Что ещё не стоит делать отдельными направлениями
+
+Есть несколько перспективных областей, которые я бы пока оставил сквозными курсами или факультативами.
+
+| Область                         | Куда поместить сейчас                                               |
+| ------------------------------- | ------------------------------------------------------------------- |
+| Prompt & Context Engineering    | AI Foundations + Advanced-модули Engineering и Agents               |
+| AI Security, Safety & Evals     | Все технические направления + Business Senior                       |
+| Local LLM, Ollama, Self-hosting | Engineering Senior и Agents Senior                                  |
+| AI Voice Agents                 | Agents + Creator + Automation                                       |
+| AI SEO, GEO, AEO                | Marketing Middle / Senior                                           |
+| AI Education & Teaching         | Отраслевой факультатив                                              |
+| AI for HR, Finance, Legal       | Прикладные отраслевые специализации                                 |
+| AI Robotics & Physical AI       | Отдельное направление в будущем, если появится подтверждённый спрос |
+
+Безопасность особенно важно не оставлять необязательной теорией. Для технических треков стоит использовать [OWASP LLM Top 10](https://genai.owasp.org/llm-top-10/?utm_source=chatgpt.com) и [Google Responsible AI](https://developers.google.com/machine-learning/guides/intro-responsible-ai?utm_source=chatgpt.com).&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://owasp.org\&sz=32)
+
+OWASP Foundation
+
++1
+
+
+
+## 6. Какую архитектуру я бы утвердил
+
+## Слой 1. AI Foundations
+
+Общий вводный курс, доступный всем. При этом один уровень сложности для всех не обязателен: технические специалисты могут пройти входную диагностику и пропустить базовые темы.
+
+## Слой 2. Девять специализаций
+
+Каждая имеет свои Junior, Middle и Senior-программы, конечные проекты и критерии оценивания. Учащийся может выбрать одну или несколько.
+
+## Слой 3. Сквозные навыки
+
+Контекст, промптинг, безопасность, оценивание, документирование, работа с API и стоимость AI. Один учебный материал привязывается к нескольким курсам.
+
+## Слой 4. Отраслевые практикумы
+
+Например, «AI для ритейла», «AI для банков», «AI для образования», «AI для агентств» и «AI для малого бизнеса». Это отдельные наборы кейсов поверх специализаций, а не переписанные с нуля программы.
+
+### Масштаб новой структуры
+
+# 9
+
+Направлений
+
+# 27
+
+Уровневых курсов
+
+# 1
+
+Общая база
+
+Это целевая структура каталога, а не рекомендация производить все 27 курсов сразу.
+
+Я бы запускал в первую очередь четыре направления: Vibe Coding, AI Automation, AI Creator и AI Marketing & Growth. Они понятнее широкой аудитории и позволяют быстро показать прикладной результат. Следом — AI Agents и AI Data & Research, затем AI Design, AI Engineering и AI Business & Product с более специализированными программами.
+
+При этом наличие самостоятельного направления ещё не означает подтверждённый рыночный спрос: порядок запуска нужно проверить интервью с потенциальными студентами и пилотными продажами.
+
+Главная методологическая поправка — строить курсы не вокруг инструментов, а вокруг навыков и конечных продуктов. Тогда новые модели, IDE и генераторы будут добавляться в существующие занятия, а архитектуру академии не придётся перестраивать каждые полгода.

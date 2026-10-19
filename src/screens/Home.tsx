@@ -1,6 +1,7 @@
 import { AnimatePresence } from 'motion/react'
 import { useMemo, useRef } from 'react'
 import { levelOf } from '../lib/game'
+import { academyEnabled } from '../lib/academy'
 import { useStore } from '../store'
 import { Avatar, Bar, Counter, Emoji, Odometer, Ring, Tap } from '../ui'
 import { AdventBanner } from './advent/Banner'
@@ -53,6 +54,8 @@ export function Home() {
       </header>
 
       <AdventBanner />
+      {academyEnabled && <Tap onClick={() => useStore.getState().push({type:'academy'})} className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center gap-4 rounded-[26px] border border-violet/25 bg-violet/10 p-5 text-left"><Emoji char="🪐" size={38}/><span className="min-w-0 flex-1"><span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-violet">От идеи к своему проекту</span><b className="mt-2 block font-display text-[17px]">AI Academy</b><span className="mt-1.5 block text-[12px] leading-relaxed text-mute">Выбери направление и посмотри программу</span></span><span aria-hidden="true" className="text-xl text-violet">↗</span></Tap>}
+      <Tap onClick={() => useStore.getState().push({type:'journey'})} className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center gap-3 rounded-[24px] border border-line bg-card/80 p-4 text-left"><Emoji char="🧭" size={30}/><span className="flex-1"><b className="block text-[14px]">Мой следующий шаг</b><span className="mt-1 block text-[12px] text-mute">Короткий маршрут к твоей цели</span></span><span aria-hidden="true">→</span></Tap>
 
       <Tap
         feedback="soft"

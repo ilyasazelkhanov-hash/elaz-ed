@@ -1,9 +1,13 @@
 import '@fontsource-variable/onest'
 import '@fontsource-variable/unbounded'
-import { Component, type ReactNode } from 'react'
+import { Component, Suspense, lazy, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App'
+const App = lazy(() => import('./App'))
+const AcademyPublic = lazy(() => import('./AcademyPublic'))
 import './index.css'
+const PlatformSpace = lazy(() => import('./PlatformSpace'))
+const academyPublic = /^\/academy\/(verify|portfolio)\/[^/]+\/?$/.test(location.pathname)
+const platform = new URLSearchParams(location.search).has('platform') || location.pathname.startsWith('/space')
 
 // После выкладки файлы прошлой версии с сервера исчезают. Если кусок приложения не загрузился,
 // один раз перезагружаемся за свежей версией; повторно в течение минуты — нет, чтобы не зациклиться.
@@ -47,6 +51,6 @@ class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
 
 createRoot(document.getElementById('root')!).render(
   <Boundary>
-    <App />
+    {academyPublic ? <Suspense fallback={<div style={{padding:32}}>AI Academy…</div>}><AcademyPublic/></Suspense> : platform ? <Suspense fallback={<div style={{padding:32}}>Открываем пространство OG CRE8R²…</div>}><PlatformSpace /></Suspense> : <Suspense fallback={<div style={{padding:32}}>OG CRE8R²…</div>}><App /></Suspense>}
   </Boundary>,
 )

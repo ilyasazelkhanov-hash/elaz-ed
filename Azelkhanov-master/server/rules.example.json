@@ -1,0 +1,6 @@
+{
+  "moderatePosts": true,
+  "progression": {"dailyXp":20,"dailyPoints":10,"contentXp":20,"contentPoints":5,"quizXpPerCorrect":10,"quizPointsPerCorrect":5,"homeworkXp":30,"homeworkPoints":10,"visitPoints":10,"referralPoints":15,"gameXp":30,"gameMinPoints":5,"gameStepPoints":5,"gameOutcomes":5},
+  "loyalty": {"purchasePointsPerUnit":0.01},
+  "notifications": {"welcomeEnabled":true,"eventRemindersEnabled":true,"eventReminderMinutes":120,"inactivityEnabled":true,"inactivityDays":7,"taskRemindersEnabled":true}
+}

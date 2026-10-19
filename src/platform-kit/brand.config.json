@@ -1,0 +1,26 @@
+{
+  "id": "og-cre8r",
+  "name": "OG CRE8R²",
+  "tagline": "Твоя среда. Твои возможности.",
+  "logo": "/icon.svg",
+  "monogram": "/icon.svg",
+  "wordmark": "/icon.svg",
+  "colors": {
+    "primary": "#A58BFF",
+    "ink": "#F3F1FF",
+    "background": "#0B0A12",
+    "accent": "#FF8AC9",
+    "surface": "#15141F",
+    "muted": "#A39FBF",
+    "onPrimary": "#211536",
+    "onAccent": "#211536",
+    "card": "#211536",
+    "heroHighlight": "#5D123F"
+  },
+  "fonts": {
+    "body": "Onest Variable",
+    "display": "Unbounded Variable"
+  },
+  "radius": 24,
+  "motion": "full"
+}

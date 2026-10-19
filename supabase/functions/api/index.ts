@@ -1,5 +1,7 @@
 // OG CRE8R² API: проверка подписи Telegram, доступ по подписке на канал, XP, стрики, админка, вебхук бота.
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { handleAcademy, AcademyError } from './academy.ts'
+import { handleAcademyFiles } from './academy-files.ts'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -26,6 +28,7 @@ const CORS = {
 
 const GRADIENTS = ['aurora', 'sunset', 'mint', 'ocean', 'candy', 'lime']
 const SUB_TTL = 5 * 60_000
+const OG_PLATFORM_ENABLED = Deno.env.get('OG_PLATFORM_ENABLED') === 'true'
 const AUTH_TTL = 48 * 3600
 
 class HttpError extends Error {
@@ -275,19 +278,31 @@ async function buildMe(row: Row) {
   const day = localDay(tzOf(row))
   // Место считаем среди подписчиков — так же, как строится таблица рейтинга.
   const { count } = await db.from('users').select('id', { count: 'exact', head: true }).eq('subscribed', true).gt('xp', row.xp)
+  let combined: Row | null = null
+  let combinedRank: number | null = null
+  if (OG_PLATFORM_ENABLED) {
+    const [progress, rating] = await Promise.all([
+      db.rpc('az_og_progress_summary', { p_actor: row.id }),
+      db.rpc('az_og_progress_top', { p_actor: row.id }),
+    ])
+    if (progress.error || rating.error || !progress.data) throw new HttpError(503, 'platform_not_ready')
+    combined = progress.data
+    combinedRank = rating.data?.rank ?? null
+  }
   return {
     id: row.id,
     name: row.first_name || 'Друг',
     username: row.username,
     photo: row.photo_url,
-    xp: row.xp,
+    xp: combined?.totalXp ?? row.xp,
+    ...(combined ? { base_xp: combined.baseXp, platform_xp: combined.platformXp } : {}),
     streak: aliveStreak(row),
     best_streak: row.best_streak,
     daily_claimed: !!row.last_claim && row.last_claim >= day,
     lessons_done: row.lessons_done,
     is_admin: row.is_admin,
     achievements: row.achievements ?? [],
-    rank: (count ?? 0) + 1,
+    rank: combinedRank ?? (count ?? 0) + 1,
     invited: row.invited,
     freezes: row.freezes ?? 0,
   }
@@ -478,6 +493,8 @@ async function lesson(body: Row) {
   ])
   return {
     ...data,
+    // Keys stay private even for completed lessons/practice and an admin's member view.
+    quiz: publicQuiz(data.quiz),
     quiz_count: data.quiz?.length ?? 0,
     has_video: !!data.video_url,
     completed: !!p.data,
@@ -486,27 +503,71 @@ async function lesson(body: Row) {
   }
 }
 
+function publicQuiz(quiz: unknown) {
+  return (Array.isArray(quiz) ? quiz : []).map((q: Row) => ({ q: q.q, options: q.options }))
+}
+
+function quizDbError(error: { message?: string } | null) {
+  if (!error) return
+  const code = ['quiz_not_found', 'quiz_answer_invalid', 'quiz_answer_locked', 'quiz_sequence', 'quiz_required', 'quiz_answers_mismatch'].find(code => error.message?.includes(code))
+  throw new HttpError(code === 'quiz_not_found' ? 404 : code === 'quiz_answer_invalid' ? 400 : code ? 409 : 500, code ?? 'db')
+}
+
+async function quizStart(body: Row) {
+  const row = await member(body)
+  const id = Number(body.id)
+  const { data: les } = await db.from('lessons').select('id,quiz,published,course_id,free_preview').eq('id', id).maybeSingle()
+  if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
+  if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
+  const { data, error } = await db.rpc('start_lesson_quiz', { p_user: row.id, p_lesson: id })
+  quizDbError(error)
+  if (!data) throw new HttpError(500, 'db')
+  return { attemptId: data.id, questions: publicQuiz(data.quiz), answers: data.answers, feedback: data.feedback,
+    practice: data.practice, done: !!data.completed_at, score: data.score, bonus: data.bonus, combo: data.combo }
+}
+
+async function quizAnswer(body: Row) {
+  const row = await member(body)
+  if (typeof body.attemptId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.attemptId) || !Number.isInteger(body.index) || !Number.isInteger(body.answer) || body.index < 0 || body.answer < 0) throw new HttpError(400, 'quiz_answer_invalid')
+  const { data: attempt, error: lookupError } = await db.from('lesson_quiz_attempts').select('lesson_id').eq('id', body.attemptId).eq('user_id', row.id).maybeSingle()
+  if (lookupError) throw new HttpError(500, 'db')
+  if (!attempt) throw new HttpError(404, 'quiz_not_found')
+  const { data: les } = await db.from('lessons').select('id,published,course_id,free_preview').eq('id', attempt.lesson_id).maybeSingle()
+  if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
+  if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
+  const { data, error } = await db.rpc('answer_lesson_quiz', { p_user: row.id, p_attempt: body.attemptId, p_index: body.index, p_answer: body.answer })
+  quizDbError(error)
+  if (!data) throw new HttpError(500, 'db')
+  return data
+}
+
 async function complete(body: Row) {
   const row = await member(body)
   const id = Number(body.id)
   const { data: les } = await db.from('lessons').select('id,kind,xp,quiz,published,course_id,free_preview').eq('id', id).maybeSingle()
   if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
   if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
-  const quiz: { correct: number }[] = Array.isArray(les.quiz) ? les.quiz : []
-  const answers: unknown[] = Array.isArray(body.answers) ? body.answers : []
-  // Серия верных ответов поднимает награду: 10, 15, дальше по 20. Ошибка сбрасывает серию.
-  let combo = 0
+  const { data: previous, error: progressError } = await db.from('progress').select('score,total').eq('user_id', row.id).eq('lesson_id', id).maybeSingle()
+  if (progressError) throw new HttpError(500, 'db')
+  if (body.attemptId !== undefined && (typeof body.attemptId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(body.attemptId))) throw new HttpError(400, 'quiz_answer_invalid')
+  let quiz: Row[] = Array.isArray(les.quiz) ? les.quiz : []
+  const query = db.from('lesson_quiz_attempts').select('*').eq('user_id', row.id).eq('lesson_id', id).eq('practice', false)
+  if (body.attemptId !== undefined) query.eq('id', body.attemptId)
+  const { data: attempt, error: attemptError } = await query.maybeSingle()
+  if (attemptError) throw new HttpError(500, 'db')
+  // Historical completions have no recorded attempt; keep them idempotent without regrading.
+  if (previous && !attempt && !body.attemptId) return { already: true, gained: 0, base: 0, bonus: 0, score: previous.score, total: previous.total, new_achievements: [], me: await buildMe(row) }
+  let answers: number[] = []
   let score = 0
   let bonus = 0
-  quiz.forEach((q, i) => {
-    if (Number(answers[i]) === q.correct) {
-      combo++
-      score++
-      bonus += 10 + 5 * Math.min(combo - 1, 2)
-    } else {
-      combo = 0
-    }
-  })
+  if (quiz.length || attempt || body.attemptId !== undefined) {
+    if (!attempt || !attempt.completed_at || attempt.answers.length !== attempt.quiz.length) throw new HttpError(409, 'quiz_required')
+    answers = attempt.answers
+    if (body.answers !== undefined && (!Array.isArray(body.answers) || body.answers.length !== answers.length || body.answers.some((value: unknown, index: number) => value !== answers[index]))) throw new HttpError(409, 'quiz_answers_mismatch')
+    quiz = attempt.quiz
+    score = attempt.score
+    bonus = attempt.bonus
+  }
   const gained = les.xp + bonus
   const { data: inserted, error } = await db.rpc('complete_lesson', {
     p_user: row.id,
@@ -516,7 +577,7 @@ async function complete(body: Row) {
     p_xp: gained,
   })
   // Раньше сбой базы выглядел как «урок уже пройден» и XP молча терялись.
-  if (error) throw new HttpError(500, 'db')
+  quizDbError(error)
   if (!inserted) return { already: true, gained: 0, base: 0, bonus: 0, score, total: quiz.length, new_achievements: [], me: await buildMe(row) }
 
   const earned: string[] = []
@@ -713,6 +774,11 @@ async function adventTicketInvoice(body: Row) {
 
 async function top(body: Row) {
   const row = await member(body)
+  if (OG_PLATFORM_ENABLED) {
+    const result = await db.rpc('az_og_progress_top', { p_actor: row.id })
+    if (result.error || !result.data) throw new HttpError(503, 'platform_not_ready')
+    return result.data
+  }
   // В рейтинге только подписчики: экран так и подписан, и отписавшиеся не занимают места.
   const { data } = await db
     .from('users')
@@ -1068,6 +1134,17 @@ async function webhook(req: Request) {
   if (!BOT_TOKEN) return json({ ok: false }, 503)
   if (req.headers.get('x-telegram-bot-api-secret-token') !== (await webhookSecret())) return json({ ok: false }, 401)
   const update = await req.json().catch(() => ({}))
+  // One Telegram bot has one webhook. New module invoices use UUID payloads;
+  // legacy course:/catchup: payments and bot commands stay on their existing path.
+  const platformPayload = update.pre_checkout_query?.invoice_payload ?? update.message?.successful_payment?.invoice_payload ?? update.message?.refunded_payment?.invoice_payload
+  if (typeof platformPayload === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(platformPayload)) {
+    const appUrl = Deno.env.get('APP_URL')
+    if (!appUrl) return json({ ok:false, error:'platform_not_configured' },503)
+    const [{createHandler},{createGateway}] = await Promise.all([import('../_shared/handler.ts'),import('../_shared/gateway.ts')])
+    const names = ['ADMIN_TELEGRAM_IDS','OIDC_CLIENT_ID','OIDC_CLIENT_SECRET','ALLOWED_ORIGINS','CRON_SECRET','INTEGRATION_WEBHOOK_SECRET','ADMIN_RETURN_PATH','API_PUBLIC_PATH']
+    const env = {...Object.fromEntries(names.map(name=>[name,Deno.env.get(name)||''])),APP_URL:appUrl,BOT_TOKEN,SUPABASE_URL,ADMIN_TELEGRAM_IDS:Deno.env.get('ADMIN_TELEGRAM_IDS')||'',WEBHOOK_SECRET:await webhookSecret()}
+    return await createHandler({env,gateway:createGateway(SUPABASE_URL,serviceKey())})(new Request(`${SUPABASE_URL}/functions/v1/az-master-api/v1/webhook`,{method:'POST',headers:{'Content-Type':'application/json','x-telegram-bot-api-secret-token':env.WEBHOOK_SECRET},body:JSON.stringify(update)}))
+  }
   // Оплату нельзя потерять: если базу не удалось обновить, отвечаем ошибкой — Telegram пришлёт уведомление ещё раз.
   let retry = false
   try {
@@ -2220,9 +2297,46 @@ async function adventPush(req: Request) {
 
 // ---------- Роутер ----------
 
+async function academy(body: Row) {
+  const actor = await member(body)
+  if (typeof body.action !== 'string') throw new HttpError(400, 'academy_unknown_action')
+  try {
+    if (['file_upload','file_finalize','file_download','portfolio_list','portfolio_publish','portfolio_revoke'].includes(body.action)) return await handleAcademyFiles(db,{id:actor.id,is_admin:!!actor.is_admin},body.action,body.payload??{})
+    return await handleAcademy(db, { id: actor.id, is_admin: !!actor.is_admin }, body.action, body.payload ?? {})
+  } catch (error) {
+    if (error instanceof AcademyError) throw new HttpError(error.status, error.code)
+    throw error
+  }
+}
+
+const academyPublicLimits=new Map<string,{count:number;expires:number}>()
+async function academyPublic(req:Request){
+  const ip=(req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown').slice(0,128),now=Date.now()
+  if(academyPublicLimits.size>4096)for(const [key,value] of academyPublicLimits)if(value.expires<now)academyPublicLimits.delete(key)
+  const bucket=academyPublicLimits.get(ip)
+  if(bucket&&bucket.expires>now){if(bucket.count++>=30)throw new HttpError(429,'academy_rate_limited')}
+  else {
+    if(academyPublicLimits.size>=4096){for(const [key,value] of academyPublicLimits)if(value.expires<=now)academyPublicLimits.delete(key)}
+    if(academyPublicLimits.size>=4096)academyPublicLimits.delete(academyPublicLimits.keys().next().value!)
+    academyPublicLimits.set(ip,{count:1,expires:now+60000})
+  }
+  const raw=await req.text();if(raw.length>2000)throw new HttpError(400,'academy_invalid_payload')
+  let body:Row
+  try{body=JSON.parse(raw||'{}')}catch{throw new HttpError(400,'academy_invalid_payload')}
+  if(!body||Array.isArray(body)||typeof body!=='object'||!body.payload||Array.isArray(body.payload)||typeof body.payload!=='object')throw new HttpError(400,'academy_invalid_payload')
+  if(!['certificate_public','portfolio_public'].includes(body.action))throw new HttpError(404,'not_found')
+  const value=body.action==='certificate_public'?body.payload?.code:body.payload?.slug
+  if(typeof value!=='string'||!/^[A-Za-z0-9_-]{12,120}$/.test(value))throw new HttpError(400,'academy_invalid_payload')
+  try{return json(await handleAcademyFiles(db,null,body.action,body.payload??{}))}
+  catch(error){if(error instanceof AcademyError)throw new HttpError(error.status,error.code);throw error}
+}
+
 const routes: Record<string, (body: Row) => Promise<unknown>> = {
+  academy,
   boot,
   lesson,
+  quiz_start: quizStart,
+  quiz_answer: quizAnswer,
   complete,
   daily,
   like,
@@ -2276,6 +2390,7 @@ Deno.serve(async (req) => {
     if (route === 'setup') return await setup()
     if (route === 'health' || route === 'api') return await health()
     if (route === 'advent_push' && req.method === 'POST') return await adventPush(req)
+    if (route === 'academy_public' && req.method === 'POST') return await academyPublic(req)
     // Только собственные ключи: иначе адрес вроде /constructor попадал во встроенные методы объекта.
     const handler = Object.hasOwn(routes, route) ? routes[route] : null
     if (!handler || req.method !== 'POST') return json({ error: 'not_found' }, 404)

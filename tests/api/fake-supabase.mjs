@@ -13,6 +13,7 @@ const KEYS = {
   advent_tickets: ['ref'],
   advent_doors: ['day'],
   reward_codes: ['code'],
+  lesson_quiz_attempts: ['id'],
 }
 const UNIQUE = { payments: ['charge_id'], advent_tickets: ['ref'] }
 const AUTO_ID = ['payments', 'events', 'courses', 'lessons', 'advent_tickets', 'advent_rewards', 'advent_points']
@@ -22,12 +23,16 @@ export const state = {
   /** Один раз вернуть ошибку базы для указанной операции: { table, op }. */
   failNext: null,
   uploads: [],
+  academyCalls: [],
+  academyReply: null,
 }
 
 export function reset(tables) {
   state.tables = structuredClone(tables)
   state.failNext = null
   state.uploads = []
+  state.academyCalls = []
+  state.academyReply = null
 }
 
 const table = (name) => (state.tables[name === 'feed_cards' ? 'lessons' : name] ??= [])
@@ -225,6 +230,67 @@ export function createClient() {
     from: (name) => new Query(name),
     // Функции базы здесь не проверяются: их логика живёт в миграциях.
     rpc: async (name, args) => {
+      if (name === 'academy_action') {
+        state.academyCalls.push(structuredClone(args))
+        return state.academyReply ?? { data: { courses: [], directions: [], total: 0 }, error: null }
+      }
+      // Persisted quiz model mirrors the SQL lock/sequence/immutable receipt contract.
+      if (['start_lesson_quiz', 'answer_lesson_quiz', 'complete_lesson'].includes(name)) {
+        const attempts = table('lesson_quiz_attempts')
+        const user = table('users').find(u => u.id === args.p_user)
+        const err = message => ({ data: null, error: { code: 'P0001', message } })
+        const failOp = name === 'start_lesson_quiz' ? 'start' : name === 'answer_lesson_quiz' ? 'answer' : 'complete'
+        if (state.failNext?.table === 'lesson_quiz_attempts' && state.failNext.op === failOp) {
+          state.failNext = null
+          return err('injected database error')
+        }
+        if (name === 'start_lesson_quiz') {
+          const lesson = table('lessons').find(l => l.id === args.p_lesson)
+          if (!user || !lesson?.quiz?.length || lesson.quiz.length > 10) return err('quiz_not_found')
+          const practice = table('progress').some(p => p.user_id === args.p_user && p.lesson_id === args.p_lesson)
+          let attempt = attempts.find(a => a.user_id === args.p_user && a.lesson_id === args.p_lesson && a.practice === practice && (!practice || !a.completed_at))
+          if (!attempt) {
+            attempt = { id: crypto.randomUUID(), user_id: args.p_user, lesson_id: args.p_lesson, practice, quiz: structuredClone(lesson.quiz), answers: [], feedback: [], score: 0, bonus: 0, combo: 0, completed_at: null }
+            attempts.push(attempt)
+          }
+          return { data: structuredClone(attempt), error: null }
+        }
+        if (name === 'answer_lesson_quiz') {
+          const attempt = attempts.find(a => a.id === args.p_attempt && a.user_id === args.p_user)
+          if (!attempt) return err('quiz_not_found')
+          const index = args.p_index, answer = args.p_answer
+          const question = attempt.quiz[index]
+          if (!Number.isInteger(index) || !Number.isInteger(answer) || !question || answer < 0 || answer >= question.options.length) return err('quiz_answer_invalid')
+          if (index < attempt.answers.length) return attempt.answers[index] === answer ? { data: structuredClone(attempt.feedback[index]), error: null } : err('quiz_answer_locked')
+          if (index !== attempt.answers.length) return err('quiz_sequence')
+          const correct = answer === question.correct
+          attempt.combo = correct ? attempt.combo + 1 : 0
+          const gained = correct ? 10 + 5 * Math.min(attempt.combo - 1, 2) : 0
+          attempt.score += correct ? 1 : 0
+          attempt.bonus += gained
+          attempt.answers.push(answer)
+          if (attempt.answers.length === attempt.quiz.length) attempt.completed_at = new Date().toISOString()
+          const receipt = { attemptId: attempt.id, index, answer, correct, correctIndex: question.correct, explain: question.explain ?? '', done: !!attempt.completed_at, score: attempt.score, bonus: attempt.bonus, combo: attempt.combo, gained }
+          attempt.feedback.push(receipt)
+          return { data: structuredClone(receipt), error: null }
+        }
+        const lesson = table('lessons').find(l => l.id === args.p_lesson)
+        if (!lesson || !user) return err('quiz_not_found')
+        const attempt = attempts.find(a => a.user_id === args.p_user && a.lesson_id === args.p_lesson && !a.practice)
+        if (attempt && !attempt.completed_at || !attempt && lesson.quiz?.length) return err('quiz_required')
+        const score = attempt?.score ?? 0, total = attempt?.quiz.length ?? 0, xp = lesson.xp + (attempt?.bonus ?? 0)
+        if (args.p_score !== score || args.p_total !== total || args.p_xp !== xp) return err('quiz_answers_mismatch')
+        if (table('progress').some(p => p.user_id === args.p_user && p.lesson_id === args.p_lesson)) return { data: false, error: null }
+        table('progress').push({ user_id: args.p_user, lesson_id: args.p_lesson, score, total, xp_earned: xp, completed_at: new Date().toISOString() })
+        user.xp = (user.xp ?? 0) + xp
+        user.lessons_done = (user.lessons_done ?? 0) + (lesson.kind === 'lesson' ? 1 : 0)
+        return { data: true, error: null }
+      }
+      if (name === 'grant_achievements') {
+        const user = table('users').find(u => u.id === args.p_user)
+        if (user) user.achievements = [...new Set([...(user.achievements ?? []), ...args.p_codes])]
+        return { data: null, error: null }
+      }
       // Выдача приза: лимит, повтор, код, доступ к уроку или курсу — как в SQL-функции advent_grant.
       if (name === 'advent_grant') return { data: grant(args.p_user, args.p_reward), error: null }
       // Розыгрыш: взвешенно по числу открытых дверей окна, без повторов — как advent_draw.
