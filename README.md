@@ -1,5 +1,7 @@
 # OG CRE8R²
 
+Рабочий сайт: [elaz-ed.vercel.app](https://elaz-ed.vercel.app). [Состояние релиза, проверки, флаги и порядок обновления](docs/RELEASE-2026-10-19.md). Мастер для заказных приложений: [Azelkhanov-master](Azelkhanov-master/README.md).
+
 AI Academy: [аудит интеграции](docs/ai-academy/integration-audit.md), [реализация и проверки](docs/ai-academy/implementation-report.md), [API и правила публикации](docs/ai-academy/backend-contract.md). [Учебный пакет Core/VC-101](docs/ai-academy/authored-content.md). Локальный каталог: `/?demo#/academy`. Проверки: `npm run test:academy`; проверка исходного curriculum: `npm run academy:seed`.
 
 Telegram Mini App для подписчиков канала: уроки, сторис, квизы, XP, стрик, уровни, рейтинг.
@@ -12,6 +14,13 @@ Telegram Mini App для подписчиков канала: уроки, сто
 | Интерфейс (React + Vite + Tailwind + Motion) | `src/`, хостинг — Vercel |
 | API и вебхук бота | `supabase/functions/api/index.ts`, Supabase Edge Function |
 | База | Supabase, проект `dcdepwdxvadhludnubis`, схема — `supabase/migrations/` |
+| AI Academy | `src/screens/academy/`, `src/AcademyPublic.tsx`, публичные страницы — `scripts/academy-prerender.mjs` |
+| Пространство клуба (копия мастера) | `src/platform-kit/`, `src/PlatformSpace.tsx`, сервер — `server/platform-kit/`, функция `supabase/functions/az-master-api`; открывается по `/?platform` или `/space` |
+| Мастер для заказных приложений | `Azelkhanov-master/` — отдельный проект со своими `node_modules`; OG от него не зависит |
+
+Копия мастера обновляется из него командой `node Azelkhanov-master/scripts/sync-og.mjs --target .` (сначала отчёт, потом `--apply`). Брендбук копии `src/platform-kit/brand.config.json` скрипт не перезаписывает — цвета OG в нём правятся вручную.
+
+Все проверки OG: `npm run build`, `npm run test:api`, `npm run test:academy`, `npm run test:database`, `npm run test:experience`; сборка без мастера во временной папке — `node scripts/verify-og-portable.mjs`. Нужен Node 24.
 
 Таблицы закрыты RLS без политик: читать и писать может только Edge Function.
 Каждый запрос подписан `initData` Telegram, сервер проверяет подпись токеном бота и подписку через `getChatMember`.
@@ -30,7 +39,7 @@ Telegram Mini App для подписчиков канала: уроки, сто
 
 Что остаётся по построению и не считается дырой:
 
-- Квиз проверяется на сервере, но правильные ответы приходят в приложение вместе с уроком — иначе не показать разбор сразу после ответа. Подсмотреть их в трафике можно; на кону только XP.
+- Квиз использует серверную попытку: выбор фиксируется по порядку, а правильный ответ и разбор раскрываются только после фиксации. Начисление XP идемпотентно. Этот контракт требует согласованного выпуска миграции `20261016201213_ordinary_quiz_attempts.sql`, API и фронтенда.
 - «Сегодня» для бонуса дня считается по часовому поясу из запроса (в пределах реальных поясов). Сменой пояса можно один раз выиграть лишний день стрика, но не больше.
 - `/setup` и `/health` открыты без входа: первый только повторяет уже заданную настройку бота, второй показывает название канала и адрес приложения. Секретов они не возвращают.
 

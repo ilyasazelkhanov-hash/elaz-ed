@@ -13,7 +13,7 @@
 
 Для копии OG скрипт использует существующий `/icon.svg`, фиолетовый `#A58BFF`, розовый `#FF8AC9`, тёмный фон `#0B0A12`. После первой поставки конфиг копии защищён от автоматического обновления.
 
-Дополнительные токены BrandConfig: colors.peach/lilac/onPrimary/onAccent/card, dark.background/ink/surface/muted, shadow и illustration (sculpture/flat). Режим reduced действует на 3D. Имена предметов и сертификат используют brand.name. Для контраста светлой темы muted уточнён до #646B78.
+Дополнительные токены BrandConfig: colors.peach/lilac/onPrimary/onAccent/card, colors.gradientFrom/gradientVia/gradientTo (аврора-градиент фирменного стиля), dark.background/ink/surface/muted, dark.primary/accent/onPrimary/onAccent (оттенки для тёмной темы), shadow и illustration (sculpture/flat). Режим reduced действует на 3D. Имена предметов и сертификат используют brand.name. Стандартный брендбук мастера использует палитру OG: светлая тема — `primary #6A4DF0`, `accent #DC3D96`, фон `#EFECF8`; тёмная — `primary #A58BFF`, `accent #FF8AC9`, фон `#0B0A12`; аврора `#7C6BFF → #B26BFF → #FF85C0`. Почему так и где слой стиля — в [VISUAL-DESIGN.md](VISUAL-DESIGN.md).
 
 Структура и тексты стартовых сценариев находятся в content/catalog.ts; production-каталог ответов — content/catalog.json. Русскоязычный интерфейс поставляется как основа; locale управляет форматированием дат, валют и часового пояса. Перевод микротекстов под другой язык входит в адаптацию клиента.
 

@@ -4,7 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  server: { port: 5173, host: true },
+  server: {
+    port: 5173,
+    host: true,
+    // Мастер и ролики — отдельные проекты со своими node_modules; их правки не должны перезапускать OG.
+    watch: { ignored: ['**/Azelkhanov-master/**', '**/videos/**', '**/test-results/**'] },
+  },
+  // Только свой вход: иначе Vite находит index.html мастера и подмешивает вторую копию React.
+  optimizeDeps: { entries: ['index.html'] },
   build: {
     // Граф импортов нужен для сравнения реальной загрузки входов и ленивых экранов.
     manifest: true,

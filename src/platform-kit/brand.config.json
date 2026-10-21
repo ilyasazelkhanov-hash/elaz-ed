@@ -15,7 +15,10 @@
     "onPrimary": "#211536",
     "onAccent": "#211536",
     "card": "#211536",
-    "heroHighlight": "#5D123F"
+    "heroHighlight": "#5D123F",
+    "gradientFrom": "#7C6BFF",
+    "gradientVia": "#B26BFF",
+    "gradientTo": "#FF85C0"
   },
   "fonts": {
     "body": "Onest Variable",

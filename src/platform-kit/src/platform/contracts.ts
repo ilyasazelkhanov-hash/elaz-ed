@@ -36,8 +36,22 @@ export interface BrandConfig {
     onAccent?: string
     card?: string
     heroHighlight?: string
+    /** Фирменный градиент (аврора): главная кнопка, активная вкладка, обложки. Без него строится из primary и accent. */
+    gradientFrom?: string
+    gradientVia?: string
+    gradientTo?: string
   }
-  dark?: { background: string; ink: string; surface: string; muted: string }
+  /** Тёмная тема. primary/accent/onPrimary/onAccent нужны, когда светлые оттенки бренда не читаются на тёмном фоне. */
+  dark?: {
+    background: string
+    ink: string
+    surface: string
+    muted: string
+    primary?: string
+    accent?: string
+    onPrimary?: string
+    onAccent?: string
+  }
   shadow?: string
   defaultTheme?: 'light' | 'dark'
   illustration?: 'sculpture' | 'flat'
