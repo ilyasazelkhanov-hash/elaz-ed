@@ -43,6 +43,7 @@ import TouchEffects from './components/TouchEffects.tsx'
 import { BrandContext } from './platform/brand-context.ts'
 import './styles.css'
 import './experience.css'
+import './signature.css'
 
 const Detail = lazy(() => import('./screens/Detail.tsx'))
 const Cart = lazy(() => import('./screens/Detail.tsx').then((m) => ({ default: m.Cart })))
@@ -176,7 +177,13 @@ export default function App({
     } catch {
       /* optional native affordance */
     }
-  }, [dark, brand])
+    // Поля вокруг колонки на широком экране — того же цвета, что и фон приложения.
+    if (!embedded)
+      document.documentElement.style.setProperty(
+        '--az-page',
+        dark ? (brand.dark?.background ?? '#0B1020') : brand.colors.background,
+      )
+  }, [dark, brand, embedded])
   useEffect(() => {
     const b = telegram()?.BackButton
     if (!b || !telegram()?.isVersionAtLeast?.('6.1')) return
@@ -190,18 +197,25 @@ export default function App({
       localStorage.setItem(`az-theme:${config.id}`, v ? 'light' : 'dark')
       return !v
     })
+  const primary = (dark && brand.dark?.primary) || brand.colors.primary
+  const accent = (dark && brand.dark?.accent) || brand.colors.accent
+  const onPrimary = (dark && brand.dark?.onPrimary) || brand.colors.onPrimary
+  const onAccent = (dark && brand.dark?.onAccent) || brand.colors.onAccent
   const vars: StyleVars = {
-    '--az-primary': brand.colors.primary,
+    '--az-primary': primary,
     '--az-ink': dark ? (brand.dark?.ink ?? '#F5F3EE') : brand.colors.ink,
     '--az-bg': dark ? (brand.dark?.background ?? '#0B1020') : brand.colors.background,
-    '--az-accent': brand.colors.accent,
+    '--az-accent': accent,
+    '--az-grad-from': brand.colors.gradientFrom ?? primary,
+    '--az-grad-via': brand.colors.gradientVia ?? `color-mix(in srgb, ${primary} 55%, ${accent})`,
+    '--az-grad-to': brand.colors.gradientTo ?? accent,
     '--az-hero-highlight': brand.colors.heroHighlight ?? brand.colors.accent,
     '--az-surface': dark ? (brand.dark?.surface ?? '#171D2E') : brand.colors.surface,
     '--az-muted': dark ? (brand.dark?.muted ?? '#A8B0C4') : brand.colors.muted,
     ...(brand.colors.peach ? { '--az-peach': brand.colors.peach } : {}),
     ...(brand.colors.lilac ? { '--az-lilac': brand.colors.lilac } : {}),
-    ...(brand.colors.onPrimary ? { '--az-on-primary': brand.colors.onPrimary } : {}),
-    ...(brand.colors.onAccent ? { '--az-on-accent': brand.colors.onAccent } : {}),
+    ...(onPrimary ? { '--az-on-primary': onPrimary } : {}),
+    ...(onAccent ? { '--az-on-accent': onAccent } : {}),
     ...(brand.shadow ? { '--az-shadow': brand.shadow } : {}),
     '--az-card-bg': brand.colors.card ?? '#10162A',
     '--az-radius': `${brand.radius}px`,
@@ -250,6 +264,10 @@ export default function App({
           className={`az-app az-experience ${dark ? 'az-dark' : ''} ${embedded ? 'az-embedded' : ''} ${['admin', 'analytics', 'cashier'].includes(view.type) ? 'az-management' : ''}`}
           style={vars}
         >
+          <div className="az-backdrop" aria-hidden="true">
+            <i />
+            <i />
+          </div>
           <div className="az-top-line">
             <span>GOOD THINGS ARE COMING.</span>
             <span>YOUR NEXT CHAPTER ↗</span>

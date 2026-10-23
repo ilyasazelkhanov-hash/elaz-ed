@@ -15,15 +15,15 @@
     "server/platform-kit/provision.mjs": "5e8be7c6a3c3c190e1875e406d7d71e043c58edaddb30fa9c5f18368a7abb4b0",
     "server/platform-kit/README.md": "6139f436025107c75ad64e37629f208cf138087012bf45f63b87da810f1c2dd4",
     "server/platform-kit/validation.ts": "d43784af6e809df027e9de98cb4c11f4333ec5b736c91d91f382288d2264fb05",
-    "src/platform-kit/src/App.tsx": "d076eee5ce52c07408baf3f0daf3ad9d75e5f542da9d9c416d6b4586cf75f0ba",
+    "src/platform-kit/src/App.tsx": "8077ad10aa7fab7d78366ad64a66507ced38eee29461c76ea0900933c4b203a9",
     "src/platform-kit/src/components/Sculpture.tsx": "3be090762235ded77a5cc45c65342c1ecd6bd88075b815a0eea809f207835f4b",
     "src/platform-kit/src/components/TouchEffects.tsx": "107932f767ee819ffe739a52b7391b4980865b96095aaf2ee22d7662326f6361",
     "src/platform-kit/src/components/ui.tsx": "c3eea1f440822e88cdb40c07fd2b34a6735408438962bb89365d72745e77fff7",
     "src/platform-kit/src/main.tsx": "f5075f0b85b8c83cfc3c451d0911522215f1d2462e02fb82f5e6792ddad7e545",
     "src/platform-kit/src/platform/brand-context.ts": "5835eee0ede0714dd83a957db6bab47f5df1b402456c9611a567d39b96508f06",
     "src/platform-kit/src/platform/client.ts": "e0bbb3091dfbc6dbd3db6e83775bfe232e074f76ec138a1e39dcc66a0ee1ca4c",
-    "src/platform-kit/src/platform/config.ts": "37d6b13646cad1c2bac9ffc23cd179b936d86192f9a68d6e3cecebe4eaa05ead",
-    "src/platform-kit/src/platform/contracts.ts": "1ae895e485df081528aab70a05229fe2037ba0200553c070ad9c27c98ba2ee96",
+    "src/platform-kit/src/platform/config.ts": "53b7710747f31e0838a9d31249b2f540ac1f326728171e8da9f8f14dbe188e3a",
+    "src/platform-kit/src/platform/contracts.ts": "25f97d4eb2a79ba3693c2836779551c8e162df34b35d1f37b40dff182df4ebea",
     "src/platform-kit/src/platform/csv.ts": "be1e55043f612fb2c5666621db76457ccade94dd7978776788da572470fef2e5",
     "src/platform-kit/src/platform/demo.ts": "9c6a69a9336f40bea391f67ad8b106604e0b84722b61de92be4cde65b16272ad",
     "src/platform-kit/src/platform/store.ts": "e7ee28b630f07ab03c27bb0230ea385e3725a0ab8db54e5618d00c96eff2cf7a",
@@ -46,7 +46,7 @@
     "docs/platform-kit/BACKEND-BRIEF.md": "0c14a94135351ec665ed3787e82a2dedc78a1ecd8ad798ab931281d2d0120fb2",
     "docs/platform-kit/BACKEND-REPORT.md": "38622a1fff4e3b550a027be5ba6e212552c3c992a2c605fef2406794556e7840",
     "docs/platform-kit/BACKUP-RESTORE.md": "92ae9c85722ab5b1bbd5906cc97f3d463adbee559e541062307aca7f04c4ac13",
-    "docs/platform-kit/BRANDING.md": "b1dd812830a97c08949167363384f9be39689ab2fb3f21bbb1bceac87cb94146",
+    "docs/platform-kit/BRANDING.md": "043063e6dcee86242b71c44fcbf94db1368b15ff223cf2910b48a38165183780",
     "docs/platform-kit/CAPABILITIES.md": "cfc66cd6d5030e28976fc792d6379ae2b0ad0cfa04c2bd0b9333d980b726e64c",
     "docs/platform-kit/DELIVERY.md": "9b6bf2f85a7f6a11c2653da204da1a20b3184180cd4dd2204a6820531a61fb53",
     "docs/platform-kit/DEPLOYMENT.md": "2c3755719e703d00000adb25eb38bccc90a35bdfb0ec50b8c78d0eeae9cb6214",
@@ -62,8 +62,8 @@
     "docs/platform-kit/VERIFICATION.md": "7ea8a66b700345e80ade5b51c5b9ebf5accb4a58bfc355416cbf88e89bf6ef55",
     "server/platform-kit/rules.example.json": "e41f86f95785c9503321908ae10e7bd578b0ccb068ff1eb40c4d36b48a543bac",
     "supabase/functions/_shared/env.ts": "69d6a8fceca801566916d1dc249470b07e080302cb416c93f11b4b2036176578",
-    "docs/platform-kit/VISUAL-DESIGN.md": "012101a7f5623b77637172397bdd2e547bd028826816ff8ee00c9b09bf2b883c",
-    "src/platform-kit/src/experience.css": "d92e6074dbf4b6325fdb44161bb8f16f55115e2d943cd83bad04ea4cd629b09e",
+    "docs/platform-kit/VISUAL-DESIGN.md": "102e18564a41affe22e903ea26f8fcc8a732a4b0aac3b35a6b339696a3823026",
+    "src/platform-kit/src/experience.css": "379cfe89a20c2843d1a61f7542ea5bf7c33a814b7c5b2d4326e79b6f4c2d4fb6",
     "src/platform-kit/src/platform/game-geometry.ts": "45ee16862a80300744b0cb490b9f53bad3a190fd4813dd96e63011b20e6ffbaa",
     "docs/platform-kit/EXPANSION-BACKEND.md": "58d3e3515053a413ec5f4a3fcc5642b8d67a1ff321a97c18cc371adb3b0b65fd",
     "src/platform-kit/src/components/SharedArtTransition.tsx": "9d684223ede186c359a265d00f2b6e38bb7cedfdd49dcca6eee4d4588ec8ed41",
@@ -75,10 +75,11 @@
     "supabase/migrations/20261018140000_az_refund_retry.sql": "d25d912f3317b06f1f9163d5229a5467f9181f4a72f4dc3c8478f1d2d18b5550",
     "supabase/migrations/20261018143000_az_early_access.sql": "b59eb3a990e0a1599d51149d2b37107b74c12572680098dbe4340f1d58d8e1dd",
     "docs/platform-kit/EXPANSION-FRONTEND.md": "4fa65fbf49a3d7f46e950d6bef447e15e763b1509ea7857258a863c81fe044f2",
-    "docs/platform-kit/EXPERIENCES.md": "c3b20940b2d2b967ae3df49acc4fae4778826caaab78fa738237b4934f492c54"
+    "docs/platform-kit/EXPERIENCES.md": "c3b20940b2d2b967ae3df49acc4fae4778826caaab78fa738237b4934f492c54",
+    "src/platform-kit/src/signature.css": "1ea8e3d27be1d22afb47999cb071d6f66d965c058f78e81ff4e9db3637ffaf18"
   },
   "templateVersion": "1.0.0",
-  "lastAppliedAt": "2026-10-18T11:36:11.372Z",
+  "lastAppliedAt": "2026-10-21T18:20:52.279Z",
   "lastUpdate": {
     "conflicts": [],
     "protected": [
@@ -88,9 +89,7 @@
     ],
     "removedUpstream": [],
     "written": [
-      "docs/platform-kit/CAPABILITIES.md",
-      "docs/platform-kit/EXPANSION-FRONTEND.md",
-      "docs/platform-kit/EXPERIENCES.md"
+      "src/platform-kit/src/signature.css"
     ]
   },
   "seedMerge": {

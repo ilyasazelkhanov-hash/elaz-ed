@@ -1057,6 +1057,11 @@ body:has(.az-experience) {
     padding-left: 16px;
     padding-right: 16px;
   }
+  /* Лента сторис уходит под поля ровно на их ширину, иначе страница сдвигается вбок. */
+  .az-experience .az-stories {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
   .az-experience .az-header-brand {
     font-size: 11px;
     gap: 6px;
