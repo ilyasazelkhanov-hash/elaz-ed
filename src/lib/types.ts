@@ -497,7 +497,7 @@ export interface Api {
   adminList(): Promise<{ lessons: Lesson[]; stats: AdminStats }>
   adminSave(lesson: LessonDraft): Promise<Lesson>
   adminDelete(id: number): Promise<void>
-  adminAnnounce(id: number): Promise<void>
+  adminAnnounce(id: number): Promise<{ queued?: boolean } | void>
   advent(): Promise<AdventState>
   adventDoor(day: number): Promise<DoorView>
   /** answers — для квиза, score — для аркады; скретч и сторис открываются без данных. */

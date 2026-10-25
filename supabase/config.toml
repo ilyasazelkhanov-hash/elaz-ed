@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.az-master-api]
 verify_jwt = false
+
+[functions.news-publisher]
+verify_jwt = false

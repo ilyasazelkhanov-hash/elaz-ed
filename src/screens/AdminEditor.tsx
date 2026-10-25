@@ -124,9 +124,9 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
     if (!d.id || !(await confirmDialog(`Отправить анонс «${d.title}» в канал?`))) return
     setBusy('announce')
     try {
-      await api.adminAnnounce(d.id)
+      const result = await api.adminAnnounce(d.id)
       haptic.success()
-      toast('Анонс ушёл в канал', '📣')
+      toast(result?.queued ? 'Материал публикуется автоматически через очередь' : 'Анонс ушёл в канал', '📣')
     } catch (e) {
       toast(errorText(e))
     } finally {
