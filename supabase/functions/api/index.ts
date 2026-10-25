@@ -3,6 +3,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { handleAcademy, AcademyError } from './academy.ts'
 import { handleAcademyFiles } from './academy-files.ts'
 import { newsTelegramPost } from '../_shared/news.ts'
+import { rewardNotifications } from '../_shared/rewardNotifications.ts'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -1674,20 +1675,10 @@ async function awardOnOpen(row: Row, opened: number, day: number, today: number,
 
 // Приз дублируем в чат с ботом: так он не потеряется, даже если человек закроет приложение.
 async function notifyRewards(userId: number, fresh: Row[], s: Settings, heading = '🎉 <b>Поздравляем! Награда получена:</b>') {
-  const detail = (c: Row) => {
-    if (c.kind === 'promo') return `🎟 Код: <code>${c.code}</code>\n<i>(Покажи этот код на кассе — он одноразовый)</i>`
-    if (c.kind === 'message') return escapeHtml(c.content?.text ?? '')
-    if (c.kind === 'link' || c.kind === 'video') return escapeHtml(c.content?.url ?? '')
-    if (c.kind === 'course') return '🎓 Доступ к курсу уже открыт в твоём профиле!'
-    if (c.kind === 'lesson') return '📖 Урок уже разблокирован в приложении.'
-    return 'Уже открыт в приложении.'
-  }
-  const lines = fresh.map((c) => `${escapeHtml(c.emoji)} <b>${escapeHtml(c.title)}</b>\n${detail(c)}`).join('\n\n───────────────\n\n')
-  const hasCode = fresh.some((c) => c.kind === 'promo')
-  await tg('sendMessage', {
+  for (const text of rewardNotifications(fresh, heading)) await tg('sendMessage', {
     chat_id: userId,
     parse_mode: 'HTML',
-    text: `${heading}\n\n${lines}${hasCode ? '\n\n💡 <i>Код сохранён в календаре — ты всегда можешь открыть его снова.</i>' : ''}`,
+    text,
     ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: '🎁 Мои награды в календаре', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
   })
 }
@@ -1863,8 +1854,9 @@ async function cleanReward(input: Row) {
   const p = input.payload ?? {}
   let payload: Row = {}
   if (kind === 'message') {
-    const text = typeof p.text === 'string' ? p.text.trim().slice(0, 2000) : ''
+    const text = typeof p.text === 'string' ? p.text.trim() : ''
     if (!text) throw new HttpError(400, 'reward_payload')
+    if (text.length > 6000) throw new HttpError(400, 'reward_payload')
     payload = { text }
   } else if (kind === 'link' || kind === 'video') {
     const url = httpsUrl(p.url)

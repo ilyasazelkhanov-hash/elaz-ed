@@ -1024,6 +1024,14 @@ test('manual announcement of a private course lesson only uses its public teaser
   assert(text.includes('Публичный анонс'))
 })
 
+test('premium reward text is retained when editing a long pack', async () => {
+  await everyoneBoots()
+  const text='Готовое задание с критериями. '.repeat(140)
+  const response=await call('admin_advent_reward_save',{reward:{title:'Premium pack',kind:'message',mode:'threshold',doors:3,payload:{text}}},ADMIN)
+  assert.equal(response.status,200)
+  assert.equal(state.tables.advent_rewards.at(-1).payload.text,text.trim())
+})
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()

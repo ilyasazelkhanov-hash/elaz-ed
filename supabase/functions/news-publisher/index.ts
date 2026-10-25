@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { newsTelegramPost } from '../_shared/news.ts'
+import { publishEditorialBatch } from '../_shared/editorial.ts'
 
 const token = Deno.env.get('BOT_TOKEN') ?? ''
 let key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -31,6 +32,11 @@ Deno.serve(async req => {
   }
   const cfg=s.news_publishing
   if(!cfg?.enabled||!Number.isSafeInteger(cfg.chat_id)||!s.bot?.username)return json({ok:true,sent:0,reason:'disabled'})
+  if(input.mode==='editorial'){
+   const target=await telegram('getChat',{chat_id:'@OGCRE8R'})
+   if(!target.ok||target.result?.id!==cfg.chat_id)return json({error:'editorial_destination'},409)
+   return json(await publishEditorialBatch(db,telegram,cfg.chat_id,String(input.batch??'')))
+  }
   let sent=0
   for(let i=0;i<10;i++){
    const claimed=await db.rpc('claim_news_post',{p_chat:cfg.chat_id})
