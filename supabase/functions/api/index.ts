@@ -2,6 +2,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { handleAcademy, AcademyError } from './academy.ts'
 import { handleAcademyFiles } from './academy-files.ts'
+import { newsTelegramPost } from '../_shared/news.ts'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -670,12 +671,16 @@ async function shareMessage(body: Row) {
   const lessonId = Number(body.lesson_id)
   let caption = 'Учусь в OG CRE8R²: уроки с XP, стриком и рейтингом.'
   let start = `r${row.id}`
+  let articleLink: string | null = null
   if (kind === 'lesson' && lessonId > 0) {
-    const { data: les } = await db.from('lessons').select('id,title').eq('id', lessonId).eq('published', true).maybeSingle()
-    if (les) {
-      caption = `Прошёл урок «${les.title}» в OG CRE8R².`
-      start = `l${les.id}_r${row.id}`
-    }
+    const { data: les, error } = await db.from('lessons').select('id,title,subtitle,body,emoji,course_id,free_preview').eq('id', lessonId).eq('published', true).maybeSingle()
+    if (error) throw new HttpError(500, 'db')
+    if (!les) throw new HttpError(404, 'not_found')
+    if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
+    const post = newsTelegramPost(les, s.bot, row.id)
+    caption = post.text
+    articleLink = post.link
+    start = `l${les.id}_r${row.id}`
   } else if (kind === 'streak') {
     // Сырой row.streak мог остаться от оборванного стрика — берём живой.
     caption = `Держу стрик в OG CRE8R²: ${aliveStreak(row)} дн. подряд.`
@@ -691,7 +696,8 @@ async function shareMessage(body: Row) {
       photo_url: photo,
       thumbnail_url: photo,
       caption,
-      reply_markup: { inline_keyboard: [[{ text: 'Открыть OG CRE8R²', url: `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=${start}` }]] },
+      ...(articleLink ? { parse_mode: 'HTML' } : {}),
+      reply_markup: { inline_keyboard: [[{ text: articleLink ? 'Читать полностью' : 'Открыть OG CRE8R²', url: articleLink ?? `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=${start}` }]] },
     },
     allow_user_chats: true,
     allow_group_chats: true,
@@ -1022,15 +1028,10 @@ async function adminAnnounce(body: Row) {
   const { data: les } = await db.from('lessons').select('*').eq('id', Number(body.id)).maybeSingle()
   if (!les || !les.published) throw new HttpError(400, 'not_published')
   if (!s.channel?.id || !s.bot?.username) throw new HttpError(400, 'not_ready')
-  const link = `https://t.me/${s.bot.username}?${s.bot.main_app ? 'startapp' : 'start'}=l${les.id}`
-  const cat = les.category ? `#${escapeHtml(String(les.category).replace(/[\s-]+/g, '_'))}` : ''
-  const meta = les.kind === 'story' ? '⚡ Короткая история' : `⏱ ${les.minutes} мин · ⚡ +${les.xp} XP`
-  const text = [
-    `${escapeHtml(les.emoji)} <b>${escapeHtml(les.title)}</b>`,
-    les.subtitle ? `${escapeHtml(les.subtitle)}` : '',
-    '',
-    [meta, cat].filter(Boolean).join('  '),
-  ].filter((line, i) => i === 2 || line !== '').join('\n')
+  // The durable queue owns news delivery; manual clicks must not duplicate it.
+  if (s.news_publishing?.enabled && les.kind === 'lesson' && !les.course_id) return { ok: true, queued: true }
+  const teaser = les.course_id && !les.free_preview ? { ...les, body: '' } : les
+  const { text, link } = newsTelegramPost(teaser, s.bot)
   const r = await tg('sendMessage', {
     chat_id: s.channel.id,
     text,

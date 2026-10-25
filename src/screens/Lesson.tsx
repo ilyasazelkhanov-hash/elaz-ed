@@ -7,6 +7,7 @@ import { appLink } from '../lib/links'
 import { sfx } from '../lib/sfx'
 import { copyText, haptic, inTelegram, openLink, shareLink } from '../lib/tg'
 import { track } from '../lib/track'
+import { newsShareText } from '../../supabase/functions/_shared/news'
 import type { Lesson, LessonQuizAttempt, QuizQuestion } from '../lib/types'
 import { Markdown } from '../Markdown'
 import { useStore, type Inset } from '../store'
@@ -102,7 +103,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const share = () => {
     const link = appLink(id)
     if (!link || !view) return toast('Ссылка появится, когда бот будет настроен')
-    shareLink(link, `${view.title} — урок в OG CRE8R²`)
+    shareLink(link, newsShareText({ title: view.title, subtitle: view.subtitle, body: lesson?.body ?? '' }))
     track('share', { kind: 'lesson', channel: 'link' }, id)
   }
 

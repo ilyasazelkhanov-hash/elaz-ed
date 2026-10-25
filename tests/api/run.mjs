@@ -985,6 +985,45 @@ test('academy propagates SQL permission/conflict errors and rejects malformed ac
   assert.equal(state.academyCalls.length,count)
 })
 
+test('shared news contains a short article excerpt and a direct article link', async () => {
+  await everyoneBoots()
+  state.tables.lessons.push({id:20,title:'Новости ИИ',kind:'lesson',published:true,course_id:null,body:'Инструмент готовит презентацию по источникам. '+ 'Деталь. '.repeat(500),subtitle:'Описание',emoji:'🤖'})
+  replies.savePreparedInlineMessage={ok:true,result:{id:'prepared-news'}}
+  const response=await call('share_message',{kind:'lesson',lesson_id:20},BUYER)
+  assert.equal(response.status,200)
+  const result=sent('savePreparedInlineMessage')[0].payload.result
+  assert(result.caption.includes('Инструмент готовит презентацию'))
+  assert(result.caption.includes('https://t.me/test_bot?start=l20_r2'))
+  assert(result.caption.length<=1024)
+})
+
+test('share cannot leak an excerpt from a locked course lesson', async () => {
+  await everyoneBoots()
+  assert.equal((await call('share_message',{kind:'lesson',lesson_id:10},BUYER)).status,403)
+  assert.equal(sent('savePreparedInlineMessage').length,0)
+})
+
+test('manual announcement is short and includes the full article link in its text', async () => {
+  await everyoneBoots()
+  state.tables.lessons.push({id:20,title:'Новости ИИ',kind:'lesson',published:true,course_id:null,body:'Инструмент готовит презентацию по источникам. '+ 'Деталь. '.repeat(500),emoji:'🤖'})
+  assert.equal((await call('admin_announce',{id:20},ADMIN)).status,200)
+  const text=sent('sendMessage')[0].payload.text
+  assert(text.includes('Инструмент готовит презентацию'))
+  assert(text.includes('https://t.me/test_bot?start=l20'))
+  assert(text.length<=1024)
+})
+
+test('manual announcement of a private course lesson only uses its public teaser', async () => {
+  await everyoneBoots()
+  const lesson=state.tables.lessons.find(l=>l.id===10)
+  lesson.body='Секретное содержимое платного урока.'
+  lesson.subtitle='Публичный анонс урока.'
+  assert.equal((await call('admin_announce',{id:10},ADMIN)).status,200)
+  const text=sent('sendMessage')[0].payload.text
+  assert(!text.includes('Секретное содержимое'))
+  assert(text.includes('Публичный анонс'))
+})
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()

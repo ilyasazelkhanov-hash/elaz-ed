@@ -3,6 +3,7 @@ import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText, isDemo } from '../lib/api'
 import { appLink } from '../lib/links'
+import { newsShareText } from '../../supabase/functions/_shared/news'
 import { blobToBase64, renderCard, type ShareCard } from '../lib/shareCard'
 import { canDownload, canShareMessage, canShareStory, downloadFile, haptic, shareLink, shareMessage, shareToStory } from '../lib/tg'
 import { track } from '../lib/track'
@@ -31,7 +32,9 @@ function Body({ card }: { card: ShareCard }) {
   const [blob, setBlob] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const [captionReady, setCaptionReady] = useState(card.kind !== 'lesson' || !card.lessonId)
   const hosted = useRef<string | null>(null)
+  const captionCache = useRef<Promise<string> | null>(null)
   const link = card.link ?? appLink(card.lessonId)
 
   useEffect(() => {
@@ -57,6 +60,21 @@ function Body({ card }: { card: ShareCard }) {
   const canNative = !!file && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })
   const canStory = canShareStory && !isDemo
   const sent = (channel: string) => track('share', { kind: card.kind, channel }, card.lessonId)
+  const shareCaption = () => {
+    if (card.kind !== 'lesson' || !card.lessonId) return Promise.resolve(card.caption)
+    captionCache.current ??= api.lesson(card.lessonId).then(lesson => newsShareText(lesson))
+    return captionCache.current.catch(error => { captionCache.current = null; throw error })
+  }
+  // Prepare the excerpt before a click: native share sheets need user activation.
+  useEffect(() => {
+    let alive = true
+    shareCaption().then(() => { if (alive) setCaptionReady(true) }).catch(() => {
+      if (alive) toast('Не удалось подготовить текст. Открой «Поделиться» ещё раз')
+    })
+    return () => { alive = false }
+    // This component is keyed by the shared card.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Telegram публикует и сохраняет картинку только по ссылке — загружаем её один раз.
   const hostedUrl = async () => {
@@ -80,7 +98,8 @@ function Body({ card }: { card: ShareCard }) {
 
   const native = () =>
     run('native', async () => {
-      await navigator.share({ files: [file!], text: link ? `${card.caption} ${link}` : card.caption })
+      const caption = await shareCaption()
+      await navigator.share({ files: [file!], text: link ? `${caption}\n\n${link}` : caption })
       sent('native')
     })
 
@@ -99,7 +118,7 @@ function Body({ card }: { card: ShareCard }) {
     run('story', async () => {
       const url = await hostedUrl()
       if (!url) return
-      shareToStory(url, card.caption, link)
+      shareToStory(url, await shareCaption(), link)
       sent('tg_story')
     })
 
@@ -120,11 +139,11 @@ function Body({ card }: { card: ShareCard }) {
       sent('save')
     })
 
-  const sendLink = () => {
+  const sendLink = () => run('link', async () => {
     if (!link) return toast('Ссылка появится, когда бот будет настроен')
-    shareLink(link, card.caption)
+    shareLink(link, await shareCaption())
     sent('link')
-  }
+  })
 
   return (
     <div>
@@ -148,13 +167,13 @@ function Body({ card }: { card: ShareCard }) {
           </Tap>
         )}
         {canNative && (
-          <Tap onClick={native} disabled={!file || !!busy} className="shine flex h-[54px] w-full items-center justify-center gap-2 rounded-[20px] font-display text-[14px] font-semibold text-white disabled:opacity-60" style={{ background: 'var(--aurora)' }}>
+          <Tap onClick={native} disabled={!file || !captionReady || !!busy} className="shine flex h-[54px] w-full items-center justify-center gap-2 rounded-[20px] font-display text-[14px] font-semibold text-white disabled:opacity-60" style={{ background: 'var(--aurora)' }}>
             {busy === 'native' ? <Spinner size={20} /> : <Share2 size={18} />} Поделиться картинкой
           </Tap>
         )}
         <div className="flex gap-2">
           {canStory && (
-            <Tap onClick={story} disabled={!file || !!busy} className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-line bg-card text-[14px] font-semibold disabled:opacity-60">
+            <Tap onClick={story} disabled={!file || !captionReady || !!busy} className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-line bg-card text-[14px] font-semibold disabled:opacity-60">
               {busy === 'story' && <Spinner size={18} />} В сторис Telegram
             </Tap>
           )}
@@ -167,7 +186,7 @@ function Body({ card }: { card: ShareCard }) {
             {busy === 'save' ? <Spinner size={18} /> : <Download size={17} />} Сохранить
           </Tap>
         </div>
-        <Tap onClick={sendLink} className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[18px] text-[14px] font-semibold text-mute">
+        <Tap onClick={sendLink} disabled={!captionReady || !!busy} className="flex h-[48px] w-full items-center justify-center gap-2 rounded-[18px] text-[14px] font-semibold text-mute disabled:opacity-60">
           <Link2 size={17} /> Отправить ссылку
         </Tap>
       </div>

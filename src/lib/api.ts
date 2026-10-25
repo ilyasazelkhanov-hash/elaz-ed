@@ -66,7 +66,7 @@ const httpApi: Api = {
     await call('admin_delete', { id })
   },
   adminAnnounce: async (id) => {
-    await call('admin_announce', { id })
+    return await call<{ queued?: boolean }>('admin_announce', { id })
   },
   advent: () => call('advent'),
   adventDoor: (day) => call('advent_door', { day }),
