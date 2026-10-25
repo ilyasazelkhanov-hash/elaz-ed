@@ -1,4 +1,4 @@
-import { ExternalLink, Star } from 'lucide-react'
+import { Copy, ExternalLink, Star } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { formatCode } from '../../lib/advent'
 import { api, errorText, isDemo } from '../../lib/api'
@@ -9,6 +9,7 @@ import { track } from '../../lib/track'
 import { useStore } from '../../store'
 import { Cta, Emoji, Sheet, Spinner, Tap } from '../../ui'
 import { Video } from '../Lesson'
+import { Markdown } from '../../Markdown'
 
 // Билеты «догнать» и содержимое призов. Всё, что даёт билет, проверяет сервер:
 // урок с квизом без ошибок, друг, подписавшийся на канал, переход по ссылке из сторис, оплата звёздами.
@@ -162,8 +163,14 @@ export function CatchupSheet({ open, onClose, data, reload }: { open: boolean; o
 /** Что внутри выданного приза. Промокод показывается отдельно — у него своя плашка с кодом. */
 export function RewardBody({ kind, content }: { kind: RewardKind; content: RewardContent | null | undefined }) {
   const push = useStore((s) => s.push)
+  const toast = useStore((s) => s.toast)
   if (!content) return null
-  if (kind === 'message') return <p className="selectable mt-3 whitespace-pre-line rounded-[16px] border border-line bg-bg p-3.5 text-[14.5px] leading-relaxed">{content.text}</p>
+  if (kind === 'message') return <div className="mt-3 min-w-0 rounded-[16px] border border-line bg-bg p-3.5">
+    <Markdown text={content.text ?? ''} />
+    <Tap className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-line text-[13px] font-semibold" onClick={async () => {
+      if (await copyText(content.text ?? '')) { haptic.success(); toast('Набор скопирован', '📋') }
+    }}><Copy size={15} /> Скопировать весь набор</Tap>
+  </div>
   if (kind === 'video' && content.url) {
     return (
       <div className="mt-3">

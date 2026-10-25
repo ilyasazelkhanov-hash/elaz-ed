@@ -153,6 +153,7 @@ npm run dev
 ## Адвент-календарь
 
 Двери по дням с квизом, скретч-картой, аркадой и историями, коды наград и страница кассира `/?redeem`. Выключен, пока в `settings.advent` не стоит `enabled: true`. Запуск, правила и cron — в [content/advent/README.md](content/advent/README.md). Экраны — `src/screens/advent/`, демо — `src/lib/mockAdvent.ts`, наполнение — `src/lib/adventSeed.json`.
+Рабочий пакет [Creator Vault](content/advent/premium-2026-10-26/README.md): практические задания, наборы наград с Markdown и копированием, шесть отдельных Telegram-постов. Импорт сохраняет уже открытые двери и выданные коды; демонстрационный seed не меняется.
 
 ## Правила игры
 
