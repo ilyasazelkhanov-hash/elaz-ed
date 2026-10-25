@@ -1,0 +1,439 @@
+[
+  {
+    "ids": [
+      1
+    ],
+    "source": "https://claude.com/resources/articles/claude-duet",
+    "url": "https://claude.com/resources/articles/claude-duet/opengraph-image/og",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 47621,
+    "checked": true
+  },
+  {
+    "ids": [
+      2
+    ],
+    "source": "https://openai.com/index/introducing-dots/",
+    "url": "https://images.ctfassets.net/kftzwdyauwt9/3SQQ9jqSm3aytzUPKuNS3X/e30d9ff756987b178e2b141de5c64a35/Art_Card___Landscape___16_9___1920_1080.png?w=1600&h=900&fit=fill",
+    "status": 403,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 502135,
+    "checked": true
+  },
+  {
+    "ids": [
+      3,
+      4
+    ],
+    "source": "https://www.notion.com/releases/2026-10-19",
+    "url": "https://images.ctfassets.net/spoqsaf9291f/2SnoQlZO6SbBvLggeRNEhg/978e043cec61baaff76de4e884dd6a52/more_for_less_release.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 155100,
+    "checked": true
+  },
+  {
+    "ids": [
+      5,
+      6,
+      7
+    ],
+    "source": "https://www.notion.com/releases/2026-10-13",
+    "url": "https://images.ctfassets.net/spoqsaf9291f/2A43mN8IhjxbceliFHQun1/fe86fb2ec86a18f1d2b1a1b12f4b78f2/3_8_Release_Cover.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 1156107,
+    "checked": true
+  },
+  {
+    "ids": [
+      8,
+      43
+    ],
+    "source": "https://docs.anthropic.com/en/release-notes/claude-apps",
+    "url": "https://downloads.intercomcdn.com/i/o/lupk8zyo/792494/717b10d3ebd874823db64841659b/76f3062d78ebbb04863fb1de3ef9cca0.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 19334,
+    "checked": true
+  },
+  {
+    "ids": [
+      9
+    ],
+    "source": "https://blog.google/innovation-and-ai/products/gemini-notebook/notebooklm-gemini-notebook/",
+    "url": "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/gemini-notebook__cover.width-1300.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 72819,
+    "checked": true
+  },
+  {
+    "ids": [
+      10,
+      11
+    ],
+    "source": "https://blog.google/innovation-and-ai/products/gemini-notebook/co-create-slides-videos/",
+    "url": "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/blog_hero_cocreation_2784x1566.width-1300.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 358884,
+    "checked": true
+  },
+  {
+    "ids": [
+      12,
+      13,
+      14,
+      15
+    ],
+    "source": "https://blog.google/innovation-and-ai/products/gemini-notebook/new-study-tools-september-2026/",
+    "url": "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Gemini_Notebook_BTS.width-1300.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 177724,
+    "checked": true
+  },
+  {
+    "ids": [
+      16
+    ],
+    "source": "https://x.com/HyperFrames_/status/2113670541274144802",
+    "url": "https://pbs.twimg.com/amplify_video_thumb/2113669013574414336/img/e4BG0slk07odqtsy?format=webp&name=large",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/webp",
+    "bytes": 58892,
+    "checked": true
+  },
+  {
+    "ids": [
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      28,
+      29
+    ],
+    "source": "https://runway.com/changelog",
+    "url": "https://runway.com/opengraph-image.png?opengraph-image.1oltnwfb7pfkb.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 298370,
+    "checked": true
+  },
+  {
+    "ids": [
+      24,
+      25
+    ],
+    "source": "https://www.heygen.com/models/heygen-video-1",
+    "url": "https://www.heygen.com/_next/image?url=%2Fassets_2025_redesign%2F_next%2Fstatic%2Fimmutable%2Fmedia%2Fbakery.239h5s6ncld8j.jpg&w=1080&q=75",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 30749,
+    "checked": true
+  },
+  {
+    "ids": [
+      26,
+      27
+    ],
+    "source": "https://www.canva.com/newsroom/news/canva-craft/",
+    "url": "https://content-management-files.canva.com/eaaa25f7-5062-44e3-8d32-f47802e44aab/CanvaCraftthumbnail.png",
+    "status": 403,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 2448933,
+    "checked": true
+  },
+  {
+    "ids": [
+      30
+    ],
+    "source": "https://www.figma.com/blog/the-figma-agent-is-here/",
+    "url": "https://cdn.sanity.io/images/599r6htc/regionalized/ecb42426bf00ba6a097dc81a0880661b44d5e86d-2040x1148.png?w=1200&q=70&fit=max&auto=format",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 273306,
+    "checked": true
+  },
+  {
+    "ids": [
+      31,
+      32
+    ],
+    "source": "https://blog.google/innovation-and-ai/models-and-research/google-labs/stitch-ai-ui-design/",
+    "url": "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/Stitch_Keyword_Hero_Visual.width-1300.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 688621,
+    "checked": true
+  },
+  {
+    "ids": [
+      33,
+      34,
+      35
+    ],
+    "source": "https://mistral.ai/news/voxtral-3/",
+    "url": "https://mistral.ai/cms-media/api/media/file/hero-blog-voxtral.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 1631331,
+    "checked": true
+  },
+  {
+    "ids": [
+      36
+    ],
+    "source": "https://elevenlabs.io/docs/eleven-agents/operate/architect",
+    "url": "https://elevenlabs.io/docs/api/fern-docs/og?slug=docs%2Feleven-agents%2Foperate%2Farchitect",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 193244,
+    "checked": true
+  },
+  {
+    "ids": [
+      37,
+      41
+    ],
+    "source": "https://openai.com/index/decisions-api/",
+    "url": "https://images.ctfassets.net/kftzwdyauwt9/6E0HwFxJrpWOEiFct0ZfQE/bb595e7e6ab06dfd2c953cb915c8f89a/build-more-responsive-apps-with-the-decisions-api-cover.png?w=1200&q=80&fm=webp",
+    "status": 403,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/webp",
+    "bytes": 11194,
+    "checked": true
+  },
+  {
+    "ids": [
+      38,
+      39
+    ],
+    "source": "https://community.n8n.io/t/introducing-n8n-agents-a-new-way-to-build-agents-you-set-up-once-and-use-anywhere/306323?tl=en",
+    "url": "https://europe1.discourse-cdn.com/n8n/optimized/3X/d/4/d400137491beffc5d77c9024420098aed94e999b_2_1024x546.jpeg",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 51074,
+    "checked": true
+  },
+  {
+    "ids": [
+      40
+    ],
+    "source": "https://github.com/coreyhaines31/marketingskills",
+    "url": "https://opengraph.githubassets.com/40f6d0c7e8ae284f7ea76132afdd9d6de72fedc162df0d5001a37d2798a4de29/coreyhaines31/marketingskills",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 101573,
+    "checked": true
+  },
+  {
+    "ids": [
+      42
+    ],
+    "source": "https://docs.anthropic.com/en/release-notes/claude-apps",
+    "url": "https://downloads.intercomcdn.com/i/o/lupk8zyo/792494/717b10d3ebd874823db64841659b/76f3062d78ebbb04863fb1de3ef9cca0.png",
+    "status": 200,
+    "type": "thematic-publisher-image",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 19334,
+    "checked": true
+  },
+  {
+    "ids": [
+      44
+    ],
+    "source": "https://www.youtube.com/watch?v=bxYHcNgONjc&t=116s",
+    "url": "https://i.ytimg.com/vi/bxYHcNgONjc/hqdefault.jpg",
+    "type": "video-thumbnail",
+    "image_status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 20099,
+    "checked": true
+  },
+  {
+    "ids": [
+      45
+    ],
+    "source": "https://www.youtube.com/watch?v=bxYHcNgONjc&t=452s",
+    "url": "https://i.ytimg.com/vi/bxYHcNgONjc/hqdefault.jpg",
+    "type": "video-thumbnail",
+    "image_status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 20099,
+    "checked": true
+  },
+  {
+    "ids": [
+      46
+    ],
+    "source": "https://www.youtube.com/watch?v=bxYHcNgONjc&t=771s",
+    "url": "https://i.ytimg.com/vi/bxYHcNgONjc/hqdefault.jpg",
+    "type": "video-thumbnail",
+    "image_status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 20099,
+    "checked": true
+  },
+  {
+    "ids": [
+      47,
+      48
+    ],
+    "source": "https://docs.anthropic.com/en/release-notes/claude-apps",
+    "url": "https://downloads.intercomcdn.com/i/o/lupk8zyo/792494/717b10d3ebd874823db64841659b/76f3062d78ebbb04863fb1de3ef9cca0.png",
+    "status": 403,
+    "type": "thematic-publisher-image",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 19334,
+    "checked": true
+  },
+  {
+    "ids": [
+      49
+    ],
+    "source": "https://t.me/denissexy/11748",
+    "url": "https://cdn4.telesco.pe/file/p23L9B8XKzjT5FN-NWmgk3PKIYaoYswETRsmeYjLHPj0wM_5_NyWMA168RfyEj-vI8vI_pehhh85ha1hwvzySWvmbT7OIlrU049zejUkEJLBIBbAESE2S6pWDbh-7T50xV5C34CPTL9nQ7iORgt8OrA03XEQpGmYllXEqPr_UnZvRlQNZUcsRvUDwbzJ-jnYRLmkdOztKOaAUI02mDZLwssApFxbZEdrf9sEI-qK9ptlfAw-qpZ2oPQyYn8QFyt_GvZOcRO2BJiLdpIR0xLa_puNbhxQTAl232J0EgNo9RhGaHCntEl_865GcseOqVXq9jO2KxAvi-pqbVN4UefZPA.jpg",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 16618,
+    "checked": true
+  },
+  {
+    "ids": [
+      50
+    ],
+    "source": "https://t.me/denissexy/11741",
+    "url": "https://cdn4.telesco.pe/file/QW_6bellGqGFaOPwPZQEIDSNJPo7IYaWKrFPGrpfuYMn8VGp8LSLsC-1jC_RDMM7O2nGcJowIrIhuhw-xA4RlTzq5nlvx5kQGtm9b7-Jegook33clrxk1hf6vR99_SxKvxtg7mXDwK-2rL9EYzSA_t49664MHWUvJSBICiS9DpcrWxM-KvLI0PnsPm9N8X7m0qifpkCaS9FmhLPHeH344_FKkpAmH0qJFRoXxnPxxzNHLagD0miCsLPe80CzAMF_GhrJTADW_xibvThHubcDUHrgsD8yK9SeExCSWUBEieqsqcWX_HoeJOyQkTjf0LFTGepua_sjM7ERBQnEEH7Ljw.jpg",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 17072,
+    "checked": true
+  },
+  {
+    "ids": [
+      51
+    ],
+    "source": "https://blog.google/innovation-and-ai/technology/developers-tools/embeddinggemma-2/",
+    "url": "https://storage.googleapis.com/gweb-uniblog-publish-prod/images/embeddinggemma2-banner_169.width-1300.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 1309101,
+    "checked": true
+  },
+  {
+    "ids": [
+      52
+    ],
+    "source": "https://research.nvidia.com/labs/nemotron/Nemotron-3.5-Bolt-E4B-4GB/",
+    "url": "https://research.nvidia.com/labs/nemotron/images/nvidia-nemotron-3.5-bolt-e4b-4gb/bolt_ttft-vs-accuracy.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 173497,
+    "checked": true
+  },
+  {
+    "ids": [
+      53
+    ],
+    "source": "https://cactuscompute.com/",
+    "url": "https://cactuscompute.com/opengraph-image?9df76a35fe8276e2",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 23170,
+    "checked": true
+  },
+  {
+    "ids": [
+      54
+    ],
+    "source": "https://allenai.org/blog/astabrief",
+    "url": "https://www.datocms-assets.com/64837/1790891256-asta-report-generation-model-blog-astabrief-google-docs-image-1.png",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 370933,
+    "checked": true
+  },
+  {
+    "ids": [
+      55
+    ],
+    "source": "https://www.kimi.ai/blog/kimi-k3-1-pro",
+    "url": "https://kimi-img.kimi.ai/pub/slides/kimi-fs/managed-assets/9558f8d5-08fc-42de-8e4e-339076e03895.webp",
+    "status": 200,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/webp",
+    "bytes": 43288,
+    "checked": true
+  },
+  {
+    "ids": [
+      56
+    ],
+    "source": "https://openai.com/index/gpt-6-for-everyone/",
+    "url": "https://images.ctfassets.net/kftzwdyauwt9/5frqtUAWccstAbVrCFraH6/5ae9b6bfbc3f3dff8001ed249812f97d/Intelligent-UI_Art-Card_16x9.png?w=1600&h=900&fit=fill",
+    "status": 403,
+    "type": "publisher-preview",
+    "image_status": 200,
+    "content_type": "image/png",
+    "bytes": 143714,
+    "checked": true
+  }
+]
