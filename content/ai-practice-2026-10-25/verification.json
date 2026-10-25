@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "feed": 56,
+  "course_blocks": 8,
+  "covers": 32,
+  "all_covers_load": true,
+  "all_posts_in_exactly_one_block": true,
+  "idempotent_import": true,
+  "existing_content_and_progress_preserved": true
+}
