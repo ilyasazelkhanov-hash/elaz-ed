@@ -1,0 +1,122 @@
+{
+  "checked_at": "2026-10-26",
+  "scope": "Curated original adaptation of public themes. Not an exhaustive mirror; no paid lessons or video transcripts accessed. Provenance internal; official documentation links remain public.",
+  "sources": [
+    {
+      "url": "https://stepik.org/course/271251/promo",
+      "title": "Claude Code для НЕпрограммистов [От рутины в Vibe Working режим]",
+      "access": "SPA promo resolved through public courses/sections API",
+      "adaptation": "File tasks, reusable instructions, MCP, team handoffs. Original GUI exercise; no paid steps."
+    },
+    {
+      "url": "https://www.futurepedia.io/courses",
+      "title": "Skill Leap by Futurepedia - All Courses",
+      "access": "Public page read",
+      "adaptation": "Research, presentations, workflow topics; no lesson text copied."
+    },
+    {
+      "url": "https://www.futurepedia.io/business",
+      "title": "How Companies Are Using AI Across Key Functions",
+      "access": "Public page read",
+      "adaptation": "Role-based process map."
+    },
+    {
+      "url": "https://www.futurepedia.io/learn",
+      "title": "Learn AI | Skill Leap Courses | Futurepedia",
+      "access": "Public page read",
+      "adaptation": "Learning routes and free/paid distinction."
+    },
+    {
+      "url": "https://www.futurepedia.io/workflows",
+      "title": "AI Workflows & Step-by-Step Playbooks | Futurepedia",
+      "access": "Public page read",
+      "adaptation": "Original source-to-assets and intake-to-draft exercises."
+    },
+    {
+      "url": "https://www.futurepedia.io/compare",
+      "title": "Compare AI Tools Side by Side | Futurepedia",
+      "access": "Public page read",
+      "adaptation": "Original comparison scorecard."
+    },
+    {
+      "url": "https://www.youtube.com/channel/UCwSozl89jl2zUDzQ4jGJD3g",
+      "title": "Skill Leap AI",
+      "access": "Partial page; embedded 401; metadata and description only; no transcripts",
+      "adaptation": "Titles only; no model claims from titles."
+    },
+    {
+      "url": "https://www.youtube.com/channel/UC_RovKmk0OCbuZjA8f08opw",
+      "title": "Futurepedia",
+      "access": "Partial page; embedded 401; metadata and description only; no transcripts",
+      "adaptation": "Description/chapter topics only; original portfolio plan."
+    },
+    {
+      "url": "https://www.futurepedia.io/ai-tools",
+      "title": "AI Tools - Find AI Software Categorized by Futurepedia",
+      "access": "Public page read",
+      "adaptation": "Scenario-first classification."
+    },
+    {
+      "url": "https://www.toolify.ai/",
+      "title": "Best AI Tools Directory & AI Tools List - Toolify",
+      "access": "Public page read",
+      "adaptation": "Discovery and official verification; no sponsored rankings."
+    },
+    {
+      "url": "https://www.futurepedia.io/discover",
+      "title": "Discover AI Tools | Futurepedia",
+      "access": "Public page read",
+      "adaptation": "Discovery versus verification; no usage claims."
+    }
+  ],
+  "primary_sources": [
+    {
+      "url": "https://stepik.org/api/courses/271251"
+    },
+    {
+      "url": "https://stepik.org/api/sections?ids[]=675477&ids[]=661485&ids[]=661490&ids[]=661489&ids[]=661491&ids[]=676463"
+    },
+    {
+      "url": "https://support.google.com/notebooklm/answer/16206563?hl=en",
+      "title": "Create a notebook in Gemini Notebook - Gemini Notebook Help"
+    },
+    {
+      "url": "https://support.google.com/gemininotebook/answer/17670842",
+      "title": "Manage your Gemini Notebook usage limits - Computer - Gemini Notebook Help"
+    },
+    {
+      "url": "https://gamma.app/",
+      "title": "Gamma | Best AI Presentation Maker & Website Builder"
+    },
+    {
+      "url": "https://help.gamma.app/en/articles/15002203-how-do-i-create-with-agent-in-gamma",
+      "title": "How do I create with Agent in Gamma? | Gamma Help Center"
+    },
+    {
+      "url": "https://www.descript.com/",
+      "title": "Descript: AI Video & Audio Text-based Editor — Try Free"
+    },
+    {
+      "url": "https://www.descript.com/pricing",
+      "title": "Descript Pricing | Plans for Every Creator, Free to Start"
+    },
+    {
+      "url": "https://support.claude.com/en/articles/16761823-claude-cowork-and-chat-are-one-claude",
+      "title": "Claude Cowork and chat are one Claude | Claude Help Center"
+    }
+  ],
+  "stepik_sections": [
+    "Введение в курс",
+    "Онбординг вашего нового ИИ-сотрудника",
+    "Даем ИИ-сотруднику доступ к внешнему миру",
+    "Собираем команду ИИ-сотрудников",
+    "Финальный проект",
+    "Бонус"
+  ],
+  "verified_updates": [
+    "Google official help now uses Gemini Notebook and notebook.google.com, with compute-based limits.",
+    "Gamma 5 agent prompt bar, Plan/Express mode picker. Classic generator is separate.",
+    "Claude merged chat/Cowork gradual rollout; Desktop open for local files.",
+    "Descript text-based editing, clips and free plan; AI/export quotas vary."
+  ]
+}
