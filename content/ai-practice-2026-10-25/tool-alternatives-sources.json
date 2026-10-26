@@ -1,0 +1,96 @@
+{
+  "checked_at": "2026-10-26",
+  "scope": "Expanded scenario-based comparisons. No paid feature or universal ranking promises. No claims of testing all products personally. Only public official product pages/help; no third-party blogger content copied.",
+  "sources": [
+    {
+      "url": "https://www.deepseek.com/",
+      "title": "DeepSeek | Into the Unknown",
+      "access": "Official public page read"
+    },
+    {
+      "url": "https://gemini.google.com/",
+      "title": "Google Gemini",
+      "access": "Official public page read"
+    },
+    {
+      "url": "https://qwen.ai/qwenchat",
+      "access": "Official page via web fallback or official search result; Firecrawl rate limit on some URLs"
+    },
+    {
+      "url": "https://mistral.ai/products/le-chat",
+      "title": "Mistral Vibe (formerly Le Chat) - AI chat and coding agent",
+      "access": "Official public page read",
+      "notes": "Current product name Mistral Vibe, formerly Le Chat"
+    },
+    {
+      "url": "https://www.midjourney.com/",
+      "title": "Midjourney",
+      "access": "Official public page read"
+    },
+    {
+      "url": "https://ideogram.ai/",
+      "access": "Official page via web fallback or official search result; Firecrawl rate limit on some URLs"
+    },
+    {
+      "url": "https://www.recraft.ai/",
+      "title": "Recraft | AI for designers, creatives, sellers, and teams",
+      "access": "Official public page read"
+    },
+    {
+      "url": "https://klingai.com/",
+      "title": "Kling AI: Next-Gen AI Video & Image Generator",
+      "access": "Official public page read"
+    },
+    {
+      "url": "https://pika.art/",
+      "title": "Pika",
+      "access": "Official public page read"
+    },
+    {
+      "url": "https://lumalabs.ai/dream-machine",
+      "title": "Creative agents for creative professionals | Luma",
+      "access": "Official public page read"
+    },
+    {
+      "url": "https://www.heygen.com/",
+      "title": "HeyGen: Create AI Videos with Your Personal Avatar",
+      "access": "Official public page read"
+    },
+    {
+      "url": "https://www.udio.com/",
+      "access": "Official page via web fallback or official search result; Firecrawl rate limit on some URLs",
+      "notes": "Do not promise downloadable audio; official help says downloads disabled"
+    },
+    {
+      "url": "https://stableaudio.com/",
+      "title": "Stable Audio",
+      "access": "Official public page read",
+      "notes": "Do not promise downloadable audio; official help says downloads disabled"
+    },
+    {
+      "url": "https://cursor.com/",
+      "access": "Official page via web fallback or official search result; Firecrawl rate limit on some URLs"
+    },
+    {
+      "url": "https://github.com/features/copilot",
+      "access": "Official page via web fallback or official search result; Firecrawl rate limit on some URLs"
+    },
+    {
+      "url": "https://www.make.com/",
+      "access": "Official page via web fallback or official search result; Firecrawl rate limit on some URLs"
+    },
+    {
+      "url": "https://zapier.com/",
+      "access": "Official page via web fallback or official search result; Firecrawl rate limit on some URLs"
+    },
+    {
+      "url": "https://help.udio.com/en/articles/12683565-changes-associated-with-the-universal-music-group-umg-partnership",
+      "access": "Official page via web fallback or official search result; Firecrawl rate limit on some URLs",
+      "notes": "Do not promise downloadable audio; official help says downloads disabled"
+    },
+    {
+      "url": "https://gemini.google/overview/gemini-live/",
+      "access": "Official page via web fallback or official search result; Firecrawl rate limit on some URLs"
+    }
+  ]
+}
