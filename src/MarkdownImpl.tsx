@@ -4,6 +4,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { copyText, haptic, openLink } from './lib/tg'
 import { Tap } from './ui'
+import { MarkdownTable } from './MarkdownTable'
+import { MarkdownImage } from './MarkdownImage'
 
 function Pre({ children }: { children?: ReactNode }) {
   const ref = useRef<HTMLPreElement>(null)
@@ -36,11 +38,7 @@ export default function MarkdownImpl({ text, className = 'prose-ed' }: { text: s
         remarkPlugins={[remarkGfm]}
         components={{
           pre: ({ children }) => <Pre>{children}</Pre>,
-          table: ({ children }) => (
-            <div className="table-wrap">
-              <table>{children}</table>
-            </div>
-          ),
+          table: ({ children }) => <MarkdownTable>{children}</MarkdownTable>,
           a: ({ href, children }) => (
             <a
               href={href}
@@ -52,7 +50,7 @@ export default function MarkdownImpl({ text, className = 'prose-ed' }: { text: s
               {children}
             </a>
           ),
-          img: ({ src, alt }) => <img src={typeof src === 'string' ? src : undefined} alt={alt ?? ''} loading="lazy" />,
+          img: ({ src, alt }) => <MarkdownImage src={typeof src === 'string' ? src : undefined} alt={alt ?? ''} />,
         }}
       >
         {text}
