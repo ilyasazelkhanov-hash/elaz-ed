@@ -1,0 +1,73 @@
+{
+  "checked_at": "2026-10-26",
+  "research_method": "Public curricula and provider tutorials. No paid lesson extraction, no claims of completing or personally testing external courses.",
+  "teaching_patterns": [
+    {
+      "source": "https://academy.openai.com/",
+      "observed": "Separate tracks by role and outcome; prompting/review/repeatable workflow emphasis.",
+      "implemented": "Five focused courses; beginner and advanced routes, concrete project."
+    },
+    {
+      "source": "https://docs.n8n.io/try-it-out/tutorial-first-workflow/",
+      "observed": "Prerequisites, numbered UI actions, screenshots, sample inputs and visible output.",
+      "implemented": "Action/purpose/expected result steps; local sample files and checkpoints."
+    },
+    {
+      "source": "https://www.boot.dev/courses/learn-ai-coding",
+      "observed": "Public chapter list progresses from models/context/rules to feedback loops, Skills, MCP and plugins.",
+      "implemented": "Beginner GUI first, optional extensions and acceptance checks. Did not copy interpreter project or lesson text."
+    }
+  ],
+  "primary_sources": [
+    {
+      "url": "https://help.gamma.app/en/articles/15002203-how-do-i-create-with-agent-in-gamma",
+      "title": "How do I create with Agent in Gamma? | Gamma Help Center",
+      "checked_at": "2026-10-26"
+    },
+    {
+      "url": "https://support.claude.com/en/articles/12512180",
+      "title": "Use skills in Claude | Claude Help Center",
+      "checked_at": "2026-10-26"
+    },
+    {
+      "url": "https://agentskills.io/specification",
+      "title": "Specification - Agent Skills",
+      "checked_at": "2026-10-26"
+    },
+    {
+      "url": "https://opencode.ai/v2/docs/mcp-servers/",
+      "title": "MCP servers | OpenCode",
+      "checked_at": "2026-10-26"
+    },
+    {
+      "url": "https://www.descript.com/api",
+      "title": "Video Editing API | Automate Transcription, Clips & Captions | Descript",
+      "checked_at": "2026-10-26"
+    },
+    {
+      "url": "https://support.google.com/gemininotebook/answer/16206563",
+      "title": "Create a notebook in Gemini Notebook - Gemini Notebook Help",
+      "checked_at": "2026-10-26"
+    },
+    {
+      "url": "https://docs.github.com/en/desktop/overview/creating-your-first-repository-using-github-desktop",
+      "title": "Creating your first repository using GitHub Desktop - GitHub Docs",
+      "checked_at": "2026-10-26"
+    }
+  ],
+  "unavailable": [
+    {
+      "url": "https://learn.microsoft.com/en-us/training/modules/introduction-generative-ai/",
+      "status": "404; not used"
+    },
+    {
+      "url": "https://docs.github.com/en/desktop/adding-and-cloning-repositories/creating-your-first-repository-using-github-desktop",
+      "status": "404; corrected to /desktop/overview/..."
+    },
+    {
+      "url": "https://skills.claude.com/",
+      "status": "No useful body; used official support article instead."
+    }
+  ],
+  "telegram": "Only news posts (published kind=lesson, course_id=null). Course split inserts no news; manual admin announcement rejects course lessons, including free previews. No deletion of already published posts requested."
+}

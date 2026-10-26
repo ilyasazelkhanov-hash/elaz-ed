@@ -1013,15 +1013,45 @@ test('manual announcement is short and includes the full article link in its tex
   assert(text.length<=1024)
 })
 
-test('manual announcement of a private course lesson only uses its public teaser', async () => {
+test('fully readable zero-price course opens without a request; mixed access stays locked', async () => {
+  await everyoneBoots()
+  state.tables.lessons.push({id:21,title:'Free course lesson',kind:'lesson',published:true,course_id:2,free_preview:true,quiz:[]})
+  let response=await call('boot',{},OTHER)
+  assert.equal(response.body.courses.find(c=>c.id===2).access,true)
+  state.tables.lessons.push({id:22,title:'Private course lesson',kind:'lesson',published:true,course_id:2,free_preview:false,quiz:[]})
+  response=await call('boot',{},OTHER)
+  assert.equal(response.body.courses.find(c=>c.id===2).access,false)
+  assert.equal(response.body.courses.find(c=>c.id===1).access,false)
+})
+
+test('split courses are paid independently: one purchase opens only that course', async () => {
+  await everyoneBoots()
+  state.tables.courses.push(...[31,32,33].map(id=>({id,title:'Bundle '+id,published:true,price_stars:500,invite_unlock:0})))
+  state.tables.courses.forEach(c=>c.price_stars=500)
+  state.tables.settings.push({key:'content_revision:ai-practice-paths-2026-10-26-v4',value:{payment_scheme:'individual',courses:{foundations:1,text:2,media:31,coding:32,automation:33}}})
+  for(const id of [2,31,32,33])state.tables.lessons.push({id:100+id,title:'Private bundle lesson',kind:'lesson',published:true,course_id:id,free_preview:false,quiz:[]})
+  await hook(paidUpdate(BUYER,2,'bundle-payment',500))
+  let response=await call('boot',{},BUYER)
+  assert.equal(response.body.courses.filter(c=>c.access).length,1)
+  assert.equal(state.tables.course_access.filter(a=>a.user_id===BUYER).length,1)
+  assert.equal((await call('lesson',{id:10},BUYER)).status,403)
+  assert.equal((await call('lesson',{id:102},BUYER)).status,200)
+  await call('admin_refund',{id:state.tables.payments.find(p=>p.charge_id==='bundle-payment').id},ADMIN)
+  response=await call('boot',{},BUYER)
+  assert.equal(response.body.courses.filter(c=>c.access).length,0)
+  assert.equal((await call('lesson',{id:10},BUYER)).status,403)
+})
+
+test('manual announcement never sends a course lesson, including free previews', async () => {
   await everyoneBoots()
   const lesson=state.tables.lessons.find(l=>l.id===10)
   lesson.body='Секретное содержимое платного урока.'
   lesson.subtitle='Публичный анонс урока.'
-  assert.equal((await call('admin_announce',{id:10},ADMIN)).status,200)
-  const text=sent('sendMessage')[0].payload.text
-  assert(!text.includes('Секретное содержимое'))
-  assert(text.includes('Публичный анонс'))
+  for(const preview of [false,true]){
+    lesson.free_preview=preview
+    assert.equal((await call('admin_announce',{id:10},ADMIN)).status,400)
+  }
+  assert.equal(sent('sendMessage').length,0)
 })
 
 test('premium reward text is retained when editing a long pack', async () => {
