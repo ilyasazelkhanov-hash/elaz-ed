@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "fictional": true,
+  "creator": "author",
+  "facts": [
+    {
+      "id": "F1",
+      "text": "Это учебный вымышленный бренд; реальная запись и коммерческий оффер отсутствуют."
+    }
+  ],
+  "budget": {
+    "hours": 12,
+    "rate": 4000,
+    "tools": 2000,
+    "revisions": 2,
+    "hours_per_revision": 1.5,
+    "price": 90000,
+    "unit": "KZT",
+    "fictional": true
+  },
+  "assets": [
+    {
+      "id": "01-question",
+      "file": "assets/01-question.png",
+      "width": 1080,
+      "height": 1350,
+      "origin": "original_author_vector_render_not_ai",
+      "alt": "Сумка с заплаткой: вопрос о сохранении вещи",
+      "rights": {
+        "state": "owned",
+        "record": "Original author SVG in this learning archive"
+      },
+      "dependencies": [
+        "assets/01-question.svg"
+      ],
+      "claims": []
+    },
+    {
+      "id": "02-photo",
+      "file": "assets/02-photo.png",
+      "width": 1080,
+      "height": 1350,
+      "origin": "original_author_vector_render_not_ai",
+      "alt": "Та же сумка: подготовить фото",
+      "rights": {
+        "state": "owned",
+        "record": "Original author SVG in this learning archive"
+      },
+      "dependencies": [
+        "assets/02-photo.svg"
+      ],
+      "claims": []
+    },
+    {
+      "id": "03-detail",
+      "file": "assets/03-detail.png",
+      "width": 1080,
+      "height": 1350,
+      "origin": "original_author_vector_render_not_ai",
+      "alt": "Крупная деталь шва и заплатки",
+      "rights": {
+        "state": "owned",
+        "record": "Original author SVG in this learning archive"
+      },
+      "dependencies": [
+        "assets/03-detail.svg"
+      ],
+      "claims": []
+    },
+    {
+      "id": "04-options",
+      "file": "assets/04-options.png",
+      "width": 1080,
+      "height": 1350,
+      "origin": "original_author_vector_render_not_ai",
+      "alt": "Та же сумка: обсудить варианты ремонта",
+      "rights": {
+        "state": "owned",
+        "record": "Original author SVG in this learning archive"
+      },
+      "dependencies": [
+        "assets/04-options.svg"
+      ],
+      "claims": []
+    },
+    {
+      "id": "05-next",
+      "file": "assets/05-next.png",
+      "width": 1080,
+      "height": 1350,
+      "origin": "original_author_vector_render_not_ai",
+      "alt": "Та же сумка: подготовить вопрос",
+      "rights": {
+        "state": "owned",
+        "record": "Original author SVG in this learning archive"
+      },
+      "dependencies": [
+        "assets/05-next.svg"
+      ],
+      "claims": []
+    },
+    {
+      "id": "intro",
+      "file": "assets/intro.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 15,
+      "origin": "procedural_card_montage_with_local_flite_speech_not_ai_video",
+      "alt": "Пять учебных карточек вымышленной мастерской; английская синтетическая речь и русские субтитры",
+      "rights": {
+        "state": "owned",
+        "record": "Original vector artwork and original narration text; locally synthesized flite speech"
+      },
+      "dependencies": [
+        "assets/intro.vtt",
+        "assets/voice.wav"
+      ],
+      "claims": []
+    },
+    {
+      "id": "campaign",
+      "file": "assets/campaign.mp4",
+      "width": 360,
+      "height": 640,
+      "seconds": 12,
+      "origin": "procedural_card_montage_with_local_flite_speech_not_ai_video",
+      "alt": "Пять учебных карточек вымышленной мастерской; английская синтетическая речь и русские субтитры",
+      "rights": {
+        "state": "owned",
+        "record": "Original vector artwork and original narration text; locally synthesized flite speech"
+      },
+      "dependencies": [
+        "assets/campaign.vtt",
+        "assets/voice.wav"
+      ],
+      "claims": []
+    }
+  ]
+}

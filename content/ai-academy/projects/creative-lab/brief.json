@@ -1,0 +1,13 @@
+{
+  "brand":"Второй шов",
+  "fictional":true,
+  "audience":"Человек, который хочет обсудить ремонт любимой вещи до её замены",
+  "job":"Понять, что подготовить для разговора с мастерской",
+  "message":"Пришлите фото вещи и опишите, что хотите изменить",
+  "cta":"Подготовьте фото и вопрос",
+  "facts":[{"id":"F1","text":"Это учебный вымышленный бренд; реальная запись и коммерческий оффер отсутствуют."}],
+  "tokens":{"paper":"#fff5e5","ink":"#302342","accent":"#7750b5","secondary":"#287a65"},
+  "product":{"kind":"canvas tote","handles":2,"patch_side":"left","stitch_rows":2},
+  "creator":"author",
+  "budget":{"hours":12,"rate":4000,"tools":2000,"revisions":2,"hours_per_revision":1.5,"price":90000,"unit":"KZT","fictional":true}
+}

@@ -1,0 +1,72 @@
+[
+  {
+    "shot": 1,
+    "duration_seconds": 1.2,
+    "asset": "assets/01-question.png",
+    "action": "Вопрос",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  },
+  {
+    "shot": 2,
+    "duration_seconds": 1.2,
+    "asset": "assets/02-photo.png",
+    "action": "Подготовка",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  },
+  {
+    "shot": 3,
+    "duration_seconds": 1.2,
+    "asset": "assets/03-detail.png",
+    "action": "Деталь",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  },
+  {
+    "shot": 4,
+    "duration_seconds": 1.2,
+    "asset": "assets/04-options.png",
+    "action": "Варианты",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  },
+  {
+    "shot": 5,
+    "duration_seconds": 1.2,
+    "asset": "assets/05-next.png",
+    "action": "Следующий шаг",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  },
+  {
+    "shot": 6,
+    "duration_seconds": 1.2,
+    "asset": "assets/01-question.png",
+    "action": "Вопрос",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  },
+  {
+    "shot": 7,
+    "duration_seconds": 1.2,
+    "asset": "assets/02-photo.png",
+    "action": "Подготовка",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  },
+  {
+    "shot": 8,
+    "duration_seconds": 1.2,
+    "asset": "assets/03-detail.png",
+    "action": "Деталь",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  },
+  {
+    "shot": 9,
+    "duration_seconds": 1.2,
+    "asset": "assets/04-options.png",
+    "action": "Варианты",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  },
+  {
+    "shot": 10,
+    "duration_seconds": 1.2,
+    "asset": "assets/05-next.png",
+    "action": "Следующий шаг",
+    "continuity": "Один и тот же авторский предмет; графическая смена карточек, не съёмка и не AI video"
+  }
+]

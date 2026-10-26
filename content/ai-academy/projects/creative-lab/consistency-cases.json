@@ -1,0 +1,162 @@
+[
+  {
+    "id": "fixture-01",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-02",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-03",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-04",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-05",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 1,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-06",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-07",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-08",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-09",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-10",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "right",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-11",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-12",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-13",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-14",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-15",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 1,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-16",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-17",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-18",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-19",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": false
+  },
+  {
+    "id": "fixture-20",
+    "origin": "authored_vector_fixture_not_ai",
+    "handles": 2,
+    "patch_side": "left",
+    "stitch_rows": 2,
+    "unknown_mark": true
+  }
+]
