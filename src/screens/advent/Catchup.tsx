@@ -199,6 +199,7 @@ export function RewardBody({ kind, content }: { kind: RewardKind; content: Rewar
       </Cta>
     )
   }
+  if (kind === 'certification' && content.certification_id) return <Cta tone="quiet" className="mt-3 w-full" onClick={() => push({type:'certifications',focusId:content.certification_id})}>Открыть маршрут сертификации</Cta>
   return null
 }
 
@@ -225,4 +226,5 @@ export const KIND_NAME: Record<RewardKind, string> = {
   video: 'Видео',
   lesson: 'Урок',
   course: 'Курс',
+  certification: 'Сертификация',
 }

@@ -13,6 +13,7 @@ export function rewardNotifications(gifts: Gift[], heading = '🎉 <b>Поздр
     if (gift.kind === 'link' || gift.kind === 'video') detail = escape(String(gift.content?.url ?? '').slice(0,400))
     if (gift.kind === 'course') detail = '🎓 Доступ к курсу уже открыт в твоём профиле!'
     if (gift.kind === 'lesson') detail = '📖 Урок уже разблокирован в приложении.'
+    if (gift.kind === 'certification') detail = '🏅 Маршрут открыт в паспорте сертификаций сразу, независимо от стрика. Остальной каталог открывается при серии 10+.'
     return `${escape(String(gift.emoji ?? '🎁').slice(0,8))} <b>${escape(String(gift.title ?? '').slice(0,120))}</b>\n${detail}`
   })
   const messages: string[] = []

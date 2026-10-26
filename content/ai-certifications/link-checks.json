@@ -1,0 +1,2473 @@
+[
+  {
+    "id": "r0006",
+    "url": "https://www.simplilearn.com/free-n8n-no-code-ai-agent-builder-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:29.958Z"
+  },
+  {
+    "id": "r0004",
+    "url": "https://www.simplilearn.com/rag-course-for-beginners-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.112Z"
+  },
+  {
+    "id": "r0005",
+    "url": "https://www.simplilearn.com/free-hugging-face-nlp-projects-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.123Z"
+  },
+  {
+    "id": "r0002",
+    "url": "https://www.simplilearn.com/yuvai-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.131Z"
+  },
+  {
+    "id": "r0001",
+    "url": "https://www.simplilearn.com/generative-ai-for-beginners-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.161Z"
+  },
+  {
+    "id": "r0003",
+    "url": "https://www.simplilearn.com/ai-agents-for-beginners-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.168Z"
+  },
+  {
+    "id": "r0011",
+    "url": "https://www.simplilearn.com/free-gemini-for-google-workspace-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.646Z"
+  },
+  {
+    "id": "r0009",
+    "url": "https://www.simplilearn.com/free-mistral-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.671Z"
+  },
+  {
+    "id": "r0007",
+    "url": "https://www.simplilearn.com/sora-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.679Z"
+  },
+  {
+    "id": "r0010",
+    "url": "https://www.simplilearn.com/prompt-engineering-applications-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.726Z"
+  },
+  {
+    "id": "r0008",
+    "url": "https://www.simplilearn.com/langchain-course-for-beginners-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:30.795Z"
+  },
+  {
+    "id": "r0013",
+    "url": "https://www.simplilearn.com/build-website-with-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:31.021Z"
+  },
+  {
+    "id": "r0017",
+    "url": "https://www.simplilearn.com/free-gemini-in-google-workspace-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:31.160Z"
+  },
+  {
+    "id": "r0016",
+    "url": "https://www.simplilearn.com/free-gemini-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:31.258Z"
+  },
+  {
+    "id": "r0012",
+    "url": "https://www.simplilearn.com/free-copilot-prompt-engineering-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:31.369Z"
+  },
+  {
+    "id": "r0018",
+    "url": "https://www.simplilearn.com/free-gemini-in-google-slides-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:31.532Z"
+  },
+  {
+    "id": "r0019",
+    "url": "https://www.simplilearn.com/free-gemini-in-google-sheets-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:31.603Z"
+  },
+  {
+    "id": "r0021",
+    "url": "https://www.simplilearn.com/free-gemini-in-google-docs-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:31.787Z"
+  },
+  {
+    "id": "r0014",
+    "url": "https://www.simplilearn.com/free-chatgpt-website-creation-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:31.915Z"
+  },
+  {
+    "id": "r0015",
+    "url": "https://www.simplilearn.com/prompt-engineering-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:31.974Z"
+  },
+  {
+    "id": "r0023",
+    "url": "https://www.simplilearn.com/free-generative-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:32.150Z"
+  },
+  {
+    "id": "r0024",
+    "url": "https://www.simplilearn.com/free-chatgpt-for-youtube-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:32.223Z"
+  },
+  {
+    "id": "r0020",
+    "url": "https://www.simplilearn.com/free-gemini-in-google-meet-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:32.289Z"
+  },
+  {
+    "id": "r0022",
+    "url": "https://www.simplilearn.com/free-gemini-in-gmail-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:32.375Z"
+  },
+  {
+    "id": "r0025",
+    "url": "https://www.simplilearn.com/free-chatgpt-for-python-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:32.400Z"
+  },
+  {
+    "id": "r0026",
+    "url": "https://www.simplilearn.com/free-chatgpt-for-data-analytics-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:32.461Z"
+  },
+  {
+    "id": "r0027",
+    "url": "https://www.simplilearn.com/free-responsible-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:32.617Z"
+  },
+  {
+    "id": "r0028",
+    "url": "https://www.simplilearn.com/free-chatgpt-advanced-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:32.658Z"
+  },
+  {
+    "id": "r0031",
+    "url": "https://www.simplilearn.com/copilot-foundations-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:32.874Z"
+  },
+  {
+    "id": "r0034",
+    "url": "https://www.simplilearn.com/free-copilot-for-startups-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.029Z"
+  },
+  {
+    "id": "r0029",
+    "url": "https://www.simplilearn.com/free-google-cloud-responsible-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.081Z"
+  },
+  {
+    "id": "r0032",
+    "url": "https://www.simplilearn.com/free-copilot-studio-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.309Z"
+  },
+  {
+    "id": "r0030",
+    "url": "https://www.simplilearn.com/free-generative-ai-studio-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.314Z"
+  },
+  {
+    "id": "r0033",
+    "url": "https://www.simplilearn.com/github-copilot-fundamentals-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.319Z"
+  },
+  {
+    "id": "r0036",
+    "url": "https://www.simplilearn.com/chatgpt-for-finance-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.393Z"
+  },
+  {
+    "id": "r0035",
+    "url": "https://www.simplilearn.com/chatgpt-for-customer-support-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.398Z"
+  },
+  {
+    "id": "r0037",
+    "url": "https://www.simplilearn.com/ai-agents-in-langgraph-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.498Z"
+  },
+  {
+    "id": "r0038",
+    "url": "https://www.simplilearn.com/knowledge-graphs-with-llms-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.705Z"
+  },
+  {
+    "id": "r0041",
+    "url": "https://www.simplilearn.com/free-ltsm-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.752Z"
+  },
+  {
+    "id": "r0039",
+    "url": "https://www.simplilearn.com/chatgpt-for-project-management-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.822Z"
+  },
+  {
+    "id": "r0040",
+    "url": "https://www.simplilearn.com/free-generative-ai-fundamentals-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.829Z"
+  },
+  {
+    "id": "r0042",
+    "url": "https://www.simplilearn.com/free-langgraph-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.886Z"
+  },
+  {
+    "id": "r0043",
+    "url": "https://www.simplilearn.com/free-optimizers-in-neural-networks-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:33.901Z"
+  },
+  {
+    "id": "r0044",
+    "url": "https://www.simplilearn.com/introduction-to-deepseek-r1-and-qwen-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.066Z"
+  },
+  {
+    "id": "r0049",
+    "url": "https://www.simplilearn.com/free-chatgpt-for-seo-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.271Z"
+  },
+  {
+    "id": "r0048",
+    "url": "https://www.simplilearn.com/free-generative-ai-for-everyone-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.274Z"
+  },
+  {
+    "id": "r0047",
+    "url": "https://www.simplilearn.com/free-multimodal-rag-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.341Z"
+  },
+  {
+    "id": "r0050",
+    "url": "https://www.simplilearn.com/free-adobe-firefly-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.448Z"
+  },
+  {
+    "id": "r0046",
+    "url": "https://www.simplilearn.com/free-prompt-engineering-with-chatgpt-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.532Z"
+  },
+  {
+    "id": "r0045",
+    "url": "https://www.simplilearn.com/databricks-for-generative-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.541Z"
+  },
+  {
+    "id": "r0051",
+    "url": "https://www.simplilearn.com/advanced-rag-techniques-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.662Z"
+  },
+  {
+    "id": "r0053",
+    "url": "https://www.simplilearn.com/free-text-to-image-ai-generators-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.734Z"
+  },
+  {
+    "id": "r0052",
+    "url": "https://www.simplilearn.com/free-crew-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.918Z"
+  },
+  {
+    "id": "r0056",
+    "url": "https://www.simplilearn.com/free-ai-in-marketing-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:34.927Z"
+  },
+  {
+    "id": "r0054",
+    "url": "https://www.simplilearn.com/free-ai-in-email-marketing-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.291Z"
+  },
+  {
+    "id": "r0057",
+    "url": "https://www.simplilearn.com/free-generative-ai-models-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.305Z"
+  },
+  {
+    "id": "r0060",
+    "url": "https://www.simplilearn.com/free-generative-ai-in-software-building-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.321Z"
+  },
+  {
+    "id": "r0058",
+    "url": "https://www.simplilearn.com/free-ai-workflow-optimization-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.382Z"
+  },
+  {
+    "id": "r0055",
+    "url": "https://www.simplilearn.com/free-langchain-for-llm-app-development-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.389Z"
+  },
+  {
+    "id": "r0059",
+    "url": "https://www.simplilearn.com/free-generative-ai-in-software-design-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.473Z"
+  },
+  {
+    "id": "r0061",
+    "url": "https://www.simplilearn.com/free-generative-ai-in-software-building-testing-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.670Z"
+  },
+  {
+    "id": "r0062",
+    "url": "https://www.simplilearn.com/free-generative-ai-ethics-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.776Z"
+  },
+  {
+    "id": "r0064",
+    "url": "https://www.simplilearn.com/free-generative-ai-in-project-planning-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.831Z"
+  },
+  {
+    "id": "r0063",
+    "url": "https://www.simplilearn.com/free-generative-ai-in-sdlc-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.838Z"
+  },
+  {
+    "id": "r0065",
+    "url": "https://www.simplilearn.com/free-lead-generation-with-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.961Z"
+  },
+  {
+    "id": "r0066",
+    "url": "https://www.simplilearn.com/introduction-to-generative-ai-models-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:35.971Z"
+  },
+  {
+    "id": "r0068",
+    "url": "https://www.simplilearn.com/generative-ai-tools-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.153Z"
+  },
+  {
+    "id": "r0067",
+    "url": "https://www.simplilearn.com/variational-autoencoders-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.196Z"
+  },
+  {
+    "id": "r0069",
+    "url": "https://www.simplilearn.com/generative-ai-for-code-generation-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.270Z"
+  },
+  {
+    "id": "r0071",
+    "url": "https://www.simplilearn.com/generative-ai-in-software-engineering-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.325Z"
+  },
+  {
+    "id": "r0070",
+    "url": "https://www.simplilearn.com/generative-ai-software-development-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.334Z"
+  },
+  {
+    "id": "r0072",
+    "url": "https://www.simplilearn.com/software-testing-with-generative-ai-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.401Z"
+  },
+  {
+    "id": "r0073",
+    "url": "https://www.simplilearn.com/free-reflection-agents-in-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.670Z"
+  },
+  {
+    "id": "r0075",
+    "url": "https://www.simplilearn.com/free-multimodal-llm-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.697Z"
+  },
+  {
+    "id": "r0076",
+    "url": "https://www.simplilearn.com/free-generative-ai-using-llamaindex-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.706Z"
+  },
+  {
+    "id": "r0077",
+    "url": "https://www.simplilearn.com/make-free-ai-video-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.758Z"
+  },
+  {
+    "id": "r0074",
+    "url": "https://www.simplilearn.com/free-graphrag-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:36.853Z"
+  },
+  {
+    "id": "r0080",
+    "url": "https://www.simplilearn.com/generative-ai-in-customer-service-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.210Z"
+  },
+  {
+    "id": "r0079",
+    "url": "https://www.simplilearn.com/build-agentic-ai-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.242Z"
+  },
+  {
+    "id": "r0083",
+    "url": "https://www.simplilearn.com/generative-ai-for-data-analytics-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.281Z"
+  },
+  {
+    "id": "r0078",
+    "url": "https://www.simplilearn.com/ai-agent-frameworks-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.327Z"
+  },
+  {
+    "id": "r0082",
+    "url": "https://www.simplilearn.com/ai-for-coding-using-tabnine-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.353Z"
+  },
+  {
+    "id": "r0081",
+    "url": "https://www.simplilearn.com/generative-ai-product-design-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.408Z"
+  },
+  {
+    "id": "r0085",
+    "url": "https://www.simplilearn.com/generative-ai--for-marketers-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.745Z"
+  },
+  {
+    "id": "r0088",
+    "url": "https://www.simplilearn.com/llm-prompting-with-gemini-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.808Z"
+  },
+  {
+    "id": "r0089",
+    "url": "https://www.simplilearn.com/chatbot-development-free-certification-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.841Z"
+  },
+  {
+    "id": "r0084",
+    "url": "https://www.simplilearn.com/free-microsoft-designer-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.919Z"
+  },
+  {
+    "id": "r0087",
+    "url": "https://www.simplilearn.com/advanced-prompt-engineering-for-everyone-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.937Z"
+  },
+  {
+    "id": "r0086",
+    "url": "https://www.simplilearn.com/free-generative-ai-design-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:37.942Z"
+  },
+  {
+    "id": "r0090",
+    "url": "https://www.simplilearn.com/genai-code-generation-with-github-copilot-in-javascript-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:38.124Z"
+  },
+  {
+    "id": "r0092",
+    "url": "https://www.simplilearn.com/free-workflow-automation-course-with-langgraph-agents-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:38.257Z"
+  },
+  {
+    "id": "r0094",
+    "url": "https://www.simplilearn.com/free-microsoft-365-copilot-course-for-finance-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:38.407Z"
+  },
+  {
+    "id": "r0091",
+    "url": "https://www.simplilearn.com/build-ai-agents-with-autogen-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:38.413Z"
+  },
+  {
+    "id": "r0095",
+    "url": "https://www.simplilearn.com/google-gemini-course-for-beginners-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:38.495Z"
+  },
+  {
+    "id": "r0093",
+    "url": "https://www.simplilearn.com/introduction-to-agentic-ai-and-llm-architectures-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:38.514Z"
+  },
+  {
+    "id": "r0096",
+    "url": "https://www.simplilearn.com/free-microsoft-365-copilot-training-for-hr-professionals-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:38.592Z"
+  },
+  {
+    "id": "r0097",
+    "url": "https://www.simplilearn.com/introduction-to-generative-ai-fundamentals-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:38.634Z"
+  },
+  {
+    "id": "r0099",
+    "url": "https://www.simplilearn.com/github-copilot-for-software-deployment-in-javascript-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:38.865Z"
+  },
+  {
+    "id": "r0103",
+    "url": "https://www.simplilearn.com/microsoft-365-copilot-for-legal-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.050Z"
+  },
+  {
+    "id": "r0101",
+    "url": "https://www.simplilearn.com/generative-ai-for-managers-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.121Z"
+  },
+  {
+    "id": "r0098",
+    "url": "https://www.simplilearn.com/deep-learning-with-tensorflow-and-pytorch-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.128Z"
+  },
+  {
+    "id": "r0100",
+    "url": "https://www.simplilearn.com/github-copilot-for-software-testing-in-javascript-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.130Z"
+  },
+  {
+    "id": "r0102",
+    "url": "https://www.simplilearn.com/microsoft-copilot-for-operations-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.210Z"
+  },
+  {
+    "id": "r0104",
+    "url": "https://www.simplilearn.com/ai-and-future-trends-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.316Z"
+  },
+  {
+    "id": "r0105",
+    "url": "https://www.simplilearn.com/free-notion-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.558Z"
+  },
+  {
+    "id": "r0108",
+    "url": "https://www.simplilearn.com/claude-101-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.630Z"
+  },
+  {
+    "id": "r0107",
+    "url": "https://www.simplilearn.com/generative-ai-content-creation-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.665Z"
+  },
+  {
+    "id": "r0109",
+    "url": "https://www.simplilearn.com/introduction-to-claude-cowork-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.673Z"
+  },
+  {
+    "id": "r0110",
+    "url": "https://www.simplilearn.com/course-on-hugging-face-transformers-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.690Z"
+  },
+  {
+    "id": "r0106",
+    "url": "https://www.simplilearn.com/generative-ai-with-large-language-models-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:39.736Z"
+  },
+  {
+    "id": "r0115",
+    "url": "https://www.simplilearn.com/claude-ai-sales-revenue-forecasting-assistant-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.045Z"
+  },
+  {
+    "id": "r0111",
+    "url": "https://www.simplilearn.com/ai-powered-retail-operations-supply-chain-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.055Z"
+  },
+  {
+    "id": "r0114",
+    "url": "https://www.simplilearn.com/claude-ai-expense-spend-insights-assistant-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.067Z"
+  },
+  {
+    "id": "r0117",
+    "url": "https://www.simplilearn.com/ai-in-education-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.464Z"
+  },
+  {
+    "id": "r0119",
+    "url": "https://www.simplilearn.com/ai-market-intelligence-sales-prospecting-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.567Z"
+  },
+  {
+    "id": "r0112",
+    "url": "https://www.simplilearn.com/free-claude-ai-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.821Z"
+  },
+  {
+    "id": "r0113",
+    "url": "https://www.simplilearn.com/claude-ai-sales-email-outreach-assistant-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.925Z"
+  },
+  {
+    "id": "r0116",
+    "url": "https://www.simplilearn.com/generative-ai-fundamentals-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.952Z"
+  },
+  {
+    "id": "r0120",
+    "url": "https://www.simplilearn.com/claude-ai-sales-finance-decision-assistant-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.962Z"
+  },
+  {
+    "id": "r0121",
+    "url": "https://www.simplilearn.com/claude-ai-financial-report-insights-assistant-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.971Z"
+  },
+  {
+    "id": "r0118",
+    "url": "https://www.simplilearn.com/generative-ai-in-finance-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:40.976Z"
+  },
+  {
+    "id": "r0122",
+    "url": "https://www.simplilearn.com/claude-ai-product-strategy-assistant-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.288Z"
+  },
+  {
+    "id": "r0125",
+    "url": "https://www.simplilearn.com/claude-ai-talent-screening-recruitment-assistant-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.337Z"
+  },
+  {
+    "id": "r0124",
+    "url": "https://www.simplilearn.com/claude-ai-demand-inventory-assistant-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.383Z"
+  },
+  {
+    "id": "r0126",
+    "url": "https://www.simplilearn.com/ai-for-healthcare-clinical-insights-documentation-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.444Z"
+  },
+  {
+    "id": "r0123",
+    "url": "https://www.simplilearn.com/ai-tool-landscape-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.495Z"
+  },
+  {
+    "id": "r0127",
+    "url": "https://www.simplilearn.com/claude-ai-literacy-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.633Z"
+  },
+  {
+    "id": "r0130",
+    "url": "https://www.simplilearn.com/free-ai-program-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.810Z"
+  },
+  {
+    "id": "r0128",
+    "url": "https://www.simplilearn.com/learn-ai-basics-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.818Z"
+  },
+  {
+    "id": "r0129",
+    "url": "https://www.simplilearn.com/learn-machine-learning-basics-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.851Z"
+  },
+  {
+    "id": "r0132",
+    "url": "https://www.simplilearn.com/free-machine-learning-beginners-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.911Z"
+  },
+  {
+    "id": "r0131",
+    "url": "https://www.simplilearn.com/introduction-to-deep-learning-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:41.926Z"
+  },
+  {
+    "id": "r0133",
+    "url": "https://www.simplilearn.com/learn-machine-learning-algorithms-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.127Z"
+  },
+  {
+    "id": "r0136",
+    "url": "https://www.simplilearn.com/introduction-to-supervised-unsupervised-learning-for-beginners-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.237Z"
+  },
+  {
+    "id": "r0135",
+    "url": "https://www.simplilearn.com/free-course-on-machine-learning-with-r-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.303Z"
+  },
+  {
+    "id": "r0134",
+    "url": "https://www.simplilearn.com/free-google-cloud-ai-innovation-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.373Z"
+  },
+  {
+    "id": "r0139",
+    "url": "https://www.simplilearn.com/free-gan-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.556Z"
+  },
+  {
+    "id": "r0137",
+    "url": "https://www.simplilearn.com/free-image-recognition-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.671Z"
+  },
+  {
+    "id": "r0138",
+    "url": "https://www.simplilearn.com/learn-tensorflow-basics-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.683Z"
+  },
+  {
+    "id": "r0140",
+    "url": "https://www.simplilearn.com/free-deep-learning-program-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.765Z"
+  },
+  {
+    "id": "r0141",
+    "url": "https://www.simplilearn.com/learn-keras-for-beginners-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.842Z"
+  },
+  {
+    "id": "r0146",
+    "url": "https://www.simplilearn.com/free-artificial-intelligence-for-business-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.878Z"
+  },
+  {
+    "id": "r0142",
+    "url": "https://www.simplilearn.com/neural-network-training-from-scratch-free-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.926Z"
+  },
+  {
+    "id": "r0143",
+    "url": "https://www.simplilearn.com/free-ai-ml-projects-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:42.999Z"
+  },
+  {
+    "id": "r0145",
+    "url": "https://www.simplilearn.com/free-ai-in-action-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.160Z"
+  },
+  {
+    "id": "r0144",
+    "url": "https://www.simplilearn.com/databricks-for-machine-learning-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.163Z"
+  },
+  {
+    "id": "r0147",
+    "url": "https://www.simplilearn.com/free-ai-for-web-development-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.232Z"
+  },
+  {
+    "id": "r0148",
+    "url": "https://www.simplilearn.com/ai-foundation-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.286Z"
+  },
+  {
+    "id": "r0149",
+    "url": "https://www.simplilearn.com/graph-machine-learning-free-certification-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.335Z"
+  },
+  {
+    "id": "r0150",
+    "url": "https://www.simplilearn.com/ai-applications-in-healthcare-free-certification-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.365Z"
+  },
+  {
+    "id": "r0154",
+    "url": "https://academy.claude.com/courses/ai-fluency-for-builders",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.509Z"
+  },
+  {
+    "id": "r0153",
+    "url": "https://academy.claude.com/courses/ai-capabilities-and-limitations",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.526Z"
+  },
+  {
+    "id": "r0156",
+    "url": "https://academy.claude.com/courses/ai-fluency-for-educators",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.560Z"
+  },
+  {
+    "id": "r0155",
+    "url": "https://academy.claude.com/courses/ai-fluency-for-creative-work",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.575Z"
+  },
+  {
+    "id": "r0152",
+    "url": "https://www.simplilearn.com/ai-for-everyone-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.579Z"
+  },
+  {
+    "id": "r0151",
+    "url": "https://www.simplilearn.com/ai-in-finance-free-certification-course-skillup",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.653Z"
+  },
+  {
+    "id": "r0162",
+    "url": "https://academy.claude.com/courses/ai-fluency-framework-foundations",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.707Z"
+  },
+  {
+    "id": "r0158",
+    "url": "https://academy.claude.com/courses/ai-fluency-for-pk-12-train-the-trainer",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.713Z"
+  },
+  {
+    "id": "r0159",
+    "url": "https://academy.claude.com/courses/ai-fluency-for-k-12-educators",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.723Z"
+  },
+  {
+    "id": "r0160",
+    "url": "https://academy.claude.com/courses/ai-fluency-for-small-businesses",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.732Z"
+  },
+  {
+    "id": "r0161",
+    "url": "https://academy.claude.com/courses/ai-fluency-for-students",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.755Z"
+  },
+  {
+    "id": "r0166",
+    "url": "https://academy.claude.com/courses/claude-code-101",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.808Z"
+  },
+  {
+    "id": "r0165",
+    "url": "https://academy.claude.com/courses/claude-101",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.813Z"
+  },
+  {
+    "id": "r0157",
+    "url": "https://academy.claude.com/courses/ai-fluency-for-nonprofits",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.836Z"
+  },
+  {
+    "id": "r0164",
+    "url": "https://academy.claude.com/courses/building-with-the-claude-api",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.888Z"
+  },
+  {
+    "id": "r0163",
+    "url": "https://academy.claude.com/courses/building-effective-human-agent-teams",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.902Z"
+  },
+  {
+    "id": "r0167",
+    "url": "https://academy.claude.com/courses/claude-code-in-action",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.907Z"
+  },
+  {
+    "id": "r0168",
+    "url": "https://academy.claude.com/courses/claude-platform-101",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.963Z"
+  },
+  {
+    "id": "r0170",
+    "url": "https://academy.claude.com/courses/claude-with-google-cloud-s-vertex-ai",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.974Z"
+  },
+  {
+    "id": "r0169",
+    "url": "https://academy.claude.com/courses/claude-with-amazon-bedrock",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:43.988Z"
+  },
+  {
+    "id": "r0171",
+    "url": "https://academy.claude.com/courses/deploying-claude-enterprise-with-confidence",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:44.038Z"
+  },
+  {
+    "id": "r0172",
+    "url": "https://academy.claude.com/courses/introduction-to-agent-skills",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:44.044Z"
+  },
+  {
+    "id": "r0173",
+    "url": "https://academy.claude.com/courses/introduction-to-claude-cowork",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:44.061Z"
+  },
+  {
+    "id": "r0174",
+    "url": "https://academy.claude.com/courses/introduction-to-claude-tag",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:44.104Z"
+  },
+  {
+    "id": "r0176",
+    "url": "https://academy.claude.com/courses/introduction-to-subagents",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:44.125Z"
+  },
+  {
+    "id": "r0175",
+    "url": "https://academy.claude.com/courses/introduction-to-model-context-protocol",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:44.142Z"
+  },
+  {
+    "id": "r0182",
+    "url": "https://cognitiveclass.ai/courses/course-v1:IBMDeveloperSkillsNetwork+CB0101EN+v1",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:45.356Z"
+  },
+  {
+    "id": "r0180",
+    "url": "https://cognitiveclass.ai/courses/course-v1:IBMSkillsNetwork+AI0146EN+v1",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:45.425Z"
+  },
+  {
+    "id": "r0178",
+    "url": "https://cognitiveclass.ai/courses/course-v1:IBMSkillsNetwork+AI0117EN+v1",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:45.540Z"
+  },
+  {
+    "id": "r0183",
+    "url": "https://cognitiveclass.ai/courses/course-v1:IBMSkillsNetwork+AI0105EN+v1",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:45.715Z"
+  },
+  {
+    "id": "r0177",
+    "url": "https://cognitiveclass.ai/courses/course-v1:IBMSkillsNetwork+PY0101EN+v1_Coursera",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:45.781Z"
+  },
+  {
+    "id": "r0181",
+    "url": "https://cognitiveclass.ai/courses/course-v1:BDU+ML0101EN+v4",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:45.882Z"
+  },
+  {
+    "id": "r0188",
+    "url": "https://huggingface.co/learn/agents-course/unit0/introduction",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:46.273Z"
+  },
+  {
+    "id": "r0189",
+    "url": "https://huggingface.co/learn/mcp-course/unit0/introduction",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:46.351Z"
+  },
+  {
+    "id": "r0184",
+    "url": "https://cognitiveclass.ai/courses/course-v1:DeepLearning.TV+ML0115EN+v2.0",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:46.596Z"
+  },
+  {
+    "id": "r0185",
+    "url": "https://cognitiveclass.ai/courses/course-v1:IBMSkillsNetwork+CB0103EN+v1_Coursera",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:46.683Z"
+  },
+  {
+    "id": "r0186",
+    "url": "https://cognitiveclass.ai/courses/course-v1:IBMSkillsNetwork+PY0224EN+v1_Coursera",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:46.788Z"
+  },
+  {
+    "id": "r0192",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/natural-language-processing-basics",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:47.145Z"
+  },
+  {
+    "id": "r0190",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/artificial-intelligence-fundamentals",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:47.238Z"
+  },
+  {
+    "id": "r0191",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/generative-ai-basics",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:47.248Z"
+  },
+  {
+    "id": "r0194",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/image-generation-and-diffusion-models",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:47.501Z"
+  },
+  {
+    "id": "r0193",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/responsible-creation-of-artificial-intelligence",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:47.525Z"
+  },
+  {
+    "id": "r0195",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/generative-ai-for-organizations",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:47.893Z"
+  },
+  {
+    "id": "r0198",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/prompt-fundamentals",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.045Z"
+  },
+  {
+    "id": "r0196",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/large-language-models",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.063Z"
+  },
+  {
+    "id": "r0197",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/change-management-for-ai-implementation",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.096Z"
+  },
+  {
+    "id": "r0199",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/model-fine-tuning",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.174Z"
+  },
+  {
+    "id": "r0187",
+    "url": "https://learn.sas.com/course/view.php?id=8216",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.254Z"
+  },
+  {
+    "id": "r0200",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/data-fundamentals-for-ai",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.557Z"
+  },
+  {
+    "id": "r0205",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/critical-thinking-and-decision-making-with-data-and-ai",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.641Z"
+  },
+  {
+    "id": "r0201",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/ai-fluency-fundamentals",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.726Z"
+  },
+  {
+    "id": "r0202",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/becoming-an-agentblazer-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.743Z"
+  },
+  {
+    "id": "r0203",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/agentforce-agents-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:48.803Z"
+  },
+  {
+    "id": "r0204",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/trusted-agentic-ai",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.010Z"
+  },
+  {
+    "id": "r0207",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/agentforce-agent-planning",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.045Z"
+  },
+  {
+    "id": "r0206",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/data-bias-recognition-and-prevention",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.265Z"
+  },
+  {
+    "id": "r0208",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/the-einstein-trust-layer",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.274Z"
+  },
+  {
+    "id": "r0209",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/prompt-builder-basics",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.406Z"
+  },
+  {
+    "id": "r0210",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/grounding-an-agent-with-data",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.549Z"
+  },
+  {
+    "id": "r0212",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/agentforce-testing-tools-and-strategies",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.667Z"
+  },
+  {
+    "id": "r0213",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/ai-data-crm-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.724Z"
+  },
+  {
+    "id": "r0214",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/autonomous-agents",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.926Z"
+  },
+  {
+    "id": "r0216",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/salesforce-headless-360-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.955Z"
+  },
+  {
+    "id": "r0215",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/reasoning-in-artificial-intelligence",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:49.959Z"
+  },
+  {
+    "id": "r0217",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/secure-and-trusted-headless-foundation",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:50.199Z"
+  },
+  {
+    "id": "r0218",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/headless-360-use-cases-in-action",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:50.324Z"
+  },
+  {
+    "id": "r0219",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/salesforce-in-claude-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:50.368Z"
+  },
+  {
+    "id": "r0220",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/introduction-to-agentforce",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:50.475Z"
+  },
+  {
+    "id": "r0222",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/new-agentforce-builder-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:50.565Z"
+  },
+  {
+    "id": "r0221",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/einstein-copilot-basics",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:50.596Z"
+  },
+  {
+    "id": "r0224",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/agentforce-for-setup-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:50.853Z"
+  },
+  {
+    "id": "r0223",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/introduction-to-agent-builder",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:50.978Z"
+  },
+  {
+    "id": "r0225",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/agentforce-service-agent-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.109Z"
+  },
+  {
+    "id": "r0226",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/agentforce-sales-agents-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.127Z"
+  },
+  {
+    "id": "r0227",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/agentforce-on-the-salesforce-mobile-app-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.244Z"
+  },
+  {
+    "id": "r0228",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/agentexchange-quick-look",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.337Z"
+  },
+  {
+    "id": "r0232",
+    "url": "https://learn.microsoft.com/en-us/training/modules/leverage-ai-tools/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.469Z"
+  },
+  {
+    "id": "r0230",
+    "url": "https://trailhead.salesforce.com/content/learn/modules/programmatic-instructions-in-agentforce",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.537Z"
+  },
+  {
+    "id": "r0233",
+    "url": "https://learn.microsoft.com/en-us/training/modules/create-business-value/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.559Z"
+  },
+  {
+    "id": "r0234",
+    "url": "https://learn.microsoft.com/en-us/training/modules/embrace-responsible-ai-principles-practices/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.604Z"
+  },
+  {
+    "id": "r0236",
+    "url": "https://learn.microsoft.com/en-us/training/modules/get-started-ai-fundamentals/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.619Z"
+  },
+  {
+    "id": "r0235",
+    "url": "https://learn.microsoft.com/en-us/training/modules/scale-ai/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.652Z"
+  },
+  {
+    "id": "r0243",
+    "url": "https://learn.microsoft.com/en-us/training/modules/get-ready-work-microsoft-365-copilot/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.735Z"
+  },
+  {
+    "id": "r0242",
+    "url": "https://learn.microsoft.com/en-us/training/modules/rag-fundamentals/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.847Z"
+  },
+  {
+    "id": "r0237",
+    "url": "https://learn.microsoft.com/en-us/training/modules/fundamentals-generative-ai/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.855Z"
+  },
+  {
+    "id": "r0244",
+    "url": "https://learn.microsoft.com/en-us/training/modules/unlock-productivity-unleash-creativity-ai-powered-chat/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.859Z"
+  },
+  {
+    "id": "r0240",
+    "url": "https://learn.microsoft.com/en-us/training/modules/introduction-computer-vision/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.862Z"
+  },
+  {
+    "id": "r0245",
+    "url": "https://learn.microsoft.com/en-us/training/modules/present-copilot-microsoft-powerpoint/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.935Z"
+  },
+  {
+    "id": "r0247",
+    "url": "https://learn.microsoft.com/en-us/training/modules/make-your-meetings-more-productive-ai/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.941Z"
+  },
+  {
+    "id": "r0246",
+    "url": "https://learn.microsoft.com/en-us/training/modules/draft-impactful-documents-using-ai/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.947Z"
+  },
+  {
+    "id": "r0238",
+    "url": "https://learn.microsoft.com/en-us/training/modules/introduction-language/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.951Z"
+  },
+  {
+    "id": "r0239",
+    "url": "https://learn.microsoft.com/en-us/training/modules/introduction-ai-speech/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:51.960Z"
+  },
+  {
+    "id": "r0249",
+    "url": "https://learn.microsoft.com/en-us/training/modules/from-inbox-impact-improve-your-email-workflows-ai/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:52.019Z"
+  },
+  {
+    "id": "r0248",
+    "url": "https://learn.microsoft.com/en-us/training/modules/uncover-new-data-insights-ai/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:52.096Z"
+  },
+  {
+    "id": "r0250",
+    "url": "https://learn.microsoft.com/en-us/training/modules/explore-ai-basics/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:52.210Z"
+  },
+  {
+    "id": "r0254",
+    "url": "https://learn.microsoft.com/en-us/training/modules/get-started-with-copilot/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:52.237Z"
+  },
+  {
+    "id": "r0253",
+    "url": "https://learn.microsoft.com/en-us/training/modules/responsible-ai/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:52.242Z"
+  },
+  {
+    "id": "r0252",
+    "url": "https://learn.microsoft.com/en-us/training/modules/explore-internet-search-beyond/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:52.335Z"
+  },
+  {
+    "id": "r0251",
+    "url": "https://learn.microsoft.com/en-us/training/modules/explore-generative-ai/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:52.340Z"
+  },
+  {
+    "id": "r0255",
+    "url": "https://learn.microsoft.com/en-us/training/modules/boost-productivity-with-copilot/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:52.352Z"
+  },
+  {
+    "id": "r0256",
+    "url": "https://learn.microsoft.com/en-us/training/modules/explore-ai-for-all/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:52.449Z"
+  },
+  {
+    "id": "r0284",
+    "url": "https://neurolearnai.uk/courses/ai-agents-llm-orchestration",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:53.428Z"
+  },
+  {
+    "id": "r0287",
+    "url": "https://neurolearnai.uk/courses/retrieval-augmented-generation",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:53.440Z"
+  },
+  {
+    "id": "r0288",
+    "url": "https://neurolearnai.uk/courses/ai-assisted-software-engineering",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:53.495Z"
+  },
+  {
+    "id": "r0291",
+    "url": "https://academy.claude.com/courses/model-context-protocol-advanced-topics",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:53.608Z"
+  },
+  {
+    "id": "r0286",
+    "url": "https://neurolearnai.uk/courses/responsible-ai-safety",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:53.632Z"
+  },
+  {
+    "id": "r0283",
+    "url": "https://neurolearnai.uk/courses/generative-ai-prompt-engineering",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:53.762Z"
+  },
+  {
+    "id": "r0285",
+    "url": "https://neurolearnai.uk/courses/deep-learning-transformers",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:53.786Z"
+  },
+  {
+    "id": "r0296",
+    "url": "https://www.skills.google/course_templates/536",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:54.003Z"
+  },
+  {
+    "id": "r0297",
+    "url": "https://www.skills.google/course_templates/539",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:54.007Z"
+  },
+  {
+    "id": "r0299",
+    "url": "https://www.skills.google/course_templates/388",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:54.105Z"
+  },
+  {
+    "id": "r0300",
+    "url": "https://www.skills.google/course_templates/946",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:54.115Z"
+  },
+  {
+    "id": "r0301",
+    "url": "https://www.skills.google/course_templates/1146",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:54.226Z"
+  },
+  {
+    "id": "r0304",
+    "url": "https://www.linkedin.com/learning/paths/career-essentials-in-generative-ai-by-microsoft-and-linkedin",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:54.345Z"
+  },
+  {
+    "id": "r0305",
+    "url": "https://www.linkedin.com/learning/paths/ai-for-organizational-leaders-by-microsoft-and-linkedin",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:54.482Z"
+  },
+  {
+    "id": "r0322",
+    "url": "https://customer-academy.databricks.com/learn/courses/1811/generative-ai-fundamentals-accreditation",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:54.841Z"
+  },
+  {
+    "id": "r0324",
+    "url": "https://www.life-global.org/course/423-ai-for-business-professionals",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:54.916Z"
+  },
+  {
+    "id": "r0323",
+    "url": "https://www.life-global.org/course/391-ai-for-beginners",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:54.921Z"
+  },
+  {
+    "id": "r0325",
+    "url": "https://www.life-global.org/course/439-critical-thinking-in-the-ai-era",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:54.988Z"
+  },
+  {
+    "id": "r0326",
+    "url": "https://www.life-global.org/course/447-strategic-planning-in-the-ai-age",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:55.084Z"
+  },
+  {
+    "id": "r0327",
+    "url": "https://learn.saylor.org/course/CS205",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:55.756Z"
+  },
+  {
+    "id": "r0330",
+    "url": "https://learn.saylor.org/course/view.php?id=1312",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:55.991Z"
+  },
+  {
+    "id": "r0329",
+    "url": "https://learn.saylor.org/course/prdv430",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:56.220Z"
+  },
+  {
+    "id": "r0328",
+    "url": "https://learn.saylor.org/course/view.php?id=1267",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:56.252Z"
+  },
+  {
+    "id": "r0341",
+    "url": "https://academy.hubspot.com/courses/AI-for-Marketers",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:56.535Z"
+  },
+  {
+    "id": "r0345",
+    "url": "https://learning.sap.com/courses/introducing-ai-fundamentals",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:56.553Z"
+  },
+  {
+    "id": "r0346",
+    "url": "https://learning.sap.com/courses/discovering-agentic-ai",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:56.561Z"
+  },
+  {
+    "id": "r0347",
+    "url": "https://learning.sap.com/courses/putting-ai-ethics-into-practice-at-sap",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:56.589Z"
+  },
+  {
+    "id": "r0340",
+    "url": "https://academy.hubspot.com/courses/ai-for-sales",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:56.595Z"
+  },
+  {
+    "id": "r0348",
+    "url": "https://learning.sap.com/courses/building-confidence-in-ai-with-sap",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:56.875Z"
+  },
+  {
+    "id": "r0358",
+    "url": "https://www.open.edu/openlearncreate/course/view.php?id=14054",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:56.990Z"
+  },
+  {
+    "id": "r0356",
+    "url": "https://www.open.edu/openlearn/education-development/ai-matters",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:57.011Z"
+  },
+  {
+    "id": "r0349",
+    "url": "https://learning.sap.com/courses/discovering-high-value-opportunities-for-agentic-ai",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:57.045Z"
+  },
+  {
+    "id": "r0357",
+    "url": "https://www.open.edu/openlearn/digital-computing/ai-fluency",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:57.256Z"
+  },
+  {
+    "id": "r0364",
+    "url": "https://huggingface.co/learn/llm-course/en/chapter3/7",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:57.454Z"
+  },
+  {
+    "id": "r0366",
+    "url": "https://www.santanderopenacademy.com/en/courses/generative-artificial-intelligence.html",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:57.991Z"
+  },
+  {
+    "id": "r0367",
+    "url": "https://www.santanderopenacademy.com/en/courses/safe-fair-legal-how-to-use-ai-right.html.html",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:58.004Z"
+  },
+  {
+    "id": "r0368",
+    "url": "https://academy.make.com/bundles/automation-to-ai-agents-foundation",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:58.046Z"
+  },
+  {
+    "id": "r0369",
+    "url": "https://academy.make.com/collections",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:58.062Z"
+  },
+  {
+    "id": "r0370",
+    "url": "https://www.semrush.com/academy/courses/ai-for-marketing-course/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:58.240Z"
+  },
+  {
+    "id": "r0371",
+    "url": "https://www.semrush.com/academy/courses/ai-pr-toolkit-crash-course/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:58.370Z"
+  },
+  {
+    "id": "r0373",
+    "url": "https://www.canva.com/design-school/test/ai-in-the-classroom",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:58.442Z"
+  },
+  {
+    "id": "r0372",
+    "url": "https://www.canva.com/design-school/test/work-smarter-with-ai",
+    "status": 403,
+    "availability": "restricted",
+    "checked_at": "2026-10-26T07:35:58.453Z"
+  },
+  {
+    "id": "r0342",
+    "url": "https://academy.hubspot.com/courses/building-an-ai-leading-organization",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:58.550Z"
+  },
+  {
+    "id": "r0379",
+    "url": "https://aiassurancecouncil.org/ai-literacy/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:58.593Z"
+  },
+  {
+    "id": "r0383",
+    "url": "https://academy.langchain.com/courses/dcode-essentials",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:58.791Z"
+  },
+  {
+    "id": "r0384",
+    "url": "https://academy.langchain.com/courses/langsmith-engine",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:58.821Z"
+  },
+  {
+    "id": "r0380",
+    "url": "https://rulex.org/certified",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.035Z"
+  },
+  {
+    "id": "r0388",
+    "url": "https://academy.langchain.com/courses/quickstart-agent-builder",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.090Z"
+  },
+  {
+    "id": "r0389",
+    "url": "https://academy.langchain.com/courses/foundation-introduction-to-langchain-python",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.114Z"
+  },
+  {
+    "id": "r0385",
+    "url": "https://academy.langchain.com/courses/foundation-introduction-to-deepagents",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.334Z"
+  },
+  {
+    "id": "r0392",
+    "url": "https://academy.langchain.com/courses/langgraph-essentials-python",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.400Z"
+  },
+  {
+    "id": "r0391",
+    "url": "https://academy.langchain.com/courses/quickstart-langsmith-essentials",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.428Z"
+  },
+  {
+    "id": "r0387",
+    "url": "https://academy.langchain.com/courses/building-reliable-agents",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.433Z"
+  },
+  {
+    "id": "r0386",
+    "url": "https://academy.langchain.com/courses/production-monitoring",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.514Z"
+  },
+  {
+    "id": "r0396",
+    "url": "https://academy.langchain.com/courses/deep-research-with-langgraph",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.742Z"
+  },
+  {
+    "id": "r0395",
+    "url": "https://academy.langchain.com/courses/intro-to-langsmith",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.757Z"
+  },
+  {
+    "id": "r0393",
+    "url": "https://academy.langchain.com/courses/langchain-essentials-python",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.779Z"
+  },
+  {
+    "id": "r0390",
+    "url": "https://academy.langchain.com/courses/langsmith-deployment",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.846Z"
+  },
+  {
+    "id": "r0394",
+    "url": "https://academy.langchain.com/courses/ambient-agents",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.883Z"
+  },
+  {
+    "id": "r0397",
+    "url": "https://academy.langchain.com/courses/intro-to-langgraph",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:35:59.932Z"
+  },
+  {
+    "id": "openai-academy-applied-ai-foundations",
+    "url": "https://academy.openai.com/public/courses/applied-ai-foundations-szsmv",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:00.489Z"
+  },
+  {
+    "id": "openai-academy-scope-ai-solutions",
+    "url": "https://academy.openai.com/public/courses/scope-ai-solutions-kjplw",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:00.530Z"
+  },
+  {
+    "id": "openai-academy-ai-foundations",
+    "url": "https://academy.openai.com/public/courses/ai-foundations-dnq5w",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:00.548Z"
+  },
+  {
+    "id": "openai-academy-agents-and-workflows",
+    "url": "https://academy.openai.com/public/courses/agents-and-workflows-y0qoc",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:00.594Z"
+  },
+  {
+    "id": "openai-academy-optimize-ai-application-performance",
+    "url": "https://academy.openai.com/public/courses/optimize-ai-application-performance-1k50h",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:00.607Z"
+  },
+  {
+    "id": "openai-academy-get-started-with-codex",
+    "url": "https://academy.openai.com/public/courses/get-started-with-codex-jkhsq",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:00.655Z"
+  },
+  {
+    "id": "kaggle-learn-intro-to-machine-learning",
+    "url": "https://www.kaggle.com/learn/intro-to-machine-learning",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.056Z"
+  },
+  {
+    "id": "kaggle-learn-intro-to-programming",
+    "url": "https://www.kaggle.com/learn/intro-to-programming",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.064Z"
+  },
+  {
+    "id": "kaggle-learn-python",
+    "url": "https://www.kaggle.com/learn/python",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.101Z"
+  },
+  {
+    "id": "openai-academy-ai-for-educators",
+    "url": "https://academy.openai.com/public/courses/ai-for-educators-lc8j1",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.229Z"
+  },
+  {
+    "id": "openai-academy-ai-leadership",
+    "url": "https://academy.openai.com/public/courses/ai-leadership-kaf7k",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.235Z"
+  },
+  {
+    "id": "openai-academy-ai-for-college-students",
+    "url": "https://academy.openai.com/public/courses/ai-for-college-students-gxgmr",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.310Z"
+  },
+  {
+    "id": "kaggle-learn-pandas",
+    "url": "https://www.kaggle.com/learn/pandas",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.445Z"
+  },
+  {
+    "id": "kaggle-learn-intermediate-machine-learning",
+    "url": "https://www.kaggle.com/learn/intermediate-machine-learning",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.470Z"
+  },
+  {
+    "id": "kaggle-learn-data-visualization",
+    "url": "https://www.kaggle.com/learn/data-visualization",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.502Z"
+  },
+  {
+    "id": "kaggle-learn-intro-to-sql",
+    "url": "https://www.kaggle.com/learn/intro-to-sql",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.631Z"
+  },
+  {
+    "id": "kaggle-learn-feature-engineering",
+    "url": "https://www.kaggle.com/learn/feature-engineering",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.652Z"
+  },
+  {
+    "id": "kaggle-learn-advanced-sql",
+    "url": "https://www.kaggle.com/learn/advanced-sql",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.690Z"
+  },
+  {
+    "id": "kaggle-learn-intro-to-deep-learning",
+    "url": "https://www.kaggle.com/learn/intro-to-deep-learning",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.822Z"
+  },
+  {
+    "id": "kaggle-learn-computer-vision",
+    "url": "https://www.kaggle.com/learn/computer-vision",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.849Z"
+  },
+  {
+    "id": "kaggle-learn-time-series",
+    "url": "https://www.kaggle.com/learn/time-series",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:01.879Z"
+  },
+  {
+    "id": "kaggle-learn-intro-to-ai-ethics",
+    "url": "https://www.kaggle.com/learn/intro-to-ai-ethics",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:02.024Z"
+  },
+  {
+    "id": "kaggle-learn-data-cleaning",
+    "url": "https://www.kaggle.com/learn/data-cleaning",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:02.029Z"
+  },
+  {
+    "id": "kaggle-learn-intro-to-game-ai-and-reinforcement-learning",
+    "url": "https://www.kaggle.com/learn/intro-to-game-ai-and-reinforcement-learning",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:02.058Z"
+  },
+  {
+    "id": "kaggle-learn-geospatial-analysis",
+    "url": "https://www.kaggle.com/learn/geospatial-analysis",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:02.087Z"
+  },
+  {
+    "id": "kaggle-learn-machine-learning-explainability",
+    "url": "https://www.kaggle.com/learn/machine-learning-explainability",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:02.195Z"
+  },
+  {
+    "id": "linux-foundation-education-conversational-ai-ensuring-compliance-and-mitigating-risks-lfs120",
+    "url": "https://training.linuxfoundation.org/training/conversational-ai-ensuring-compliance-and-mitigating-risks-lfs120/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:02.498Z"
+  },
+  {
+    "id": "neo4j-graphacademy-neo4j-generative-ai-certification",
+    "url": "https://graphacademy.neo4j.com/certifications/genai-certification",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:02.589Z"
+  },
+  {
+    "id": "mongodb-university-ai-agents-with-mongodb",
+    "url": "https://learn.mongodb.com/learn/course/ai-agents-with-mongodb/",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:02.872Z"
+  },
+  {
+    "id": "mongodb-university-vector-search-fundamentals",
+    "url": "https://learn.mongodb.com/courses/vector-search-fundamentals",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:02.962Z"
+  },
+  {
+    "id": "mongodb-university-building-genai-apps",
+    "url": "https://learn.mongodb.com/learning-paths/building-genai-apps-learning-badge-path",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:03.585Z"
+  },
+  {
+    "id": "nvidia-academy-15853439",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A15853439",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:04.197Z"
+  },
+  {
+    "id": "nvidia-academy-16115386",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A16115386",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:04.205Z"
+  },
+  {
+    "id": "nvidia-academy-15139978",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A15139978",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:04.283Z"
+  },
+  {
+    "id": "nvidia-academy-15853441",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A15853441",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:04.349Z"
+  },
+  {
+    "id": "nvidia-academy-15139858",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A15139858",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:05.041Z"
+  },
+  {
+    "id": "nvidia-academy-15139853",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A15139853",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:05.069Z"
+  },
+  {
+    "id": "nvidia-academy-15139833",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A15139833",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:05.105Z"
+  },
+  {
+    "id": "nvidia-academy-15139849",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A15139849",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:05.149Z"
+  },
+  {
+    "id": "alibaba-cloud-academy-generative-ai-course-and-free-exam",
+    "url": "https://www.alibabacloud.com/en/academy/aigc",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:05.456Z"
+  },
+  {
+    "id": "nvidia-academy-15139856",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A15139856",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:05.633Z"
+  },
+  {
+    "id": "nvidia-academy-15139827",
+    "url": "https://www.nvidia.com/en-us/training/academy/course-detail?id=course%3A15139827",
+    "status": 200,
+    "availability": "reachable",
+    "checked_at": "2026-10-26T07:36:06.189Z"
+  }
+]

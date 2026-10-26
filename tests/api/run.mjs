@@ -1032,6 +1032,51 @@ test('premium reward text is retained when editing a long pack', async () => {
   assert.equal(state.tables.advent_rewards.at(-1).payload.text,text.trim())
 })
 
+function certificationSeed(streak=9,age=0){
+  const user=state.tables.users.find(u=>u.id===BUYER)
+  user.streak=streak;user.freezes=0;user.tz=0
+  user.last_claim=new Date(Date.now()-age*86400000).toISOString().slice(0,10)
+  state.tables.ai_certifications=[{id:'test-ai',title:'AI Foundations',provider:'Provider',credential:'certificate',topic:'fundamentals',url:'https://provider.example/ai',published:true,free_course:true,free_credential:true,position:0}]
+  state.tables.certification_progress=[]
+}
+test('certification catalog previews are available but never leak enrollment links below streak10',async()=>{
+ await everyoneBoots();certificationSeed()
+ const r=await call('certifications',{action:'catalog'},BUYER)
+ assert.equal(r.status,200);assert.equal(r.body.unlocked,false);assert.equal(r.body.items.length,1)
+ assert(!JSON.stringify(r.body).includes('https://'))
+ assert.equal((await call('certifications',{action:'open',id:'test-ai'},BUYER)).status,403)
+})
+test('certification access rechecks live streak and relocks immediately after it expires',async()=>{
+ await everyoneBoots();certificationSeed(10)
+ assert.equal((await call('certifications',{action:'open',id:'test-ai'},BUYER)).body.url,'https://provider.example/ai')
+ state.tables.users.find(u=>u.id===BUYER).last_claim='2026-01-01'
+ assert.equal((await call('certifications',{action:'open',id:'test-ai'},BUYER)).status,403)
+ assert.equal((await call('certifications',{action:'progress',id:'test-ai',status:'completed'},BUYER)).status,403)
+})
+test('certification completion and receipt are separate self-reported, actor-bound marks',async()=>{
+ await everyoneBoots();certificationSeed(10)
+ assert.equal((await call('certifications',{action:'progress',id:'test-ai',status:'received'},BUYER)).status,409)
+ assert.equal((await call('certifications',{action:'progress',id:'test-ai',status:'completed',user_id:ADMIN},BUYER)).status,200)
+ assert.equal((await call('certifications',{action:'progress',id:'test-ai',status:'received'},BUYER)).status,200)
+ assert.equal(state.tables.certification_progress[0].user_id,BUYER)
+ assert.equal(state.tables.certification_progress[0].status,'received')
+ state.tables.users.find(u=>u.id===BUYER).last_claim='2026-01-01'
+ const r=await call('certifications',{action:'catalog'},BUYER)
+ assert.equal(r.body.items[0].status,'received');assert.equal(r.body.unlocked,false)
+})
+
+test('an advent prize opens only its exact certification independently of the streak',async()=>{
+ await everyoneBoots();certificationSeed(0)
+ state.tables.advent_rewards=[{id:99,kind:'certification',payload:{certification_id:'test-ai'}}]
+ state.tables.reward_codes=[{user_id:BUYER,reward_id:99}]
+ const catalog=await call('certifications',{action:'catalog'},BUYER)
+ assert.equal(catalog.body.unlocked,false);assert.equal(catalog.body.items[0].available,true)
+ assert.equal((await call('certifications',{action:'open',id:'test-ai'},BUYER)).status,200)
+ assert.equal((await call('certifications',{action:'open',id:'other-ai'},BUYER)).status,403)
+ state.tables.reward_codes=[{user_id:ADMIN,reward_id:99}]
+ assert.equal((await call('certifications',{action:'open',id:'test-ai'},BUYER)).status,403)
+})
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()
