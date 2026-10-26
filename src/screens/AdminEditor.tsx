@@ -335,7 +335,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             </>
           )}
 
-          {d.id && d.published && (
+          {d.id && d.published && !d.course_id && d.kind === 'lesson' && (
             <Tap onClick={announce} disabled={!!busy} className="mt-5 flex h-[52px] w-full items-center justify-center gap-2 rounded-[18px] border border-line bg-card2 text-[14.5px] font-semibold">
               {busy === 'announce' ? <Spinner size={18} /> : <Megaphone size={18} />} Анонсировать в канале
             </Tap>

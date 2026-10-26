@@ -379,7 +379,7 @@ async function buildCourses(row: Row, feed: Row[]) {
       invite_unlock: c.invite_unlock,
       lessons: lessons.length,
       done: lessons.filter((l) => l.completed).length,
-      access: row.is_admin || has.has(c.id),
+      access: row.is_admin || has.has(c.id) || (c.price_stars === 0 && lessons.length > 0 && lessons.every((l) => l.free_preview)),
       request: asked.get(c.id) ?? null,
     })
   }
@@ -1029,11 +1029,11 @@ async function adminAnnounce(body: Row) {
   const s = await getSettings()
   const { data: les } = await db.from('lessons').select('*').eq('id', Number(body.id)).maybeSingle()
   if (!les || !les.published) throw new HttpError(400, 'not_published')
+  if (les.course_id || les.kind !== 'lesson') throw new HttpError(400, 'news_only')
   if (!s.channel?.id || !s.bot?.username) throw new HttpError(400, 'not_ready')
   // The durable queue owns news delivery; manual clicks must not duplicate it.
   if (s.news_publishing?.enabled && les.kind === 'lesson' && !les.course_id) return { ok: true, queued: true }
-  const teaser = les.course_id && !les.free_preview ? { ...les, body: '' } : les
-  const { text, link } = newsTelegramPost(teaser, s.bot)
+  const { text, link } = newsTelegramPost(les, s.bot)
   const r = await tg('sendMessage', {
     chat_id: s.channel.id,
     text,
