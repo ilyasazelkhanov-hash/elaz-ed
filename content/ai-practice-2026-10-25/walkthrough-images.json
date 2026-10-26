@@ -1,0 +1,66 @@
+[
+  {
+    "file": "claude-desktop.jpg",
+    "url": "https://assets.claude.com/e0035a095d8888c9739f8acb305f517b25d469eb.jpg",
+    "page": "https://claude.com/product/cowork",
+    "bytes": 168977,
+    "content_type": "image/jpeg",
+    "checked_at": "2026-10-26"
+  },
+  {
+    "file": "chatgpt-scheduled.webp",
+    "url": "https://images.ctfassets.net/j22is2dtoxu1/lbas_img_VqHYGe5lZn0eoenRKTbB9wuviX0oORyEaVsb1Oluqz8/8efb42534fa6d0fa57f98ac16edbcba4/lbas_img_VqHYGe5lZn0eoenRKTbB9wuviX0oORyEaVsb1Oluqz8.png?fm=webp&q=80&w=1344",
+    "page": "https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt",
+    "bytes": 24304,
+    "content_type": "image/webp",
+    "checked_at": "2026-10-26"
+  },
+  {
+    "file": "chatgpt-controls.webp",
+    "url": "https://images.ctfassets.net/j22is2dtoxu1/lbas_img_M6A3vtN-CoMiHqGxTZ4aQqy2bGEC8oOzSYweAVAihYg/60408b6cca009983ebb1512d1f42ffdf/lbas_img_M6A3vtN-CoMiHqGxTZ4aQqy2bGEC8oOzSYweAVAihYg.png?fm=webp&q=80&w=1344",
+    "page": "https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt",
+    "bytes": 20660,
+    "content_type": "image/webp",
+    "checked_at": "2026-10-26"
+  },
+  {
+    "file": "runway-apps.png",
+    "url": "https://help.runwayml.com/hc/article_attachments/50021344329619",
+    "page": "https://help.runwayml.com/hc/en-us/articles/46974685288467-Creating-with-Gen-4-5",
+    "bytes": 1437935,
+    "content_type": "image/png",
+    "checked_at": "2026-10-26"
+  },
+  {
+    "file": "runway-settings.png",
+    "url": "https://help.runwayml.com/hc/article_attachments/49602653261331",
+    "page": "https://help.runwayml.com/hc/en-us/articles/46974685288467-Creating-with-Gen-4-5",
+    "bytes": 28267,
+    "content_type": "image/png",
+    "checked_at": "2026-10-26"
+  },
+  {
+    "file": "n8n-personal.png",
+    "url": "https://2446198290-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FCxSeOtVxqqhfxMSac0AV%2Fuploads%2Fgit-blob-85c3edcf10180966c40f0f826da0a4ab7679beec%2Fbuild-your-first-workflow-create-workflow-01.png?alt=media",
+    "page": "https://docs.n8n.io/build-your-first-workflow",
+    "bytes": 10978,
+    "content_type": "image/png",
+    "checked_at": "2026-10-26"
+  },
+  {
+    "file": "n8n-create.png",
+    "url": "https://2446198290-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FCxSeOtVxqqhfxMSac0AV%2Fuploads%2Fgit-blob-55758edc996be986a974008c1ead88254fb638ab%2Fbuild-your-first-workflow-create-workflow-02.png?alt=media",
+    "page": "https://docs.n8n.io/build-your-first-workflow",
+    "bytes": 8805,
+    "content_type": "image/png",
+    "checked_at": "2026-10-26"
+  },
+  {
+    "file": "firefly-results.jpg",
+    "url": "https://helpx-prod.scene7.com/is/image/HelpxProd/create-images-from-text-prompts-42-firefly?%24pjpeg%24=&jpegSize=200&wid=1200",
+    "page": "https://helpx.adobe.com/firefly/web/work-with-images/generate-images/generate-images-from-text-descriptions.html",
+    "bytes": 35973,
+    "content_type": "image/jpeg",
+    "checked_at": "2026-10-26"
+  }
+]

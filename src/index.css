@@ -541,6 +541,7 @@
 }
 .prose-ed table {
   width: 100%;
+  min-width: 560px;
   border-collapse: collapse;
   font-size: 14.5px;
 }
@@ -548,6 +549,8 @@
 .prose-ed td {
   padding: 10px 14px;
   text-align: left;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 .prose-ed th {
   background: var(--color-card);
@@ -558,6 +561,24 @@
 .prose-ed tr + tr td {
   border-top: 1px solid var(--color-line);
 }
+.markdown-table .table-cards { display: none; }
+@media (max-width: 600px) {
+  .prose-ed .responsive-table > .table-wrap { display: none; }
+  .prose-ed .table-cards { display: grid; gap: 12px; }
+  .prose-ed .table-card { min-width: 0; padding: 18px; border: 1px solid var(--color-line); border-radius: 18px; background: var(--color-card); }
+  .prose-ed .table-card h4 { margin: 0 0 14px; font-size: 17px; line-height: 1.35; overflow-wrap: break-word; }
+  .prose-ed .table-card dl { display: grid; gap: 14px; margin: 0; }
+  .prose-ed .table-card dt { color: var(--color-mute); font-size: 12px; font-weight: 600; margin: 0 0 4px; }
+  .prose-ed .table-card dd { margin: 0; font-size: 15px; line-height: 1.6; overflow-wrap: break-word; }
+}
+.learning-image { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: zoom-in; }
+.learning-image > span { display: flex; align-items: center; gap: 6px; padding-top: 7px; color: var(--color-mute); font-size: 12px; }
+.learning-image-dialog { padding: 16px; border: 1px solid var(--color-line); border-radius: 20px; background: var(--color-bg); color: var(--color-ink); width: min(1100px, calc(100vw - 24px)); max-width: calc(100vw - 24px); max-height: calc(100dvh - 32px); }
+.learning-image-dialog::backdrop { background: rgb(0 0 0 / 78%); }
+.learning-image-close { position: sticky; top: 0; z-index: 1; display: grid; place-items: center; margin: 0 0 10px auto; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--color-line); background: var(--color-card); color: inherit; }
+.learning-image-full { overflow: auto; max-height: calc(100dvh - 180px); }
+.learning-image-full img { display: block; width: max(100%, 700px); max-width: none; height: auto; }
+.learning-image-dialog > p { margin: 12px 0 0; font: 14px/1.5 system-ui; }
 
 /* Сторис: крупнее, цвет текста задаёт градиент слайда, а не тема */
 .prose-story {
