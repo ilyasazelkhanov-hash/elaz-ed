@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { newsTelegramPost } from '../_shared/news.ts'
 import { publishEditorialBatch } from '../_shared/editorial.ts'
+import { refreshNewsMessage } from '../_shared/newsRefresh.ts'
 
 const token = Deno.env.get('BOT_TOKEN') ?? ''
 let key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -36,6 +37,23 @@ Deno.serve(async req => {
    const target=await telegram('getChat',{chat_id:'@OGCRE8R'})
    if(!target.ok||target.result?.id!==cfg.chat_id)return json({error:'editorial_destination'},409)
    return json(await publishEditorialBatch(db,telegram,cfg.chat_id,String(input.batch??'')))
+  }
+  if(input.mode==='refresh_news'){
+   const target=await telegram('getChat',{chat_id:'@OGCRE8R'})
+   if(!target.ok||target.result?.id!==cfg.chat_id)return json({error:'refresh_destination'},409)
+   if(!Array.isArray(input.ids)||input.ids.length>10||!input.ids.every((id:unknown)=>Number.isSafeInteger(id)&&Number(id)>0))return json({error:'refresh_ids'},400)
+   const receipts=await db.from('news_publications').select('lesson_id,message_id').eq('chat_id',cfg.chat_id).eq('status','sent').in('lesson_id',input.ids)
+   const lessons=await db.from('lessons').select('id,title,subtitle,body,cover_url').in('id',input.ids)
+   if(receipts.error||lessons.error)throw new Error('refresh_load')
+   const results=[]
+   for(const receipt of receipts.data??[]){
+    const lesson=lessons.data?.find(l=>l.id===receipt.lesson_id)
+    if(!lesson||!Number.isSafeInteger(receipt.message_id))continue
+    const result=await refreshNewsMessage(telegram,cfg.chat_id,receipt.message_id,lesson,s.bot)
+    results.push({lesson_id:lesson.id,message_id:receipt.message_id,...result})
+    if(!result.ok)break
+   }
+   return json({ok:results.length===input.ids.length&&results.every(r=>r.ok),results})
   }
   let sent=0
   for(let i=0;i<10;i++){
