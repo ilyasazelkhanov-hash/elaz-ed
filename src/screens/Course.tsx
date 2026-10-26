@@ -1,6 +1,6 @@
 import { Check, ChevronLeft, ChevronRight, Lock, Send, Star, Users } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { api, errorText, isDemo } from '../lib/api'
 import { GRADIENTS, lessonsWord, plural } from '../lib/game'
 import { appLink } from '../lib/links'
@@ -166,9 +166,17 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
           <div className="overflow-hidden rounded-[22px] border border-line bg-card/80">
             {lessons.map((l, i) => {
               const available = course.access || l.free_preview
+              const moduleStart = l.category.startsWith('Модуль ') && (i === 0 || lessons[i - 1].category !== l.category)
+              const moduleLessons = moduleStart ? lessons.filter(item => item.category === l.category) : []
               return (
+                <Fragment key={l.id}>
+                  {moduleStart && (
+                    <div className="border-b border-line bg-violet/8 px-4 py-4">
+                      <h3 className="font-display text-[14px] font-semibold leading-snug text-violet">{l.category}</h3>
+                      <p className="mt-1 text-[12px] text-mute">{moduleLessons.length} {lessonsWord(moduleLessons.length)} · {moduleLessons.reduce((sum, item) => sum + item.minutes, 0)} мин · {moduleLessons.filter(item => item.completed).length} пройдено</p>
+                    </div>
+                  )}
                 <button
-                  key={l.id}
                   type="button"
                   onClick={(e) => {
                     if (available) {
@@ -193,6 +201,7 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
                   </span>
                   {available ? <ChevronRight size={18} className="shrink-0 text-faint" /> : <Lock size={16} className="shrink-0 text-faint" />}
                 </button>
+                </Fragment>
               )
             })}
             {lessons.length === 0 && <p className="px-4 py-6 text-center text-[14px] text-mute">Уроки появятся здесь, как только автор их опубликует.</p>}
