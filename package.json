@@ -19,7 +19,7 @@
     "academy:seed": "node scripts/academy-seed.mjs",
     "preview": "vite preview",
     "academy:content": "node scripts/academy-content.mjs",
-    "academy:release": "node scripts/academy-release.mjs"
+    "academy:release": "node --use-env-proxy scripts/academy-release.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",
