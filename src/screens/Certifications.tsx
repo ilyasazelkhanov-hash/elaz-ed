@@ -91,7 +91,7 @@ export function CertificationsScreen({focusId}:{focusId?:string}) {
    </article>)}</div>
    {data&&items.length===0&&<div className="rounded-[24px] border border-line bg-card p-7 text-center"><Search size={30} className="mx-auto text-faint"/><p className="mt-3 text-[14px] text-mute">{isDemo?'Каталог доступен в рабочей миниаппке.':filter==='gift'?'Здесь появятся маршруты, выигранные в адвенте.':'Нет подходящих маршрутов. Попробуй другой запрос.'}</p></div>}
    {items.length>limit&&<Cta tone="quiet" className="mt-4 w-full" onClick={()=>setLimit(n=>n+12)}>Показать ещё 12</Cta>}
-   <p className="mt-6 text-[11px] leading-relaxed text-faint">Источник списка: aicertified.free · срез 26.10.2026. В каталоге есть сертификаты об окончании и учебные бейджи; они не равны профессиональной сертификации. Стоимость, требования и выдачу проверяй у провайдера. Личные отметки не являются проверкой документа.</p>
+   <p className="mt-6 text-[11px] leading-relaxed text-faint">В каталоге есть сертификаты об окончании и учебные бейджи; они не равны профессиональной сертификации. Стоимость, требования и выдачу проверяй у провайдера. Личные отметки не являются проверкой документа.</p>
   </div>
  </motion.div>
 }
