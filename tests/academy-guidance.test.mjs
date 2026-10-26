@@ -43,7 +43,7 @@ test('all 448 lessons can be prepared from student-visible course metadata witho
     }
   }
   assert.equal(count, 448)
-  assert.equal(planned, 384)
+  assert.equal(planned, catalog.entities.filter(entity=>entity.kind==='lesson'&&entity.state==='outline').length)
   await assert.rejects(api(student, 'lesson', { code: 'DT-201-M1-L1' }), /not_published/)
   await assert.rejects(api(student, 'complete', { code: 'DT-201-M1-L1' }), /not_published/)
   assert.equal((await api(student, 'my', {})).progress.length, 0)

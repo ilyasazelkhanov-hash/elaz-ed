@@ -83,11 +83,25 @@ export function contentSql(catalog,actor,courseCode){
  // A content digest receipt makes reruns no-ops; mismatched/manual rows fail before any mutation.
  return `-- Reviewed authored Academy pack. Apply after original curriculum import and all Academy migrations.\n-- Existing non-outline content is never overwritten.\nbegin;\ncreate table if not exists public.aa_content_receipts(revision text primary key,applied_at timestamptz default now());\nalter table public.aa_content_receipts enable row level security;\nrevoke all on public.aa_content_receipts from public,anon,authenticated;\ndo $content$\ndeclare current_node jsonb; publish_state text;\nbegin\nperform pg_advisory_xact_lock(7813);\nif exists(select 1 from aa_content_receipts where revision='${catalog.content_revision}') then return;end if;\nif exists(select 1 from aa_nodes where code in(select value#>>'{}' from jsonb_array_elements(${literal(rows.map(n=>n.code))})) and (state<>'outline' or seed_managed=false)) then raise exception 'Authored pack conflicts with edited content; review manually';end if;\n${calls.join('\n')}\n${publish.join('\n')}\ninsert into aa_source_links(source_code,target_code,usage,visibility,start_seconds) select x.source_code,x.target_code,x.usage,x.visibility,x.start_seconds from jsonb_to_recordset(${literal(links)}) as x(source_code text,target_code text,usage text,visibility text,start_seconds integer) on conflict do nothing;\ninsert into aa_content_receipts(revision) values('${catalog.content_revision}');\nend $content$;\ncommit;\n`
 }
+export async function loadAuthoredPacks(){
+ const codes=JSON.parse(await readFile(path.join(root,'content/ai-academy/authored/index.json'),'utf8'))
+ assert(Array.isArray(codes)&&codes.length>0&&new Set(codes).size===codes.length,'Invalid authored course index')
+ return Promise.all(codes.map(async code=>{
+  assert(typeof code==='string'&&/^[A-Z]+-\d{3}$/.test(code),'Invalid authored course code')
+  const pack=JSON.parse(await readFile(path.join(root,`content/ai-academy/authored/${code}.json`),'utf8'))
+  assert(pack.course_code===code,'Authored course identity mismatch')
+  return pack
+ }))
+}
 export async function buildContent(){
  const base=JSON.parse(await readFile(path.join(root,'content/ai-academy/catalog.normalized.json'),'utf8'))
- const packs=await Promise.all(['CORE-000','VC-101','ENG-101','VC-201'].map(async code=>JSON.parse(await readFile(path.join(root,`content/ai-academy/authored/${code}.json`),'utf8'))))
+ const packs=await loadAuthoredPacks()
  const catalog=composeLearningCatalog(base,packs)
  await writeIfChanged(path.join(root,'content/ai-academy/catalog.learning.json'),JSON.stringify(catalog,null,2)+'\n')
+ const courses=catalog.entities.filter(n=>n.kind==='course')
+ const completed=catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='published').length
+ const progress=['# Наполнение AI Academy','','Файл формируется командой `npm run academy:content` из учебного каталога.','',`Наполнены **${completed} из 448 занятий**; **${448-completed}** остаются планами. Это состояние локального учебного пакета, а не подтверждение публикации в рабочей Supabase.`,'','| Курс | Программа | Наполнено занятий |','| --- | --- | --- |',...courses.map(course=>{const count=catalog.entities.filter(n=>n.kind==='lesson'&&n.code.startsWith(course.code+'-')&&n.state==='published').length;return `| ${course.code} | ${course.title.replaceAll('|','/')} | ${count}/16 |`}), '','Наполненные пакеты перечислены в `content/ai-academy/authored/index.json`. Учебные проекты находятся в `content/ai-academy/projects/`. Публикация выполняется отдельно через проверенный SQL-экспорт конкретного курса.',''].join('\n')
+ await writeIfChanged(path.join(root,'docs/ai-academy/content-status.md'),progress)
  const actor=process.argv.find(a=>a.startsWith('--actor='))?.slice(8)
  if(actor){const out=path.join(root,'content/ai-academy/generated');await mkdir(out,{recursive:true});await writeIfChanged(path.join(out,'authored-content.sql'),contentSql(catalog,actor,process.argv.find(a=>a.startsWith('--course='))?.slice(9)))}
  console.log(`Academy content: ${packs.length} courses, ${packs.reduce((n,p)=>n+p.lessons.length,0)} authored lessons; revision ${catalog.content_revision}. ${actor?'SQL exported; no database writes.':'No database writes.'}`)

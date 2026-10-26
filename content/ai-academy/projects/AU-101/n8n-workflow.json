@@ -1,0 +1,143 @@
+{
+  "name": "AU-101 · проверка заявки и черновик",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Ручной запуск",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Учебная заявка",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"id\":\"REQ-001\",\"email\":\"learner@example.test\",\"message\":\"Нужен ремонт учебного устройства\"}",
+        "options": {}
+      }
+    },
+    {
+      "id": "filter",
+      "name": "Email заполнен",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "email-condition",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "draft",
+      "name": "Черновик результата",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        -80
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "request-id",
+              "name": "requestId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "queue",
+              "name": "queue",
+              "value": "manual",
+              "type": "string"
+            },
+            {
+              "id": "notification",
+              "name": "notificationState",
+              "value": "draft",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Ручной запуск": {
+      "main": [
+        [
+          {
+            "node": "Учебная заявка",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Учебная заявка": {
+      "main": [
+        [
+          {
+            "node": "Email заполнен",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email заполнен": {
+      "main": [
+        [
+          {
+            "node": "Черновик результата",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "tags": [],
+  "id": "academyAu101Flow01"
+}
