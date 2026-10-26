@@ -1,0 +1,5 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {once} from 'node:events'
+import {createAssistantServer} from './server.mjs'
+test('browser API keeps student source access and validates pasted proposals',async()=>{const server=createAssistantServer();server.listen(0,'127.0.0.1');await once(server,'listening');const origin=`http://127.0.0.1:${server.address().port}`;try{const response=await fetch(origin+'/ask?q='+encodeURIComponent('внутренняя заметка график')+'&role=staff');const data=await response.json();assert.equal(response.status,200);assert.ok(!JSON.stringify(data).includes('INTERNAL_ONLY'));assert.ok(data.retrieved.every(doc=>doc.id!=='STAFF-INTERNAL'));const bad=await fetch(origin+'/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:'график',proposal:{answer:'Служебный текст',citations:[{id:'STAFF-INTERNAL',quote:'INTERNAL_ONLY'}],needsHuman:false}})});assert.equal(bad.status,400);assert.equal((await fetch(origin+'/ask?q=')).status,400)}finally{await new Promise(r=>server.close(r))}})
