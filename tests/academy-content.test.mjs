@@ -6,16 +6,16 @@ import {composeLearningCatalog,contentSql} from '../scripts/academy-content.mjs'
 import {createAcademyEngine} from '../src/lib/academy-domain.ts'
 const read=async path=>JSON.parse(await readFile(new URL(path,import.meta.url),'utf8'))
 const base=await read('../content/ai-academy/catalog.normalized.json')
-const packs=await Promise.all(['CORE-000','VC-101'].map(c=>read(`../content/ai-academy/authored/${c}.json`)))
+const packs=await Promise.all(['CORE-000','VC-101','ENG-101'].map(c=>read(`../content/ai-academy/authored/${c}.json`)))
 const catalog=composeLearningCatalog(base,packs)
 test('authored courses contain substantive lessons, source links and distinct practical work',()=>{
- assert.equal(catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='published').length,32)
- assert.equal(catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='outline').length,416)
+ assert.equal(catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='published').length,48)
+ assert.equal(catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='outline').length,400)
  assert.equal(base.entities.filter(n=>n.kind==='lesson'&&n.state==='published').length,0)
  const practice=catalog.entities.find(n=>n.code==='CORE-000-M1-L1-CHECK'),final=catalog.entities.find(n=>n.code==='CORE-000-M4-L4-CHECK')
  assert.notEqual(practice.data.rubric_code,final.data.rubric_code)
  const bodies=catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='published').map(n=>n.data.content_blocks.map(b=>b.text||b.body||'').join('\n'))
- assert.equal(new Set(bodies).size,32)
+ assert.equal(new Set(bodies).size,48)
  for(const lesson of catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='published')){
   assert.ok(catalog.links.some(l=>l.target_code===lesson.code&&l.source_code.startsWith('AUTH-SRC-')),`missing source ${lesson.code}`)
   assert.ok(lesson.data.artifact.length>15)
@@ -56,8 +56,9 @@ test('real PostgreSQL publishes pack through validators, reruns once and rejects
  await db.exec(`insert into users(id) values(1),(2);insert into settings(key,value) values('admins','{"owner":1}')`)
  const rpc=async(action,payload={},actor=1)=>(await db.query('select academy_action($1,$2,$3::jsonb) v',[actor,action,JSON.stringify(payload)])).rows[0].v
  await rpc('admin_import',{...base,dry_run:false})
- const sql=contentSql(catalog,'1');await db.exec(sql)
- assert.equal((await db.query("select count(*)::int n from aa_nodes where kind='lesson' and state='published'")).rows[0].n,32)
+ const legacy=composeLearningCatalog(base,packs.slice(0,2));await db.exec(contentSql(legacy,'1'))
+ const sql=contentSql(catalog,'1','ENG-101');await db.exec(sql)
+ assert.equal((await db.query("select count(*)::int n from aa_nodes where kind='lesson' and state='published'")).rows[0].n,48)
  const versions=JSON.stringify((await db.query('select code,version from aa_nodes order by code')).rows)
  await db.exec(sql)
  assert.equal(JSON.stringify((await db.query('select code,version from aa_nodes order by code')).rows),versions)

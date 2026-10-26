@@ -61,7 +61,13 @@ export function composeLearningCatalog(base,packs){
 }
 
 // Explicit, reviewable publication through existing validators. No direct table bypass.
-export function contentSql(catalog,actor){
+export function contentSql(catalog,actor,courseCode){
+ if(courseCode){
+  const selected=catalog.entities.filter(n=>n.data.authored_pack===`og-original:${courseCode}:1`)
+  assert(selected.some(n=>n.kind==='course'&&n.code===courseCode),'Unknown authored course')
+  const selectedLinks=catalog.links.filter(link=>selected.some(n=>n.code===link.source_code))
+  catalog={...catalog,entities:selected,content_revision:createHash('sha256').update('scoped-content:1').update(JSON.stringify({entities:selected,links:selectedLinks})).digest('hex').slice(0,16)}
+ }
  assert(/^[a-f0-9]{16}$/.test(catalog.content_revision||''),'Invalid content revision')
  assert(/^[1-9]\d*$/.test(actor||'')&&BigInt(actor)<=9223372036854775807n,'--actor must be a positive bigint Telegram ID')
  const rows=catalog.entities.filter(n=>n.data.authored_pack)
@@ -79,11 +85,11 @@ export function contentSql(catalog,actor){
 }
 export async function buildContent(){
  const base=JSON.parse(await readFile(path.join(root,'content/ai-academy/catalog.normalized.json'),'utf8'))
- const packs=await Promise.all(['CORE-000','VC-101'].map(async code=>JSON.parse(await readFile(path.join(root,`content/ai-academy/authored/${code}.json`),'utf8'))))
+ const packs=await Promise.all(['CORE-000','VC-101','ENG-101'].map(async code=>JSON.parse(await readFile(path.join(root,`content/ai-academy/authored/${code}.json`),'utf8'))))
  const catalog=composeLearningCatalog(base,packs)
  await writeIfChanged(path.join(root,'content/ai-academy/catalog.learning.json'),JSON.stringify(catalog,null,2)+'\n')
  const actor=process.argv.find(a=>a.startsWith('--actor='))?.slice(8)
- if(actor){const out=path.join(root,'content/ai-academy/generated');await mkdir(out,{recursive:true});await writeIfChanged(path.join(out,'authored-content.sql'),contentSql(catalog,actor))}
+ if(actor){const out=path.join(root,'content/ai-academy/generated');await mkdir(out,{recursive:true});await writeIfChanged(path.join(out,'authored-content.sql'),contentSql(catalog,actor,process.argv.find(a=>a.startsWith('--course='))?.slice(9)))}
  console.log(`Academy content: ${packs.length} courses, ${packs.reduce((n,p)=>n+p.lessons.length,0)} authored lessons; revision ${catalog.content_revision}. ${actor?'SQL exported; no database writes.':'No database writes.'}`)
  return catalog
 }
