@@ -1,11 +1,22 @@
 import { Check, Copy } from 'lucide-react'
-import { useRef, useState, type ReactNode } from 'react'
+import { Children, isValidElement, useRef, useState, type ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { copyText, haptic, openLink } from './lib/tg'
 import { Tap } from './ui'
 import { MarkdownTable } from './MarkdownTable'
 import { MarkdownImage } from './MarkdownImage'
+import { LessonAnimation } from './LessonAnimation'
+import { lessonAnimations } from './lib/lesson-animations'
+
+function MarkdownPre({children}:{children?:ReactNode}) {
+  const code=Children.toArray(children)[0]
+  if(isValidElement<{className?:string;children?:ReactNode}>(code)&&code.props.className==='language-lesson-animation'){
+    const id=typeof code.props.children==='string'?code.props.children.trim():''
+    if(Object.hasOwn(lessonAnimations,id))return <LessonAnimation id={id}/>
+  }
+  return <Pre>{children}</Pre>
+}
 
 function Pre({ children }: { children?: ReactNode }) {
   const ref = useRef<HTMLPreElement>(null)
@@ -37,7 +48,7 @@ export default function MarkdownImpl({ text, className = 'prose-ed' }: { text: s
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          pre: ({ children }) => <Pre>{children}</Pre>,
+          pre: MarkdownPre,
           table: ({ children }) => <MarkdownTable>{children}</MarkdownTable>,
           a: ({ href, children }) => (
             <a

@@ -53,7 +53,8 @@ test('training replaces only course lessons and preserves news, IDs and progress
  assert(!lessons.some(x=>x.body.includes('opencode-tui.webp')||x.body.includes('elevenlabs-tts.webp')))
  assert(lessons.find(x=>x.title.includes('ChatGPT, Claude')).body.includes('claude-desktop.jpg'))
  assert(lessons.find(x=>x.title.includes('Музыка')).body.includes('Suno'))
- assert.equal(lessons.filter(x=>x.body.includes('.gif)')).length,3)
+ assert.equal(lessons.filter(x=>x.body.includes('```lesson-animation')).length,10)
+ assert.equal(lessons.filter(x=>x.body.includes('.gif)')).length,0)
  }finally{await db.close()}
 })
 test('all educational pictures, animations and starter files are local deployable assets',async()=>{
