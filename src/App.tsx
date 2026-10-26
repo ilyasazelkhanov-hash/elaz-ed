@@ -2,6 +2,7 @@ import { House, Trophy, User } from 'lucide-react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
+import { academyEntry } from './lib/academy-entry'
 import { bindBack, initTelegram, inTelegram, startParam } from './lib/tg'
 import { applyTheme, watchTheme } from './lib/theme'
 import { preloadMarkdown } from './Markdown'
@@ -108,7 +109,7 @@ function Shell() {
 
   // Прямая ссылка на урок: t.me/бот?start=l12
   useEffect(() => {
-    const academyPath = location.hash.startsWith('#/academy') ? location.hash.slice(1) : location.pathname.startsWith('/academy') ? location.pathname : null
+    const academyPath = academyEntry(location.hash, location.pathname, startParam)
     if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
     const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
     const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)

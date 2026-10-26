@@ -1,7 +1,7 @@
 import { AnimatePresence } from 'motion/react'
 import { useMemo, useRef } from 'react'
 import { levelOf } from '../lib/game'
-import { academyEnabled } from '../lib/academy'
+import { AcademyCourses } from './home/AcademyCourses'
 import { useStore } from '../store'
 import { Avatar, Bar, Counter, Emoji, Odometer, Ring, Tap } from '../ui'
 import { AdventBanner } from './advent/Banner'
@@ -60,7 +60,6 @@ export function Home() {
         <span className="min-w-0 flex-1"><span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-violet">Паспорт достижений</span><span className="mt-1 block font-display text-[17px] font-semibold leading-tight">ИИ-сертификации</span><span className="mt-1 block text-[12px] leading-snug text-mute">{me.streak>=10?'Серия 10+ · каталог открыт':'Собери стрик 10 дней · открой каталог'}</span></span>
         <ChevronRight className="shrink-0 text-violet" size={20}/>
       </Tap>
-      {academyEnabled && <Tap onClick={() => useStore.getState().push({type:'academy'})} className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center gap-4 rounded-[26px] border border-violet/25 bg-violet/10 p-5 text-left"><Emoji char="🪐" size={38}/><span className="min-w-0 flex-1"><span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-violet">От идеи к своему проекту</span><b className="mt-2 block font-display text-[17px]">AI Academy</b><span className="mt-1.5 block text-[12px] leading-relaxed text-mute">Выбери направление и посмотри программу</span></span><span aria-hidden="true" className="text-xl text-violet">↗</span></Tap>}
       <Tap onClick={() => useStore.getState().push({type:'journey'})} className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center gap-3 rounded-[24px] border border-line bg-card/80 p-4 text-left"><Emoji char="🧭" size={30}/><span className="flex-1"><b className="block text-[14px]">Мой следующий шаг</b><span className="mt-1 block text-[12px] text-mute">Короткий маршрут к твоей цели</span></span><span aria-hidden="true">→</span></Tap>
 
       <Tap
@@ -84,6 +83,8 @@ export function Home() {
           {me.daily_claimed ? <StreakCard key="streak" /> : <DailyCard key="daily" />}
         </AnimatePresence>
       </div>
+
+      <AcademyCourses />
 
       {stories.length > 0 && (
         <div className="no-bar mt-6 flex gap-3.5 overflow-x-auto px-5">

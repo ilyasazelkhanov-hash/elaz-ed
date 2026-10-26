@@ -1,0 +1,478 @@
+[
+  {
+    "code": "CORE-000",
+    "kind": "course",
+    "parent_code": null,
+    "title": "AI Foundations: единый фундамент",
+    "position": 1,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Общее владение AI-терминологией и безопасным применением",
+      "level": "Core",
+      "hours": 10,
+      "prerequisites": "Нет",
+      "capstone": "Пакет промптов и policy безопасного применения"
+    }
+  },
+  {
+    "code": "VC-101",
+    "kind": "course",
+    "parent_code": "VC",
+    "title": "Первое приложение с AI",
+    "position": 2,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Создаёт, тестирует и объясняет работу первого продукта",
+      "level": "Junior",
+      "hours": 18,
+      "prerequisites": "AI Core либо входной тест",
+      "capstone": "Опубликованный сайт с формой заявок"
+    }
+  },
+  {
+    "code": "VC-201",
+    "kind": "course",
+    "parent_code": "VC",
+    "title": "Full-stack MVP с AI",
+    "position": 3,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Самостоятельно проектирует и выпускает MVP",
+      "level": "Middle",
+      "hours": 26,
+      "prerequisites": "Junior-аттестация или HTML/JS, Git, API",
+      "capstone": "Рабочая CRM/бронирование с аккаунтами и БД"
+    }
+  },
+  {
+    "code": "VC-301",
+    "kind": "course",
+    "parent_code": "VC",
+    "title": "Product-Grade AI SaaS: Architecture & Delivery",
+    "position": 4,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Развивает и выпускает продукт, разбирается в безопасности, техдолге и экономике; не подменяет специализированную harness-инженерию ENG-301",
+      "level": "Senior",
+      "hours": 34,
+      "prerequisites": "Middle-аттестация, Git, API, БД и тесты",
+      "capstone": "SaaS MVP с мониторингом, безопасностью и документацией"
+    }
+  },
+  {
+    "code": "ENG-101",
+    "kind": "course",
+    "parent_code": "ENG",
+    "title": "AI Developer Foundations",
+    "position": 5,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Изменяет существующий проект через AI-IDE и обосновывает правки",
+      "level": "Junior",
+      "hours": 20,
+      "prerequisites": "CORE или входной тест; уверенное пользование ПК",
+      "capstone": "Pull request в учебный репозиторий с тестом и README"
+    }
+  },
+  {
+    "code": "ENG-201",
+    "kind": "course",
+    "parent_code": "ENG",
+    "title": "Agentic Developer Workflows",
+    "position": 6,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Создаёт повторяемую агентную разработку со специализированными ролями",
+      "level": "Middle",
+      "hours": 30,
+      "prerequisites": "ENG-101 или Git/CLI + ревью кода",
+      "capstone": "Конвейер issue → план → код → тест → PR → review"
+    }
+  },
+  {
+    "code": "ENG-301",
+    "kind": "course",
+    "parent_code": "ENG",
+    "title": "Agent Harness & Autonomous Engineering",
+    "position": 7,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Проектирует ограниченный, наблюдаемый агентный runtime",
+      "level": "Senior",
+      "hours": 40,
+      "prerequisites": "ENG-201 и опыт поддержки сервисов",
+      "capstone": "Harness с заданием, ролями, аудитом, E2E и бюджетными лимитами"
+    }
+  },
+  {
+    "code": "AU-101",
+    "kind": "course",
+    "parent_code": "AU",
+    "title": "Автоматизация без кода",
+    "position": 8,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Собирает простые надёжные сценарии",
+      "level": "Junior",
+      "hours": 18,
+      "prerequisites": "AI Core либо входной тест",
+      "capstone": "Обработка заявки из формы до уведомления"
+    }
+  },
+  {
+    "code": "AU-201",
+    "kind": "course",
+    "parent_code": "AU",
+    "title": "Интеграции и AI Workflows",
+    "position": 9,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Собирает и отлаживает цепочки между разными системами",
+      "level": "Middle",
+      "hours": 26,
+      "prerequisites": "Junior-аттестация или основы n8n",
+      "capstone": "Мини-автоматизация CRM, support и контента"
+    }
+  },
+  {
+    "code": "AU-301",
+    "kind": "course",
+    "parent_code": "AU",
+    "title": "Automation Systems Architecture",
+    "position": 10,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Умеет оценивать стоимость, риски и надёжность",
+      "level": "Senior",
+      "hours": 34,
+      "prerequisites": "Middle-аттестация, API, БД и поддержка",
+      "capstone": "Промышленный процесс с мониторингом и rollback"
+    }
+  },
+  {
+    "code": "AG-101",
+    "kind": "course",
+    "parent_code": "AG",
+    "title": "AI Assistant Foundations",
+    "position": 11,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Понимает отличие чатбота, ассистента и агента",
+      "level": "Junior",
+      "hours": 18,
+      "prerequisites": "AI Core либо входной тест",
+      "capstone": "Помощник, отвечающий на типовые вопросы"
+    }
+  },
+  {
+    "code": "AG-201",
+    "kind": "course",
+    "parent_code": "AG",
+    "title": "RAG & Tool-Using Agents",
+    "position": 12,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Строит и тестирует агент по закрытым документам",
+      "level": "Middle",
+      "hours": 26,
+      "prerequisites": "Junior-аттестация и базовые API/Python или no-code",
+      "capstone": "База знаний с источниками и инструментами"
+    }
+  },
+  {
+    "code": "AG-301",
+    "kind": "course",
+    "parent_code": "AG",
+    "title": "Production Agents & Multi-agent",
+    "position": 13,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Управляет надёжностью, границами и стоимостью",
+      "level": "Senior",
+      "hours": 34,
+      "prerequisites": "Middle-аттестация, RAG и API",
+      "capstone": "Агентная система с измеримым качеством и логами"
+    }
+  },
+  {
+    "code": "CR-101",
+    "kind": "course",
+    "parent_code": "CR",
+    "title": "AI Content Creator",
+    "position": 14,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Умеет стабильно производить простые материалы",
+      "level": "Junior",
+      "hours": 18,
+      "prerequisites": "AI Core либо входной тест",
+      "capstone": "Контент-пакет: 5 изображений + 2 коротких видео"
+    }
+  },
+  {
+    "code": "CR-201",
+    "kind": "course",
+    "parent_code": "CR",
+    "title": "AI Creative Production",
+    "position": 15,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Управляет продакшеном и качеством материала",
+      "level": "Middle",
+      "hours": 26,
+      "prerequisites": "Junior-аттестация или портфолио визуалов",
+      "capstone": "Рекламная кампания с визуальной преемственностью"
+    }
+  },
+  {
+    "code": "CR-301",
+    "kind": "course",
+    "parent_code": "CR",
+    "title": "AI Content Studio & Direction",
+    "position": 16,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Стандартизирует производство и управляет рисками",
+      "level": "Senior",
+      "hours": 34,
+      "prerequisites": "Middle-аттестация и рекламный кейс",
+      "capstone": "Мини-студия с SOP, бюджетом, QA и выпуском"
+    }
+  },
+  {
+    "code": "DS-101",
+    "kind": "course",
+    "parent_code": "DS",
+    "title": "AI-Assisted UI/UX Design",
+    "position": 17,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Преобразует пользовательскую проблему в тестируемый прототип",
+      "level": "Junior",
+      "hours": 20,
+      "prerequisites": "CORE или вводный тест",
+      "capstone": "Кликабельный прототип 3–5 экранов и результаты 3 тестов"
+    }
+  },
+  {
+    "code": "DS-201",
+    "kind": "course",
+    "parent_code": "DS",
+    "title": "AI Product Design & Systems",
+    "position": 18,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Проектирует продуктовую систему и готовит передачу разработке",
+      "level": "Middle",
+      "hours": 30,
+      "prerequisites": "DS-101 или портфолио UX/UI",
+      "capstone": "Прототип SaaS-фичи + систематизированная библиотека компонентов"
+    }
+  },
+  {
+    "code": "DS-301",
+    "kind": "course",
+    "parent_code": "DS",
+    "title": "AI-Native Design Operations",
+    "position": 19,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Создаёт управляемый дизайн-процесс для команды",
+      "level": "Senior",
+      "hours": 40,
+      "prerequisites": "DS-201 и работа с дизайн-системой",
+      "capstone": "DesignOps playbook + QA automation + governance"
+    }
+  },
+  {
+    "code": "MK-101",
+    "kind": "course",
+    "parent_code": "MK",
+    "title": "AI Marketing Essentials",
+    "position": 20,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Создаёт маркетинговую основу и согласованный контент-план",
+      "level": "Junior",
+      "hours": 20,
+      "prerequisites": "CORE или входной тест",
+      "capstone": "Кампанийный brief и календарь 4 недель для продукта"
+    }
+  },
+  {
+    "code": "MK-201",
+    "kind": "course",
+    "parent_code": "MK",
+    "title": "AI Growth & Sales Automation",
+    "position": 21,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Проводит контролируемые эксперименты роста и автоматизирует лиды",
+      "level": "Middle",
+      "hours": 30,
+      "prerequisites": "MK-101 или опыт рекламы/CRM",
+      "capstone": "Воронка лидогенерации с CRM, сегментацией и аналитикой"
+    }
+  },
+  {
+    "code": "MK-301",
+    "kind": "course",
+    "parent_code": "MK",
+    "title": "AI Growth Architecture & GEO",
+    "position": 22,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Выстраивает измеримую growth-систему и стратегию AI discoverability",
+      "level": "Senior",
+      "hours": 40,
+      "prerequisites": "MK-201 и экспериментальная аналитика",
+      "capstone": "90-дневная growth/SEO/GEO программа со сценариями и governance"
+    }
+  },
+  {
+    "code": "DT-101",
+    "kind": "course",
+    "parent_code": "DT",
+    "title": "AI Research & Data Literacy",
+    "position": 23,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Проводит проверяемое исследование с первичными источниками",
+      "level": "Junior",
+      "hours": 20,
+      "prerequisites": "CORE или входной тест",
+      "capstone": "Исследовательская записка с датасетом и графиками"
+    }
+  },
+  {
+    "code": "DT-201",
+    "kind": "course",
+    "parent_code": "DT",
+    "title": "AI Data Analytics & BI",
+    "position": 24,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Готовит воспроизводимый аналитический workflow",
+      "level": "Middle",
+      "hours": 30,
+      "prerequisites": "DT-101 или базовые таблицы/SQL",
+      "capstone": "SQL/Python анализ и интерактивный BI-отчёт"
+    }
+  },
+  {
+    "code": "DT-301",
+    "kind": "course",
+    "parent_code": "DT",
+    "title": "Decision Intelligence & Advanced Analytics",
+    "position": 25,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Проектирует систему управленческой аналитики и проверок",
+      "level": "Senior",
+      "hours": 40,
+      "prerequisites": "DT-201 и статистические основы",
+      "capstone": "Decision dashboard + эксперимент/прогноз с ограничениями"
+    }
+  },
+  {
+    "code": "BI-101",
+    "kind": "course",
+    "parent_code": "BI",
+    "title": "AI Productivity",
+    "position": 26,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Экономит время на типовых интеллектуальных задачах",
+      "level": "Junior",
+      "hours": 18,
+      "prerequisites": "AI Core либо входной тест",
+      "capstone": "5 воспроизводимых личных AI-сценариев"
+    }
+  },
+  {
+    "code": "BI-201",
+    "kind": "course",
+    "parent_code": "BI",
+    "title": "AI Transformation & Product Pilots",
+    "position": 27,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Проверяет гипотезу AI-пользы на измеримых данных",
+      "level": "Middle",
+      "hours": 26,
+      "prerequisites": "Junior-аттестация + управление процессами",
+      "capstone": "Пилот внедрения ИИ в команде"
+    }
+  },
+  {
+    "code": "BI-301",
+    "kind": "course",
+    "parent_code": "BI",
+    "title": "AI Strategy, Product & Governance",
+    "position": 28,
+    "state": "outline",
+    "version": 1,
+    "seed_managed": true,
+    "data": {
+      "outcome": "Определяет правила внедрения и контроля AI",
+      "level": "Senior",
+      "hours": 34,
+      "prerequisites": "Middle-аттестация + управление инициативами",
+      "capstone": "12-месячная AI-стратегия и портфель проектов"
+    }
+  }
+]

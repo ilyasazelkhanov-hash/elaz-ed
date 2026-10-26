@@ -1,9 +1,9 @@
 import { isDemo } from './api'
 import { initData } from './tg'
 import { useStore } from '../store'
+import { requestAcademyApi } from './academy-transport'
 export { safeAcademyUrl } from './academy-types'
 export type { AcademyEntity, AcademySourceLink } from './academy-types'
-export const academyEnabled = isDemo || import.meta.env.VITE_ACADEMY_ENABLED === 'true'
 
 const messages: Record<string,string> = {
   forbidden:'Недостаточно прав.',not_found:'Запись не найдена.',not_published:'Материал ещё готовится к публикации.',
@@ -59,12 +59,7 @@ export async function academyRequest<T=any>(action: string, payload: Record<stri
       const me=useStore.getState().me
       return await (await demoClient())({id:me?.id ?? 1,is_admin:me?.is_admin ?? false,commerce:useStore.getState().courses},action,payload)
     }
-    const res=await fetch(`${import.meta.env.VITE_API_URL ?? ''}/academy`,{
-      method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({auth:initData,action,payload}),
-    }).catch(()=>{throw new Error('network')})
-    const body=await res.json().catch(()=>({error:'academy_not_ready'}))
-    if (!res.ok) throw new Error(body.error ?? 'academy_not_ready')
-    return body as T
+    return await requestAcademyApi<T>(action, payload, initData, import.meta.env.VITE_API_URL ?? '')
   } catch (error) {
     const code=error instanceof Error ? error.message : 'unknown'
     const normalized=code.replace(/^academy_/,'')
