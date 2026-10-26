@@ -1,0 +1,5 @@
+{
+ "provenance":"authored_mock_agent_proposals_not_live_model_results",
+ "measurements":[{"id":"C1","code":"contrast","status":"fail","ratio":2.1},{"id":"C2","code":"contrast","status":"pass","ratio":7.2},{"id":"L1","code":"label","status":"fail"},{"id":"L2","code":"label","status":"pass"},{"id":"T1","code":"target_size","status":"fail","width":12,"height":12}],
+ "proposals":[{"id":"P1","expected_supported":true,"finding":{"measurement_id":"C1","code":"contrast"}},{"id":"P2","expected_supported":true,"finding":{"measurement_id":"L1","code":"label"}},{"id":"P3","expected_supported":true,"finding":{"measurement_id":"T1","code":"target_size"}},{"id":"P4","expected_supported":false,"finding":{"measurement_id":"C2","code":"contrast"}},{"id":"P5","expected_supported":false,"finding":{"measurement_id":"L2","code":"label"}},{"id":"P6","expected_supported":false,"finding":{"measurement_id":"MISSING","code":"focus"}}]
+}

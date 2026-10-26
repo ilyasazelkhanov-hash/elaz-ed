@@ -1,0 +1,22 @@
+{
+  "scope": "local_browser_checks_not_usability_research",
+  "viewports": [
+    320,
+    390,
+    1024
+  ],
+  "keyboard": "passed",
+  "validation": "passed",
+  "backPreservesValues": true,
+  "noEventsWithoutConsent": true,
+  "repeatPixelDiff": {
+    "passed": true,
+    "changed": 0,
+    "compared": 378690,
+    "masked": 0,
+    "ratio": 0,
+    "threshold": 8,
+    "allowedRatio": 0.005
+  },
+  "pageErrors": []
+}
