@@ -4,6 +4,7 @@ import { handleAcademy, AcademyError } from './academy.ts'
 import { handleAcademyFiles } from './academy-files.ts'
 import { newsTelegramPost } from '../_shared/news.ts'
 import { rewardNotifications } from '../_shared/rewardNotifications.ts'
+import { handleCertifications, CertificationError } from './certifications.ts'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -1364,7 +1365,7 @@ const ADVENT_THEMES = ['standard', 'halloween', 'newyear']
 const CATCHUP_METHODS = ['quiz', 'invite', 'story', 'stars']
 /** Сколько билетов за переходы из сторис может получить один человек — защита от накрутки своими аккаунтами. */
 const STORY_TICKETS = 5
-const REWARD_KINDS = ['promo', 'message', 'link', 'video', 'lesson', 'course']
+const REWARD_KINDS = ['promo', 'message', 'link', 'video', 'lesson', 'course', 'certification']
 /** Как выдаётся приз: за N дверей, в выбранные дни, мгновенный выигрыш или розыгрыш после окна. */
 const REWARD_MODES = ['threshold', 'day', 'instant', 'draw']
 const DOOR_KINDS = ['quiz', 'scratch', 'arcade', 'story']
@@ -1572,6 +1573,7 @@ function rewardContent(kind: string, payload: Row | null) {
   if (kind === 'link' || kind === 'video') return { url: String(p.url ?? ''), label: String(p.label ?? '') }
   if (kind === 'lesson') return { lesson_id: Number(p.lesson_id) || null }
   if (kind === 'course') return { course_id: Number(p.course_id) || null }
+  if (kind === 'certification') return { certification_id: String(p.certification_id ?? '') }
   return null
 }
 
@@ -1866,6 +1868,10 @@ async function cleanReward(input: Row) {
     const { data } = await db.from('lessons').select('id').eq('id', Number(p.lesson_id)).maybeSingle()
     if (!data) throw new HttpError(400, 'reward_payload')
     payload = { lesson_id: data.id }
+  } else if (kind === 'certification') {
+    const { data } = await db.from('ai_certifications').select('id').eq('id', String(p.certification_id ?? '')).eq('published', true).maybeSingle()
+    if (!data) throw new HttpError(400, 'reward_payload')
+    payload = { certification_id: data.id }
   } else if (kind === 'course') {
     const { data } = await db.from('courses').select('id').eq('id', Number(p.course_id)).maybeSingle()
     if (!data) throw new HttpError(400, 'reward_payload')
@@ -2324,7 +2330,14 @@ async function academyPublic(req:Request){
   catch(error){if(error instanceof AcademyError)throw new HttpError(error.status,error.code);throw error}
 }
 
+async function certifications(body: Row) {
+  const row=await member(body)
+  try { return await handleCertifications(db,row.id,aliveStreak(row),String(body.action??'catalog'),body) }
+  catch(error){if(error instanceof CertificationError)throw new HttpError(error.status,error.message);throw error}
+}
+
 const routes: Record<string, (body: Row) => Promise<unknown>> = {
+  certifications,
   academy,
   boot,
   lesson,

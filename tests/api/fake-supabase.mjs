@@ -14,6 +14,7 @@ const KEYS = {
   advent_doors: ['day'],
   reward_codes: ['code'],
   lesson_quiz_attempts: ['id'],
+  certification_progress: ['user_id', 'certification_id'],
 }
 const UNIQUE = { payments: ['charge_id'], advent_tickets: ['ref'] }
 const AUTO_ID = ['payments', 'events', 'courses', 'lessons', 'advent_tickets', 'advent_rewards', 'advent_points']

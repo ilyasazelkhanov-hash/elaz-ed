@@ -211,6 +211,9 @@ function grant(codes: string[]) {
 }
 
 export const mockApi: Api = {
+  async certificationCatalog() { return {streak:me().streak,required_streak:10,unlocked:false,total:0,items:[]} },
+  async certificationOpen() { throw new ApiError('not_found',404) },
+  async certificationProgress() { throw new ApiError('not_found',404) },
   async boot(): Promise<Boot> {
     await wait(500)
     return {

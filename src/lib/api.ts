@@ -29,6 +29,9 @@ async function call<T>(route: string, payload: Record<string, unknown> = {}, kee
 }
 
 const httpApi: Api = {
+  certificationCatalog: () => call('certifications', { action:'catalog' }),
+  certificationOpen: (id) => call('certifications', { action:'open',id }),
+  certificationProgress: (id,status) => call('certifications', { action:'progress',id,status }),
   boot: (force) => call('boot', { force: !!force, sp: startParam, platform, theme: document.documentElement.dataset.theme ?? '' }),
   lesson: (id) => call('lesson', { id }),
   quizStart: (id) => call('quiz_start', { id }),
@@ -123,6 +126,8 @@ export const api: Api = isDemo ? demoApi : httpApi
 export function errorText(e: unknown) {
   const code = e instanceof ApiError ? e.code : typeof e === 'string' ? e : ''
   switch (code) {
+    case 'streak_required': return 'Нужен активный стрик от 10 дней. Подаренные курсы доступны отдельно'
+    case 'complete_first': return 'Сначала отметь, что курс пройден'
     case 'platform_not_ready':
       return 'Клуб обновляется. Попробуй открыть приложение немного позже'
     case 'network':

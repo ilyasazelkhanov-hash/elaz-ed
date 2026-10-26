@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { api, errorText } from '../../lib/api'
 import { confirmDialog, haptic } from '../../lib/tg'
 import type { AdminDoor, AdminReward, AdventSettings, CatchupMethod, DoorKind, RewardKind, RewardMode } from '../../lib/types'
+import type { CertificationCard } from '../../lib/certifications'
 import { useStore } from '../../store'
 import { Cta, Emoji, Sheet, Spinner, Tap } from '../../ui'
 import { KIND_NAME } from './Catchup'
@@ -18,8 +19,9 @@ const METHODS: { id: CatchupMethod; label: string }[] = [
   { id: 'stars', label: 'Оплата звёздами' },
 ]
 
-const KINDS: RewardKind[] = ['promo', 'message', 'link', 'video', 'lesson', 'course']
+const KINDS: RewardKind[] = ['promo', 'message', 'link', 'video', 'lesson', 'course', 'certification']
 const KIND_HINT: Record<RewardKind, string> = {
+  certification: 'Открывает конкретный внешний курс в паспорте сертификаций без требования стрика.',
   promo: 'Каждому — свой одноразовый код. Погашение на странице кассира /?redeem, видно, кто и где использовал.',
   message: 'Текст откроется в календаре и придёт в чат с ботом.',
   link: 'Кнопка со ссылкой: подарок, файл, форма записи.',
@@ -195,6 +197,8 @@ function RewardForm({ initial, onDone }: { initial: AdminReward; onDone: () => v
   const pay = (k: keyof AdminReward['payload'], v: string | number | undefined) => setR((p) => ({ ...p, payload: { ...p.payload, [k]: v } }))
   // Урок — только из закрытого курса: уроки ленты и так открыты всем.
   const lessons = feed.filter((l) => l.kind === 'lesson' && l.course_id)
+  const [certifications,setCertifications]=useState<CertificationCard[]>([])
+  useEffect(()=>{if(r.kind==='certification')void api.certificationCatalog().then(c=>setCertifications(c.items)).catch(()=>toast('Каталог сертификаций не загрузился'))},[r.kind,toast])
 
   const save = async () => {
     if (!r.title.trim()) return toast('Нужно название')
@@ -265,6 +269,7 @@ function RewardForm({ initial, onDone }: { initial: AdminReward; onDone: () => v
       <input value={r.description} onChange={(e) => set('description', e.target.value)} placeholder="Описание — видно до получения" maxLength={300} className={`${field} mt-2`} />
 
       {r.kind === 'message' && <textarea value={r.payload.text ?? ''} onChange={(e) => pay('text', e.target.value)} rows={4} placeholder="Текст приза: секрет, промпт, инструкция" className={`${field} mt-2 resize-y`} />}
+      {r.kind === 'certification' && <select aria-label="Маршрут сертификации" value={r.payload.certification_id??''} onChange={e=>pay('certification_id',e.target.value)} className={`${field} mt-2`}><option value="">Выбери маршрут</option>{certifications.map(c=><option key={c.id} value={c.id}>{c.provider} · {c.title}</option>)}</select>}
       {(r.kind === 'link' || r.kind === 'video') && (
         <>
           <input value={r.payload.url ?? ''} onChange={(e) => pay('url', e.target.value)} placeholder="https://" inputMode="url" className={`${field} mt-2`} />

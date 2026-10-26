@@ -11,6 +11,7 @@
     "test:experience": "node --experimental-strip-types --test tests/experience.test.mjs",
     "test:news": "node --experimental-strip-types --test tests/news-summary.test.mjs tests/news-database.test.mjs tests/news-worker.test.mjs",
     "test:advent-premium": "node --experimental-strip-types --test tests/advent-premium.test.mjs tests/reward-notifications.test.mjs tests/telegram-editorial.test.mjs",
+    "test:certifications": "node --experimental-strip-types --test tests/certifications-database.test.mjs",
     "test:academy": "node --experimental-transform-types --no-warnings --test tests/academy-seed.test.mjs tests/academy-domain.test.mjs tests/academy-completion-domain.test.mjs tests/academy-seo.test.mjs tests/api/academy-database.test.mjs tests/api/academy-api.test.mjs tests/api/academy-completion.test.mjs tests/api/academy-files.test.mjs tests/api/academy-quiz-types.test.mjs tests/api/academy-public.test.mjs tests/academy-content.test.mjs tests/academy-locale.test.mjs tests/academy-performance.test.mjs",
     "academy:seed": "node scripts/academy-seed.mjs",
     "preview": "vite preview",

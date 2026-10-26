@@ -30,6 +30,7 @@ const ServicesScreen = lazy(() => import('./screens/Experience').then((m) => ({ 
 const AcademyScreen = lazy(() => import('./screens/Academy').then((m) => ({ default: m.AcademyScreen })))
 // Адвент нужен только в сезон — грузим экраны календаря, игр и кассы по требованию.
 const AdventScreen = lazy(() => import('./screens/advent/Advent').then((m) => ({ default: m.AdventScreen })))
+const CertificationsScreen = lazy(() => import('./screens/Certifications').then((m) => ({ default: m.CertificationsScreen })))
 const DoorScreen = lazy(() => import('./screens/advent/Door').then((m) => ({ default: m.DoorScreen })))
 const AdventAdminScreen = lazy(() => import('./screens/advent/AdventAdmin').then((m) => ({ default: m.AdventAdminScreen })))
 const RedeemScreen = lazy(() => import('./screens/Redeem').then((m) => ({ default: m.RedeemScreen })))
@@ -113,6 +114,7 @@ function Shell() {
     const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
     if (id) useStore.getState().push({ type: 'lesson', id })
     else if (course) useStore.getState().push({ type: 'course', id: course })
+    else if (startParam === 'certifications') useStore.getState().push({ type: 'certifications' })
     // Кнопка из напоминания бота: t.me/бот?startapp=advent
     else if (/(?:^|_)advent(?:_|$)/.test(startParam) && useStore.getState().advent) useStore.getState().push({ type: 'advent' })
     preloadMarkdown()
@@ -169,6 +171,7 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
     case 'journey': return <Suspense fallback={null}><JourneyScreen/></Suspense>
     case 'club': return <Suspense fallback={null}><ClubScreen/></Suspense>
     case 'services': return <Suspense fallback={null}><ServicesScreen/></Suspense>
+    case 'certifications': return <Suspense fallback={null}><CertificationsScreen focusId={overlay.focusId}/></Suspense>
     case 'lesson':
       return <LessonScreen id={overlay.id} from={overlay.from} />
     case 'stories':

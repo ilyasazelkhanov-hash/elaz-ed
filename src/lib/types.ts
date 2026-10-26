@@ -178,7 +178,7 @@ export interface AdventCell {
 export type RewardMode = 'threshold' | 'day' | 'instant' | 'draw'
 
 /** Вид приза: промокод с погашением на кассе, текст, ссылка, видео, урок или курс. */
-export type RewardKind = 'promo' | 'message' | 'link' | 'video' | 'lesson' | 'course'
+export type RewardKind = 'promo' | 'message' | 'link' | 'video' | 'lesson' | 'course' | 'certification'
 
 /** Содержимое приза — приходит только тому, кому приз уже выдан. */
 export interface RewardContent {
@@ -187,6 +187,7 @@ export interface RewardContent {
   label?: string
   lesson_id?: number | null
   course_id?: number | null
+  certification_id?: string
 }
 
 export interface AdventReward {
@@ -295,7 +296,7 @@ export interface AdminReward {
   stock: number | null
   position: number
   kind: RewardKind
-  payload: { text?: string; url?: string; label?: string; lesson_id?: number; course_id?: number }
+  payload: { text?: string; url?: string; label?: string; lesson_id?: number; course_id?: number; certification_id?: string }
   mode: RewardMode
   day_from: number | null
   day_to: number | null
@@ -468,6 +469,9 @@ export type LessonDraft = Omit<Lesson, 'id' | 'completed' | 'liked' | 'views' | 
 }
 
 export interface Api {
+  certificationCatalog(): Promise<import('./certifications').CertificationCatalog>
+  certificationOpen(id: string): Promise<{url:string}>
+  certificationProgress(id:string,status:import('./certifications').CertificationStatus): Promise<{ok:boolean;status:import('./certifications').CertificationStatus}>
   boot(force?: boolean): Promise<Boot>
   lesson(id: number): Promise<Lesson>
   quizStart(id: number): Promise<LessonQuizAttempt>
