@@ -85,7 +85,7 @@ export function contentSql(catalog,actor,courseCode){
 }
 export async function buildContent(){
  const base=JSON.parse(await readFile(path.join(root,'content/ai-academy/catalog.normalized.json'),'utf8'))
- const packs=await Promise.all(['CORE-000','VC-101','ENG-101'].map(async code=>JSON.parse(await readFile(path.join(root,`content/ai-academy/authored/${code}.json`),'utf8'))))
+ const packs=await Promise.all(['CORE-000','VC-101','ENG-101','VC-201'].map(async code=>JSON.parse(await readFile(path.join(root,`content/ai-academy/authored/${code}.json`),'utf8'))))
  const catalog=composeLearningCatalog(base,packs)
  await writeIfChanged(path.join(root,'content/ai-academy/catalog.learning.json'),JSON.stringify(catalog,null,2)+'\n')
  const actor=process.argv.find(a=>a.startsWith('--actor='))?.slice(8)
