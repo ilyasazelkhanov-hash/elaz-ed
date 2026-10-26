@@ -1,0 +1,21 @@
+// Original local SVG illustrations. No remote assets, accounts or image fonts.
+import { mkdir, writeFile } from 'node:fs/promises'
+const root = new URL('../public/learning/academy/', import.meta.url)
+await mkdir(root, { recursive: true })
+const drawings = {
+  core: '<path d="M260 160c-35-45-85 5-50 38-40 32 5 79 42 56 10 38 60 25 60-10V144c-5-34-48-30-52 16Zm200 0c35-45 85 5 50 38 40 32-5 79-42 56-10 38-60 25-60-10V144c5-34 48-30 52 16Z"/><path d="m270 185 42 15m-55 30 55-10m137-35-41 15m55 30-55-10"/><circle cx="360" cy="200" r="16"/><path d="M360 147v-30m0 137v30m-80-84h-35m195 0h35"/>',
+  vc: '<rect x="195" y="92" width="330" height="205" rx="20"/><path d="M195 132h330"/><circle cx="217" cy="112" r="4"/><circle cx="234" cy="112" r="4"/><rect x="218" y="155" width="116" height="118" rx="10"/><path d="M358 163h139m-139 31h110m-110 31h139"/><rect x="358" y="247" width="95" height="25" rx="9"/>',
+  eng: '<rect x="182" y="102" width="350" height="190" rx="20"/><path d="m214 146 18 17-18 17m35 0h45m26-20h48m-102 45h135m-135 26h81"/><circle cx="462" cy="235" r="39"/><path d="m444 234 13 13 25-28M204 123h303"/>',
+  au: '<rect x="120" y="159" width="100" height="78" rx="20"/><rect x="310" y="105" width="100" height="78" rx="20"/><rect x="310" y="231" width="100" height="78" rx="20"/><rect x="500" y="159" width="100" height="78" rx="20"/><path d="M220 198h45v-54h45m-45 54v72h45m100-126h45v54h45m-90 72h45v-72"/><path d="m150 195 13 14 26-30m340 16 13 14 26-30m-240-50h62m-55 103h48"/>',
+  ag: '<rect x="276" y="141" width="168" height="118" rx="28"/><circle cx="321" cy="191" r="9"/><circle cx="398" cy="191" r="9"/><path d="M333 224h54m-27-83v-23"/><circle cx="360" cy="106" r="10"/><rect x="112" y="95" width="95" height="125" rx="13"/><path d="M133 125h52m-52 25h42m-42 25h52m22 20h69"/><circle cx="545" cy="190" r="45"/><path d="m524 190 15 15 28-32m-123 17h56"/>',
+  cr: '<rect x="156" y="107" width="206" height="172" rx="16"/><path d="m176 252 53-62 38 39 39-54 38 77Z"/><circle cx="209" cy="151" r="16"/><rect x="381" y="136" width="176" height="126" rx="16"/><path d="m448 169 43 30-43 30Z"/><path d="M188 84h124m105 204h102"/>',
+  ds: '<rect x="173" y="99" width="210" height="195" rx="18"/><path d="M173 138h210"/><rect x="194" y="157" width="77" height="64" rx="9"/><path d="M287 163h74m-74 24h56m-74 52h92"/><rect x="423" y="120" width="117" height="201" rx="23"/><rect x="439" y="149" width="85" height="57" rx="8"/><path d="M439 226h85m-85 23h68m-38 43h26"/>',
+  mk: '<path d="M183 111h354l-93 100v71l-63 35V211Z"/><circle cx="267" cy="143" r="12"/><circle cx="360" cy="143" r="12"/><circle cx="453" cy="143" r="12"/><path d="M346 178h28m14 24h28"/><circle cx="558" cy="279" r="36"/><path d="m541 279 11 11 22-24"/>',
+  dt: '<rect x="146" y="104" width="160" height="181" rx="16"/><path d="M146 147h160m-160 43h160m-160 43h160m-104-129v181m51-181v181M357 284h205m-185 0V178h35v106m29 0V139h35v145m29 0v-64h35v64"/><path d="m372 150 73-49 79 40 51-53"/>',
+  bi: '<rect x="171" y="101" width="228" height="195" rx="16"/><path d="M194 132h180m-180 29h109m-109 31h180m-180 30h88m-88 30h130"/><circle cx="479" cy="219" r="66"/><path d="m451 219 19 19 38-43m-32-42v-22m-54 38-17-15m124 15 17-15"/>',
+}
+for (const [name, drawing] of Object.entries(drawings)) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360"><defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#24203f"/><stop offset="1" stop-color="#112b35"/></linearGradient><linearGradient id="ink" x2="1" y2="1"><stop stop-color="#c0a9ff"/><stop offset="1" stop-color="#7ce8cd"/></linearGradient></defs><rect width="720" height="360" rx="28" fill="url(#bg)"/><g fill="none" stroke="#c0a9ff" opacity=".13"><circle cx="360" cy="180" r="150"/><circle cx="360" cy="180" r="125"/><path d="M65 180h590M360 20v320"/></g><g fill="#a78bfa" opacity=".6"><circle cx="96" cy="81" r="4"/><circle cx="621" cy="288" r="5"/><circle cx="583" cy="68" r="3"/></g><g fill="#181b32" stroke="url(#ink)" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">${drawing}</g></svg>\n`
+  await writeFile(new URL(`${name}.svg`, root), svg)
+}
+console.log(`Academy: ${Object.keys(drawings).length} local illustrations generated.`)

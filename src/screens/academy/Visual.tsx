@@ -3,6 +3,7 @@ import { GRADIENTS } from '../../lib/game'
 import type { GradientName } from '../../lib/types'
 import { useDocumentVisible, useElementVisible, usePrefersReducedMotion } from '../../lib/visibility'
 import { Emoji, Pattern } from '../../ui'
+import { courseGuide } from '../../lib/academy-guidance'
 
 // The same cover materials as the OG home carousel, with a stable identity per direction.
 const identities: Record<string, { gradient: GradientName; emoji: string }> = {
@@ -24,6 +25,10 @@ export function Cover({ code, compact = false }: { code?: string; compact?: bool
   const [imageLoaded, setImageLoaded] = useState(false)
   const size = compact ? 84 : 124
   useEffect(() => setImageLoaded(false), [identity.emoji])
+  if (code && courseGuide(code)) return <div className={`academy-cover academy-illustrated-cover ${compact ? 'is-compact' : ''}`} aria-hidden="true">
+    <img src={`/learning/academy/${code.split('-')[0].toLowerCase()}.svg`} alt="" width="720" height="360" loading="lazy"/>
+    <span className="academy-cover-sticker">{code} / AI ACADEMY</span>
+  </div>
   return <div ref={coverRef} className={`academy-cover ${compact ? 'is-compact' : ''}`} style={{ background: g.css, color: g.ink }} aria-hidden="true">
     <Pattern name={identity.gradient} full />
     <span className="academy-cover-word">{code?.replace(/^DIR-/, '').split('-')[0] || 'AI'}</span>

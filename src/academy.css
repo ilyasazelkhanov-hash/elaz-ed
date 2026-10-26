@@ -66,3 +66,41 @@
 .academy-progress progress::-moz-progress-bar { background:var(--aurora); border-radius:99px; }
 @container(min-width:420px) { .academy-grid:has(.academy-direction) { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(prefers-reduced-motion:reduce) { .academy * { animation:none!important; } .academy button { transform:none!important; } }
+
+/* Course maps and progressive help stay readable on narrow phone screens. */
+.academy-illustrated-cover > img { width:100%; height:100%; object-fit:cover; }
+.academy-guidance { overflow-wrap:anywhere; }
+.academy-learning-map { margin:22px 0 0; overflow:hidden; border:1px solid var(--color-line); border-radius:20px; background:var(--color-bg); }
+.academy-learning-map > img { display:block; width:100%; height:auto; }
+.academy-learning-map figcaption { padding:18px; }
+.academy-flow { display:grid; gap:12px; margin-top:14px; }
+.academy-flow li { display:flex; align-items:center; gap:10px; font-size:13px; line-height:1.5; }
+.academy-flow li > span { display:grid; place-items:center; flex-shrink:0; width:25px; height:25px; border-radius:50%; color:var(--color-violet); background:var(--color-card2); font-size:11px; }
+.academy-flow li > b { flex:1; font-weight:500; }
+.academy-flow li > svg { transform:rotate(90deg); color:var(--color-mute); }
+.academy-first-step { display:flex; gap:12px; margin:22px 0; border-radius:16px; padding:16px; color:var(--color-ink); background:color-mix(in srgb,var(--color-violet) 12%,var(--color-card)); }
+.academy-first-step > svg { flex-shrink:0; color:var(--color-violet); }
+.academy-help { margin-top:12px; border-top:1px solid var(--color-line); padding-top:4px; }
+.academy-help > summary { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:48px; padding:8px 0; font-size:13px; font-weight:600; line-height:1.5; }
+.academy-help > summary > span { flex-shrink:0; color:var(--color-violet); }
+.academy-help[open] > summary > span { transform:rotate(45deg); }
+.academy-help > p,.academy-help li,.academy-glossary dd { margin:10px 0; font-size:13px; line-height:1.75; color:var(--color-mute); }
+.academy-help > ul { list-style:disc; padding-left:19px; }
+.academy-module-results { margin-top:16px; }
+.academy-module-results li { display:flex; align-items:flex-start; gap:12px; padding:14px 0; border-bottom:1px solid var(--color-line); }
+.academy-module-results li > span { font-size:11px; padding-top:2px; color:var(--color-violet); }
+.academy-module-results b { font-size:13px; font-weight:600; line-height:1.5; }
+.academy-module-results p { margin-top:7px; font-size:12px; line-height:1.7; color:var(--color-mute); }
+.academy-glossary { padding:0 0 4px; }
+.academy-glossary dt { margin-top:16px; font-weight:600; font-size:13px; }
+.academy-lesson-goal { display:flex; align-items:flex-start; gap:12px; margin:20px 0; }
+.academy-lesson-goal > span { display:grid; place-items:center; width:30px; height:30px; flex-shrink:0; border-radius:10px; background:var(--color-card2); color:var(--color-violet); font-size:11px; }
+.academy-lesson-goal h3 { font-size:14px; font-weight:600; }
+.academy-lesson-goal p { margin-top:9px; font-size:13px; line-height:1.75; }
+.academy-prompt { margin-top:14px; padding:15px; border-left:2px solid var(--color-violet); background:var(--color-card2); border-radius:0 14px 14px 0; font-size:13px; line-height:1.75; }
+.academy-self-check { min-width:0; margin-top:24px; border:1px solid var(--color-line); border-radius:16px; padding:14px; }
+.academy-self-check legend { padding:0 5px; font-size:13px; font-weight:600; }
+.academy-self-check label { display:flex; align-items:flex-start; gap:10px; margin:14px 0; font-size:13px; line-height:1.7; }
+.academy-self-check input { width:18px; height:18px; flex-shrink:0; margin-top:2px; accent-color:var(--color-violet); }
+.academy-self-check > p { margin-top:12px; font-size:11px; line-height:1.7; color:var(--color-mute); }
+@container(min-width:700px) { .academy-flow { grid-template-columns:repeat(3,minmax(0,1fr)); } .academy-flow li > svg { transform:none; } }
