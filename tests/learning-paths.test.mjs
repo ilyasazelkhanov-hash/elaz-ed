@@ -80,6 +80,8 @@ test('every course includes guided lessons, visible result, advanced extension a
   for(const l of c.lessons){
    for(const text of ['Если ты новичок','Если уже работаешь с ИИ','Для продвинутых:','Куда нажать / что ввести','Что должно появиться','Критерии готовности'])assert(l.body.includes(text),l.key+': '+text)
    assert(!l.body.includes('undefined'))
+   assert(l.body.includes('## Какие инструменты выбрать'),l.key)
+   assert.match(l.body,/https:\/\/(chatgpt.com|claude.ai|www.perplexity.ai|notebook.google.com|firefly.adobe.com|runway.com|elevenlabs.io|suno.com|opencode.ai|n8n.io|gamma.app|www.descript.com|openbot.run|desktop.github.com)/)
    const assets=new Set(l.body.match(/\/learning\/ai-practice\/[a-zA-Z0-9./-]+\.(?:png|webp|jpg|svg|zip|md|csv|json|html)/g))
    for(const asset of assets)assert((await stat(new URL('../public'+asset,import.meta.url))).size>50,asset)
   }
@@ -92,4 +94,7 @@ test('every course includes guided lessons, visible result, advanced extension a
  assert(final.title.includes('рабочая страница'))
  assert(!final.body.includes('ролик понятен без звука'))
  assert(p.courses[3].lessons[1].body.includes('OpenCode для этого урока ещё не нужен'))
+ const intro=p.courses[0].lessons[0].body
+ for(const name of ['ChatGPT','Claude','Perplexity','Gemini Notebook','Adobe Firefly','Runway','ElevenLabs','Suno','OpenCode Desktop','n8n'])assert(intro.includes('['+name+']('),name)
+ assert(!intro.includes('Какой тип ИИ выбрать'))
 })

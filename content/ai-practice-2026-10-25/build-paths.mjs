@@ -1,5 +1,6 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises'
 import {pathLessons} from './path-lessons.mjs'
+import {renderRecommendations} from './tool-recommendations.mjs'
 const dir=new URL('./',import.meta.url),origin='https://elaz-ed.vercel.app'
 const legacy=JSON.parse(await readFile(new URL('training.json',dir),'utf8')).lessons
 const fresh=new Map(pathLessons.map(x=>[x.key,x]))
@@ -44,6 +45,9 @@ const courses=specs.map((s,ci)=>{
   const old=legacy.find(x=>x.key===key),l=fresh.get(key)
   if(!old&&!l)throw Error('Unknown lesson '+key)
   let body=old&&!l?old.body.replace(/^Модуль [^\n]+\n\n/,'').replace(/## Дополнительная практика:[\s\S]*?(?=## Ссылки для практики)/,'').replace(/Следующий шаг: сохрани результат[\s\S]*$/,'').replace(/Курс завершён, когда[\s\S]*$/,''):newBody(l,s)
+  const recommendations='## Какие инструменты выбрать\n\n'+renderRecommendations(key)+'\n\n'
+  if(body.includes('## Какие инструменты выбрать'))body=body.replace(/## Какие инструменты выбрать[\s\S]*?(?=\n## )/,recommendations.trimEnd())
+  else body=body.replace('## Бесплатно и платно',recommendations+'## Бесплатно и платно')
   body=body.replace('в модуле «Работа с текстом»','в отдельном курсе «Текст и исследования с ИИ»'); body=`## Маршрут урока\n\n**Если ты новичок:** выполняй основной пример по порядку, сравнивай результат после каждого шага.\n\n**Если уже работаешь с ИИ:** выполни пример без подсказки, затем перейди к блоку «Для продвинутых» и проверь альтернативный вход.\n\n${body.trim()}\n\n${advanced(s.key,i)}${i===5?'## Завершение курса\n\nСобери результаты в одну папку. Пройди критерии каждого урока на новом входе и запиши, что умеешь повторить самостоятельно.':`Следующий урок этого курса: ${i+2}. ${(fresh.get(s.items[i+1])?.title??legacy.find(x=>x.key===s.items[i+1]).title).replace(/^\d+\. /,'')}.`}`
   return {key,legacy:!!old,free_preview:i===0,title:`${i+1}. ${(l?.title??old.title).replace(/^\d+\. /,'')}`,subtitle:l?.output.slice(0,190)??old.subtitle,body,cover_url:old?.cover_url??origin+base+'paths/'+s.key+'.svg',minutes:old?.minutes??l.minutes,position:i+1,category:`Модуль ${i<3?1:2} · ${i<3?'Основной маршрут':'Практика и расширения'}`}
  })

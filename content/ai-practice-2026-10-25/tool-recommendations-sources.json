@@ -1,0 +1,56 @@
+{
+  "checked_at": "2026-10-26",
+  "scope": "Scenario-based editorial recommendations, not a benchmark or claim of personally testing each service. No exact model version or quota claims. Gamma, Descript, OpenBot, Agent Reach, GitHub Desktop and Context7 reuse same-day official checks recorded in paths-research.json and reference-audit.json.",
+  "sources": [
+    {
+      "url": "https://chatgpt.com/overview",
+      "title": "Overview | ChatGPT",
+      "status": 200
+    },
+    {
+      "url": "https://claude.com/product/overview",
+      "title": "The AI for problem solvers | Claude by Anthropic",
+      "status": 200
+    },
+    {
+      "url": "https://www.perplexity.ai/",
+      "title": "Perplexity",
+      "status": 200
+    },
+    {
+      "url": "https://notebook.google.com/",
+      "title": "Gemini Notebook",
+      "status": 200
+    },
+    {
+      "url": "https://www.adobe.com/products/firefly.html",
+      "title": "Adobe Firefly - Free Generative AI for Creatives",
+      "status": 200
+    },
+    {
+      "url": "https://runwayml.com/",
+      "title": "Make Your First Video in 2 Minutes | Runway",
+      "status": 200
+    },
+    {
+      "url": "https://elevenlabs.io/text-to-speech",
+      "title": "Text to Speech with Ultra-Realistic AI Voices Online",
+      "status": 200
+    },
+    {
+      "url": "https://suno.com/",
+      "title": "Suno | AI Music Generator",
+      "status": 200
+    },
+    {
+      "url": "https://opencode.ai/v2/docs/",
+      "title": "Intro | OpenCode",
+      "status": 200
+    },
+    {
+      "url": "https://n8n.io/",
+      "title": "AI Workflow Automation Platform - n8n",
+      "status": 200
+    }
+  ]
+}
