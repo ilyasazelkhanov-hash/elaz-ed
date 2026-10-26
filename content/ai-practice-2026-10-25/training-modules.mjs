@@ -1,4 +1,5 @@
 import {guidance,musicLesson} from './training-guidance.mjs'
+import {nativeAutomation} from './training-native-automation.mjs'
 const connections={
  key:'block-connections',title:'Плагины, коннекторы, Skills и MCP без путаницы',minutes:30,
  goal:'Разберёшься, чем отличаются способы расширения ИИ, и опишешь одно подключение с нужными правами.',
@@ -65,7 +66,7 @@ export function composeTraining(base){
   ['Модуль 1 · Знакомство с ИИ',['block-1',connections,'block-openbot']],
   ['Модуль 2 · Работа с текстом',['block-2','block-3']],
   ['Модуль 3 · Работа с медиа',['block-4','block-5','block-6',musicLesson]],
-  ['Модуль 4 · Автоматизация',['block-8']],
+  ['Модуль 4 · Автоматизация',[nativeAutomation,'block-8']],
   ['Модуль 5 · Вайбкодинг',['block-7',opencode,'block-agent-reach']]
  ]
  return groups.flatMap(([module,items])=>items.map(item=>({...typeof item==='string'?byKey.get(item):item,module}))).map((l,i)=>({...l,title:`${i+1}. ${l.title.replace(/^\d+\. /,'')}`}))
