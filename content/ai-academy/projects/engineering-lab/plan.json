@@ -1,0 +1,10 @@
+{
+  "id":"price-fixed-fee",
+  "maxSteps":3,
+  "timeoutMs":3000,
+  "steps":[
+    {"id":"read","role":"reader","action":"read","path":"AGENTS.md"},
+    {"id":"implement","role":"implementer","action":"apply_reviewed_patch"},
+    {"id":"verify","role":"tester","action":"test"}
+  ]
+}
