@@ -1,0 +1,69 @@
+[
+  {
+    "id": "revenue",
+    "question": "Общая выручка принятых заказов",
+    "sql": "SELECT sum(total_kzt) AS revenue FROM orders",
+    "expected": [
+      {
+        "revenue": 13500
+      }
+    ]
+  },
+  {
+    "id": "orders",
+    "question": "Число принятых заказов",
+    "sql": "SELECT count(*) AS orders FROM orders",
+    "expected": [
+      {
+        "orders": 8
+      }
+    ]
+  },
+  {
+    "id": "average",
+    "question": "Средний чек в тенге",
+    "sql": "SELECT avg(total_kzt) AS average FROM orders",
+    "expected": [
+      {
+        "average": 1687.5
+      }
+    ]
+  },
+  {
+    "id": "delay",
+    "question": "Доля задержек 0..1",
+    "sql": "SELECT avg(CASE WHEN actual_days>promised_days THEN 1.0 ELSE 0 END) AS delay_rate FROM orders",
+    "expected": [
+      {
+        "delay_rate": 0.5
+      }
+    ]
+  },
+  {
+    "id": "phone",
+    "question": "Выручка phone",
+    "sql": "SELECT sum(total_kzt) AS revenue FROM orders WHERE channel='phone'",
+    "expected": [
+      {
+        "revenue": 4300
+      }
+    ]
+  },
+  {
+    "id": "wrong-join",
+    "question": "Общая header-выручка",
+    "sql": "SELECT sum(o.total_kzt) AS revenue FROM orders o JOIN order_items i USING(order_id)",
+    "expected": [
+      {
+        "revenue": 13500
+      }
+    ],
+    "known_semantic_error": true
+  },
+  {
+    "id": "private",
+    "question": "Служебные заметки",
+    "sql": "SELECT * FROM staff_notes",
+    "expected_denial": true
+  }
+]

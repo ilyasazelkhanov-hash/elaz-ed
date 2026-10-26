@@ -1,0 +1,86 @@
+{
+  "data_origin": "Собственные вымышленные CSV; не реальное исследование клиентов.",
+  "notice": "Десять ссылок не равны десяти независимым подтверждениям. Девять принадлежат одному издателю и описывают разные инструменты.",
+  "sources": [
+    {
+      "id": "METHOD-01",
+      "title": "Python 3.12: csv",
+      "url": "https://github.com/python/cpython/blob/3.12/Doc/library/csv.rst",
+      "checked_at": "2026-10-26",
+      "supports": "Использование стандартного модуля csv; не подтверждает бизнес-выводы синтетического набора.",
+      "publisher": "Python Software Foundation"
+    },
+    {
+      "id": "METHOD-02",
+      "title": "Python 3.12: sqlite3",
+      "url": "https://github.com/python/cpython/blob/3.12/Doc/library/sqlite3.rst",
+      "checked_at": "2026-10-26",
+      "supports": "Использование стандартного модуля sqlite3; не подтверждает бизнес-выводы синтетического набора.",
+      "publisher": "Python Software Foundation"
+    },
+    {
+      "id": "METHOD-03",
+      "title": "Python 3.12: statistics",
+      "url": "https://github.com/python/cpython/blob/3.12/Doc/library/statistics.rst",
+      "checked_at": "2026-10-26",
+      "supports": "Использование стандартного модуля statistics; не подтверждает бизнес-выводы синтетического набора.",
+      "publisher": "Python Software Foundation"
+    },
+    {
+      "id": "METHOD-04",
+      "title": "Python 3.12: datetime",
+      "url": "https://github.com/python/cpython/blob/3.12/Doc/library/datetime.rst",
+      "checked_at": "2026-10-26",
+      "supports": "Использование стандартного модуля datetime; не подтверждает бизнес-выводы синтетического набора.",
+      "publisher": "Python Software Foundation"
+    },
+    {
+      "id": "METHOD-05",
+      "title": "Python 3.12: math",
+      "url": "https://github.com/python/cpython/blob/3.12/Doc/library/math.rst",
+      "checked_at": "2026-10-26",
+      "supports": "Использование стандартного модуля math; не подтверждает бизнес-выводы синтетического набора.",
+      "publisher": "Python Software Foundation"
+    },
+    {
+      "id": "METHOD-06",
+      "title": "Python 3.12: unittest",
+      "url": "https://github.com/python/cpython/blob/3.12/Doc/library/unittest.rst",
+      "checked_at": "2026-10-26",
+      "supports": "Использование стандартного модуля unittest; не подтверждает бизнес-выводы синтетического набора.",
+      "publisher": "Python Software Foundation"
+    },
+    {
+      "id": "METHOD-07",
+      "title": "Python 3.12: json",
+      "url": "https://github.com/python/cpython/blob/3.12/Doc/library/json.rst",
+      "checked_at": "2026-10-26",
+      "supports": "Использование стандартного модуля json; не подтверждает бизнес-выводы синтетического набора.",
+      "publisher": "Python Software Foundation"
+    },
+    {
+      "id": "METHOD-08",
+      "title": "Python 3.12: hashlib",
+      "url": "https://github.com/python/cpython/blob/3.12/Doc/library/hashlib.rst",
+      "checked_at": "2026-10-26",
+      "supports": "Использование стандартного модуля hashlib; не подтверждает бизнес-выводы синтетического набора.",
+      "publisher": "Python Software Foundation"
+    },
+    {
+      "id": "METHOD-09",
+      "title": "Python 3.12: pathlib",
+      "url": "https://github.com/python/cpython/blob/3.12/Doc/library/pathlib.rst",
+      "checked_at": "2026-10-26",
+      "supports": "Использование стандартного модуля pathlib; не подтверждает бизнес-выводы синтетического набора.",
+      "publisher": "Python Software Foundation"
+    },
+    {
+      "id": "METHOD-10",
+      "title": "Matplotlib: официальный проект",
+      "url": "https://github.com/matplotlib/matplotlib",
+      "checked_at": "2026-10-26",
+      "supports": "Визуализация; не независимое свидетельство поведения клиентов.",
+      "publisher": "Matplotlib"
+    }
+  ]
+}

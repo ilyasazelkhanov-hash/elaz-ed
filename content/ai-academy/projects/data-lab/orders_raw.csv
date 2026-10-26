@@ -1,0 +1,12 @@
+order_id,date,total_kzt,promised_days,actual_days,channel,service
+O001,2026-09-01,1000,2,3,web,repair
+O002,2026-09-02,2000,2,2,phone,repair
+O003,2026-09-03,1500,1,1,web,diagnostic
+O004,2026-09-04,3000,3,5,referral,repair
+O004,2026-09-04,3000,3,5,referral,repair
+O005,2026-09-05,500,1,1,phone,diagnostic
+O006,2026-09-06,2500,2,4,web,Repair
+O007,2026-09-07,,2,3,referral,repair
+O008,2026-09-08,-100,1,0,referral,repair
+O009,2026-09-09,1800,2,2,phone,repair
+O010,2026-09-10,1200,1,2,web,diagnostic

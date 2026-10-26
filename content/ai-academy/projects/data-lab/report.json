@@ -1,0 +1,223 @@
+{
+  "kpis": {
+    "orders": 8,
+    "revenue_kzt": 13500,
+    "average_order_kzt": 1687.5,
+    "late_orders": 4,
+    "delay_rate": 0.5
+  },
+  "rows": [
+    {
+      "order_id": "O001",
+      "date": "2026-09-01",
+      "total_kzt": 1000,
+      "promised_days": 2,
+      "actual_days": 3,
+      "channel": "web",
+      "service": "repair"
+    },
+    {
+      "order_id": "O002",
+      "date": "2026-09-02",
+      "total_kzt": 2000,
+      "promised_days": 2,
+      "actual_days": 2,
+      "channel": "phone",
+      "service": "repair"
+    },
+    {
+      "order_id": "O003",
+      "date": "2026-09-03",
+      "total_kzt": 1500,
+      "promised_days": 1,
+      "actual_days": 1,
+      "channel": "web",
+      "service": "diagnostic"
+    },
+    {
+      "order_id": "O004",
+      "date": "2026-09-04",
+      "total_kzt": 3000,
+      "promised_days": 3,
+      "actual_days": 5,
+      "channel": "referral",
+      "service": "repair"
+    },
+    {
+      "order_id": "O005",
+      "date": "2026-09-05",
+      "total_kzt": 500,
+      "promised_days": 1,
+      "actual_days": 1,
+      "channel": "phone",
+      "service": "diagnostic"
+    },
+    {
+      "order_id": "O006",
+      "date": "2026-09-06",
+      "total_kzt": 2500,
+      "promised_days": 2,
+      "actual_days": 4,
+      "channel": "web",
+      "service": "repair"
+    },
+    {
+      "order_id": "O009",
+      "date": "2026-09-09",
+      "total_kzt": 1800,
+      "promised_days": 2,
+      "actual_days": 2,
+      "channel": "phone",
+      "service": "repair"
+    },
+    {
+      "order_id": "O010",
+      "date": "2026-09-10",
+      "total_kzt": 1200,
+      "promised_days": 1,
+      "actual_days": 2,
+      "channel": "web",
+      "service": "diagnostic"
+    }
+  ],
+  "rejected": [
+    {
+      "id": "O004",
+      "reason": "duplicate_id"
+    },
+    {
+      "id": "O007",
+      "reason": "invalid_or_missing_field"
+    },
+    {
+      "id": "O008",
+      "reason": "invalid_or_missing_field"
+    }
+  ],
+  "provenance": "Синтетический учебный набор; не реальные наблюдения.",
+  "source_sha256": "d48ba33275d5a0a49182073641a93a1269aedfbead310b9cadc3bb2c1fae2671",
+  "contract_sha256": "16b644f0166f4711bea978e2fa44b296f96eb555ac76303268aecb22bf61ef58",
+  "experiment": {
+    "difference": 0.09999999999999998,
+    "ci95_low": -0.09402653540895486,
+    "ci95_high": 0.29402653540895485,
+    "approximate_p_value": 0.3148786413364202,
+    "method": "independent normal approximation; synthetic aggregates"
+  },
+  "backtests": {
+    "seasonal": {
+      "mae": 1.9285714285714286,
+      "predictions": [
+        31,
+        34,
+        35,
+        38,
+        39,
+        26,
+        23,
+        31,
+        37,
+        38,
+        38,
+        42,
+        29,
+        23
+      ],
+      "actual": [
+        31,
+        37,
+        38,
+        38,
+        42,
+        29,
+        23,
+        34,
+        40,
+        38,
+        41,
+        45,
+        29,
+        26
+      ],
+      "cutoff": 42,
+      "horizon": 7,
+      "method": "seasonal"
+    },
+    "mean": {
+      "mae": 5.76530612244898,
+      "predictions": [
+        32.285714285714285,
+        32.285714285714285,
+        32.285714285714285,
+        32.285714285714285,
+        32.285714285714285,
+        32.285714285714285,
+        32.285714285714285,
+        34,
+        34,
+        34,
+        34,
+        34,
+        34,
+        34
+      ],
+      "actual": [
+        31,
+        37,
+        38,
+        38,
+        42,
+        29,
+        23,
+        34,
+        40,
+        38,
+        41,
+        45,
+        29,
+        26
+      ],
+      "cutoff": 42,
+      "horizon": 7,
+      "method": "mean"
+    },
+    "linear": {
+      "mae": 5.755445114923046,
+      "predictions": [
+        32.44250871080139,
+        32.68900413256624,
+        32.93549955433109,
+        33.18199497609594,
+        33.42849039786079,
+        33.67498581962564,
+        33.92148124139049,
+        34.48214285714286,
+        34.7365306122449,
+        34.990918367346936,
+        35.24530612244898,
+        35.499693877551024,
+        35.75408163265306,
+        36.0084693877551
+      ],
+      "actual": [
+        31,
+        37,
+        38,
+        38,
+        42,
+        29,
+        23,
+        34,
+        40,
+        38,
+        41,
+        45,
+        29,
+        26
+      ],
+      "cutoff": 42,
+      "horizon": 7,
+      "method": "linear"
+    }
+  }
+}

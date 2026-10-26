@@ -1,0 +1,11 @@
+{
+  "version":1,
+  "provenance":"Все данные созданы автором для упражнения. Это не наблюдения реальной мастерской.",
+  "metrics":[
+    {"id":"revenue_kzt","unit":"KZT","grain":"одна принятая строка на уникальный order_id","formula":"SUM(total_kzt)","exclusions":"повторы, пропущенная сумма и отрицательная сумма по контракту набора без возвратов"},
+    {"id":"average_order_kzt","unit":"KZT/order","grain":"принятый заказ","formula":"SUM(total_kzt)/COUNT(order_id)"},
+    {"id":"delay_rate","unit":"fraction 0..1; display percent","grain":"принятый заказ","formula":"COUNT(actual_days>promised_days)/COUNT(order_id)","caveat":"Расчёт относится только к строкам, принятым единым учебным фильтром. Для иного вопроса нужна отдельная политика пропусков."}
+  ],
+  "ownership":"вымышленный владелец учебного набора",
+  "as_of":"2026-10-26"
+}
