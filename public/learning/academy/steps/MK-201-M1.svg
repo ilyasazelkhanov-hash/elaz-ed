@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="826" viewBox="0 0 720 826" role="img" aria-labelledby="title desc">
+<title id="title">MK-201-M1: порядок занятий</title>
+<desc id="desc">1.1. CAC, LTV и конверсия: сначала единица расчёта; 1.2. Две рекламные гипотезы с проверяемым механизмом; 1.3. A/B-протокол до просмотра результата; 1.4. Наблюдаемая разница и причинный вывод</desc>
+<rect width="720" height="826" rx="24" fill="#10172a"/>
+<g font-family="system-ui, sans-serif">
+<text x="30" y="38" fill="#c1b4ff" font-size="15" letter-spacing="1">MK-201 · МОДУЛЬ 1</text>
+<text x="30" y="70" fill="#aab5d1" font-size="15">Growth-процесс: эксперимент, CRM и управляемые сообщения</text>
+<text x="30" y="112" fill="#edf0fa" font-size="23">Performance и эксперименты</text>
+<text x="30" y="156" fill="#aab5d1" font-size="15">Проходи сверху вниз: разбор → практика → проверка.</text>
+<rect x="28" y="194" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="212" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="238" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">1.1</text>
+<text x="114" y="225" font-size="14" fill="#c1b4ff">Урок 1 из 16 · Разбор</text>
+<text x="114" y="256" fill="#edf0fa" font-size="20">CAC, LTV и конверсия: сначала единица</text>
+<text x="114" y="284" fill="#edf0fa" font-size="20">расчёта</text>
+<path d="M61 329v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="348" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="366" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="392" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">1.2</text>
+<text x="114" y="379" font-size="14" fill="#c1b4ff">Урок 2 из 16 · Показ на примере</text>
+<text x="114" y="410" fill="#edf0fa" font-size="20">Две рекламные гипотезы с проверяемым</text>
+<text x="114" y="438" fill="#edf0fa" font-size="20">механизмом</text>
+<path d="M61 483v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="502" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="520" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="546" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">1.3</text>
+<text x="114" y="533" font-size="14" fill="#c1b4ff">Урок 3 из 16 · Практика</text>
+<text x="114" y="564" fill="#edf0fa" font-size="20">A/B-протокол до просмотра результата</text>
+<path d="M61 609v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="628" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="646" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="672" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">1.4</text>
+<text x="114" y="659" font-size="14" fill="#c1b4ff">Урок 4 из 16 · Самопроверка</text>
+<text x="114" y="690" fill="#edf0fa" font-size="20">Наблюдаемая разница и причинный вывод</text>
+<text x="30" y="781" fill="#c1b4ff" font-size="16">Дальше: модуль 2. Сначала проверь результат текущего.</text>
+</g></svg>

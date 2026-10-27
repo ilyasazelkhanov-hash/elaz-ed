@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="876" viewBox="0 0 720 876" role="img" aria-labelledby="title desc">
+<title id="title">DS-201-M3: порядок занятий</title>
+<desc id="desc">3.1. AI-прототипирование и границы выбранного инструмента; 3.2. Из design spec в проверяемое изменение кода; 3.3. Сравнение UI по скриншотам в одинаковых условиях; 3.4. Visual regression: измерение и решение человека</desc>
+<rect width="720" height="876" rx="24" fill="#10172a"/>
+<g font-family="system-ui, sans-serif">
+<text x="30" y="38" fill="#c1b4ff" font-size="15" letter-spacing="1">DS-201 · МОДУЛЬ 3</text>
+<text x="30" y="70" fill="#aab5d1" font-size="15">Дизайн с evidence: исследование, компоненты и проверка</text>
+<text x="30" y="93" fill="#aab5d1" font-size="15">кода</text>
+<text x="30" y="134" fill="#edf0fa" font-size="23">Design-to-code</text>
+<text x="30" y="178" fill="#aab5d1" font-size="15">Проходи сверху вниз: разбор → практика → проверка.</text>
+<rect x="28" y="216" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="234" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="260" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.1</text>
+<text x="114" y="247" font-size="14" fill="#c1b4ff">Урок 9 из 16 · Разбор</text>
+<text x="114" y="278" fill="#edf0fa" font-size="20">AI-прототипирование и границы выбранного</text>
+<text x="114" y="306" fill="#edf0fa" font-size="20">инструмента</text>
+<path d="M61 351v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="370" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="388" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="414" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.2</text>
+<text x="114" y="401" font-size="14" fill="#c1b4ff">Урок 10 из 16 · Показ на примере</text>
+<text x="114" y="432" fill="#edf0fa" font-size="20">Из design spec в проверяемое изменение кода</text>
+<path d="M61 477v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="496" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="514" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="540" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.3</text>
+<text x="114" y="527" font-size="14" fill="#c1b4ff">Урок 11 из 16 · Практика</text>
+<text x="114" y="558" fill="#edf0fa" font-size="20">Сравнение UI по скриншотам в одинаковых</text>
+<text x="114" y="586" fill="#edf0fa" font-size="20">условиях</text>
+<path d="M61 631v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="650" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="668" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="694" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.4</text>
+<text x="114" y="681" font-size="14" fill="#c1b4ff">Урок 12 из 16 · Разбор ситуации</text>
+<text x="114" y="712" fill="#edf0fa" font-size="20">Visual regression: измерение и решение</text>
+<text x="114" y="740" fill="#edf0fa" font-size="20">человека</text>
+<text x="30" y="831" fill="#c1b4ff" font-size="16">Дальше: модуль 4. Сначала проверь результат текущего.</text>
+</g></svg>

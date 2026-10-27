@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="882" viewBox="0 0 720 882" role="img" aria-labelledby="title desc">
+<title id="title">CR-201-M1: порядок занятий</title>
+<desc id="desc">1.1. Кампания начинается с решения и измеримого вопроса; 1.2. Storyboard помогает проверить идею до производства; 1.3. Сценарий и shot list для воспроизводимого производства; 1.4. Три творческих направления и аргументированный отказ</desc>
+<rect width="720" height="882" rx="24" fill="#10172a"/>
+<g font-family="system-ui, sans-serif">
+<text x="30" y="38" fill="#c1b4ff" font-size="15" letter-spacing="1">CR-201 · МОДУЛЬ 1</text>
+<text x="30" y="70" fill="#aab5d1" font-size="15">Согласованная AI-кампания: продукт, серия и монтаж</text>
+<text x="30" y="112" fill="#edf0fa" font-size="23">Creative strategy</text>
+<text x="30" y="156" fill="#aab5d1" font-size="15">Проходи сверху вниз: разбор → практика → проверка.</text>
+<rect x="28" y="194" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="212" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="238" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">1.1</text>
+<text x="114" y="225" font-size="14" fill="#c1b4ff">Урок 1 из 16 · Разбор ситуации</text>
+<text x="114" y="256" fill="#edf0fa" font-size="20">Кампания начинается с решения и измеримого</text>
+<text x="114" y="284" fill="#edf0fa" font-size="20">вопроса</text>
+<path d="M61 329v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="348" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="366" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="392" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">1.2</text>
+<text x="114" y="379" font-size="14" fill="#c1b4ff">Урок 2 из 16 · Разбор ситуации</text>
+<text x="114" y="410" fill="#edf0fa" font-size="20">Storyboard помогает проверить идею до</text>
+<text x="114" y="438" fill="#edf0fa" font-size="20">производства</text>
+<path d="M61 483v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="502" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="520" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="546" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">1.3</text>
+<text x="114" y="533" font-size="14" fill="#c1b4ff">Урок 3 из 16 · Практика</text>
+<text x="114" y="564" fill="#edf0fa" font-size="20">Сценарий и shot list для воспроизводимого</text>
+<text x="114" y="592" fill="#edf0fa" font-size="20">производства</text>
+<path d="M61 637v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="656" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="674" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="700" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">1.4</text>
+<text x="114" y="687" font-size="14" fill="#c1b4ff">Урок 4 из 16 · Разбор ситуации</text>
+<text x="114" y="718" fill="#edf0fa" font-size="20">Три творческих направления и</text>
+<text x="114" y="746" fill="#edf0fa" font-size="20">аргументированный отказ</text>
+<text x="30" y="837" fill="#c1b4ff" font-size="16">Дальше: модуль 2. Сначала проверь результат текущего.</text>
+</g></svg>

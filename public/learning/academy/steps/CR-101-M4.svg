@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="820" viewBox="0 0 720 820" role="img" aria-labelledby="title desc">
+<title id="title">CR-101-M4: порядок занятий</title>
+<desc id="desc">4.1. Размер, контейнер и воспроизводимый экспорт; 4.2. Рекламный пост без выдуманного доказательства; 4.3. Комплект Post, Stories и короткого видео; 4.4. Защита контент-пакета и решение о выпуске</desc>
+<rect width="720" height="820" rx="24" fill="#10172a"/>
+<g font-family="system-ui, sans-serif">
+<text x="30" y="38" fill="#c1b4ff" font-size="15" letter-spacing="1">CR-101 · МОДУЛЬ 4</text>
+<text x="30" y="70" fill="#aab5d1" font-size="15">Понятный AI-контент: от брифа до пяти визуалов и двух</text>
+<text x="30" y="93" fill="#aab5d1" font-size="15">роликов</text>
+<text x="30" y="134" fill="#edf0fa" font-size="23">Публикация</text>
+<text x="30" y="178" fill="#aab5d1" font-size="15">Проходи сверху вниз: разбор → практика → проверка.</text>
+<rect x="28" y="216" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="234" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="260" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">4.1</text>
+<text x="114" y="247" font-size="14" fill="#c1b4ff">Урок 13 из 16 · Разбор</text>
+<text x="114" y="278" fill="#edf0fa" font-size="20">Размер, контейнер и воспроизводимый экспорт</text>
+<path d="M61 323v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="342" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="360" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="386" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">4.2</text>
+<text x="114" y="373" font-size="14" fill="#c1b4ff">Урок 14 из 16 · Практика</text>
+<text x="114" y="404" fill="#edf0fa" font-size="20">Рекламный пост без выдуманного</text>
+<text x="114" y="432" fill="#edf0fa" font-size="20">доказательства</text>
+<path d="M61 477v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="496" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="514" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="540" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">4.3</text>
+<text x="114" y="527" font-size="14" fill="#c1b4ff">Урок 15 из 16 · Практика</text>
+<text x="114" y="558" fill="#edf0fa" font-size="20">Комплект Post, Stories и короткого видео</text>
+<path d="M61 603v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="622" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="640" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="666" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">4.4</text>
+<text x="114" y="653" font-size="14" fill="#c1b4ff">Урок 16 из 16 · Защита результата</text>
+<text x="114" y="684" fill="#edf0fa" font-size="20">Защита контент-пакета и решение о выпуске</text>
+<text x="30" y="775" fill="#c1b4ff" font-size="16">После последнего занятия — защита результата курса.</text>
+</g></svg>

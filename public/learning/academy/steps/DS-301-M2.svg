@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="792" viewBox="0 0 720 792" role="img" aria-labelledby="title desc">
+<title id="title">DS-301-M2: порядок занятий</title>
+<desc id="desc">2.1. Агентный workflow с проверяемыми границами; 2.2. Аудит UI по скриншоту и измерениям; 2.3. Issue, макет и проверка одной версии; 2.4. Ложные замечания агента и качество отказа</desc>
+<rect width="720" height="792" rx="24" fill="#10172a"/>
+<g font-family="system-ui, sans-serif">
+<text x="30" y="38" fill="#c1b4ff" font-size="15" letter-spacing="1">DS-301 · МОДУЛЬ 2</text>
+<text x="30" y="70" fill="#aab5d1" font-size="15">Дизайн-система и AI-аудит: управление, проверки и</text>
+<text x="30" y="93" fill="#aab5d1" font-size="15">стратегия</text>
+<text x="30" y="134" fill="#edf0fa" font-size="23">AI-агенты в UX-процессе</text>
+<text x="30" y="178" fill="#aab5d1" font-size="15">Проходи сверху вниз: разбор → практика → проверка.</text>
+<rect x="28" y="216" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="234" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="260" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">2.1</text>
+<text x="114" y="247" font-size="14" fill="#c1b4ff">Урок 5 из 16 · Разбор</text>
+<text x="114" y="278" fill="#edf0fa" font-size="20">Агентный workflow с проверяемыми границами</text>
+<path d="M61 323v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="342" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="360" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="386" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">2.2</text>
+<text x="114" y="373" font-size="14" fill="#c1b4ff">Урок 6 из 16 · Показ на примере</text>
+<text x="114" y="404" fill="#edf0fa" font-size="20">Аудит UI по скриншоту и измерениям</text>
+<path d="M61 449v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="468" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="486" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="512" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">2.3</text>
+<text x="114" y="499" font-size="14" fill="#c1b4ff">Урок 7 из 16 · Практика</text>
+<text x="114" y="530" fill="#edf0fa" font-size="20">Issue, макет и проверка одной версии</text>
+<path d="M61 575v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="594" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="612" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="638" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">2.4</text>
+<text x="114" y="625" font-size="14" fill="#c1b4ff">Урок 8 из 16 · Самопроверка</text>
+<text x="114" y="656" fill="#edf0fa" font-size="20">Ложные замечания агента и качество отказа</text>
+<text x="30" y="747" fill="#c1b4ff" font-size="16">Дальше: модуль 3. Сначала проверь результат текущего.</text>
+</g></svg>

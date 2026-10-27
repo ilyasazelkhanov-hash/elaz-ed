@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="882" viewBox="0 0 720 882" role="img" aria-labelledby="title desc">
+<title id="title">CR-301-M3: порядок занятий</title>
+<desc id="desc">3.1. Согласие, похожесть и права на исходные материалы; 3.2. Provenance и watermark: что они подтверждают; 3.3. Коммерческий релиз: проверка фактов и комплекта; 3.4. Спорные кейсы: решение без выдуманной уверенности</desc>
+<rect width="720" height="882" rx="24" fill="#10172a"/>
+<g font-family="system-ui, sans-serif">
+<text x="30" y="38" fill="#c1b4ff" font-size="15" letter-spacing="1">CR-301 · МОДУЛЬ 3</text>
+<text x="30" y="70" fill="#aab5d1" font-size="15">AI-студия: стандарты, согласование и экономика</text>
+<text x="30" y="112" fill="#edf0fa" font-size="23">Права, этика и QA</text>
+<text x="30" y="156" fill="#aab5d1" font-size="15">Проходи сверху вниз: разбор → практика → проверка.</text>
+<rect x="28" y="194" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="212" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="238" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.1</text>
+<text x="114" y="225" font-size="14" fill="#c1b4ff">Урок 9 из 16 · Разбор</text>
+<text x="114" y="256" fill="#edf0fa" font-size="20">Согласие, похожесть и права на исходные</text>
+<text x="114" y="284" fill="#edf0fa" font-size="20">материалы</text>
+<path d="M61 329v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="348" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="366" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="392" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.2</text>
+<text x="114" y="379" font-size="14" fill="#c1b4ff">Урок 10 из 16 · Показ на примере</text>
+<text x="114" y="410" fill="#edf0fa" font-size="20">Provenance и watermark: что они</text>
+<text x="114" y="438" fill="#edf0fa" font-size="20">подтверждают</text>
+<path d="M61 483v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="502" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="520" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="546" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.3</text>
+<text x="114" y="533" font-size="14" fill="#c1b4ff">Урок 11 из 16 · Практика</text>
+<text x="114" y="564" fill="#edf0fa" font-size="20">Коммерческий релиз: проверка фактов и</text>
+<text x="114" y="592" fill="#edf0fa" font-size="20">комплекта</text>
+<path d="M61 637v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="656" width="664" height="128" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="674" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="700" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.4</text>
+<text x="114" y="687" font-size="14" fill="#c1b4ff">Урок 12 из 16 · Самопроверка</text>
+<text x="114" y="718" fill="#edf0fa" font-size="20">Спорные кейсы: решение без выдуманной</text>
+<text x="114" y="746" fill="#edf0fa" font-size="20">уверенности</text>
+<text x="30" y="837" fill="#c1b4ff" font-size="16">Дальше: модуль 4. Сначала проверь результат текущего.</text>
+</g></svg>

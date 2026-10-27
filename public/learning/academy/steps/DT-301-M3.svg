@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="770" viewBox="0 0 720 770" role="img" aria-labelledby="title desc">
+<title id="title">DT-301-M3: порядок занятий</title>
+<desc id="desc">3.1. Контракт данных и единый смысл метрики; 3.2. Словарь метрик и независимые тесты; 3.3. Наблюдение за обновлением набора; 3.4. Breaking change: версия против тихой ошибки</desc>
+<rect width="720" height="770" rx="24" fill="#10172a"/>
+<g font-family="system-ui, sans-serif">
+<text x="30" y="38" fill="#c1b4ff" font-size="15" letter-spacing="1">DT-301 · МОДУЛЬ 3</text>
+<text x="30" y="70" fill="#aab5d1" font-size="15">Решения по данным: эксперименты, прогноз и безопасный SQL</text>
+<text x="30" y="112" fill="#edf0fa" font-size="23">Semantic layer и управление метриками</text>
+<text x="30" y="156" fill="#aab5d1" font-size="15">Проходи сверху вниз: разбор → практика → проверка.</text>
+<rect x="28" y="194" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="212" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="238" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.1</text>
+<text x="114" y="225" font-size="14" fill="#c1b4ff">Урок 9 из 16 · Разбор</text>
+<text x="114" y="256" fill="#edf0fa" font-size="20">Контракт данных и единый смысл метрики</text>
+<path d="M61 301v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="320" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="338" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="364" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.2</text>
+<text x="114" y="351" font-size="14" fill="#c1b4ff">Урок 10 из 16 · Показ на примере</text>
+<text x="114" y="382" fill="#edf0fa" font-size="20">Словарь метрик и независимые тесты</text>
+<path d="M61 427v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="446" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="464" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="490" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.3</text>
+<text x="114" y="477" font-size="14" fill="#c1b4ff">Урок 11 из 16 · Практика</text>
+<text x="114" y="508" fill="#edf0fa" font-size="20">Наблюдение за обновлением набора</text>
+<path d="M61 553v14m-5-5 5 5 5-5" stroke="#98a3c6" stroke-width="2" fill="none"/>
+<rect x="28" y="572" width="664" height="100" rx="18" fill="#1a2138" stroke="#3c4665"/>
+<rect x="44" y="590" width="52" height="38" rx="11" fill="#b8a4ff"/>
+<text x="70" y="616" text-anchor="middle" fill="#17142b" font-size="19" font-weight="700">3.4</text>
+<text x="114" y="603" font-size="14" fill="#c1b4ff">Урок 12 из 16 · Разбор ситуации</text>
+<text x="114" y="634" fill="#edf0fa" font-size="20">Breaking change: версия против тихой ошибки</text>
+<text x="30" y="725" fill="#c1b4ff" font-size="16">Дальше: модуль 4. Сначала проверь результат текущего.</text>
+</g></svg>
