@@ -44,10 +44,13 @@ test('all 448 lessons can be prepared from student-visible course metadata witho
   }
   assert.equal(count, 448)
   assert.equal(planned, catalog.entities.filter(entity=>entity.kind==='lesson'&&entity.state==='outline').length)
-  const plannedLesson = catalog.entities.find(entity => entity.kind === 'lesson' && entity.state === 'outline')
-  assert.ok(plannedLesson, 'the curriculum still contains unpublished lessons')
-  await assert.rejects(api(student, 'lesson', { code: plannedLesson.code }), /not_published/)
-  await assert.rejects(api(student, 'complete', { code: plannedLesson.code }), /not_published/)
+  const unpublished = JSON.parse(await readFile(new URL('../content/ai-academy/catalog.normalized.json', import.meta.url)))
+  let unpublishedSaved
+  const unpublishedApi = createAcademyEngine(unpublished, { load: () => unpublishedSaved, save: value => { unpublishedSaved = value } })
+  const plannedLesson = unpublished.entities.find(entity => entity.kind === 'lesson' && entity.state === 'outline')
+  assert.ok(plannedLesson, 'the original unpublished fixture must exercise access checks')
+  await assert.rejects(unpublishedApi(student, 'lesson', { code: plannedLesson.code }), /not_published/)
+  await assert.rejects(unpublishedApi(student, 'complete', { code: plannedLesson.code }), /not_published/)
   assert.equal((await api(student, 'my', {})).progress.length, 0)
 })
 

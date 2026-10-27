@@ -1,0 +1,11 @@
+{
+  "version": "training-v1",
+  "state": "declared_local_rules_not_production_authorization",
+  "dataClasses": ["public", "internal", "restricted"],
+  "purposes": ["summary", "meeting_packet"],
+  "tools": {
+    "local_baseline": {"approved":true,"dataClasses":["public","internal"],"purposes":["summary","meeting_packet"],"actions":["prepare_draft"]},
+    "external_demo": {"approved":true,"dataClasses":["public"],"purposes":["summary"],"actions":["prepare_draft"]}
+  },
+  "scope": "Данные и инструменты вымышлены. Отправка, расходы и изменение доступов не реализованы. Проверка полей не заменяет аутентификацию, серверные разрешения, договоры и фактический контроль хранения."
+}

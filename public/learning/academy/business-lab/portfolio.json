@@ -1,0 +1,14 @@
+{
+  "provenance": "fictional_assumptions_not_enterprise_audit",
+  "currency": "KZT",
+  "budget": 150000,
+  "effortLimit": 70,
+  "horizonMonths": 12,
+  "projects": [
+    {"id":"DATA","title":"Упорядочить разрешённые источники","setupCost":40000,"monthlyCapacityValue":10000,"monthlySupport":1000,"effortHours":20,"approved":true,"dependencies":[],"benefitGroup":"data"},
+    {"id":"FAQ","title":"Черновики справок с ревью","setupCost":80000,"monthlyCapacityValue":25000,"monthlySupport":4000,"effortHours":40,"approved":true,"dependencies":["DATA"],"benefitGroup":"support"},
+    {"id":"MEET","title":"Пакеты встреч","setupCost":60000,"monthlyCapacityValue":20000,"monthlySupport":3000,"effortHours":30,"approved":true,"dependencies":["DATA"],"benefitGroup":"meetings"},
+    {"id":"RISKY","title":"Несогласованные данные — запуск запрещён","setupCost":10000,"monthlyCapacityValue":100000,"monthlySupport":1000,"effortHours":5,"approved":false,"dependencies":[],"benefitGroup":"external"}
+  ],
+  "scope": "Выбор по сценарной оценке ёмкости с жёсткими ограничениями; не утверждённый бюджет, не денежная прибыль. Стоимость внедрения ограничена budget, операционная поддержка учтена в целевой оценке, но не в этом лимите внедрения."
+}
