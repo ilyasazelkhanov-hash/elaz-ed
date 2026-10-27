@@ -1,0 +1,8 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {readFile} from 'node:fs/promises'
+import {allowedContext,meetingPacket,validateSummary,agenda,followup} from './work.mjs'
+const meeting=JSON.parse(await readFile(new URL('./meeting.json',import.meta.url),'utf8'))
+test('meeting baseline filters internal context and preserves unknown owners/dates instead of inventing them',()=>{const context=allowedContext(meeting),packet=meetingPacket(meeting);assert.ok(!JSON.stringify(context).includes('INTERNAL_ONLY'));assert.equal(packet.actions.length,2);assert.equal(packet.actions[1].owner,null);assert.equal(packet.actions[1].due,null);assert.match(followup(packet),/не назначен/);assert.match(followup(packet),/не указан/);assert.match(followup(packet),/не отправлялось/)})
+test('summary validation rejects invented citations, private evidence and new commitments',()=>{const claim={source_id:'N3',quote:'Подготовить черновик инструкции',owner:'Фиктивная Алина',due:'2026-10-20'};assert.equal(validateSummary(meeting,{claims:[claim]}).requiresHumanInterpretationReview,true);for(const invalid of [{...claim,quote:'Продажи выросли вдвое'},{...claim,source_id:'N5',quote:'INTERNAL_ONLY'},{...claim,due:'2026-10-19'},{source_id:'N4',quote:'Согласовать критерии',owner:'Invented'}])assert.throws(()=>validateSummary(meeting,{claims:[invalid]}),/unsupported_evidence|invented_commitment/)})
+test('agenda checks total time and requires a decision for each discussion',()=>{assert.equal(agenda([{minutes:10,decision:'Choose a pilot'},{minutes:20,decision:'Agree checks'}],30).remaining,0);assert.throws(()=>agenda([{minutes:31,decision:'Choose'}],30),/time_limit/);assert.throws(()=>agenda([{minutes:10,decision:''}],30),/invalid_agenda/)})

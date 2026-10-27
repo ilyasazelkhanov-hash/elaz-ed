@@ -1,0 +1,59 @@
+{
+  "packet": {
+    "provenance": "author_synthetic_meeting_not_real_people",
+    "facts": [
+      {
+        "text": "Учебная мастерская получает вопросы о подготовке вещи к ремонту.",
+        "source_id": "N1"
+      }
+    ],
+    "decisions": [
+      {
+        "text": "Проверить понятность инструкции подготовки фото на добровольных учебных сессиях.",
+        "source_id": "N2"
+      }
+    ],
+    "actions": [
+      {
+        "text": "Подготовить черновик инструкции для проверки.",
+        "source_id": "N3",
+        "owner": "Фиктивная Алина",
+        "due": "2026-10-20"
+      },
+      {
+        "text": "Согласовать критерии качества перед пилотом.",
+        "source_id": "N4",
+        "owner": null,
+        "due": null
+      }
+    ],
+    "method": "deterministic tagged-note baseline, not a live LLM response"
+  },
+  "agenda": {
+    "items": [
+      {
+        "title": "Цель",
+        "minutes": 5,
+        "decision": "Подтвердить задачу"
+      },
+      {
+        "title": "Evidence",
+        "minutes": 10,
+        "decision": "Определить известное и пробелы"
+      },
+      {
+        "title": "Варианты",
+        "minutes": 10,
+        "decision": "Выбрать ограниченную проверку"
+      },
+      {
+        "title": "Следующие шаги",
+        "minutes": 5,
+        "decision": "Назначить действия или отметить неизвестное"
+      }
+    ],
+    "total": 30,
+    "limitMinutes": 30,
+    "remaining": 0
+  }
+}
