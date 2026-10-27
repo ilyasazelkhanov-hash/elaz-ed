@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto'
 import {publicAcademyCatalog} from './academy-public.mjs'
 import {writeCourseBooks} from './academy-books.mjs'
 import {writeModuleIllustrations} from './academy-module-illustrations.mjs'
+import {writeConceptIllustrations} from './academy-concept-illustrations.mjs'
 const root=fileURLToPath(new URL('../',import.meta.url))
 const assert=(condition,message)=>{if(!condition)throw Error(message)}
 const clone=value=>structuredClone(value)
@@ -108,6 +109,7 @@ export async function buildContent(){
  const completed=catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='published').length
  const progress=['# Наполнение AI Academy','','Файл формируется командой `npm run academy:content` из учебного каталога.','',`Наполнены **${completed} из 448 занятий**; **${448-completed}** остаются планами. Это состояние локального учебного пакета, а не подтверждение публикации в рабочей Supabase.`,'','| Курс | Программа | Наполнено занятий |','| --- | --- | --- |',...courses.map(course=>{const count=catalog.entities.filter(n=>n.kind==='lesson'&&n.code.startsWith(course.code+'-')&&n.state==='published').length;return `| ${course.code} | ${course.title.replaceAll('|','/')} | ${count}/16 |`}), '','Наполненные пакеты перечислены в `content/ai-academy/authored/index.json`. Учебные проекты находятся в `content/ai-academy/projects/`. Публикация выполняется отдельно через проверенный SQL-экспорт конкретного курса.',''].join('\n')
  await writeIfChanged(path.join(root,'docs/ai-academy/content-status.md'),progress)
+ await writeConceptIllustrations()
  await writeModuleIllustrations(catalog)
  await writeCourseBooks(base,packs)
  const actor=process.argv.find(a=>a.startsWith('--actor='))?.slice(8)
