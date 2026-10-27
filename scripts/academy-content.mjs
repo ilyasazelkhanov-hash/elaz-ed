@@ -97,11 +97,11 @@ export async function loadAuthoredPacks(){
 }
 export async function buildContent(){
  const base=JSON.parse(await readFile(path.join(root,'content/ai-academy/catalog.normalized.json'),'utf8'))
- const publicCatalog=publicAcademyCatalog(base)
- await writeIfChanged(path.join(root,'content/ai-academy/catalog.public.json'),JSON.stringify(publicCatalog,null,2)+'\n')
- await writeIfChanged(path.join(root,'content/ai-academy/course-directory.json'),JSON.stringify(publicCatalog.entities.filter(n=>n.kind==='course'),null,2)+'\n')
  const packs=await loadAuthoredPacks()
  const catalog=composeLearningCatalog(base,packs)
+ const publicCatalog=publicAcademyCatalog(catalog)
+ await writeIfChanged(path.join(root,'content/ai-academy/catalog.public.json'),JSON.stringify(publicCatalog,null,2)+'\n')
+ await writeIfChanged(path.join(root,'content/ai-academy/course-directory.json'),JSON.stringify(publicCatalog.entities.filter(n=>n.kind==='course'),null,2)+'\n')
  await writeIfChanged(path.join(root,'content/ai-academy/catalog.learning.json'),JSON.stringify(catalog,null,2)+'\n')
  const courses=catalog.entities.filter(n=>n.kind==='course')
  const completed=catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='published').length

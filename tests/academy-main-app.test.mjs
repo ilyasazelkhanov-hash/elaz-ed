@@ -23,7 +23,7 @@ test('main-app programs contain all 28 courses and 448 lesson outlines with no g
 })
 
 test('program directory is generated from the same public schema as the deployed course previews', async () => {
-  const base = JSON.parse(await readFile(new URL('../content/ai-academy/catalog.normalized.json', import.meta.url)))
+  const base = JSON.parse(await readFile(new URL('../content/ai-academy/catalog.learning.json', import.meta.url)))
   const publicCatalog = JSON.parse(await readFile(new URL('../content/ai-academy/catalog.public.json', import.meta.url)))
   const directory = JSON.parse(await readFile(new URL('../content/ai-academy/course-directory.json', import.meta.url)))
   assert.deepEqual(publicCatalog, publicAcademyCatalog(base))

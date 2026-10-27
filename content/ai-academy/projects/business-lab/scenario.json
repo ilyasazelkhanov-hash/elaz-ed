@@ -1,0 +1,17 @@
+{
+  "provenance": "author_synthetic_assumptions_not_vendor_prices",
+  "unit": "KZT",
+  "tasksPerMonth": 160,
+  "minutesSaved": 6,
+  "hourlyValue": 4000,
+  "setupCost": 120000,
+  "monthlyTools": 20000,
+  "monthlySupport": 30000,
+  "variableCostPerTask": 25,
+  "horizonMonths": 3,
+  "qualityGate": {
+    "minQualityRate": 0.9,
+    "minComparablePairs": 6,
+    "openIncidents": 0
+  }
+}

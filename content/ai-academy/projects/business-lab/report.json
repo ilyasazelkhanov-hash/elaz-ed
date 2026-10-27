@@ -1,0 +1,62 @@
+{
+  "metrics": {
+    "provenance": "synthetic_records_not_real_pilot",
+    "tasks": 8,
+    "manualMinutes": 250,
+    "draftMinutes": 74,
+    "reviewMinutes": 73,
+    "fixMinutes": 40,
+    "assistedMinutes": 187,
+    "rawDraftSavings": 176,
+    "netMinutesSaved": 63,
+    "manualQualityRate": 1,
+    "assistedQualityRate": 0.75,
+    "comparablePairs": 6,
+    "comparableManualMinutes": 165,
+    "comparableAssistedMinutes": 124,
+    "comparableMinutesSaved": 41,
+    "scope": "Descriptive; pass-conditioned subset is not a causal or cash-savings estimate."
+  },
+  "gate": {
+    "decision": "revise_before_scaling",
+    "reason": "quality_below_threshold"
+  },
+  "scenarios": [
+    {
+      "minutesSaved": 3,
+      "monthlyCapacityValue": 32000,
+      "monthlyCost": 54000,
+      "totalCost": 282000,
+      "totalCapacityValue": 96000,
+      "netCapacityValue": -186000,
+      "roi": -0.6595744680851063,
+      "paybackMonths": null,
+      "horizonMonths": 3,
+      "scope": "Monetized capacity scenario, not proven cash savings."
+    },
+    {
+      "minutesSaved": 6,
+      "monthlyCapacityValue": 64000,
+      "monthlyCost": 54000,
+      "totalCost": 282000,
+      "totalCapacityValue": 192000,
+      "netCapacityValue": -90000,
+      "roi": -0.3191489361702128,
+      "paybackMonths": 12,
+      "horizonMonths": 3,
+      "scope": "Monetized capacity scenario, not proven cash savings."
+    },
+    {
+      "minutesSaved": 10,
+      "monthlyCapacityValue": 106666.66666666667,
+      "monthlyCost": 54000,
+      "totalCost": 282000,
+      "totalCapacityValue": 320000,
+      "netCapacityValue": 38000,
+      "roi": 0.1347517730496454,
+      "paybackMonths": 2.2784810126582276,
+      "horizonMonths": 3,
+      "scope": "Monetized capacity scenario, not proven cash savings."
+    }
+  ]
+}
