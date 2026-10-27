@@ -3,8 +3,6 @@ import { ArrowRight, Check, Copy, Lightbulb } from 'lucide-react'
 import { courseGuide, lessonGuide, lessonTerms } from '../../lib/academy-guidance'
 import { copyText } from '../../lib/tg'
 import { Tap } from '../../ui'
-import { LessonVideos } from './Videos'
-import { LessonVisuals } from './LessonVisuals'
 import { panel, text, type Entity } from './shared'
 
 export function CourseGuidance({ course, modules, lessons, preview = false }: { course: Entity; modules: Entity[]; lessons: Entity[]; preview?: boolean }) {
@@ -39,21 +37,14 @@ function Glossary({ title, code }: { title: string; code: string }) {
   return <details className="academy-help"><summary>Непонятные слова <span aria-hidden="true">+</span></summary><dl className="academy-glossary">{terms.map(([term, meaning]) => <div key={term}><dt>{term}</dt><dd>{meaning}</dd></div>)}</dl></details>
 }
 
-export function LessonGuidance({ lesson, module }: { lesson: Entity; module?: Entity }) {
-  const [copied, setCopied] = useState(false)
-  const guide = lessonGuide(lesson)
-  const ready = lesson.state === 'published'
-  const checks = guide.criteria.length ? guide.criteria : guide.guide?.checks || []
-  async function copyPrompt() { setCopied(await copyText(guide.prompt)) }
-  return <><LessonVisuals code={lesson.code}/><LessonVideos code={lesson.code}/><section className={`${panel} academy-guidance`} aria-label="Подсказки к занятию">
-    <p className="academy-kicker">{ready ? 'Разберём по шагам' : 'Подготовка к будущему занятию'}</p>
-    <h2 className="mt-3 font-display text-[20px] font-semibold">{ready ? 'Как пройти это занятие' : 'С чего можно начать'}</h2>
-    {!ready && <p className="mt-3 text-sm leading-relaxed text-mute">Это открытый ориентир по теме. Полный урок и проверка ещё готовятся; эта подготовка не даёт зачёт.</p>}
-    <div className="academy-lesson-goal"><span aria-hidden="true">01</span><div><h3>Пойми результат</h3><p>{guide.goal}</p>{module?.data.outcome && <p className="text-mute">В этом модуле: {text(module.data.outcome)}</p>}</div></div>
-    <details className="academy-help"><summary>Подсказка 1 · как разобраться <span aria-hidden="true">+</span></summary><p>{guide.hints[0]}</p></details>
-    <details className="academy-help"><summary>Подсказка 2 · как попробовать <span aria-hidden="true">+</span></summary><p>{guide.hints[1]}</p>{guide.guide && <><p><b>Учебная ситуация:</b> {guide.guide.scenario}</p><p><b>Пример применения в курсе:</b> {guide.guide.example}</p></>}</details>
-    <details className="academy-help"><summary>Подсказка 3 · спросить AI <span aria-hidden="true">+</span></summary><p>Сначала попробуй сам. Затем скопируй запрос, чтобы разобрать тему, а не получить готовую работу.</p><blockquote className="academy-prompt">{guide.prompt}</blockquote><Tap className="academy-chip mt-3" onClick={() => void copyPrompt()}>{copied ? <Check size={15}/> : <Copy size={15}/>}Скопировать запрос</Tap><p role="status" aria-live="polite">{copied ? 'Запрос скопирован' : ''}</p></details>
-    {checks.length > 0 && <fieldset className="academy-self-check"><legend>Перед тем как идти дальше</legend>{checks.map((check, index) => <label key={`${lesson.code}-${index}`}><input type="checkbox"/><span>{check}</span></label>)}<p>Это личная самопроверка. Зачёт сохраняется только после выполнения условий занятия.</p></fieldset>}
+export function LessonGuidance({ lesson }: { lesson: Entity; module?: Entity }) {
+  const [copyState,setCopyState]=useState<'idle'|'copied'|'failed'>('idle')
+  const guide=lessonGuide(lesson)
+  async function copyPrompt(){setCopyState(await copyText(guide.prompt)?'copied':'failed')}
+  return <details className={`${panel} academy-guidance academy-study-sources`} aria-label="Помощь с занятием"><summary>Если застрял: подсказки и непонятные слова</summary>
+    <details className="academy-help"><summary>Как разобраться <span aria-hidden="true">+</span></summary><p>{guide.hints[0]}</p></details>
+    <details className="academy-help"><summary>Как попробовать <span aria-hidden="true">+</span></summary><p>{guide.hints[1]}</p></details>
+    <details className="academy-help"><summary>Попросить AI объяснить <span aria-hidden="true">+</span></summary><p>Сначала попробуй сам. Этот запрос помогает разобраться и не заменяет самостоятельную работу.</p><blockquote className="academy-prompt selectable">{guide.prompt}</blockquote><Tap className="academy-chip mt-3" onClick={()=>void copyPrompt()}>{copyState==='copied'?<Check size={15}/>:<Copy size={15}/>}Скопировать запрос</Tap><p role="status" aria-live="polite">{copyState==='copied'?'Запрос скопирован':copyState==='failed'?'Не удалось скопировать. Выдели запрос и скопируй вручную.':''}</p></details>
     <Glossary title={lesson.title} code={lesson.code}/>
-  </section></>
+  </details>
 }

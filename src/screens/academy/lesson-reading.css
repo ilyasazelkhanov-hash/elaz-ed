@@ -1,0 +1,40 @@
+.academy-lesson-reading{display:grid;gap:18px;min-width:0}
+.academy-reading-article{min-width:0}
+.academy-reading-article>h2{font-size:21px;font-weight:700;line-height:1.4;margin-bottom:18px}
+.academy-reading-section+.academy-reading-section,.academy-reading-code+.academy-reading-section,.academy-reading-section+.academy-reading-code{margin-top:22px}
+.academy-reading-section>h3{font-size:18px;line-height:1.5;font-weight:700;margin:0 0 12px}
+.academy-reading-section-label{font-size:11px;line-height:1.5;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--color-violet);margin:0 0 9px}
+.academy-reading-section:not(.is-text){padding:18px;border-radius:16px;background:var(--color-card2);border-left:3px solid var(--color-violet)}
+.academy-reading-section.is-hint{border-left-color:var(--color-mint)}
+.academy-reading-section.is-check{border-left-color:var(--color-mint)}
+.academy-reading-prose{max-width:68ch;font-size:16px;line-height:1.8;overflow-wrap:anywhere;min-width:0}
+.academy-reading-prose>*+*{margin-top:16px}
+.academy-reading-prose :is(h1,h2){font-size:21px;line-height:1.4;font-weight:700;margin-top:28px;margin-bottom:14px;letter-spacing:-.015em}
+.academy-reading-prose :is(h3,h4,h5,h6){font-size:18px;line-height:1.5;font-weight:700;margin-top:24px;margin-bottom:12px}
+.academy-reading-prose>:first-child{margin-top:0}
+.academy-reading-prose :is(ul,ol){padding-left:24px}
+.academy-reading-prose ul{list-style:disc}.academy-reading-prose ol{list-style:decimal}
+.academy-reading-prose li+li{margin-top:9px}
+.academy-reading-prose :is(ul,ol) :is(ul,ol){margin-top:8px}
+.academy-reading-prose a{color:var(--color-violet);text-decoration:underline;text-underline-offset:3px}
+.academy-reading-prose strong{font-weight:700}
+.academy-reading-prose blockquote{padding:12px 16px;border-left:3px solid var(--color-violet);background:var(--color-card2);border-radius:0 12px 12px 0}
+.academy-reading-prose code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.88em;background:var(--color-card2);padding:2px 5px;border-radius:5px}
+.academy-reading-prose pre{max-width:100%;overflow-x:auto;white-space:pre;padding:16px;font-size:13px;line-height:1.7}
+.academy-reading-prose pre code{padding:0;background:none;font-size:inherit}
+.academy-reading-prose :is(img,video){max-width:100%;height:auto;border-radius:14px}
+.academy-reading-prose table{display:block;max-width:100%;overflow-x:auto;font-size:14px;border-collapse:collapse}
+.academy-reading-prose :is(th,td){padding:10px 12px;border:1px solid var(--color-line);text-align:left;min-width:110px}
+.academy-reading-prose th{font-weight:700;background:var(--color-card2)}
+.academy-reading-prose hr{border:0;border-top:1px solid var(--color-line);margin:24px 0}
+.academy-reading-code{min-width:0;overflow:hidden;border:1px solid var(--color-line);border-radius:15px;background:var(--color-bg)}
+.academy-reading-code-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--color-line);font-size:12px;font-weight:600}
+.academy-reading-copy{display:inline-flex;align-items:center;gap:7px;padding:7px 9px;border-radius:8px;color:var(--color-violet);font-size:12px;text-align:left}
+.academy-reading-code pre{margin:0;padding:16px;max-width:100%;overflow-x:auto;white-space:pre;font:13px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;user-select:text}
+.academy-reading-copy-status{font-size:12px;line-height:1.6;color:var(--color-mute);padding:0 14px}
+.academy-reading-copy-status:not(:empty){padding-bottom:12px}
+.academy-reading-checklist legend,.academy-reading-resource h3{font-size:17px;font-weight:700;line-height:1.5;margin-bottom:14px}
+.academy-reading-checklist label{display:flex;align-items:flex-start;gap:12px;font-size:15px;line-height:1.8;margin-top:12px}
+.academy-reading-checklist input{margin-top:6px;flex-shrink:0;accent-color:var(--color-violet)}
+.academy-reading-resource>*+*{margin-top:14px}
+@media(max-width:360px){.academy-reading-section:not(.is-text){padding:13px}.academy-reading-prose{font-size:15px}.academy-reading-code-heading{gap:6px}}

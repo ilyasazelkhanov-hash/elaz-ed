@@ -10,6 +10,10 @@ test('all 112 modules have distinct, concrete teaching cases and nonempty local 
  const examples=await loadStudyExamples(),base=await read('catalog.normalized.json'),expected=base.entities.filter(node=>node.kind==='module').map(node=>node.code).sort()
  assert.deepEqual(examples.map(row=>row.module_code).sort(),expected)
  assert.equal(new Set(examples.map(row=>row.situation)).size,112)
+ const courses=await read('authored/index.json')
+ let worked=0
+ for(const code of courses){const pack=await read('authored/'+code+'.json');for(const lesson of pack.lessons){assert.equal(lesson.data.content_blocks.filter(block=>block.learning_role==='module_example').length,1,lesson.code);worked++}}
+ assert.equal(worked,448)
  for(const row of examples){const svg=await readFile(new URL(`../public/learning/academy/concepts/${row.module_code}.svg`,import.meta.url),'utf8');assert.match(svg,/<svg[^>]+viewBox="0 0 720 610"/);assert.doesNotMatch(svg,/<script|<foreignObject|(?:href|src)="https?:/)}
 })
 test('first two courses have a specific beginner walkthrough for each lesson and enrichment preserves grading',async()=>{

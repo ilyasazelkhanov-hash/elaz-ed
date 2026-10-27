@@ -10,11 +10,12 @@ export function LessonVisuals({code}:{code:string}){
  if(!visuals)return null
  function enlarge(screenshot:LessonScreenshot){setSelected(screenshot);dialog.current?.showModal()}
  return <section className={`${panel} academy-lesson-visuals`} aria-label="Схема и скриншоты занятия">
-  <h2 className="font-display text-[20px] font-semibold">Наглядно: что и в каком порядке</h2>
+  <h3 className="font-display text-[18px] font-semibold">{visuals.screenshots.length?'Сверь с учебным экраном':'Маршрут модуля'}</h3>
+  <details className="academy-study-sources"><summary>Показать маршрут четырёх уроков модуля</summary>
   <figure className="academy-step-figure">
    <img src={visuals.diagram} alt="Порядок четырёх занятий этого модуля с названиями и номерами" width="720" loading="lazy"/>
    <figcaption>Читай схему сверху вниз. Сейчас ты на шаге {visuals.step} из 4. Прочитай материал, выполни практику и проверь результат перед переходом дальше.</figcaption>
-  </figure>
+  </figure></details>
   {visuals.screenshots.length>0&&<div className="academy-screenshot-list"><h3 className="text-sm font-semibold">Как выглядит учебный пример</h3>{visuals.screenshots.map(screenshot=><figure key={screenshot.src}>
    <button type="button" className="academy-screenshot-button" onClick={()=>enlarge(screenshot)} aria-label={`Увеличить скриншот: ${screenshot.alt}`}><img src={screenshot.src} alt={screenshot.alt} loading="lazy"/><span><Expand size={15} aria-hidden="true"/>Увеличить скриншот</span></button>
    <figcaption>{screenshot.caption}</figcaption>
