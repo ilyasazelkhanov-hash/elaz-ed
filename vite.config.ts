@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     host: true,
     // Мастер и ролики — отдельные проекты со своими node_modules; их правки не должны перезапускать OG.
-    watch: { ignored: ['**/Azelkhanov-master/**', '**/videos/**', '**/test-results/**'] },
+    watch: { ignored: ['**/Azelkhanov-master/**', '**/videos/elaz-ed-demos/**', '**/videos/elaz-ed-employees-claude/**', '**/test-results/**'] },
   },
   // Только свой вход: иначе Vite находит index.html мастера и подмешивает вторую копию React.
   optimizeDeps: { entries: ['index.html'] },

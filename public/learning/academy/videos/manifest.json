@@ -1,0 +1,41 @@
+{
+  "videos": [
+    {
+      "id": "creative-intro",
+      "title": "Учебный анонс: пять карточек",
+      "category": "Учебные примеры CR-101",
+      "seconds": 15,
+      "src": "creative-intro.mp4",
+      "captions": "creative-intro.vtt",
+      "poster": "../creative/01-question.png",
+      "description": "Авторская графика, английская синтетическая речь и русские субтитры. Не видеолекция и не AI-генерация сцены.",
+      "lesson_codes": [
+        "CR-101-M3-L1",
+        "CR-101-M3-L3"
+      ]
+    },
+    {
+      "id": "creative-campaign",
+      "title": "Учебный монтаж: десять планов",
+      "category": "Учебные примеры CR-201",
+      "seconds": 12,
+      "src": "creative-campaign.mp4",
+      "captions": "creative-campaign.vtt",
+      "poster": "../creative/04-options.png",
+      "description": "Технический монтаж авторских карточек. Пример тайминга, аудио и субтитров.",
+      "lesson_codes": [
+        "CR-201-M3-L3"
+      ]
+    },
+    {
+      "id": "elaz-ed-employees",
+      "title": "Elaz Ed для команды",
+      "category": "Демонстрация продукта",
+      "seconds": 60,
+      "src": "elaz-ed-employees.mp4",
+      "poster": "elaz-ed-employees.png",
+      "description": "Корпоративный адвент и пространство команды. Вымышленная компания «Орбита», музыка и экранный текст; записанного диктора нет.",
+      "lesson_codes": []
+    }
+  ]
+}

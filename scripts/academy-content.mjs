@@ -3,6 +3,7 @@ import {pathToFileURL,fileURLToPath} from 'node:url'
 import path from 'node:path'
 import {createHash} from 'node:crypto'
 import {publicAcademyCatalog} from './academy-public.mjs'
+import {writeCourseBooks} from './academy-books.mjs'
 const root=fileURLToPath(new URL('../',import.meta.url))
 const assert=(condition,message)=>{if(!condition)throw Error(message)}
 const clone=value=>structuredClone(value)
@@ -106,6 +107,7 @@ export async function buildContent(){
  const completed=catalog.entities.filter(n=>n.kind==='lesson'&&n.state==='published').length
  const progress=['# Наполнение AI Academy','','Файл формируется командой `npm run academy:content` из учебного каталога.','',`Наполнены **${completed} из 448 занятий**; **${448-completed}** остаются планами. Это состояние локального учебного пакета, а не подтверждение публикации в рабочей Supabase.`,'','| Курс | Программа | Наполнено занятий |','| --- | --- | --- |',...courses.map(course=>{const count=catalog.entities.filter(n=>n.kind==='lesson'&&n.code.startsWith(course.code+'-')&&n.state==='published').length;return `| ${course.code} | ${course.title.replaceAll('|','/')} | ${count}/16 |`}), '','Наполненные пакеты перечислены в `content/ai-academy/authored/index.json`. Учебные проекты находятся в `content/ai-academy/projects/`. Публикация выполняется отдельно через проверенный SQL-экспорт конкретного курса.',''].join('\n')
  await writeIfChanged(path.join(root,'docs/ai-academy/content-status.md'),progress)
+ await writeCourseBooks(base,packs)
  const actor=process.argv.find(a=>a.startsWith('--actor='))?.slice(8)
  if(actor){const out=path.join(root,'content/ai-academy/generated');await mkdir(out,{recursive:true});await writeIfChanged(path.join(out,'authored-content.sql'),contentSql(catalog,actor,process.argv.find(a=>a.startsWith('--course='))?.slice(9)))}
  console.log(`Academy content: ${packs.length} courses, ${packs.reduce((n,p)=>n+p.lessons.length,0)} authored lessons; revision ${catalog.content_revision}. ${actor?'SQL exported; no database writes.':'No database writes.'}`)
