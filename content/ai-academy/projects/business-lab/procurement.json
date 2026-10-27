@@ -1,0 +1,12 @@
+{
+  "provenance": "fictional_offers_not_actual_vendor_quotes_or_contracts",
+  "currency": "KZT",
+  "horizonMonths": 3,
+  "tasksPerMonth": 160,
+  "options": [
+    {"id":"SERVICE_A","setupCost":40000,"monthlyTools":12000,"monthlySupport":30000,"variableCostPerTask":30,"evidence":{"dataTerms":"unknown","exportTest":"not_run","sla":"unverified"}},
+    {"id":"SERVICE_B","setupCost":80000,"monthlyTools":25000,"monthlySupport":20000,"variableCostPerTask":20,"evidence":{"dataTerms":"fictional_example_only","exportTest":"not_run","sla":"fictional_example_only"}},
+    {"id":"INTERNAL","setupCost":120000,"monthlyTools":20000,"monthlySupport":30000,"variableCostPerTask":25,"evidence":{"dataTerms":"requires_real_review","exportTest":"not_run","sla":"owner_not_yet_assigned"}}
+  ],
+  "scope": "Ни один вариант не получил реального закупочного допуска. Цена сравнивается отдельно от обязательных условий данных, прав, качества и выхода."
+}
