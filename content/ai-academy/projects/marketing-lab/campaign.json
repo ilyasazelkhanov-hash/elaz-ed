@@ -1,0 +1,44 @@
+{
+  "fictional": true,
+  "provenance": "author_synthetic_data_not_real_campaign",
+  "as_of": "2026-10-26",
+  "spend_kzt": {
+    "search": 12000,
+    "social": 8000
+  },
+  "platform_credits": {
+    "search": [
+      "O1",
+      "O2",
+      "O3",
+      "O4",
+      "O5",
+      "O6"
+    ],
+    "social": [
+      "O1",
+      "O2",
+      "O3",
+      "O7",
+      "O8"
+    ]
+  },
+  "funnel": {
+    "sessions": 120,
+    "leads": 32,
+    "qualified": 18,
+    "orders": 8
+  },
+  "gross_margin": 0.4,
+  "experiment": {
+    "control": {
+      "n": 100,
+      "successes": 20
+    },
+    "treatment": {
+      "n": 100,
+      "successes": 30
+    },
+    "assumptions": "Synthetic independent groups; random assignment is an assumption, not a performed trial."
+  }
+}

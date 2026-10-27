@@ -1,0 +1,450 @@
+[
+  {
+    "id": "POST-01",
+    "date": "2026-11-01",
+    "topic": "Как сформулировать вопрос",
+    "segment": "first_question",
+    "pillar": "education",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_1",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-02",
+    "date": "2026-11-02",
+    "topic": "Какие фото подготовить",
+    "segment": "compare_options",
+    "pillar": "education",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_2",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-03",
+    "date": "2026-11-03",
+    "topic": "Что важно сохранить",
+    "segment": "returning",
+    "pillar": "education",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_3",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-04",
+    "date": "2026-11-04",
+    "topic": "Общий вид и деталь",
+    "segment": "first_question",
+    "pillar": "education",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_4",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-05",
+    "date": "2026-11-05",
+    "topic": "Какие сроки нужно уточнить",
+    "segment": "compare_options",
+    "pillar": "education",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_5",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-06",
+    "date": "2026-11-06",
+    "topic": "Вопросы перед решением",
+    "segment": "returning",
+    "pillar": "education",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_6",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-07",
+    "date": "2026-11-07",
+    "topic": "Итог первой недели",
+    "segment": "first_question",
+    "pillar": "education",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_7",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-08",
+    "date": "2026-11-08",
+    "topic": "Износ и желаемое изменение",
+    "segment": "compare_options",
+    "pillar": "process",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_8",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-09",
+    "date": "2026-11-09",
+    "topic": "Почему важны ограничения",
+    "segment": "returning",
+    "pillar": "process",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_9",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-10",
+    "date": "2026-11-10",
+    "topic": "Деталь шва крупным планом",
+    "segment": "first_question",
+    "pillar": "process",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_10",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-11",
+    "date": "2026-11-11",
+    "topic": "Как описать размер",
+    "segment": "compare_options",
+    "pillar": "process",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_11",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-12",
+    "date": "2026-11-12",
+    "topic": "Какие варианты обсудить",
+    "segment": "returning",
+    "pillar": "process",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_12",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-13",
+    "date": "2026-11-13",
+    "topic": "Что спросить о материале",
+    "segment": "first_question",
+    "pillar": "process",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_13",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-14",
+    "date": "2026-11-14",
+    "topic": "Проверка брифа",
+    "segment": "compare_options",
+    "pillar": "process",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_14",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-15",
+    "date": "2026-11-15",
+    "topic": "Сохранить вещь: варианты",
+    "segment": "returning",
+    "pillar": "questions",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_15",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-16",
+    "date": "2026-11-16",
+    "topic": "Когда нужна консультация",
+    "segment": "first_question",
+    "pillar": "questions",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_16",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-17",
+    "date": "2026-11-17",
+    "topic": "Что пока неизвестно",
+    "segment": "compare_options",
+    "pillar": "questions",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_17",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-18",
+    "date": "2026-11-18",
+    "topic": "Как проверить понимание",
+    "segment": "returning",
+    "pillar": "questions",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_18",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-19",
+    "date": "2026-11-19",
+    "topic": "Понятное описание задачи",
+    "segment": "first_question",
+    "pillar": "questions",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_19",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-20",
+    "date": "2026-11-20",
+    "topic": "Подготовить вопрос заранее",
+    "segment": "compare_options",
+    "pillar": "questions",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_20",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-21",
+    "date": "2026-11-21",
+    "topic": "Итог учебного примера",
+    "segment": "returning",
+    "pillar": "questions",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_21",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-22",
+    "date": "2026-11-22",
+    "topic": "Проверь исходные факты",
+    "segment": "first_question",
+    "pillar": "review",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_22",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-23",
+    "date": "2026-11-23",
+    "topic": "Как уточнить следующий шаг",
+    "segment": "compare_options",
+    "pillar": "review",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_23",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-24",
+    "date": "2026-11-24",
+    "topic": "Что входит в подготовку",
+    "segment": "returning",
+    "pillar": "review",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_24",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-25",
+    "date": "2026-11-25",
+    "topic": "Как сравнивать варианты",
+    "segment": "first_question",
+    "pillar": "review",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_25",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-26",
+    "date": "2026-11-26",
+    "topic": "Почему важна обратная связь",
+    "segment": "compare_options",
+    "pillar": "review",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_26",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-27",
+    "date": "2026-11-27",
+    "topic": "Что обновить в брифе",
+    "segment": "returning",
+    "pillar": "review",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_27",
+    "status": "planned_not_published"
+  },
+  {
+    "id": "POST-28",
+    "date": "2026-11-28",
+    "topic": "Итог месяца и новые вопросы",
+    "segment": "first_question",
+    "pillar": "review",
+    "cta": "Подготовь фото вещи и вопрос",
+    "claims": [
+      {
+        "text": "Учебный вымышленный бренд",
+        "evidence_id": "F1"
+      }
+    ],
+    "url": "https://example.test/repair?utm_source=social&utm_medium=organic&utm_campaign=repair_nov&utm_content=post_28",
+    "status": "planned_not_published"
+  }
+]

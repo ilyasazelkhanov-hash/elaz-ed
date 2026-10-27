@@ -1,0 +1,9 @@
+import {forecast} from './metrics.mjs'
+const status=document.getElementById('kpis'),select=document.getElementById('channel'),spend=document.getElementById('spend'),prediction=document.getElementById('forecast')
+try{
+ const response=await fetch('report.json');if(!response.ok)throw Error('report_unavailable');const report=await response.json()
+ function render(){const rows=report.campaign.lastTouch.filter(row=>select.value==='all'||row.channel===select.value),orders=rows.reduce((sum,row)=>sum+row.orders,0),revenue=rows.reduce((sum,row)=>sum+row.revenue,0),cost=rows.reduce((sum,row)=>sum+row.spend,0);status.textContent=`Заказов: ${orders}. Выручка: ${revenue} ₸. Расходы: ${cost} ₸. ROAS: ${(revenue/cost).toFixed(2)}. Это учёт последнего касания, не причинный эффект.`}
+ function scenario(){try{const result=forecast({spend:Number(spend.value),cpc:100,leadRate:.1,qualifiedRate:.6,purchaseRate:.25,averageOrder:6500,grossMargin:.4});prediction.textContent=`Ожидаемых заказов: ${result.expectedOrders.toFixed(2)}. Выручка: ${result.revenue.toFixed(0)} ₸. Вклад после рекламы: ${result.contributionAfterAds.toFixed(0)} ₸. Налоги и постоянные расходы не включены.`}catch{prediction.textContent='Укажи неотрицательный учебный бюджет.'}}
+ select.onchange=render;spend.oninput=scenario;render();scenario()
+ const calendarResponse=await fetch('calendar.json');if(!calendarResponse.ok)throw Error('calendar_unavailable');for(const entry of await calendarResponse.json()){const li=document.createElement('li');li.textContent=`${entry.date}: ${entry.topic} · ${entry.segment} · план`;document.getElementById('calendar').append(li)}
+}catch{status.setAttribute('role','alert');status.textContent='Не удалось открыть учебные данные. Восстанови архив или пересобери report.json и calendar.json.';select.disabled=true;spend.disabled=true}

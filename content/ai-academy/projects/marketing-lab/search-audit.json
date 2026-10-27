@@ -1,0 +1,49 @@
+{
+  "provenance": "six_authored_mock_answers_not_real_search_runs",
+  "engine": "synthetic-fixture",
+  "scope": "Only these six invented answers; no market visibility score",
+  "queries": [
+    {
+      "id": "Q1",
+      "query": "Как подготовить вещь к обсуждению ремонта",
+      "answer": "В учебном примере «Второй шов» предлагает подготовить фото вещи и вопрос.",
+      "citation": "https://example.test/repair",
+      "live_source_checked": false
+    },
+    {
+      "id": "Q2",
+      "query": "Что спросить у мастерской",
+      "answer": "Этот вымышленный ответ описывает общие вопросы к мастерской без упоминания бренда.",
+      "citation": null,
+      "live_source_checked": false
+    },
+    {
+      "id": "Q3",
+      "query": "Как описать повреждение",
+      "answer": "Этот вымышленный ответ описывает общие вопросы к мастерской без упоминания бренда.",
+      "citation": null,
+      "live_source_checked": false
+    },
+    {
+      "id": "Q4",
+      "query": "Какие фото нужны",
+      "answer": "Этот вымышленный ответ описывает общие вопросы к мастерской без упоминания бренда.",
+      "citation": null,
+      "live_source_checked": false
+    },
+    {
+      "id": "Q5",
+      "query": "Как сравнить варианты ремонта",
+      "answer": "Этот вымышленный ответ описывает общие вопросы к мастерской без упоминания бренда.",
+      "citation": null,
+      "live_source_checked": false
+    },
+    {
+      "id": "Q6",
+      "query": "Что проверить перед решением",
+      "answer": "Этот вымышленный ответ описывает общие вопросы к мастерской без упоминания бренда.",
+      "citation": null,
+      "live_source_checked": false
+    }
+  ]
+}

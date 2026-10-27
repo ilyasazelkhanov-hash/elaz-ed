@@ -1,0 +1,34 @@
+{
+  "provenance": "authored_fixture_not_live_competitor_research",
+  "facts": [
+    {
+      "id": "F1",
+      "text": "Второй шов — вымышленная мастерская для учебного проекта.",
+      "source": "author_fixture",
+      "checked_at": "2026-10-26"
+    },
+    {
+      "id": "F2",
+      "text": "В учебном сценарии предлагается подготовить фото вещи и вопрос.",
+      "source": "author_fixture",
+      "checked_at": "2026-10-26"
+    }
+  ],
+  "segments": [
+    {
+      "id": "first_question",
+      "job": "Понять, что подготовить для первого вопроса",
+      "status": "hypothesis"
+    },
+    {
+      "id": "compare_options",
+      "job": "Сравнить возможные способы сохранить вещь",
+      "status": "hypothesis"
+    },
+    {
+      "id": "returning",
+      "job": "Уточнить следующий шаг после прошлой консультации",
+      "status": "hypothesis"
+    }
+  ]
+}
