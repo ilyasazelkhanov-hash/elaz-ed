@@ -1,0 +1,20 @@
+.academy-journey-course{color:var(--color-violet);font-size:12px;text-align:left}
+.academy-journey-location{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:16px}
+.academy-journey-location b{font-size:17px}.academy-journey-location>span{color:var(--color-mute);font-size:11px}
+.academy-journey-module-title{margin-top:9px;font-size:13px;line-height:1.6}
+.academy-journey-module-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:16px}
+.academy-journey-module-steps li{border-top:4px solid var(--color-line);padding-top:8px;color:var(--color-mute);font-size:10px}
+.academy-journey-module-steps li[aria-current=step]{border-color:var(--color-violet);color:var(--color-violet);font-weight:700}
+.academy-journey-note{margin-top:12px;color:var(--color-mute);font-size:12px;line-height:1.7}
+.academy-journey-neighbours{display:grid;gap:12px;margin-top:16px}
+.academy-journey-link{display:flex;align-items:center;gap:12px;width:100%;padding:15px;border:1px solid var(--color-line);border-radius:16px;text-align:left;min-width:0}
+.academy-journey-link>span{flex:1;min-width:0}.academy-journey-link svg{flex-shrink:0}
+.academy-journey-link small{display:block;color:var(--color-mute);font-size:11px}
+.academy-journey-link b{display:block;margin-top:6px;font-size:13px;font-weight:600;line-height:1.6;overflow-wrap:anywhere}
+.academy-journey-link em{display:block;margin-top:7px;font-size:11px;font-style:normal;color:var(--color-mute)}
+.academy-journey-link.is-next{background:var(--color-card2);border-color:var(--color-violet)}
+.academy-journey-finish{padding:15px;border-radius:16px;background:var(--color-card2);font-size:13px}.academy-journey-finish p{margin-top:8px;color:var(--color-mute);font-size:12px;line-height:1.7}
+.academy-program-order{padding:16px;margin-bottom:16px;border:1px solid var(--color-line);border-radius:16px;background:var(--color-card2);font-size:13px;line-height:1.7}
+.academy-program-order p+p{margin-top:8px}.academy-program-order strong{color:var(--color-violet)}
+.academy-program-lesson-number{display:block;min-width:24px;margin-top:2px;color:var(--color-violet);font-size:12px;font-weight:650}
+.academy-program-lesson-status{display:block;margin-top:7px;color:var(--color-violet);font-size:10px}

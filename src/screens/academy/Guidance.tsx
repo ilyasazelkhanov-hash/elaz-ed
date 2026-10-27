@@ -4,6 +4,7 @@ import { courseGuide, lessonGuide, lessonTerms } from '../../lib/academy-guidanc
 import { copyText } from '../../lib/tg'
 import { Tap } from '../../ui'
 import { LessonVideos } from './Videos'
+import { LessonVisuals } from './LessonVisuals'
 import { panel, text, type Entity } from './shared'
 
 export function CourseGuidance({ course, modules, lessons, preview = false }: { course: Entity; modules: Entity[]; lessons: Entity[]; preview?: boolean }) {
@@ -44,7 +45,7 @@ export function LessonGuidance({ lesson, module }: { lesson: Entity; module?: En
   const ready = lesson.state === 'published'
   const checks = guide.criteria.length ? guide.criteria : guide.guide?.checks || []
   async function copyPrompt() { setCopied(await copyText(guide.prompt)) }
-  return <><LessonVideos code={lesson.code}/><section className={`${panel} academy-guidance`} aria-label="Подсказки к занятию">
+  return <><LessonVisuals code={lesson.code}/><LessonVideos code={lesson.code}/><section className={`${panel} academy-guidance`} aria-label="Подсказки к занятию">
     <p className="academy-kicker">{ready ? 'Разберём по шагам' : 'Подготовка к будущему занятию'}</p>
     <h2 className="mt-3 font-display text-[20px] font-semibold">{ready ? 'Как пройти это занятие' : 'С чего можно начать'}</h2>
     {!ready && <p className="mt-3 text-sm leading-relaxed text-mute">Это открытый ориентир по теме. Полный урок и проверка ещё готовятся; эта подготовка не даёт зачёт.</p>}
