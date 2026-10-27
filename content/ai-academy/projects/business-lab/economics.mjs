@@ -20,3 +20,8 @@ export function pilotDecision(metrics,policy){
  if(metrics.comparablePairs<policy.minComparablePairs)return{decision:'collect_more_evidence',reason:'insufficient_comparable_pairs'}
  return{decision:'limited_next_stage_review',reason:'local_thresholds_met_not_causal_proof'}
 }
+export function wilsonRate(successes,total,z=1.96){
+ if(!Number.isSafeInteger(total)||total<1||!Number.isSafeInteger(successes)||successes<0||successes>total||!Number.isFinite(z)||z<=0)throw Error('invalid_proportion')
+ const p=successes/total,denominator=1+z*z/total,center=(p+z*z/(2*total))/denominator,margin=z*Math.sqrt(p*(1-p)/total+z*z/(4*total*total))/denominator
+ return{low:Math.max(0,center-margin),high:Math.min(1,center+margin),method:'Wilson score interval; independent binomial observations assumed, not guaranteed by the synthetic paired dataset.'}
+}

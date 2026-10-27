@@ -8,3 +8,5 @@ const {parsePilot,pilotMetrics,capacityScenario,pilotDecision}=await import('./e
 const metrics=pilotMetrics(parsePilot(await readFile(root+'pilot.csv','utf8'))),scenario=JSON.parse(await readFile(root+'scenario.json','utf8'))
 await writeFile(root+'report.json',JSON.stringify({metrics,gate:pilotDecision(metrics,scenario.qualityGate),scenarios:[3,6,10].map(minutesSaved=>({minutesSaved,...capacityScenario({...scenario,minutesSaved})}))},null,2)+'\n')
 console.log('Generated descriptive pilot metrics and three explicitly hypothetical capacity scenarios.')
+const {choosePortfolio}=await import('./portfolio.mjs')
+await writeFile(root+'portfolio-report.json',JSON.stringify(choosePortfolio(JSON.parse(await readFile(root+'portfolio.json','utf8'))),null,2)+'\n')

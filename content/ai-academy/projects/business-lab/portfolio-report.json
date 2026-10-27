@@ -1,0 +1,10 @@
+{
+  "ids": [
+    "DATA",
+    "FAQ"
+  ],
+  "setupCost": 120000,
+  "effortHours": 60,
+  "scenarioNetCapacityValue": 240000,
+  "scope": "Fictional capacity valuation under declared constraints, not cash profit, approval or causal evidence."
+}
