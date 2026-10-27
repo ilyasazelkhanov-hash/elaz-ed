@@ -30,7 +30,7 @@ export function useAcademy<T = any>(action: string, payload: Record<string, unkn
 }
 export function ProgramNotice({ preview, refresh }: { preview?: boolean; refresh: () => void }) {
   if (!preview) return null
-  return <section role="status" className={panel}><h2 className="font-semibold text-sm">Программы курсов</h2><p className="mt-2 text-sm leading-relaxed text-mute">Сейчас доступна программа с подсказками. Учебные материалы и запись на курс появятся после подключения обучения.</p><Tap onClick={refresh} className="academy-chip mt-3"><RefreshCw size={15}/>Обновить</Tap></section>
+  return <section role="status" className={panel}><h2 className="font-semibold text-sm">Программы курсов</h2><p className="mt-2 text-sm leading-relaxed text-mute">Сейчас открыта ознакомительная программа с подсказками. Уроки и запись на курс временно недоступны. Попробуй обновить или открой материалы для чтения.</p><Tap onClick={refresh} className="academy-chip mt-3"><RefreshCw size={15}/>Обновить</Tap></section>
 }
 export function FetchState({ loading, error, refresh }: { loading: boolean; error: string; refresh: () => void }) { const t=useAcademyTranslation(); return <>{loading && <div role="status" aria-label={t('Загрузка')} className="space-y-3 py-5">{[1, 2, 3].map((x) => <div key={x} className="skeleton h-24 rounded-[24px]" />)}<span className="sr-only">{t("Загружаем академию…")}</span></div>}{error && <section role="alert" className={panel}><h2 className="font-semibold">{t("Не удалось загрузить")}</h2><p className="mt-2 text-sm text-mute">{error}</p><Tap onClick={refresh} className="mt-4 flex items-center gap-2 text-violet"><RefreshCw size={16} />{t("Попробовать ещё раз")}</Tap></section>}</> }
 export function useAction(refresh?: () => void) {

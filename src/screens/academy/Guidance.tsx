@@ -3,16 +3,17 @@ import { ArrowRight, Check, Copy, Lightbulb } from 'lucide-react'
 import { courseGuide, lessonGuide, lessonTerms } from '../../lib/academy-guidance'
 import { copyText } from '../../lib/tg'
 import { Tap } from '../../ui'
+import { LessonVideos } from './Videos'
 import { panel, text, type Entity } from './shared'
 
-export function CourseGuidance({ course, modules, lessons }: { course: Entity; modules: Entity[]; lessons: Entity[] }) {
+export function CourseGuidance({ course, modules, lessons, preview = false }: { course: Entity; modules: Entity[]; lessons: Entity[]; preview?: boolean }) {
   const guide = courseGuide(course.code)
   if (!guide) return null
   return <section className={`${panel} academy-guidance`} aria-label="Курс простыми словами">
     <p className="academy-kicker">Понятный старт</p>
     <h2 className="mt-3 font-display text-[21px] font-semibold">Что ты научишься делать</h2>
     <p className="mt-3 text-sm leading-relaxed">{guide.summary}</p>
-    <p className="mt-3 text-xs leading-relaxed text-mute">Опубликовано занятий: {lessons.filter(lesson => lesson.state === 'published').length} из {lessons.length}. Подсказки к планам помогают подготовиться; обучение открывается после публикации материалов.</p>
+    <p className="mt-3 text-xs leading-relaxed text-mute">{preview ? `Показана программа из ${lessons.length} занятий. Актуальный доступ к обучению можно проверить обновлением страницы курса.` : `Опубликовано занятий: ${lessons.filter(lesson => lesson.state === 'published').length} из ${lessons.length}. Подсказки к планам помогают подготовиться; обучение открывается после публикации материалов.`}</p>
     <figure className="academy-learning-map">
       <img src={`/learning/academy/${course.code.split('-')[0].toLowerCase()}.svg`} alt="" width="720" height="360" loading="lazy"/>
       <figcaption>
@@ -43,7 +44,7 @@ export function LessonGuidance({ lesson, module }: { lesson: Entity; module?: En
   const ready = lesson.state === 'published'
   const checks = guide.criteria.length ? guide.criteria : guide.guide?.checks || []
   async function copyPrompt() { setCopied(await copyText(guide.prompt)) }
-  return <section className={`${panel} academy-guidance`} aria-label="Подсказки к занятию">
+  return <><LessonVideos code={lesson.code}/><section className={`${panel} academy-guidance`} aria-label="Подсказки к занятию">
     <p className="academy-kicker">{ready ? 'Разберём по шагам' : 'Подготовка к будущему занятию'}</p>
     <h2 className="mt-3 font-display text-[20px] font-semibold">{ready ? 'Как пройти это занятие' : 'С чего можно начать'}</h2>
     {!ready && <p className="mt-3 text-sm leading-relaxed text-mute">Это открытый ориентир по теме. Полный урок и проверка ещё готовятся; эта подготовка не даёт зачёт.</p>}
@@ -53,5 +54,5 @@ export function LessonGuidance({ lesson, module }: { lesson: Entity; module?: En
     <details className="academy-help"><summary>Подсказка 3 · спросить AI <span aria-hidden="true">+</span></summary><p>Сначала попробуй сам. Затем скопируй запрос, чтобы разобрать тему, а не получить готовую работу.</p><blockquote className="academy-prompt">{guide.prompt}</blockquote><Tap className="academy-chip mt-3" onClick={() => void copyPrompt()}>{copied ? <Check size={15}/> : <Copy size={15}/>}Скопировать запрос</Tap><p role="status" aria-live="polite">{copied ? 'Запрос скопирован' : ''}</p></details>
     {checks.length > 0 && <fieldset className="academy-self-check"><legend>Перед тем как идти дальше</legend>{checks.map((check, index) => <label key={`${lesson.code}-${index}`}><input type="checkbox"/><span>{check}</span></label>)}<p>Это личная самопроверка. Зачёт сохраняется только после выполнения условий занятия.</p></fieldset>}
     <Glossary title={lesson.title} code={lesson.code}/>
-  </section>
+  </section></>
 }

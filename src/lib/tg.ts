@@ -60,6 +60,7 @@ export const haptic = {
 }
 
 export function openLink(url: string) {
+  if (url.startsWith('/')) url = new URL(url, location.origin).href
   if (inTelegram && /^https:\/\/t\.me\//.test(url)) return safe(() => wa.openTelegramLink(url))
   if (wa?.openLink && inTelegram) return safe(() => wa.openLink(url))
   window.open(url, '_blank', 'noopener')
