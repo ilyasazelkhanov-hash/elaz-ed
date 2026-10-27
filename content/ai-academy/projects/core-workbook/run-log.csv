@@ -1,0 +1,9 @@
+run_id,lesson_code,date,product,model_or_undisclosed,tool_settings,prompt_file,input_file,result_file,errors,review_minutes,state
+A1,CORE-000-M1-L3,,,,,,,,,,not_run
+A2,CORE-000-M1-L3,,,,,,,,,,not_run
+B1,CORE-000-M1-L3,,,,,,,,,,not_run
+B2,CORE-000-M1-L3,,,,,,,,,,not_run
+I1,CORE-000-M2-L3,,,,,,,,,,not_run
+I2,CORE-000-M2-L3,,,,,,,,,,not_run
+T1,CORE-000-M3-L2,,,,,,,,,,not_run
+T2,CORE-000-M3-L2,,,,,,,,,,not_run

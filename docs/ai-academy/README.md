@@ -1,5 +1,7 @@
 # Курсы AI Academy
 
+**[Начать с AI Core и первого приложения: файлы и подробные примеры](first-courses.md)**
+
 **[Как проходить курс: порядок уроков и примеры экранов](how-to-learn.md)**
 
 **[Открыть программы курсов](https://elaz-ed.vercel.app/academy)** · **[Смотреть видео](https://elaz-ed.vercel.app/learning/academy/videos/index.html)** · [Файлы MP4 в репозитории](../../public/learning/academy/videos)

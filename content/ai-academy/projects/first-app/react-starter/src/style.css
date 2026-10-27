@@ -1,0 +1,1 @@
+*{box-sizing:border-box}body{margin:0;background:#f3effa;color:#242036;font:16px/1.8 system-ui,sans-serif}main{width:min(760px,100%);margin:auto;padding:28px 20px}h1{font-size:clamp(25px,5vw,38px);line-height:1.25}h2{font-size:20px}.label{color:#624b9d;font-weight:650}section{padding:22px;margin-top:18px;background:white;border:1px solid #dcd4ea;border-radius:20px}

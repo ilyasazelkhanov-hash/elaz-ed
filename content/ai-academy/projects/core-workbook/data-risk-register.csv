@@ -1,0 +1,6 @@
+risk_id,object_or_action,purpose,provenance,minimum_required_data,tool_or_destination,permission_evidence,possible_event,possible_harm,control,owner,next_step,status
+R-01,,,,,,,,,,,,not_reviewed
+R-02,,,,,,,,,,,,not_reviewed
+R-03,,,,,,,,,,,,not_reviewed
+R-04,,,,,,,,,,,,not_reviewed
+R-05,,,,,,,,,,,,not_reviewed
