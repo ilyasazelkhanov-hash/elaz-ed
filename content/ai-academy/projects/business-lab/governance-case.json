@@ -1,0 +1,6 @@
+{
+  "provenance": "fictional_tabletop_rehearsal_not_real_incident",
+  "incident": {"id":"TRAINING-01","owner":"fictional_operator","status":"mitigated","fixVersion":"draft-check-v2","event":"Черновик добавил отсутствующий срок; обнаружено до выдачи","containment":"Выдача приостановлена в сценарии, ручная сверка назначена"},
+  "review": {"reviewer":"fictional_peer","policyVersion":"training-v1","fixVersion":"draft-check-v2","residualRiskAccepted":true,"evidence":["УЧЕБНОЕ: исходный случай повторно разобран без добавления срока","УЧЕБНОЕ: независимый пример включён в план проверки"]},
+  "scope":"Эти строки не являются доказательствами фактически проведённой независимой проверки. Собственная карточка требует реального выполнения и подтверждения полномочий."
+}
