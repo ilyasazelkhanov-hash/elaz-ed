@@ -1,4 +1,4 @@
-# Команда открывает праздник
+# Демонстрации Elaz Ed
 
 Готовая Remotion-композиция ElazEdEmployeesDemo: 60 секунд, 1080 × 1920, 30 fps.
 Демо для HR и внутренних коммуникаций: адвент, знания, игры, корпоратив, постоянное пространство команды и разработка под компанию.
@@ -40,4 +40,10 @@
 npm run lint — ESLint и TypeScript.
 node scripts/qa-stills.mjs — 34 контрольных PNG-кадра в out/qa (использует установленный Edge).
 Исходный сценарий: ../../docs/demo-videos/02-employees.md.
-MP4 не экспортировался: результат этого этапа — исходники и предпросмотр Studio.
+Готовые MP4 публикуются в `../../public/learning/academy/videos/`. Ссылки и статус каждого ролика: [готовые видео](../../docs/demo-videos/README.md).
+
+## Новые композиции
+
+`ElazEdUsersDemo` — пользовательский путь, 9 сцен; `ElazEdCustomersDemo` — демонстрация разработки клиентского клуба, 8 сцен. Обе по 60 секунд, 1080×1920, 30 fps. Данные вымышлены. Тексты и тайминги редактируются в `src/audience-plans.ts`; UI — в `src/AudienceDemos.tsx`. Музыка оригинальная, записанного диктора нет.
+
+Экспорт с системным Chromium: `npx remotion render src/index.ts ElazEdUsersDemo out/users.mp4 --browser-executable=/usr/bin/chromium --concurrency=2 --codec=h264 --crf=24`. Перед публикацией проверь длительность, 1800 кадров, аудиопоток и контрольные кадры.

@@ -1,4 +1,5 @@
 import {Composition, Folder} from 'remotion';
+import {UsersDemo,CustomersDemo} from './AudienceDemos';
 import {EmployeesDemo} from './EmployeesDemo';
 import {HookScene} from './scenes/Hook';
 import {CalendarScene} from './scenes/Calendar';
@@ -11,6 +12,8 @@ import {FinalScene} from './scenes/Final';
 import './styles.css';
 
 export const RemotionRoot = () => <>
+  <Composition id="ElazEdUsersDemo" component={UsersDemo} durationInFrames={1800} fps={30} width={1080} height={1920}/>
+  <Composition id="ElazEdCustomersDemo" component={CustomersDemo} durationInFrames={1800} fps={30} width={1080} height={1920}/>
   <Composition id="ElazEdEmployeesDemo" component={EmployeesDemo} durationInFrames={1800} fps={30} width={1080} height={1920} defaultProps={{brandName: 'Орбита', accentColor: '#FFD166', contact: '@elazart', musicVolume: 0.65, voiceoverSrc: ''}}/>
   <Folder name="Scenes">
     <Composition id="Hook" component={HookScene} durationInFrames={150} fps={30} width={1080} height={1920} defaultProps={{brandName: 'Орбита', accentColor: '#FFD166', contact: '@elazart'}}/>

@@ -5,8 +5,8 @@
 | Видео | Готовность | Файл |
 | --- | --- | --- |
 | Для команды | Готово · 60 сек · 1080×1920 | [Скачать MP4](https://github.com/ilyasazelkhanov-hash/elaz-ed/raw/refs/heads/main/public/learning/academy/videos/elaz-ed-employees.mp4) |
-| Для пользователей | Экспортируется | Ссылка появится после проверки |
-| Для клиентов бизнеса | В работе | Ссылка появится после проверки |
+| Для пользователей | Готово · 60 сек · 1080×1920 | [Скачать MP4](https://github.com/ilyasazelkhanov-hash/elaz-ed/raw/refs/heads/main/public/learning/academy/videos/elaz-ed-users.mp4) |
+| Для клиентов бизнеса | Готово · 60 сек · 1080×1920 | [Скачать MP4](https://github.com/ilyasazelkhanov-hash/elaz-ed/raw/refs/heads/main/public/learning/academy/videos/elaz-ed-customers.mp4) |
 | Учебный анонс CR-101 | Готово · 15 сек | [MP4](../../public/learning/academy/videos/creative-intro.mp4) |
 | Учебный монтаж CR-201 | Готово · 12 сек | [MP4](../../public/learning/academy/videos/creative-campaign.mp4) |
 
