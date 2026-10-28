@@ -33,12 +33,13 @@ const root=path.resolve(__dirname,'..')
   const page=await context.newPage(),errors=[],out=path.join(root,'test-results/og-clarity');await fs.mkdir(out,{recursive:true});page.on('pageerror',e=>errors.push(e.message))
   const shot=async name=>{await page.waitForTimeout(200);await page.screenshot({path:path.join(out,name)})}
   await page.goto('http://127.0.0.1:5180/');const nav=page.getByRole('navigation',{name:'Основные разделы'});await nav.waitFor()
-  for(const label of ['Главная','Курсы','Блог','Профиль']){const button=nav.getByRole('button',{name:label,exact:true});await button.waitFor();assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();return r.height>=44&&r.width>=44}))}
-  const courseTitle=page.getByRole('region',{name:'Курсы',exact:true}).getByRole('heading',{name:'Курсы',exact:true});assert.ok(await courseTitle.evaluate(el=>el.getBoundingClientRect().top<250))
+  for(const label of ['Главная','Рейтинг','Профиль']){const button=nav.getByRole('button',{name:label,exact:true});await button.waitFor();assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();return r.height>=44&&r.width>=44}))}
+  const game=page.getByRole('button',{name:'Мой уровень и прогресс',exact:true});await game.waitFor();assert.ok(await game.evaluate(el=>el.getBoundingClientRect().bottom<innerHeight))
+  assert.equal(await nav.getByRole('button',{name:'Блог',exact:true}).count(),0);assert.equal(await nav.getByRole('button',{name:'Курсы',exact:true}).count(),0)
   assert.equal(await page.getByRole('heading',{name:'Все уроки',exact:true}).count(),0)
   assert.equal(await page.getByText('LEGACY HIDDEN COURSE',{exact:true}).count(),0)
   await shot('01-home.png')
-  await nav.getByRole('button',{name:'Блог',exact:true}).click();await page.getByRole('heading',{name:'Блог',exact:true,level:1}).waitFor();await page.getByLabel('Поиск в блоге').fill('Новость об инструментах')
+  await page.getByRole('button',{name:'Все публикации',exact:true}).click();await page.getByRole('heading',{name:'Блог',exact:true,level:1}).waitFor();await page.getByLabel('Поиск в блоге').fill('Новость об инструментах')
   const articleButton=page.getByRole('button',{name:'Читать публикацию: Новость об инструментах ИИ',exact:true});await articleButton.waitFor()
   assert.doesNotMatch(await articleButton.innerText(),/XP|Пройдено|квиз/i)
   await shot('02-blog.png');await articleButton.click();const article=page.getByRole('region',{name:'Публикация блога'});await article.getByRole('heading',{level:1}).waitFor();await article.getByText('Что изменилось',{exact:true}).waitFor()
@@ -50,9 +51,9 @@ const root=path.resolve(__dirname,'..')
   assert.equal(requests.filter(r=>['complete','quiz_start','quiz_answer'].includes(r.name)).length,0)
   assert.equal(state.progress.length,1)
   await page.getByText('Не удалось сохранить лайк. Попробуй ещё раз.',{exact:true}).waitFor({state:'hidden'})
-  await page.getByRole('button',{name:'Назад',exact:true}).click();await nav.getByRole('button',{name:'Блог',exact:true}).waitFor();await page.getByRole('button',{name:'Непрочитанные',exact:true}).click()
+  await page.getByRole('button',{name:'Назад',exact:true}).click();await page.getByRole('heading',{name:'Блог',exact:true,level:1}).waitFor();await page.getByRole('button',{name:'Непрочитанные',exact:true}).click()
   assert.equal(await page.getByRole('button',{name:'Читать публикацию: Новость об инструментах ИИ',exact:true}).count(),0)
-  await nav.getByRole('button',{name:'Курсы',exact:true}).click();const catalogUI=page.locator('[data-course-catalog]');await catalogUI.waitFor();assert.equal(await catalogUI.getByRole('button',{name:/Открыть курс/}).count(),28)
+  await nav.getByRole('button',{name:'Главная',exact:true}).click();await page.getByRole('button',{name:'Все курсы',exact:true}).click();const catalogUI=page.locator('[data-course-catalog]');await catalogUI.waitFor();assert.equal(await catalogUI.getByRole('button',{name:/Открыть курс/}).count(),28)
   await shot('04-courses.png');await catalogUI.getByRole('button',{name:/Открыть курс/}).first().click();const program=page.locator('[data-course-program]');await program.waitFor()
   await program.getByText('Твой прогресс · 1 из 16 уроков',{exact:true}).waitFor()
   assert.equal(await page.getByRole('navigation',{name:'Разделы курсов'}).count(),0)
@@ -62,10 +63,10 @@ const root=path.resolve(__dirname,'..')
   for(const width of [320,390,1024]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))}
   await page.goto('http://127.0.0.1:5180/?sp=c1#/blog');await page.getByRole('heading',{name:'Блог',exact:true,level:1}).waitFor();assert.equal(await page.getByRole('heading',{name:'Старый курс скрыт'}).count(),0)
   await nav.getByRole('button',{name:'Профиль',exact:true}).click();await page.getByRole('button',{name:'Демо Академии',exact:true}).waitFor();await page.getByRole('button',{name:'ИИ-сертификации',exact:true}).waitFor()
-  // All four labels remain visible and large enough on a narrow phone.
+  // All three primary controls remain available and large enough on a narrow phone.
   await nav.getByRole('button',{name:'Главная',exact:true}).click()
   await page.setViewportSize({width:320,height:844})
-  for(const label of ['Главная','Курсы','Блог','Профиль'])assert.ok(await nav.getByRole('button',{name:label,exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.left>=0&&r.right<=innerWidth}))
+  for(const label of ['Главная','Рейтинг','Профиль'])assert.ok(await nav.getByRole('button',{name:label,exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.left>=0&&r.right<=innerWidth}))
   fixtures.boot.me.is_admin=true
   await page.goto('http://127.0.0.1:5180/#/profile')
   await page.getByRole('button',{name:'Админка',exact:true}).click()
@@ -74,7 +75,7 @@ const root=path.resolve(__dirname,'..')
   assert.equal(await page.getByText('Квиз',{exact:true}).count(),0)
   assert.equal(await page.getByText('XP за урок',{exact:true}).count(),0)
   assert.deepEqual(errors,[])
-  const result={mainNavigation:['Главная','Курсы','Блог','Профиль'],homeCoursesAboveFold:true,blog:'separate article reader with no quiz or XP claims',blogReload:true,blogLikeRollback:true,readMarkers:'local, separate from learning',courseCatalog:28,courseUI:'native OG, no Academy navigation or branded cover',sqlProgress:'1 of 16; resumes lesson 2',legacyCourses:'hidden',additionalFeatures:'available in profile',blogEditor:'publication, no quiz or XP controls',viewports:[320,390,1024],pageErrors:errors,evidence:'local production build + synthetic API, not live Telegram'}
+  const result={mainNavigation:['Главная','Рейтинг','Профиль'],homeGamificationVisible:true,blog:'separate article reader with no quiz or XP claims',blogReload:true,blogLikeRollback:true,readMarkers:'local, separate from learning',courseCatalog:28,courseUI:'native OG, no Academy navigation or branded cover',sqlProgress:'1 of 16; resumes lesson 2',legacyCourses:'hidden',additionalFeatures:'available in profile',blogEditor:'publication, no quiz or XP controls',viewports:[320,390,1024],pageErrors:errors,evidence:'local production build + synthetic API, not live Telegram'}
   await fs.writeFile(path.join(out,'checks.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result))
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exit(1)})

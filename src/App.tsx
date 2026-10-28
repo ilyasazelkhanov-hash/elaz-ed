@@ -1,4 +1,4 @@
-import { House, BookOpen, Newspaper, User } from 'lucide-react'
+import { House, Trophy, User } from 'lucide-react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
@@ -254,15 +254,37 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
   }
 }
 
-const TABS: {id:Tab;label:string;icon:typeof House}[]=[
- {id:'home',label:'Главная',icon:House},
- {id:'courses',label:'Курсы',icon:BookOpen},
- {id:'blog',label:'Блог',icon:Newspaper},
- {id:'profile',label:'Профиль',icon:User},
+const TABS: { id: Tab; label: string; icon: typeof House }[] = [
+  { id: 'home', label: 'Главная', icon: House },
+  { id: 'top', label: 'Рейтинг', icon: Trophy },
+  { id: 'profile', label: 'Профиль', icon: User },
 ]
-function Nav(){
- const tab=useStore(s=>s.tab),setTab=useStore(s=>s.setTab)
- return <nav aria-label="Основные разделы" className="absolute inset-x-3 bottom-0 z-20 mb-3 grid grid-cols-4 rounded-[24px] border border-line bg-float/95 p-1.5 shadow-[var(--shadow-float)] backdrop-blur-xl" style={{marginBottom:'calc(12px + var(--bottom))'}}>
-  {TABS.map(({id,label,icon:Icon})=><Tap key={id} aria-label={label} aria-current={tab===id?'page':undefined} onClick={()=>tab===id?document.querySelector('[data-tab-scroll]')?.scrollTo({top:0,behavior:'smooth'}):setTab(id)} className={`flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-[18px] px-1 text-[11px] font-semibold ${tab===id?'bg-violet/15 text-violet':'text-mute'}`}><Icon size={21}/><span>{label}</span></Tap>)}
- </nav>
+
+function Nav() {
+  const tab = useStore((s) => s.tab)
+  const setTab = useStore((s) => s.setTab)
+  // Повторное нажатие на открытую вкладку возвращает к началу экрана.
+  const toTop = () => document.querySelector('[data-tab-scroll]')?.scrollTo({ top: 0, behavior: 'smooth' })
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center" style={{ paddingBottom: 'calc(14px + var(--bottom))' }}>
+      <nav aria-label="Основные разделы" className="pointer-events-auto flex gap-1 rounded-full border border-line bg-float/85 p-1.5 shadow-[var(--shadow-float)] backdrop-blur-xl">
+        {TABS.map(({ id, label, icon: Icon }) => {
+          const active = tab === id || id==='home'&&(tab==='courses'||tab==='blog')
+          return (
+            <Tap key={id} feedback="select" onClick={() => (tab===id ? toTop() : setTab(id))} aria-label={label} aria-current={active?'page':undefined} className={`relative flex h-11 items-center gap-2 rounded-full px-4 ${active ? 'text-white' : 'text-mute'}`}>
+              {active && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-full" style={{ background: 'var(--aurora)' }} transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
+              <Icon size={19} strokeWidth={2.2} className="relative" />
+              <AnimatePresence initial={false}>
+                {active && (
+                  <motion.span initial={{ width: 0, opacity: 0 }} animate={{ width: 'auto', opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="relative overflow-hidden whitespace-nowrap text-[13px] font-semibold">
+                    {label}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Tap>
+          )
+        })}
+      </nav>
+    </div>
+  )
 }

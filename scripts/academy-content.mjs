@@ -2,6 +2,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises'
 import {pathToFileURL,fileURLToPath} from 'node:url'
 import path from 'node:path'
 import {createHash} from 'node:crypto'
+import {writeCourseMaterials} from './course-materials.mjs'
 import {academyDemoSample} from './academy-demo-sample.mjs'
 import {publicAcademyCatalog} from './academy-public.mjs'
 import {writeCourseBooks} from './academy-books.mjs'
@@ -110,6 +111,7 @@ export async function buildContent(){
  const packs=await loadAuthoredPacks()
  const catalog=composeLearningCatalog(base,packs)
  const publicCatalog=publicAcademyCatalog(catalog)
+ await writeCourseMaterials(catalog,root)
  await writeIfChanged(path.join(root,'content/ai-academy/demo.sample.json'),JSON.stringify(academyDemoSample(catalog),null,2)+'\n')
  await writeIfChanged(path.join(root,'content/ai-academy/catalog.public.json'),JSON.stringify(publicCatalog,null,2)+'\n')
  await writeIfChanged(path.join(root,'content/ai-academy/course-directory.json'),JSON.stringify(publicCatalog.entities.filter(n=>n.kind==='course'),null,2)+'\n')

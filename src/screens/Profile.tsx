@@ -13,8 +13,6 @@ import { getMode, setMode, type ThemeMode } from '../lib/theme'
 import { useTilt } from '../lib/tilt'
 import type { Me } from '../lib/types'
 import { useStore } from '../store'
-import { DailyCard, StreakCard } from './home/Daily'
-import { AdventBanner } from './advent/Banner'
 import { Avatar, Counter, Emoji, Pattern, Sheet, Tap } from '../ui'
 
 
@@ -49,8 +47,6 @@ export function Profile() {
       </div>
 
       <Tap className="mx-5 mt-4 flex w-[calc(100%-40px)] items-center justify-between rounded-2xl border border-line bg-card p-4 text-left" onClick={()=>push({type:'learning',path:'/courses/my-learning'})}><span><b className="block text-sm">Моё обучение</b><span className="mt-1 block text-xs text-mute">Курсы, работы и результаты</span></span><ChevronRight size={18}/></Tap>
-      <div className="mx-5 mt-4">{me.daily_claimed?<StreakCard/>:<DailyCard/>}</div>
-      <AdventBanner/>
       <div className="mx-5 mt-4 grid grid-cols-2 gap-3" aria-label="Дополнительные разделы">
        {[{label:'Рейтинг',icon:Trophy,open:()=>useStore.getState().setTab('top')},{label:'Мой маршрут',icon:Compass,open:()=>push({type:'journey'})},{label:'ИИ-сертификации',icon:Award,open:()=>push({type:'certifications'})},{label:'Демо Академии',icon:BookOpen,open:()=>push({type:'academy',path:'/academy'})}].map(item=><Tap key={item.label} onClick={item.open} className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><item.icon size={20} className="shrink-0 text-violet"/>{item.label}</Tap>)}
       </div>

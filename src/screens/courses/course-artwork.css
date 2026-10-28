@@ -1,0 +1,10 @@
+.og-course-art{width:100%;height:168px;overflow:hidden;position:relative;background:radial-gradient(ellipse at 50% 115%,color-mix(in srgb,var(--art-a) 24%,transparent),transparent 75%),#17122e}
+.og-course-art svg{display:block;width:100%;height:100%;overflow:visible}
+.og-art-cube{animation:og-course-float 5s ease-in-out infinite;transform-origin:180px 90px}
+.og-art-note{animation:og-course-float 6.5s ease-in-out infinite;animation-delay:-1.7s}
+.og-art-note.is-second{animation-delay:-3.2s}
+.og-art-orbit{animation:og-course-orbit 18s linear infinite;transform-origin:180px 112px}
+.og-course-art[data-animated=false] :is(.og-art-cube,.og-art-note,.og-art-orbit){animation-play-state:paused}
+@keyframes og-course-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes og-course-orbit{from{transform:rotate(-7deg)}50%{transform:rotate(7deg)}to{transform:rotate(-7deg)}}
+@media(prefers-reduced-motion:reduce){.og-course-art *{animation:none!important}}

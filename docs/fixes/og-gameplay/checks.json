@@ -1,0 +1,192 @@
+{
+  "navigation": [
+    "Главная",
+    "Рейтинг",
+    "Профиль"
+  ],
+  "levelXpStreakAndDailyBonus": "visible on home",
+  "emojiCdnFailure": "native fallback, no broken visible images",
+  "covers": "animated in view; paused for reduced motion",
+  "publicMaterialHttpChecks": [
+    {
+      "code": "CORE-000",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "VC-101",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "VC-201",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "VC-301",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "ENG-101",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "ENG-201",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "ENG-301",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "AU-101",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "AU-201",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "AU-301",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "AG-101",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "AG-201",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "AG-301",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "CR-101",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "CR-201",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "CR-301",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "DS-101",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "DS-201",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "DS-301",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "MK-101",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "MK-201",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "MK-301",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "DT-101",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "DT-201",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "DT-301",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "BI-101",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "BI-201",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    },
+    {
+      "code": "BI-301",
+      "status": 200,
+      "lessons": 16,
+      "substantive": true
+    }
+  ],
+  "lessons": 448,
+  "readingWithCourseApi503": true,
+  "reload": true,
+  "crossModule": "1.4 → 2.1",
+  "fakeEnrollmentsAndGrades": 0,
+  "viewports": [
+    320,
+    390,
+    1024
+  ],
+  "pageErrors": [],
+  "evidence": "local production build; course API deliberately returns 503, not live Telegram"
+}

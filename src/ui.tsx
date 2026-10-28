@@ -85,7 +85,9 @@ export function Emoji({ char, size = 24, animated = false, className = '' }: { c
           animatedEmojiLoads.set(webpUrl, Promise.resolve(false))
           setAnimationUrl(undefined)
         } else {
-          setFallback({ char, stage: stage + 1 })
+          // Retry without the variation selector only if that changes the URL.
+          // Otherwise the same failed src would never emit another error.
+          setFallback({ char, stage: stage===0&&emojiCode(char,false)!==code?1:2 })
         }
       }}
     />
