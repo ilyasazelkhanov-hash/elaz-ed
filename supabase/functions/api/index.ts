@@ -995,18 +995,27 @@ async function adminRefund(body: Row) {
 
 async function adminList(body: Row) {
   await member(body, true)
-  const dayStart = new Date(Date.now() - 24 * 3600_000).toISOString()
-  const [lessons, users, subs, active, done] = await Promise.all([
-    db.from('lessons').select('*').order('created_at', { ascending: false }).limit(500),
-    db.from('users').select('id', { count: 'exact', head: true }),
-    db.from('users').select('id', { count: 'exact', head: true }).eq('subscribed', true),
-    db.from('users').select('id', { count: 'exact', head: true }).gte('last_seen', dayStart),
-    db.from('progress').select('lesson_id', { count: 'exact', head: true }),
+  const scope=body.scope
+  if(scope!=null&&!['summary','blog','stories','legacy'].includes(scope))throw new HttpError(400,'bad_scope')
+  if(body.cursor!=null&&(!Number.isSafeInteger(body.cursor)||body.cursor<=0))throw new HttpError(400,'bad_cursor')
+  const search=String(body.query??'').trim().slice(0,120)
+  let materials=db.from('lessons').select('*')
+  if(scope==='stories')materials=materials.eq('kind','story')
+  if(scope==='blog')materials=materials.eq('kind','lesson').is('course_id',null)
+  if(scope==='legacy')materials=materials.eq('kind','lesson').not('course_id','is',null)
+  if(scope&&body.cursor!=null)materials=materials.lt('id',body.cursor)
+  if(scope&&search)materials=materials.ilike('title',`%${search.replace(/[\\%_]/g,'\\$&')}%`)
+  const dayStart=new Date(Date.now()-24*3600_000).toISOString()
+  const [lessons,users,subs,active,done]=await Promise.all([
+    scope==='summary'?Promise.resolve({data:[],error:null}):scope?materials.order('id',{ascending:false}).limit(31):materials.order('created_at',{ascending:false}).limit(500),
+    db.from('users').select('id',{count:'exact',head:true}),
+    db.from('users').select('id',{count:'exact',head:true}).eq('subscribed',true),
+    db.from('users').select('id',{count:'exact',head:true}).gte('last_seen',dayStart),
+    db.from('progress').select('lesson_id',{count:'exact',head:true}),
   ])
-  return {
-    lessons: lessons.data ?? [],
-    stats: { users: users.count ?? 0, subscribed: subs.count ?? 0, active: active.count ?? 0, completions: done.count ?? 0 },
-  }
+  if([lessons,users,subs,active,done].some(result=>result.error))throw new HttpError(500,'db')
+  const page=(lessons.data??[]).slice(0,scope?30:500)
+  return {lessons:page,next:scope&&(lessons.data??[]).length>30?page.at(-1)!.id:null,stats:{users:users.count??0,subscribed:subs.count??0,active:active.count??0,completions:done.count??0}}
 }
 
 async function adminAnalytics(body: Row) {

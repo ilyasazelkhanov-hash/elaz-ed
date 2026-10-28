@@ -1,0 +1,27 @@
+{
+  "hub": "blog / stories / current course materials",
+  "blogArchive": 620,
+  "serverSearch": "old title outside first 500",
+  "separateLists": true,
+  "blogSettings": "promotion, no quiz/XP/course selector",
+  "storySettings": "slides and view XP, no blog promotion",
+  "legacy": "separate archive",
+  "courses": "current LMS admin, not demo",
+  "backNavigation": true,
+  "saves": [
+    {
+      "kind": "lesson",
+      "course_id": null,
+      "xp": 0,
+      "pinned": true
+    },
+    {
+      "kind": "story",
+      "course_id": null,
+      "xp": 7,
+      "pinned": false
+    }
+  ],
+  "pageErrors": [],
+  "evidence": "local production build + synthetic API; no live Telegram or database writes"
+}

@@ -14,10 +14,11 @@ const root=path.resolve(__dirname,'..')
   Object.assign(fixtures.boot.feed.find(c=>c.id===fixtures.post.id),{...fixtures.post,body:null})
   const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'}),requests=[]
   await context.addInitScript(()=>{window.Telegram={WebApp:{initData:'SYNTHETIC_OG_UX',initDataUnsafe:{user:{id:55,first_name:'Student'}},platform:'android',isVersionAtLeast:()=>false,ready(){},expand(){},onEvent(){},offEvent(){}}}})
-  await context.route('**/telegram.org/**',r=>r.abort())
+  await context.route('**/telegram.org/**',r=>r.abort());await context.route('**/fonts.gstatic.com/**',r=>r.abort())
   await context.route(/\/functions\/v1\/api\//,async route=>{
    const name=new URL(route.request().url()).pathname.split('/').pop(),body=JSON.parse(route.request().postData()||'{}'),send=(json,status=200)=>route.fulfill({json,status,headers:{'access-control-allow-origin':'*'}});requests.push({name,action:body.action})
    if(name==='boot')return send(fixtures.boot)
+   if(name==='blog_feed')return send({posts:fixtures.boot.feed.filter(p=>p.kind==='lesson'&&!p.course_id),next:null})
    if(name==='lesson')return send(fixtures.post)
    if(name==='like')return send({error:'db'},500)
    if(name==='admin_list')return send({lessons:[],stats:{users:1}})
@@ -33,7 +34,7 @@ const root=path.resolve(__dirname,'..')
   const page=await context.newPage(),errors=[],out=path.join(root,'test-results/og-clarity');await fs.mkdir(out,{recursive:true});page.on('pageerror',e=>errors.push(e.message))
   const shot=async name=>{await page.waitForTimeout(200);await page.screenshot({path:path.join(out,name)})}
   await page.goto('http://127.0.0.1:5180/');const nav=page.getByRole('navigation',{name:'Основные разделы'});await nav.waitFor()
-  for(const label of ['Главная','Рейтинг','Профиль']){const button=nav.getByRole('button',{name:label,exact:true});await button.waitFor();assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();return r.height>=44&&r.width>=44}))}
+  for(const label of ['Главная','Рейтинг','Профиль']){const button=nav.getByRole('button',{name:label,exact:true});await button.waitFor().catch(async error=>{console.log('NAVFAIL',errors,(await page.locator('body').innerText()).slice(0,1500),await nav.innerHTML());throw error});assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();return r.height>=44&&r.width>=44}))}
   const game=page.getByRole('button',{name:'Мой уровень и прогресс',exact:true});await game.waitFor();assert.ok(await game.evaluate(el=>el.getBoundingClientRect().bottom<innerHeight))
   assert.equal(await nav.getByRole('button',{name:'Блог',exact:true}).count(),0);assert.equal(await nav.getByRole('button',{name:'Курсы',exact:true}).count(),0)
   assert.equal(await page.getByRole('heading',{name:'Все уроки',exact:true}).count(),0)
@@ -70,8 +71,8 @@ const root=path.resolve(__dirname,'..')
   fixtures.boot.me.is_admin=true
   await page.goto('http://127.0.0.1:5180/#/profile')
   await page.getByRole('button',{name:'Админка',exact:true}).click()
-  await page.getByRole('button',{name:'Публикация',exact:false}).click()
-  await page.getByText('Новая публикация',{exact:true}).waitFor()
+  await page.getByRole('button',{name:'Блог',exact:false}).click();await page.getByRole('button',{name:'Новая публикация',exact:true}).click()
+  await page.getByRole('heading',{name:'Новая публикация',level:1,exact:true}).waitFor()
   assert.equal(await page.getByText('Квиз',{exact:true}).count(),0)
   assert.equal(await page.getByText('XP за урок',{exact:true}).count(),0)
   assert.deepEqual(errors,[])

@@ -1,0 +1,354 @@
+[
+  {
+    "code": "CORE-000-M1-L1",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Подобрать инструмент под вопрос"
+    ]
+  },
+  {
+    "code": "CORE-000-M1-L2",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Подобрать инструмент под вопрос"
+    ]
+  },
+  {
+    "code": "CORE-000-M1-L3",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Подобрать инструмент под вопрос"
+    ]
+  },
+  {
+    "code": "CORE-000-M1-L4",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Подобрать инструмент под вопрос"
+    ]
+  },
+  {
+    "code": "CORE-000-M2-L1",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Сверить ответ с разрешённым фрагментом"
+    ]
+  },
+  {
+    "code": "CORE-000-M2-L2",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Сверить ответ с разрешённым фрагментом"
+    ]
+  },
+  {
+    "code": "CORE-000-M2-L3",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Сверить ответ с разрешённым фрагментом"
+    ]
+  },
+  {
+    "code": "CORE-000-M2-L4",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Сверить ответ с разрешённым фрагментом"
+    ]
+  },
+  {
+    "code": "CORE-000-M3-L1",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Посчитать стоимость принятого черновика"
+    ]
+  },
+  {
+    "code": "CORE-000-M3-L2",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Посчитать стоимость принятого черновика"
+    ]
+  },
+  {
+    "code": "CORE-000-M3-L3",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Посчитать стоимость принятого черновика"
+    ]
+  },
+  {
+    "code": "CORE-000-M3-L4",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Посчитать стоимость принятого черновика"
+    ]
+  },
+  {
+    "code": "CORE-000-M4-L1",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Проследить путь одного материала"
+    ]
+  },
+  {
+    "code": "CORE-000-M4-L2",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Проследить путь одного материала"
+    ]
+  },
+  {
+    "code": "CORE-000-M4-L3",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Проследить путь одного материала"
+    ]
+  },
+  {
+    "code": "CORE-000-M4-L4",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Проследить путь одного материала"
+    ]
+  },
+  {
+    "code": "VC-101-M1-L1",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Сузить идею до одного действия"
+    ]
+  },
+  {
+    "code": "VC-101-M1-L2",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Сузить идею до одного действия"
+    ]
+  },
+  {
+    "code": "VC-101-M1-L3",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Сузить идею до одного действия"
+    ]
+  },
+  {
+    "code": "VC-101-M1-L4",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Сузить идею до одного действия"
+    ]
+  },
+  {
+    "code": "VC-101-M2-L1",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Показать четыре состояния формы"
+    ]
+  },
+  {
+    "code": "VC-101-M2-L2",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Показать четыре состояния формы"
+    ]
+  },
+  {
+    "code": "VC-101-M2-L3",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Показать четыре состояния формы"
+    ]
+  },
+  {
+    "code": "VC-101-M2-L4",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Показать четыре состояния формы"
+    ]
+  },
+  {
+    "code": "VC-101-M3-L1",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Отличить надпись от сохранённой записи"
+    ]
+  },
+  {
+    "code": "VC-101-M3-L2",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Отличить надпись от сохранённой записи"
+    ]
+  },
+  {
+    "code": "VC-101-M3-L3",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Отличить надпись от сохранённой записи"
+    ]
+  },
+  {
+    "code": "VC-101-M3-L4",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Отличить надпись от сохранённой записи"
+    ]
+  },
+  {
+    "code": "VC-101-M4-L1",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Проверить опубликованную версию"
+    ]
+  },
+  {
+    "code": "VC-101-M4-L2",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Проверить опубликованную версию"
+    ]
+  },
+  {
+    "code": "VC-101-M4-L3",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Проверить опубликованную версию"
+    ]
+  },
+  {
+    "code": "VC-101-M4-L4",
+    "roles": [
+      "beginner",
+      "module_example"
+    ],
+    "titles": [
+      "Мини-пример",
+      "Проверить опубликованную версию"
+    ]
+  }
+]

@@ -1170,6 +1170,36 @@ test('admin can promote and unpromote a blog post; ordinary members cannot',asyn
  const updated=await call('admin_save',{lesson:{...saved.body,pinned:false}},ADMIN);assert.equal(updated.status,200);assert.equal(updated.body.pinned,false)
 })
 
+test('admin content sections paginate their entire own archive without mixing stories or course lessons',async()=>{
+ await everyoneBoots()
+ state.tables.lessons=[
+  ...Array.from({length:620},(_,i)=>({id:i+1,kind:'lesson',course_id:null,title:`Blog ${i+1}`,quiz:[],published:i%2===0})),
+  ...Array.from({length:400},(_,i)=>({id:1001+i,kind:'story',course_id:null,title:`Story ${i+1}`,quiz:[],published:true})),
+  ...Array.from({length:10},(_,i)=>({id:2001+i,kind:'lesson',course_id:1,title:`Legacy ${i+1}`,quiz:[],published:true})),
+ ]
+ for(const [scope,total] of [['blog',620],['stories',400],['legacy',10]]){
+  let cursor=null,all=[],pages=0
+  do{const response=await call('admin_list',{scope,cursor},ADMIN);assert.equal(response.status,200);all.push(...response.body.lessons);cursor=response.body.next;assert.ok(++pages<30)}while(cursor)
+  assert.equal(all.length,total);assert.equal(new Set(all.map(item=>item.id)).size,total)
+  assert.ok(all.every(item=>scope==='stories'?item.kind==='story':item.kind==='lesson'&&(scope==='blog'?item.course_id==null:item.course_id!=null)))
+ }
+ assert.equal((await call('admin_list',{scope:'summary'},ADMIN)).body.lessons.length,0)
+})
+test('admin section search reaches old titles and treats SQL wildcard characters literally',async()=>{
+ await everyoneBoots()
+ state.tables.lessons=[{id:1,kind:'lesson',course_id:null,title:'Old 100%_ literal',quiz:[]},...Array.from({length:600},(_,i)=>({id:i+2,kind:'lesson',course_id:null,title:`New ${i}`,quiz:[]})),{id:900,kind:'story',course_id:null,title:'Old 100%_ story',quiz:[]}]
+ for(const query of ['Old','%_']){
+  const response=await call('admin_list',{scope:'blog',query},ADMIN);assert.equal(response.status,200);assert.deepEqual(response.body.lessons.map(item=>item.id),[1]);assert.equal(response.body.next,null)
+ }
+})
+test('scoped admin content list retains admin authorization and reports database failures',async()=>{
+ await everyoneBoots()
+ assert.equal((await call('admin_list',{scope:'blog'},BUYER)).status,403)
+ for(const body of [{scope:'invalid'},{scope:'blog',cursor:-1},{scope:'stories',cursor:'10'}])assert.equal((await call('admin_list',body,ADMIN)).status,400)
+ state.failNext={table:'lessons',op:'select'}
+ assert.equal((await call('admin_list',{scope:'blog'},ADMIN)).status,500)
+})
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()

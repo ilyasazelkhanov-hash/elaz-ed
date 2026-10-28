@@ -50,3 +50,34 @@ test('publication removes a withdrawn generated edition while preserving unrelat
  assert.equal(index.courses.length,28)
  assert.ok(index.courses.every(c=>c.lessons.every(l=>!l.data&&!l.content_blocks)))
 })
+
+test('public books deliver reviewed lesson and course references without bundling source bodies',()=>{
+ const books=courseMaterials(catalog),core=books.find(book=>book.course.code==='CORE-000')
+ const nist=core.lessons.find(lesson=>lesson.code==='CORE-000-M1-L1').sources.find(source=>source.code==='AUTH-SRC-CORE-NIST')
+ assert.equal(nist.url,'https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf')
+ assert.match(nist.title,/NIST/);assert.equal(nist.checked_at,'2026-10-18')
+ assert.ok(core.sources.some(source=>source.code==='AUTH-SRC-CORE-NIST'))
+ assert.equal(books.reduce((sum,book)=>sum+book.lessons.filter(lesson=>lesson.sources.length>0).length,0),448)
+ assert.equal(books.reduce((sum,book)=>sum+book.sources.length+book.lessons.reduce((total,lesson)=>total+lesson.sources.length,0),0),851)
+ for(const book of books)for(const source of [...book.sources,...book.lessons.flatMap(lesson=>lesson.sources)]){
+  assert.ok(source.url.startsWith('https://'));assert.ok(source.title);assert.equal(source.data,undefined)
+  assert.equal(source.body,undefined);assert.equal(source.note,undefined)
+ }
+})
+test('external references require reviewed rights and safe URLs; arbitrary notes and data stay private',()=>{
+ const input=structuredClone(catalog),target='CORE-000-M1-L1'
+ const add=(code,data={},link={},state='published')=>{
+  input.entities.push({code,kind:'source',state,title:code,data:{url:'https://example.org/public-guide',rights_state:'public_link',link_state:'verified',checked_at:'2026-10-28',...data}})
+  input.links.push({source_code:code,target_code:target,visibility:'student',usage:'supplementary',...link})
+ }
+ add('VISIBLE',{author:'Public author',body:'PRIVATE_SOURCE_BODY',notes:'PRIVATE_SOURCE_NOTES',questions:[{answer:'PRIVATE_SOURCE_ANSWER'}]},{start_seconds:0,end_seconds:30,note:'PRIVATE_LINK_NOTE',private_notes:'PRIVATE_LINK_FIELD'})
+ for(const [index,url]of ['javascript:alert(1)','http://example.org/guide','https://user:password@example.org/guide','https://example.org/?token=PRIVATE_TOKEN','https://example.org/?api_key=PRIVATE_TOKEN','https://example.org/?X-Amz-Signature=PRIVATE_TOKEN'].entries())add(`UNSAFE-${index}`,{url})
+ add('INTERNAL',{}, {visibility:'internal'});add('METHOD',{}, {usage:'methodological'});add('INTERNAL-USE',{}, {usage:'internal'})
+ add('DRAFT',{}, {},'draft');add('UNVERIFIED',{link_state:'unchecked'});add('NO-RIGHTS',{rights_state:'unknown'});add('NO-DATE',{checked_at:''})
+ const books=courseMaterials(input),lesson=books.find(book=>book.course.code==='CORE-000').lessons.find(lesson=>lesson.code===target)
+ const visible=lesson.sources.find(source=>source.code==='VISIBLE')
+ assert.equal(visible.url,'https://example.org/public-guide');assert.equal(visible.author,'Public author')
+ assert.equal(visible.start_seconds,0);assert.equal(visible.end_seconds,30)
+ assert.ok(lesson.sources.every(source=>!source.code.startsWith('UNSAFE-')&&!['INTERNAL','METHOD','INTERNAL-USE','DRAFT','UNVERIFIED','NO-RIGHTS','NO-DATE'].includes(source.code)))
+ assert.doesNotMatch(JSON.stringify(books),/PRIVATE_(?:SOURCE_BODY|SOURCE_NOTES|SOURCE_ANSWER|LINK_NOTE|LINK_FIELD|TOKEN)/)
+})

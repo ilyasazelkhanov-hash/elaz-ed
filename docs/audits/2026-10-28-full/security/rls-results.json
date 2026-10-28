@@ -1,0 +1,8 @@
+{
+  "migrations": 24,
+  "tables": 81,
+  "functions": 114,
+  "suspiciousTables": [],
+  "publicFunctions": [],
+  "notes": "PGlite, fresh migrations; storage bucket schema and random bytes stubbed, not a live Supabase test"
+}

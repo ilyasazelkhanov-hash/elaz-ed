@@ -215,6 +215,8 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
           <CourseEditorScreen course={overlay.course} />
         </Suspense>
       )
+    case 'admin-content':
+      return <Suspense fallback={null}><AdminScreen scope={overlay.scope}/></Suspense>
     case 'admin':
       return (
         <Suspense fallback={null}>

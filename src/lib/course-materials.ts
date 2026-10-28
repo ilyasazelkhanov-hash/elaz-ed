@@ -1,8 +1,9 @@
 import {useEffect,useState} from 'react'
 import manifest from '../../content/ai-academy/materials-manifest.json'
 export const publicCourseMaterials=(code:string)=>manifest.courses.find(c=>c.course.code===code)
-export type PublicLesson={code:string;title:string;parent_code:string;position:number;data:{format:string;minutes:number;artifact:string;acceptance:string[];content_blocks:any[]}}
-export type PublicCourseBook={revision:string;course:{code:string;title:string};modules:{code:string;title:string;position:number}[];lessons:PublicLesson[]}
+export type PublicCourseSource={code:string;title:string;url:string;checked_at:string;language?:string;author?:string;provider?:string;rights?:string;allowed_use?:string;usage_rights?:string;start_seconds?:number;end_seconds?:number}
+export type PublicLesson={code:string;title:string;parent_code:string;position:number;sources?:PublicCourseSource[];data:{format:string;minutes:number;artifact:string;acceptance:string[];content_blocks:any[]}}
+export type PublicCourseBook={revision:string;sources?:PublicCourseSource[];course:{code:string;title:string};modules:{code:string;title:string;position:number}[];lessons:PublicLesson[]}
 const pending=new Map<string,Promise<PublicCourseBook>>()
 export function loadCourseMaterials(code:string):Promise<PublicCourseBook>{
  const index=publicCourseMaterials(code)

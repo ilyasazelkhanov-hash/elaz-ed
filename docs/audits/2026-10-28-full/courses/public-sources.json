@@ -1,0 +1,29 @@
+{
+  "studentLinks": 851,
+  "verifiedPublicLinks": 851,
+  "authoredLessonLinks": 786,
+  "affectedLessons": 448,
+  "coreNist": {
+    "code": "AUTH-SRC-CORE-NIST",
+    "kind": "source",
+    "parent_code": null,
+    "title": "NIST AI 600-1: Generative Artificial Intelligence Profile",
+    "position": 0,
+    "state": "published",
+    "version": 1,
+    "seed_managed": false,
+    "data": {
+      "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
+      "canonical_url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
+      "type": "documentation",
+      "source_type": "documentation",
+      "language": "EN",
+      "rights_state": "public_link",
+      "link_state": "verified",
+      "checked_at": "2026-10-18",
+      "rights": "Ссылка на официальный источник. Материал не перепечатывается.",
+      "authored_pack": "og-original:CORE-000:1"
+    }
+  },
+  "publicBookHasNist": false
+}

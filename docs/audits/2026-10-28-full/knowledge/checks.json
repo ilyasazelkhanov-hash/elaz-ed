@@ -1,0 +1,16 @@
+{
+  "audiences": true,
+  "topicSelection": true,
+  "journeyUsesActualCourses": true,
+  "blogCourseLinks": true,
+  "allExamples": true,
+  "approvedSources": true,
+  "apiUnavailableReader": true,
+  "viewports": [
+    320,
+    390,
+    1024
+  ],
+  "pageErrors": [],
+  "evidence": "local production build + synthetic API; not live Telegram"
+}

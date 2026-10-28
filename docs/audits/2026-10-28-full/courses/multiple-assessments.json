@@ -1,0 +1,14 @@
+{
+  "publishedAssessments": [
+    "Q1",
+    "Q2"
+  ],
+  "returnedAssessment": "Q1",
+  "returnedAssessmentAfterFirstPassed": "Q1",
+  "quizReceipt": {
+    "score": 100,
+    "passed": true
+  },
+  "completionError": "academy_assessment_required",
+  "otherAssessmentNotInLessonResponse": true
+}

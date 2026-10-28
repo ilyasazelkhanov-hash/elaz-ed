@@ -1,0 +1,149 @@
+{
+  "books": 28,
+  "lessons": 448,
+  "missing": [],
+  "externalLinks": 5,
+  "stats": [
+    {
+      "course": "AG-101",
+      "lessons": 16,
+      "chars": 56251
+    },
+    {
+      "course": "AG-201",
+      "lessons": 16,
+      "chars": 56035
+    },
+    {
+      "course": "AG-301",
+      "lessons": 16,
+      "chars": 57053
+    },
+    {
+      "course": "AU-101",
+      "lessons": 16,
+      "chars": 58314
+    },
+    {
+      "course": "AU-201",
+      "lessons": 16,
+      "chars": 55231
+    },
+    {
+      "course": "AU-301",
+      "lessons": 16,
+      "chars": 56590
+    },
+    {
+      "course": "BI-101",
+      "lessons": 16,
+      "chars": 49112
+    },
+    {
+      "course": "BI-201",
+      "lessons": 16,
+      "chars": 50884
+    },
+    {
+      "course": "BI-301",
+      "lessons": 16,
+      "chars": 51654
+    },
+    {
+      "course": "CORE-000",
+      "lessons": 16,
+      "chars": 85754
+    },
+    {
+      "course": "CR-101",
+      "lessons": 16,
+      "chars": 52178
+    },
+    {
+      "course": "CR-201",
+      "lessons": 16,
+      "chars": 51810
+    },
+    {
+      "course": "CR-301",
+      "lessons": 16,
+      "chars": 52590
+    },
+    {
+      "course": "DS-101",
+      "lessons": 16,
+      "chars": 50449
+    },
+    {
+      "course": "DS-201",
+      "lessons": 16,
+      "chars": 50378
+    },
+    {
+      "course": "DS-301",
+      "lessons": 16,
+      "chars": 50440
+    },
+    {
+      "course": "DT-101",
+      "lessons": 16,
+      "chars": 53064
+    },
+    {
+      "course": "DT-201",
+      "lessons": 16,
+      "chars": 49870
+    },
+    {
+      "course": "DT-301",
+      "lessons": 16,
+      "chars": 52284
+    },
+    {
+      "course": "ENG-101",
+      "lessons": 16,
+      "chars": 58236
+    },
+    {
+      "course": "ENG-201",
+      "lessons": 16,
+      "chars": 54028
+    },
+    {
+      "course": "ENG-301",
+      "lessons": 16,
+      "chars": 53558
+    },
+    {
+      "course": "MK-101",
+      "lessons": 16,
+      "chars": 49305
+    },
+    {
+      "course": "MK-201",
+      "lessons": 16,
+      "chars": 50873
+    },
+    {
+      "course": "MK-301",
+      "lessons": 16,
+      "chars": 50988
+    },
+    {
+      "course": "VC-101",
+      "lessons": 16,
+      "chars": 104642
+    },
+    {
+      "course": "VC-201",
+      "lessons": 16,
+      "chars": 57575
+    },
+    {
+      "course": "VC-301",
+      "lessons": 16,
+      "chars": 53349
+    }
+  ],
+  "study": 480
+}

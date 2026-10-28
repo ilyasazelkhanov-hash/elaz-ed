@@ -56,17 +56,18 @@ const TOOLS: { label: string; wrap: [string, string] }[] = [
 export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Kind }) {
   const { pop, push, toast, guard, boot } = useStore.getState()
   const feed = useStore((s) => s.feed)
-  const categories = useMemo(() => [...new Set(feed.filter((c) => c.kind === 'lesson').map((c) => c.category))], [feed])
+  const categories = useMemo(() => [...new Set(feed.filter((c) => c.kind === 'lesson' && (lesson?.course_id?c.course_id!=null:c.course_id==null)).map((c) => c.category))], [feed,lesson?.course_id])
   const [d, setD] = useState<LessonDraft>(() => (lesson ? { ...lesson } : blank(kind)))
   const [autoMinutes, setAutoMinutes] = useState(!lesson)
   const [courses, setCourses] = useState<AdminCourse[]>([])
 
   useEffect(() => {
+    if(!lesson?.course_id)return
     api
       .adminCourses()
       .then((r) => setCourses(r.courses))
       .catch(() => {})
-  }, [])
+  }, [lesson?.course_id])
   const [busy, setBusy] = useState<string | null>(null)
   const area = useRef<HTMLTextAreaElement>(null)
   const story = d.kind === 'story'
@@ -136,7 +137,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
   }
 
   const remove = async () => {
-    if (!d.id || !(await confirmDialog(`Удалить «${d.title}»? Прогресс подписчиков по нему тоже пропадёт.`))) return
+    if (!d.id || !(await confirmDialog(`Удалить «${d.title}»? ${post?'Публикация исчезнет из блога.':story?'Сторис исчезнет из подборки.':'Прогресс подписчиков по нему тоже пропадёт.'}`))) return
     setBusy('delete')
     try {
       await api.adminDelete(d.id)
@@ -159,7 +160,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
     <motion.div {...sheet} className="absolute inset-0 z-[31] bg-bg">
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(130px + var(--bottom))' }}>
         <Header
-          title={d.id ? 'Правка' : story ? 'Новая сторис' : post ? 'Новая публикация' : 'Новый урок'}
+          title={story ? (d.id?'Редактирование сторис':'Новая сторис') : post ? (d.id?'Редактирование публикации':'Новая публикация') : 'Архивный урок'}
           right={
             d.id ? (
               <Tap onClick={remove} aria-label="Удалить" className="grid h-10 w-10 place-items-center rounded-full border border-line bg-card text-rose">
@@ -170,6 +171,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
         />
 
         <div className="px-5">
+          <p className="mt-4 text-sm leading-relaxed text-mute">{story?'Настройки сторис: слайды, оформление и награда за просмотр.':post?'Настройки блога: текст статьи, обложка, категория и продвижение.':'Материал старого курса. Актуальные программы и задания редактируются в разделе «Материалы курсов».'}</p>
           <div className="mt-5 flex items-center gap-3.5">
             <EmojiTile emoji={d.emoji || '✨'} gradient={d.gradient} size={68} radius={22} />
             <div className="min-w-0 flex-1">
@@ -320,9 +322,9 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
 
               {courses.length > 0 && (
                 <>
-                  <Label hint="урок уйдёт из общей ленты на страницу курса">Курс</Label>
+                  <Label hint="назначение в архиве старых курсов">Курс</Label>
                   <div className="no-bar flex gap-1.5 overflow-x-auto">
-                    {[{ id: null, title: 'Без курса' }, ...courses].map((c) => (
+                    {courses.map((c) => (
                       <Tap key={c.id ?? 'none'} feedback="select" onClick={() => set('course_id', c.id)} className={`h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold ${d.course_id === c.id ? 'border-violet/60 bg-violet/15 text-ink' : 'border-line text-mute'}`}>
                         {c.title}
                       </Tap>

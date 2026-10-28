@@ -8,7 +8,7 @@ export const GOALS = [
 ] as const
 export function routeLessons(feed: Card[], courses: Course[], goalId: string): Card[] {
   const goal = GOALS.find((g) => g.id === goalId) ?? GOALS[0]
-  const available = feed.filter((c) => c.kind === 'lesson' && c.published && (!c.course_id || c.free_preview || courses.some((p) => p.id === c.course_id && p.access)))
+  const available = feed.filter((c) => c.kind === 'lesson' && c.published && c.course_id != null && (c.free_preview || courses.some((p) => p.id === c.course_id && p.access)))
   const relevant = available.filter((c) => goal.pattern.test(`${c.title} ${c.subtitle} ${c.category}`))
   return (relevant.length ? relevant : available).slice().sort((a, b) => a.position - b.position || a.id - b.id).slice(0, 4)
 }

@@ -1,0 +1,19 @@
+{
+  "setup": {
+    "status": 200,
+    "anonymous": true,
+    "mutatingTelegramMethods": [
+      "setWebhook",
+      "setChatMenuButton",
+      "setMyCommands",
+      "setMyShortDescription"
+    ]
+  },
+  "channelBootstrap": {
+    "attackerIsConfiguredAdmin": false,
+    "boundChannel": -1000777,
+    "precondition": "settings.channel is absent",
+    "status": 200
+  },
+  "evidence": "isolated in-memory Supabase and fake Telegram; no live requests"
+}

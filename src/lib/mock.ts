@@ -462,12 +462,18 @@ export const mockApi: Api = {
     save()
   },
 
-  async adminList() {
+  async adminList(input) {
     await wait()
-    return {
-      lessons: [...state.lessons].sort((a, b) => b.id - a.id),
-      stats: { users: 248, subscribed: 231, active: 64, completions: 512 + Object.keys(state.done).length },
+    const scope=input?.scope,query=(input?.query??'').toLowerCase()
+    let lessons=[...state.lessons].sort((a,b)=>b.id-a.id)
+    if(scope==='summary')lessons=[]
+    else if(scope){
+      lessons=lessons.filter(l=>scope==='stories'?l.kind==='story':l.kind==='lesson'&&(scope==='blog'?l.course_id==null:l.course_id!=null))
+      if(input?.cursor)lessons=lessons.filter(l=>l.id<input.cursor!)
+      if(query)lessons=lessons.filter(l=>l.title.toLowerCase().includes(query))
     }
+    const page=scope?lessons.slice(0,30):lessons
+    return {lessons:page,next:scope&&lessons.length>30?page.at(-1)!.id:null,stats:{users:248,subscribed:231,active:64,completions:512+Object.keys(state.done).length}}
   },
 
   async adminSave(draft) {

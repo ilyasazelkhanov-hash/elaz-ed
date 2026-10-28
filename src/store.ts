@@ -30,6 +30,7 @@ export type Overlay =
   | { type: 'journey' | 'club' | 'services' }
   | { type: 'academy' | 'learning'; path?: string }
   | { type: 'admin' }
+  | { type: 'admin-content'; scope: 'blog' | 'stories' | 'legacy' }
   | { type: 'analytics' }
   | { type: 'courses-admin' }
   | { type: 'course-editor'; course: AdminCourse | null }

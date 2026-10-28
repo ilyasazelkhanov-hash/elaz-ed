@@ -1,0 +1,7 @@
+.knowledge-hub{position:relative;background:linear-gradient(130deg,var(--color-card),#a78bfa18 55%,#f472b61a)}
+.knowledge-orb{position:absolute;right:-45px;top:-40px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ec489944,#8b5cf655 48%,transparent 70%);pointer-events:none;animation:knowledge-drift 9s ease-in-out infinite}
+.knowledge-path{background:linear-gradient(115deg,#8b5cf615,#ec489915);border:1px solid #a78bfa44;transition:box-shadow .25s,transform .25s}
+.knowledge-path:focus-visible{outline:2px solid #8b5cf6;outline-offset:3px}
+@media(hover:hover){.knowledge-path:hover{box-shadow:0 8px 30px #8b5cf622;transform:translateY(-2px)}}
+@keyframes knowledge-drift{0%,100%{transform:translate3d(0,0,0) scale(.92)}50%{transform:translate3d(-24px,28px,0) scale(1.08)}}
+@media(prefers-reduced-motion:reduce){.knowledge-orb{animation:none}.knowledge-path{transition:none}}

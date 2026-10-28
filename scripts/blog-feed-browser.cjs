@@ -53,7 +53,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=r
   await scroll();await page.waitForFunction(()=>document.querySelectorAll('[aria-label^="Читать публикацию:"]').length>=60)
   await page.screenshot({path:path.join(out,'home-feed.png')})
   // Admin switch is explicit, saved by the existing protected editor API.
-  await page.getByRole('navigation',{name:'Основные разделы'}).getByRole('button',{name:'Профиль',exact:true}).click();await page.getByRole('button',{name:'Админка',exact:true}).click();await page.getByRole('button',{name:'Публикация',exact:false}).click()
+  await page.getByRole('navigation',{name:'Основные разделы'}).getByRole('button',{name:'Профиль',exact:true}).click();await page.getByRole('button',{name:'Админка',exact:true}).click();await page.getByRole('button',{name:'Блог',exact:false}).click();await page.getByRole('button',{name:'Новая публикация',exact:true}).click()
   const toggle=page.getByRole('switch',{name:'Продвигать',exact:true});await toggle.waitFor();assert.equal(await toggle.getAttribute('aria-checked'),'false');await toggle.click();await page.screenshot({path:path.join(out,'admin-promote.png')})
   await page.getByPlaceholder('Как собрать бота за вечер').fill('Новая продвигаемая публикация');await page.getByRole('button',{name:'Опубликовать',exact:true}).click()
   await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(n=>n.textContent==='Сохранить'));assert.equal(saves.at(-1).pinned,true)

@@ -468,6 +468,9 @@ export type LessonDraft = Omit<Lesson, 'id' | 'completed' | 'liked' | 'views' | 
   id?: number
 }
 
+export type AdminContentScope = 'blog' | 'stories' | 'legacy'
+export type AdminListInput = {scope:AdminContentScope|'summary';cursor?:number|null;query?:string}
+
 export type BlogCursor = { pinned: boolean; date: string | null; id: number }
 export type BlogPage = { posts: Card[]; next: BlogCursor | null }
 
@@ -502,7 +505,7 @@ export interface Api {
   adminPayments(): Promise<Payment[]>
   /** Возвращает звёзды через Telegram и закрывает доступ, выданный за эту оплату. */
   adminRefund(id: number): Promise<void>
-  adminList(): Promise<{ lessons: Lesson[]; stats: AdminStats }>
+  adminList(input?:AdminListInput): Promise<{ lessons: Lesson[]; stats: AdminStats; next?:number|null }>
   adminSave(lesson: LessonDraft): Promise<Lesson>
   adminDelete(id: number): Promise<void>
   adminAnnounce(id: number): Promise<{ queued?: boolean } | void>

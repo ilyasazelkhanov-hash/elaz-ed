@@ -64,7 +64,7 @@ const httpApi: Api = {
   adminRefund: async (id) => {
     await call('admin_refund', { id })
   },
-  adminList: () => call('admin_list'),
+  adminList: (input) => call('admin_list', input??{}),
   adminSave: (lesson) => call('admin_save', { lesson }),
   adminDelete: async (id) => {
     await call('admin_delete', { id })

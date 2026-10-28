@@ -6,6 +6,7 @@ import { useStore } from '../store'
 import { Avatar, Bar, Counter, Emoji, Odometer, Ring, Tap } from '../ui'
 import { AdventBanner } from './advent/Banner'
 import { DailyCard, StreakCard } from './home/Daily'
+import {KnowledgeHub} from './home/KnowledgeHub'
 import { Feed } from './home/Feed'
 import { StoryBubble } from './home/parts'
 import { Award, ChevronRight } from 'lucide-react'
@@ -73,6 +74,7 @@ export function Home() {
         </AnimatePresence>
       </div>
 
+      <KnowledgeHub posts={lessons}/>
       <MainCourses />
 
       {stories.length > 0 && (

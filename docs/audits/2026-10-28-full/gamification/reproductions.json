@@ -1,0 +1,21 @@
+{
+  "journey": {
+    "returnedBlog": "Новости нейросетей",
+    "xp": 50,
+    "completed": false
+  },
+  "rating": {
+    "rank": 1,
+    "position": 2,
+    "xp": 100
+  },
+  "achievement": {
+    "firstStatus": 200,
+    "claimedAward": [
+      "first"
+    ],
+    "persisted": [],
+    "retryAlready": true,
+    "retryPersisted": []
+  }
+}
