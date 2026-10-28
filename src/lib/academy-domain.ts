@@ -162,7 +162,7 @@ export function createAcademyEngine(seed: AcademySeed, storage: Persistence) {
       return { rows: rows.slice(offset, offset+limit), total: rows.length }
     }
     const matches = (node: AcademyEntity) => {
-      const text = `${node.title} ${node.code} ${JSON.stringify(node.data)} ${node.code.startsWith('VC') ? 'вайбкодинг' : ''}`.toLowerCase()
+      const text = `${node.title} ${node.code} ${JSON.stringify(action==='admin_list'?node.data:sanitize(node).data)} ${node.code.startsWith('VC') ? 'вайбкодинг' : ''}`.toLowerCase()
       return !payload.q || text.includes(String(payload.q).trim().toLowerCase())
     }
     let result: any
@@ -309,7 +309,7 @@ export function createAcademyEngine(seed: AcademySeed, storage: Persistence) {
         const resolved=assessmentAccess(payload.code),lesson=resolved.lesson,assessment=resolved.config
         if (!assessment?.questions?.length) failure('assessment_not_configured')
         const limit = Number(assessment.max_attempts) || 3
-        const all = db.attempts.filter(a => a.user_id === actor.id && a.assessment_code === resolved.code)
+        const all = db.attempts.filter(a => a.user_id === actor.id && a.assessment_code === resolved.code && a.version === resolved.version)
         let attempt = all.find(a => a.state === 'started' && a.version===resolved.version)
         if (!attempt) {
           if (all.length >= limit) failure('attempt_limit')
@@ -345,7 +345,7 @@ export function createAcademyEngine(seed: AcademySeed, storage: Persistence) {
         if (action === 'submission_submit' && !text && !artifact) failure('artifact_required')
         const old = db.submissions.filter(s => s.user_id === actor.id && s.assessment_code === resolved.code)
         if (old.some(s => s.state === 'submitted')) failure('already_submitted')
-        let row = old.find(s => s.state === 'draft')
+        let row = old.find(s => s.state === 'draft' && s.assessment_version === resolved.version)
         const rubric=resolved.config?.rubric_code ? find(resolved.config.rubric_code,'rubric').data : lesson?.data.rubric ?? {}
         if (!row) { row = { id:uid(),user_id:actor.id,assessment_code:resolved.code,lesson_code:lesson?.code,course_code:courseFor(find(resolved.code)).code,version:old.length+1,assessment_version:resolved.version,rubric_snapshot:copy(rubric),rubric:copy(rubric),reviews:[],created_at:now() };db.submissions.push(row) }
         Object.assign(row,{text,artifact_url:artifact,artifact:{text,url:artifact},state:action === 'submission_submit' ? 'submitted':'draft',submitted_at:action === 'submission_submit' ? now():null})
@@ -406,8 +406,8 @@ export function createAcademyEngine(seed: AcademySeed, storage: Persistence) {
         if(course.state!=='published')failure('not_published')
         if(!eligible(course.code))failure('prerequisite_required')
         if (summary(course.code).state !== 'completed') failure('course_incomplete')
-        const capstones=db.entities.filter(e=>e.kind==='assessment'&&e.data.kind==='capstone'&&courseFor(e).code===course.code)
-        if (!capstones.length || capstones.some(l => !db.submissions.some(s => s.user_id === actor.id && s.assessment_code === l.code && s.state === 'passed'))) failure('capstone_required')
+        const capstones=db.entities.filter(e=>e.kind==='assessment'&&e.state==='published'&&e.data.kind==='capstone'&&courseFor(e).code===course.code)
+        if (!capstones.length || capstones.some(l => !db.submissions.some(s => s.user_id === actor.id && s.assessment_code === l.code && s.assessment_version === l.version && s.state === 'passed'))) failure('capstone_required')
         let certificate=db.certificates.find(c => c.user_id === actor.id && c.course_code === course.code)
         if (!certificate) {certificate={code:uid(),user_id:actor.id,course_code:course.code,course_version:course.version,issued_at:now()};db.certificates.push(certificate)}
         result=certificate;changed=true;break
@@ -500,6 +500,11 @@ export function createAcademyEngine(seed: AcademySeed, storage: Persistence) {
         break
       }
       default: failure('unknown_action')
+    }
+    if(action==='lesson'&&result.assessment){
+      const assessment=find(result.assessment.code)
+      const passed=db.attempts.find(a=>a.user_id===actor.id&&a.assessment_code===assessment.code&&a.version===assessment.version&&a.state==='passed')
+      result.quiz_result=passed?{passed:true,score:passed.score}:null
     }
     const event=({catalog:'catalog_view',course:'course_view',enroll:'enrolled',lesson:'lesson_open',quiz_start:'quiz_started',quiz_submit:'quiz_passed',submission_submit:'submission_submitted',complete:'lesson_completed',certificate:'certificate_issued'} as Record<string,string>)[action]
     if(event&&!(action==='quiz_submit'&&!result.passed)&&!db.events.some(e=>e.user_id===actor.id&&e.event===event&&e.entity_code===(action==='catalog'?'catalog':actionNode?.code??null))){db.events.push({user_id:actor.id,event,entity_code:action==='catalog'?'catalog':actionNode?.code??null,created_at:now()});changed=true}

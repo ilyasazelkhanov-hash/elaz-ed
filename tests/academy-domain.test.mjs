@@ -98,3 +98,25 @@ test('staff permissions are assigned only by administrator',async()=>{
  await api(admin,'admin_roles',{user_id:2,role:'editor',enabled:false})
  assert.equal((await api(student,'permissions',{})).editor,false)
 })
+
+test('search matches only public metadata for learners',async()=>{
+ const api=setup(),course=structuredClone(seed.entities.find(n=>n.code==='CORE-000'))
+ course.data={...course.data,description:'Public description',internal_notes:'HIDDEN_SEARCH_MARKER'}
+ await api(admin,'admin_save',{entity:course,expected_version:1})
+ assert.equal((await api(student,'catalog',{q:'HIDDEN_SEARCH_MARKER'})).total,0)
+ assert.equal((await api(student,'catalog',{q:'Public description'})).total,1)
+ assert.equal((await api(admin,'admin_list',{q:'HIDDEN_SEARCH_MARKER'})).total,1)
+})
+test('new quiz versions get fresh attempts while old results stay immutable',async()=>{
+ const versionSeed={entities:[node('C','course',null,{},'published'),node('M','module','C',{},'published'),node('L','lesson','M',{format:'knowledge_check',content_blocks:[{type:'markdown',text:'Learn'}]},'published'),node('Q','assessment','L',{kind:'quiz',max_attempts:1,questions:[{id:'q',prompt:'Pick',choices:['a','b'],answer:1}]},'published')],links:[],prerequisites:[]}
+ let state;const api=createAcademyEngine(versionSeed,{load:()=>state,save:s=>state=structuredClone(s)})
+ await api(student,'enroll',{code:'C'})
+ const first=await api(student,'quiz_start',{code:'Q'});await api(student,'quiz_submit',{attempt_id:first.id,answers:[1]})
+ assert.equal((await api(student,'lesson',{code:'L'})).quiz_result.passed,true)
+ await assert.rejects(api(student,'quiz_start',{code:'Q'}),/attempt_limit/)
+ const q=structuredClone(state.entities.find(n=>n.code==='Q'))
+ await api(admin,'admin_save',{entity:{...q,data:{...q.data,instructions:'New version'}},expected_version:q.version})
+ assert.equal((await api(student,'lesson',{code:'L'})).quiz_result,null)
+ const next=await api(student,'quiz_start',{code:'Q'});assert.notEqual(first.id,next.id)
+ assert.equal(state.attempts.find(a=>a.id===first.id).version,1)
+})

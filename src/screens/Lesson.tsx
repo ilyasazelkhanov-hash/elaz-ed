@@ -76,8 +76,10 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
     }
   }
 
+  const likePending = useRef(false)
   const toggleLike = async () => {
-    if (!lesson) return
+    if (!lesson || likePending.current) return
+    likePending.current = true
     const next = !liked
     if (next) sfx.pop()
     setLesson({ ...lesson, liked: next, likes: Math.max(0, likes + (next ? 1 : -1)) })
@@ -86,7 +88,11 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
       setLesson((l) => (l ? { ...l, ...res } : l))
       patchCard(id, res)
     } catch (e) {
+      setLesson(lesson)
       guard(e)
+      toast(errorText(e))
+    } finally {
+      likePending.current = false
     }
   }
 

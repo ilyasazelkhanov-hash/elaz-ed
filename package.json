@@ -20,7 +20,8 @@
     "preview": "vite preview",
     "academy:content": "node scripts/academy-content.mjs",
     "academy:release": "node --use-env-proxy scripts/academy-release.mjs",
-    "academy:enrich": "node scripts/academy-enrich-lessons.mjs"
+    "academy:enrich": "node scripts/academy-enrich-lessons.mjs",
+    "test:audit-fixes": "node --test tests/audit-fixes-database.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",
