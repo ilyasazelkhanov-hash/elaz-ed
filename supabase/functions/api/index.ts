@@ -224,14 +224,13 @@ async function refreshSub(row: Row, s: Settings, force: boolean): Promise<Row> {
 // Админка — только у аккаунтов из настройки admins (ключ — @username в нижнем регистре).
 // При первом входе username привязывается к Telegram ID: если его потом займёт другой человек, прав он не получит.
 async function resolveAdmin(row: Row, s: Settings): Promise<boolean> {
-  const admins: Record<string, number | null> = s.admins ?? {}
-  if (Object.values(admins).includes(row.id)) return true
-  const username = String(row.username ?? '').toLowerCase()
-  if (username && username in admins && admins[username] == null) {
-    await setSetting('admins', { ...admins, [username]: row.id })
-    return true
+  const { data, error } = await db.rpc('resolve_admin', { p_user: row.id, p_username: String(row.username ?? '').toLowerCase() })
+  if (error) throw new HttpError(503, 'db')
+  if (data === true && s.admins) {
+    const username = String(row.username ?? '').toLowerCase()
+    if (Object.hasOwn(s.admins, username) && s.admins[username] == null) { s.admins[username] = row.id; settingsCache = null }
   }
-  return false
+  return data === true
 }
 
 // Журнал событий для аналитики. Сбой записи не должен ломать запрос пользователя.
@@ -324,6 +323,7 @@ async function member(body: Row, admin = false): Promise<Row> {
   if (!data) throw new HttpError(401, 'no_user')
   const row = await refreshSub(data, await getSettings(), false)
   if (!row.subscribed) throw new HttpError(403, 'locked')
+  row.is_admin = await resolveAdmin({ ...row, username: tu.username }, {})
   if (admin && !row.is_admin) throw new HttpError(403, 'forbidden')
   return row
 }
@@ -336,7 +336,8 @@ function adminIds(s: Settings): number[] {
 
 async function grantAccess(userId: number, courseId: number, source: 'stars' | 'admin' | 'invites') {
   const { error } = await db.from('course_access').upsert({ user_id: userId, course_id: courseId, source }, { onConflict: 'user_id,course_id', ignoreDuplicates: true })
-  return !error
+  if (error) throw new HttpError(500, 'db')
+  return true
 }
 
 async function hasAccess(userId: number, courseId: number) {
@@ -400,11 +401,9 @@ async function notifyOpened(userId: number, course: Row, s: Settings) {
 async function decideRequest(courseId: number, userId: number, approve: boolean): Promise<string | null> {
   const { data: course } = await db.from('courses').select('id,title').eq('id', courseId).maybeSingle()
   if (!course) return null
-  await db.from('access_requests').upsert({ user_id: userId, course_id: courseId, status: approve ? 'approved' : 'declined', decided_at: new Date().toISOString() })
-  if (approve) {
-    await grantAccess(userId, courseId, 'admin')
-    await notifyOpened(userId, course, await getSettings())
-  }
+  const { error } = await db.rpc('decide_course_request', { p_user: userId, p_course: courseId, p_approve: approve })
+  if (error) throw new HttpError(500, 'db')
+  if (approve) await notifyOpened(userId, course, await getSettings())
   return course.title
 }
 
@@ -1237,25 +1236,11 @@ async function webhook(req: Request) {
     if (ticketPay && Number(ticketPay[1]) === msg.from?.id) {
       const userId = Number(ticketPay[1])
       const charge = String(paid.telegram_payment_charge_id)
-      const ins = await db.from('payments').insert({ user_id: userId, course_id: null, stars: paid.total_amount, charge_id: charge, purpose: 'catchup' })
-      const duplicate = ins.error?.code === '23505'
-      if (ins.error && !duplicate) retry = true
-      else {
-        const { data: pay } = await db.from('payments').select('refunded_at').eq('charge_id', charge).maybeSingle()
-        // После возврата звёзд повторное уведомление билет не возвращает.
-        if (!pay?.refunded_at) {
-          const t = await db.from('advent_tickets').insert({ user_id: userId, source: 'stars', ref: `stars:${charge}` })
-          if (t.error && t.error.code !== '23505') retry = true
-          else if (!t.error) {
-            await logEvent(userId, 'purchase', null, { catchup: true, stars: paid.total_amount })
-            await tg('sendMessage', {
-              chat_id: userId,
-              parse_mode: 'HTML',
-              text: '🎟 <b>Билет успешно получен!</b>\n\nЗвёзды списаны, билет уже на твоём балансе. Открой календарь и выбери любую пропущенную дверь, чтобы наверстать прогресс.',
-              ...(s.app_url ? { reply_markup: { inline_keyboard: [[{ text: '🚀 Открыть календарь', web_app: { url: `${s.app_url}/?sp=advent` } }]] } } : {}),
-            })
-          }
-        }
+      const { data: payment, error } = await db.rpc('apply_ticket_payment', { p_user: userId, p_stars: paid.total_amount, p_charge: charge })
+      if (error || !payment) retry = true
+      else if (payment.inserted && !payment.refunded) {
+        await logEvent(userId, 'purchase', null, { catchup: true, stars: paid.total_amount })
+        await tg('sendMessage', { chat_id: userId, text: '🎟 Билет успешно получен! Открой календарь и выбери пропущенную дверь.' })
       }
     }
 
@@ -1266,7 +1251,7 @@ async function webhook(req: Request) {
     const cb = update.callback_query
     if (typeof cb?.data === 'string' && cb.data.startsWith('req:')) {
       const [, action, courseId, userId] = cb.data.split(':')
-      if (adminIds(s).includes(cb.from?.id)) {
+      if (await resolveAdmin({ id: cb.from?.id, username: cb.from?.username }, {})) {
         const approve = action === 'a'
         await decideRequest(Number(courseId), Number(userId), approve)
         await tg('answerCallbackQuery', { callback_query_id: cb.id, text: approve ? 'Доступ открыт' : 'Заявка отклонена' })
@@ -1614,7 +1599,8 @@ function doorView(door: Row, open: Row | null, cfg: AdventCfg, today: number) {
 }
 
 async function adventDoor(body: Row) {
-  const { cfg, today, door, open } = await loadDoor(body)
+  const { row, cfg, today, door, open } = await loadDoor(body)
+  if (open) await recoverDoorRewards(row, door.day, today, await getSettings())
   return doorView(door, open, cfg, today)
 }
 
@@ -1651,6 +1637,7 @@ async function awardOnOpen(row: Row, opened: number, day: number, today: number,
     db.from('advent_rewards').select('*').order('doors').order('position'),
     db.from('reward_codes').select('reward_id').eq('user_id', row.id),
   ])
+  if (rewards.error || mine.error) throw new HttpError(500, 'db')
   const have = new Set((mine.data ?? []).map((c) => c.reward_id))
   const fresh: Row[] = []
   for (const r of rewards.data ?? []) {
@@ -1664,10 +1651,13 @@ async function awardOnOpen(row: Row, opened: number, day: number, today: number,
       const left = r.stock - (count ?? 0)
       take = left > 0 && secureRandom() < (await instantChance(r, today, left))
     }
-    if (!take) continue
+    const decision = await db.rpc('advent_reward_decision', { p_user: row.id, p_day: day, p_reward: r.id, p_take: take })
+    if (decision.error) throw new HttpError(500, 'db')
+    if (!decision.data) continue
     // Лимит и повтор проверяет база под блокировкой: лишний приз не выпадет даже при одновременных открытиях.
     const { data: code, error } = await db.rpc('advent_grant', { p_user: row.id, p_reward: r.id })
-    if (error || !code) continue
+    if (error) throw new HttpError(500, 'db')
+    if (!code) continue
     const kind = r.kind ?? 'promo'
     fresh.push({ reward_id: r.id, code: kind === 'promo' ? code : null, kind, mode, title: r.title, emoji: r.emoji, content: rewardContent(kind, r.payload) })
   }
@@ -1711,10 +1701,19 @@ async function runDueDraws(cfg: AdventCfg, today: number, s: Settings) {
   }
 }
 
+async function recoverDoorRewards(row: Row, day: number, today: number, s: Settings) {
+  const { count, error } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).eq('user_id', row.id)
+  if (error) throw new HttpError(500, 'db')
+  return awardOnOpen(row, count ?? 0, day, today, s)
+}
+
 async function adventOpen(body: Row) {
   const { row, cfg, today, door, open } = await loadDoor(body)
   const s = await getSettings()
-  if (open) return { already: true, gained: 0, score: open.score, total: open.total, opened: null, new_codes: [], door: doorView(door, open, cfg, today), me: await buildMe(row) }
+  if (open) {
+    const recovered = await recoverDoorRewards(row, door.day, today, s)
+    return { already: true, gained: 0, score: open.score, total: open.total, opened: null, new_codes: recovered, door: doorView(door, open, cfg, today), me: await buildMe(row) }
+  }
   if (adventClosed(cfg, today)) throw new HttpError(403, 'advent_closed')
   const late = door.day < today
   let score = 0
@@ -1739,7 +1738,7 @@ async function adventOpen(body: Row) {
   const res = Array.isArray(data) ? data[0] : data
   if (late && res && !res.ticket) throw new HttpError(402, 'need_ticket')
   const inserted = !!res?.inserted
-  const newCodes = inserted ? await awardOnOpen(row, res.opened, door.day, today, s) : []
+  const newCodes = await awardOnOpen(row, res.opened, door.day, today, s)
   if (inserted) await logEvent(row.id, 'advent_open', null, { day: door.day, kind: door.kind, score, late })
   const after = { score, total, xp, late }
   return {
@@ -1760,26 +1759,13 @@ async function sha256Hex(text: string) {
   return hex(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(text))))
 }
 
-const PIN_TRIES = 8
-const PIN_LOCK = 15 * 60_000
-
 async function cashierPoint(body: Row) {
   const id = Number(body.point)
-  const { data: p } = await db.from('advent_points').select('*').eq('id', id).maybeSingle()
-  if (!p) throw new HttpError(404, 'point_not_found')
-  if (p.locked_until && Date.parse(p.locked_until) > Date.now()) throw new HttpError(429, 'pin_locked')
-  const ok = safeEqual(await sha256Hex(`${p.id}:${str(body.pin, 12)}`), p.pin_hash)
-  if (!ok) {
-    // После 8 неверных PIN точка блокируется на 15 минут: перебор кодов без PIN бессмыслен, с PIN — медленный.
-    const fails = p.fails + 1
-    await db
-      .from('advent_points')
-      .update(fails >= PIN_TRIES ? { fails: 0, locked_until: new Date(Date.now() + PIN_LOCK).toISOString() } : { fails })
-      .eq('id', p.id)
-    throw new HttpError(403, 'bad_pin')
-  }
-  if (p.fails) await db.from('advent_points').update({ fails: 0 }).eq('id', p.id)
-  return p
+  const hash = await sha256Hex(`${id}:${str(body.pin, 12)}`)
+  const { data, error } = await db.rpc('cashier_auth', { p_point: id, p_hash: hash })
+  if (error || !data) throw new HttpError(500, 'db')
+  if (!data.ok) throw new HttpError(data.error === 'pin_locked' ? 429 : data.error === 'point_not_found' ? 404 : 403, data.error)
+  return data.point
 }
 
 async function redeemPoints() {

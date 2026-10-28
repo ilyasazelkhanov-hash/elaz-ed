@@ -231,6 +231,40 @@ export function createClient() {
     from: (name) => new Query(name),
     // Функции базы здесь не проверяются: их логика живёт в миграциях.
     rpc: async (name, args) => {
+      if (name === 'resolve_admin') {
+        const admins=table('settings').find(s=>s.key==='admins')?.value??{}
+        if(Object.values(admins).includes(args.p_user))return {data:true,error:null}
+        if(args.p_username && Object.hasOwn(admins,args.p_username) && admins[args.p_username]===null){admins[args.p_username]=args.p_user;return {data:true,error:null}}
+        return {data:false,error:null}
+      }
+      if(name==='cashier_auth'){
+        const p=table('advent_points').find(p=>p.id===args.p_point)
+        if(!p)return {data:{ok:false,error:'point_not_found'},error:null}
+        if(Date.parse(p.locked_until)>Date.now())return {data:{ok:false,error:'pin_locked'},error:null}
+        if(p.pin_hash!==args.p_hash){const n=p.locked_until?1:(p.fails??0)+1;p.fails=n>=8?0:n;p.locked_until=n>=8?new Date(Date.now()+900000).toISOString():null;return {data:{ok:false,error:'bad_pin'},error:null}}
+        p.fails=0;p.locked_until=null;return {data:{ok:true,point:p},error:null}
+      }
+      if(name==='advent_reward_decision'){
+        const rows=table('advent_reward_decisions');let d=rows.find(d=>d.user_id===args.p_user&&d.day===args.p_day&&d.reward_id===args.p_reward)
+        if(!d){d={user_id:args.p_user,day:args.p_day,reward_id:args.p_reward,take:args.p_take};rows.push(d)}
+        return {data:d.take,error:null}
+      }
+      if(name==='decide_course_request'){
+        const before=structuredClone(state.tables)
+        if(args.p_approve){const grant=await new Query('course_access').upsert({user_id:args.p_user,course_id:args.p_course,source:'admin'},{ignoreDuplicates:true});if(grant.error){state.tables=before;return grant}}
+        const result=await new Query('access_requests').upsert({user_id:args.p_user,course_id:args.p_course,status:args.p_approve?'approved':'declined',decided_at:new Date().toISOString()})
+        if(result.error)state.tables=before
+        return result
+      }
+      if(name==='apply_ticket_payment'){
+        const before=structuredClone(state.tables),prior=table('payments').find(p=>p.charge_id===args.p_charge)
+        if(prior?.refunded_at)return {data:{inserted:false,refunded:true},error:null}
+        if(!prior){const p=await new Query('payments').insert({user_id:args.p_user,course_id:null,stars:args.p_stars,charge_id:args.p_charge,purpose:'catchup'});if(p.error)return p}
+        if(table('advent_tickets').some(t=>t.ref===`stars:${args.p_charge}`))return {data:{inserted:false,refunded:false},error:null}
+        const ticket=await new Query('advent_tickets').insert({user_id:args.p_user,source:'stars',ref:`stars:${args.p_charge}`})
+        if(ticket.error){state.tables=before;return ticket}
+        return {data:{inserted:true,refunded:false},error:null}
+      }
       if (name === 'academy_action') {
         state.academyCalls.push(structuredClone(args))
         return state.academyReply ?? { data: { courses: [], directions: [], total: 0 }, error: null }
@@ -293,6 +327,7 @@ export function createClient() {
         return { data: null, error: null }
       }
       // Выдача приза: лимит, повтор, код, доступ к уроку или курсу — как в SQL-функции advent_grant.
+      if (name === 'advent_grant' && state.failNext?.table==='reward_codes' && state.failNext.op==='grant') {state.failNext=null;return {data:null,error:{message:'injected'}}}
       if (name === 'advent_grant') return { data: grant(args.p_user, args.p_reward), error: null }
       // Розыгрыш: взвешенно по числу открытых дверей окна, без повторов — как advent_draw.
       if (name === 'advent_draw') {

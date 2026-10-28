@@ -1107,6 +1107,43 @@ test('an advent prize opens only its exact certification independently of the st
  assert.equal((await call('certifications',{action:'open',id:'test-ai'},BUYER)).status,403)
 })
 
+test('revoking admin blocks direct actions and private reads without boot',async()=>{
+ await everyoneBoots()
+ state.tables.settings.find(s=>s.key==='admins').value={}
+ assert.equal((await call('admin_list',{},ADMIN)).status,403)
+ assert.equal((await call('lesson',{id:10},ADMIN)).status,403)
+})
+test('failed access grant leaves request pending and sends no success',async()=>{
+ await everyoneBoots()
+ state.tables.access_requests.push({user_id:BUYER,course_id:2,status:'pending'})
+ state.failNext={table:'course_access',op:'upsert'}
+ const r=await call('admin_request',{course_id:2,user_id:BUYER,approve:true},ADMIN)
+ assert.equal(r.status,500)
+ assert.equal(state.tables.access_requests[0].status,'pending')
+ assert.equal(access(BUYER,2).length,0)
+ assert.equal(sent('sendMessage').length,0)
+})
+test('reward failure after opening is retried without extra XP or reroll',async()=>{
+ await everyoneBoots();adventOn()
+ state.tables.advent_rewards=[{id:1,doors:1,title:'Gift',kind:'message',mode:'day',day_from:5,day_to:5,payload:{text:'Gift'}}]
+ state.failNext={table:'reward_codes',op:'grant'}
+ assert.equal((await call('advent_open',{day:5},BUYER)).status,500)
+ const xp=state.tables.users.find(u=>u.id===BUYER).xp
+ const retry=await call('advent_open',{day:5},BUYER)
+ assert.equal(retry.status,200);assert.equal(retry.body.already,true);assert.equal(retry.body.new_codes.length,1)
+ assert.equal(state.tables.users.find(u=>u.id===BUYER).xp,xp)
+ assert.equal((await call('advent_open',{day:5},BUYER)).body.new_codes.length,0)
+})
+test('reopening an already opened door recovers a pending reward',async()=>{
+ await everyoneBoots();adventOn()
+ state.tables.advent_rewards=[{id:1,doors:1,title:'Gift',kind:'message',mode:'day',day_from:5,day_to:5,payload:{text:'Gift'}}]
+ state.failNext={table:'reward_codes',op:'grant'}
+ assert.equal((await call('advent_open',{day:5},BUYER)).status,500)
+ assert.equal((await call('advent_door',{day:5},BUYER)).status,200)
+ assert.equal(state.tables.reward_codes.length,1)
+})
+
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()
