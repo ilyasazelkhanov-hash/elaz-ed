@@ -23,6 +23,8 @@ Telegram Mini App для подписчиков канала: уроки, сто
 
 Копия мастера обновляется из него командой `node Azelkhanov-master/scripts/sync-og.mjs --target .` (сначала отчёт, потом `--apply`). Брендбук копии `src/platform-kit/brand.config.json` скрипт не перезаписывает — цвета OG в нём правятся вручную.
 
+[Исправления аудита 28 октября и порядок применения](docs/fixes/2026-10-28.md). Новые SQL-регрессии: `npm run test:audit-fixes`.
+
 Все проверки OG: `npm run build`, `npm run test:api`, `npm run test:academy`, `npm run test:database`, `npm run test:experience`; сборка без мастера во временной папке — `node scripts/verify-og-portable.mjs`. Нужен Node 24.
 
 Таблицы закрыты RLS без политик: читать и писать может только Edge Function.

@@ -67,7 +67,22 @@ test('real PostgreSQL publishes pack through validators, reruns once and rejects
  const lesson=await rpc('lesson',{code:'CORE-000-M1-L1'},2)
  assert.ok(lesson.blocks.length&&lesson.sources.length)
  await assert.rejects(rpc('enroll',{code:'VC-101'},2),/academy_prerequisites_required/)
- const changed={...catalog,content_revision:'0123456789abcdef'}
- await assert.rejects(db.exec(contentSql(changed,'1')),/conflicts with edited/)
+ const changed=structuredClone(catalog);changed.content_revision='0123456789abcdef'
+ changed.entities.find(n=>n.code==='CORE-000-M1-L1').data.content_blocks.push({type:'markdown',body:'New authored explanation.'})
+ const untouched=(await db.query("select version from aa_nodes where code='CORE-000-M1-L2'")).rows[0].version
+ await db.exec(contentSql(changed,'1','CORE-000'))
+ assert.equal((await rpc('lesson',{code:'CORE-000-M1-L1'},2)).blocks.at(-1).body,'New authored explanation.')
+ assert.equal((await db.query("select version from aa_nodes where code='CORE-000-M1-L2'")).rows[0].version,untouched)
+ // Legacy releases can be adopted only against an explicitly supplied matching baseline.
+ await db.exec("delete from aa_content_node_receipts where code like 'CORE-000%'")
+ const next=structuredClone(changed);next.content_revision='1123456789abcdef'
+ next.entities.find(n=>n.code==='CORE-000-M1-L1').data.content_blocks.push({type:'markdown',body:'Another explanation.'})
+ await assert.rejects(db.exec(contentSql(next,'1','CORE-000')),/conflicts with edited/);await db.exec('rollback')
+ await db.exec(contentSql(next,'1','CORE-000',changed))
+ await rpc('admin_save',{expected_version:(await db.query("select version from aa_nodes where code='CORE-000-M1-L1'")).rows[0].version,entity:{...(await db.query("select * from aa_nodes where code='CORE-000-M1-L1'")).rows[0],title:'Manual revision'}})
+ const conflict=structuredClone(next);conflict.content_revision='2123456789abcdef'
+ conflict.entities.find(n=>n.code==='CORE-000-M1-L1').data.content_blocks.push({type:'markdown',body:'Conflicting new update.'})
+ await assert.rejects(db.exec(contentSql(conflict,'1','CORE-000')),/conflicts with edited/)
  await db.exec('rollback')
+ assert.equal((await db.query("select title from aa_nodes where code='CORE-000-M1-L1'")).rows[0].title,'Manual revision')
 })

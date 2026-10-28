@@ -65,7 +65,7 @@ export function composeLearningCatalog(base,packs){
 }
 
 // Explicit, reviewable publication through existing validators. No direct table bypass.
-export function contentSql(catalog,actor,courseCode){
+export function contentSql(catalog,actor,courseCode,baseline){
  if(courseCode){
   const selected=catalog.entities.filter(n=>n.data.authored_pack===`og-original:${courseCode}:1`)
   assert(selected.some(n=>n.kind==='course'&&n.code===courseCode),'Unknown authored course')
@@ -78,14 +78,21 @@ export function contentSql(catalog,actor,courseCode){
  const ordered=[...rows].sort((a,b)=>({course:0,module:1,lesson:2,source:3,rubric:4,assessment:5}[a.kind]??9)-({course:0,module:1,lesson:2,source:3,rubric:4,assessment:5}[b.kind]??9))
  const literal=x=>`'${JSON.stringify(x).replaceAll("'","''")}'::jsonb`
  const stages=[...rows].sort((a,b)=>({rubric:0,source:1,assessment:2,lesson:3,module:4,course:5}[a.kind]??9)-({rubric:0,source:1,assessment:2,lesson:3,module:4,course:5}[b.kind]??9))
- const calls=ordered.map(n=>`perform academy_action(${actor},'admin_save',jsonb_build_object('expected_version',coalesce((select version from aa_nodes where code=${literal(n.code)}#>>'{}'),0),'entity',${literal({...n,state:'draft'})}));`)
- const publish=stages.map(n=>`foreach publish_state in array array['approved','published'] loop
+ const shape=n=>({code:n.code,kind:n.kind,parent_code:n.parent_code??null,title:n.title,position:n.position??0,state:'published',data:n.data})
+ const equal=(alias,n)=>`(${alias}->'data'=${literal(n.data)} and ${alias}->>'title'=${literal(n.title)}#>>'{}' and ${alias}->>'kind'=${literal(n.kind)}#>>'{}' and ${alias}->>'parent_code' is not distinct from ${literal(n.parent_code??null)}#>>'{}' and (${alias}->>'position')::integer=${n.position??0} and ${alias}->>'state'='published')`
+ const calls=ordered.map(n=>`select to_jsonb(t) into current_node from aa_nodes t where code=${literal(n.code)}#>>'{}';
+ if current_node is null or not ${equal('current_node',n)} then
+ changed_codes:=array_append(changed_codes,${literal(n.code)}#>>'{}');
+ perform academy_action(${actor},'admin_save',jsonb_build_object('expected_version',coalesce((current_node->>'version')::integer,0),'entity',${literal({...n,state:'draft'})}));end if;`)
+ const publish=stages.map(n=>`if ${literal(n.code)}#>>'{}'=any(changed_codes) then
+ foreach publish_state in array array['approved','published'] loop
  select to_jsonb(t) into current_node from aa_nodes t where code=${literal(n.code)}#>>'{}';
  perform academy_action(${actor},'admin_save',jsonb_build_object('expected_version',(current_node->>'version')::integer,'entity',current_node||jsonb_build_object('state',publish_state)));
- end loop;`)
+ end loop;end if;`)
+ const baselineRows=(baseline?.entities||[]).filter(n=>rows.some(r=>r.code===n.code)&&n.data.authored_pack).map(shape)
  const links=catalog.links.filter(l=>rows.some(n=>n.code===l.source_code))
  // A content digest receipt makes reruns no-ops; mismatched/manual rows fail before any mutation.
- return `-- Reviewed authored Academy pack. Apply after original curriculum import and all Academy migrations.\n-- Existing non-outline content is never overwritten.\nbegin;\ncreate table if not exists public.aa_content_receipts(revision text primary key,applied_at timestamptz default now());\nalter table public.aa_content_receipts enable row level security;\nrevoke all on public.aa_content_receipts from public,anon,authenticated;\ndo $content$\ndeclare current_node jsonb; publish_state text;\nbegin\nperform pg_advisory_xact_lock(7813);\nif exists(select 1 from aa_content_receipts where revision='${catalog.content_revision}') then return;end if;\nif exists(select 1 from aa_nodes where code in(select value#>>'{}' from jsonb_array_elements(${literal(rows.map(n=>n.code))})) and (state<>'outline' or seed_managed=false)) then raise exception 'Authored pack conflicts with edited content; review manually';end if;\n${calls.join('\n')}\n${publish.join('\n')}\ninsert into aa_source_links(source_code,target_code,usage,visibility,start_seconds) select x.source_code,x.target_code,x.usage,x.visibility,x.start_seconds from jsonb_to_recordset(${literal(links)}) as x(source_code text,target_code text,usage text,visibility text,start_seconds integer) on conflict do nothing;\ninsert into aa_content_receipts(revision) values('${catalog.content_revision}');\nend $content$;\ncommit;\n`
+ return `-- Reviewed authored Academy pack. Apply after original curriculum import and all Academy migrations.\n-- Managed updates require an unchanged saved snapshot or an explicit previous catalog baseline.\nbegin;\ncreate table if not exists public.aa_content_receipts(revision text primary key,applied_at timestamptz default now());\ncreate table if not exists public.aa_content_node_receipts(code text primary key,snapshot jsonb not null);\nalter table public.aa_content_node_receipts enable row level security;\nrevoke all on public.aa_content_node_receipts from public,anon,authenticated;\nalter table public.aa_content_receipts enable row level security;\nrevoke all on public.aa_content_receipts from public,anon,authenticated;\ndo $content$\ndeclare current_node jsonb; publish_state text; changed_codes text[]:=array[]::text[];\nbegin\nperform pg_advisory_xact_lock(7813);\nif exists(select 1 from aa_content_receipts where revision='${catalog.content_revision}') then return;end if;\nif exists(select 1 from aa_nodes where code in(select value#>>'{}' from jsonb_array_elements(${literal(rows.map(n=>n.code))})) and (state<>'outline' or seed_managed=false) and not exists(select 1 from aa_content_node_receipts r where r.code=aa_nodes.code and r.snapshot=to_jsonb(aa_nodes)) and not exists(select 1 from jsonb_array_elements(${literal(baselineRows)}) b where b->>'code'=aa_nodes.code and b=jsonb_build_object('code',aa_nodes.code,'kind',aa_nodes.kind,'parent_code',aa_nodes.parent_code,'title',aa_nodes.title,'position',aa_nodes.position,'state',aa_nodes.state,'data',aa_nodes.data))) then raise exception 'Authored pack conflicts with edited content; review manually';end if;\n${calls.join('\n')}\n${publish.join('\n')}\ninsert into aa_source_links(source_code,target_code,usage,visibility,start_seconds) select x.source_code,x.target_code,x.usage,x.visibility,x.start_seconds from jsonb_to_recordset(${literal(links)}) as x(source_code text,target_code text,usage text,visibility text,start_seconds integer) on conflict do nothing;\ninsert into aa_content_node_receipts(code,snapshot) select n.code,to_jsonb(n) from aa_nodes n where n.code in(select value#>>'{}' from jsonb_array_elements(${literal(rows.map(n=>n.code))})) on conflict(code) do update set snapshot=excluded.snapshot;\ninsert into aa_content_receipts(revision) values('${catalog.content_revision}');\nend $content$;\ncommit;\n`
 }
 export async function loadAuthoredPacks(){
  const codes=JSON.parse(await readFile(path.join(root,'content/ai-academy/authored/index.json'),'utf8'))

@@ -8,7 +8,7 @@ const defaultProject = 'dcdepwdxvadhludnubis'
 const literal = value => `'${JSON.stringify(value).replaceAll("'", "''")}'::jsonb`
 
 /** Uses existing Academy validators; never pushes or repairs the migration history. */
-export function academyReleasePlan(base, packs, actor, course) {
+export function academyReleasePlan(base, packs, actor, course, baseline) {
   if (!/^[1-9]\d*$/.test(actor || '') || BigInt(actor) > 9223372036854775807n) throw new Error('--actor must be the existing administrator Telegram ID')
   const selected = course ? packs.filter(pack => pack.course_code === course) : packs
   if (!selected.length) throw new Error('Unknown authored course')
@@ -18,8 +18,8 @@ export function academyReleasePlan(base, packs, actor, course) {
   const grouped = initial.length === 2 ? initial : []
   return [
     { name: 'curriculum', sql: `begin;\nselect public.academy_action(${actor},'admin_import',${literal({ ...base, dry_run: false })});\ncommit;\n` },
-    ...(grouped.length ? [{ name: 'CORE-000-VC-101', sql: contentSql(composeLearningCatalog(base, grouped), actor) }] : []),
-    ...selected.filter(pack => !grouped.includes(pack)).map(pack => ({ name: pack.course_code, sql: contentSql(catalog, actor, pack.course_code) })),
+    ...(grouped.length ? [{ name: 'CORE-000-VC-101', sql: contentSql(composeLearningCatalog(base, grouped), actor,undefined,baseline) }] : []),
+    ...selected.filter(pack => !grouped.includes(pack)).map(pack => ({ name: pack.course_code, sql: contentSql(catalog, actor, pack.course_code,baseline) })),
   ]
 }
 
@@ -37,8 +37,8 @@ export async function managementQuery(project, token, sql, fetcher = fetch) {
 
 async function main(args) {
   const option = name => args.find(arg => arg.startsWith(`${name}=`))?.slice(name.length + 1)
-  const allowed = /^(?:--check|--publish|--actor=[1-9]\d*|--course=[A-Z]+-\d{3}|--project=[a-z]{20})$/
-  if (args.some(arg => !allowed.test(arg))) throw new Error('Usage: academy:release -- --check OR --actor=TELEGRAM_ID [--course=CODE] [--publish] [--project=REF]')
+  const allowed = /^(?:--check|--publish|--actor=[1-9]\d*|--course=[A-Z]+-\d{3}|--project=[a-z]{20}|--baseline=.+)$/
+  if (args.some(arg => !allowed.test(arg))) throw new Error('Usage: academy:release -- --check OR --actor=TELEGRAM_ID [--course=CODE] [--publish] [--project=REF] [--baseline=PREVIOUS_CATALOG]')
   const project = option('--project') || defaultProject
   const query = sql => managementQuery(project, process.env.SUPABASE_ACCESS_TOKEN, sql)
   if (args.includes('--check')) {
@@ -51,7 +51,9 @@ async function main(args) {
   }
   const actor = option('--actor')
   const base = JSON.parse(await readFile(path.join(root, 'content/ai-academy/catalog.normalized.json'), 'utf8'))
-  const plan = academyReleasePlan(base, await loadAuthoredPacks(), actor, option('--course'))
+  const baselinePath=option('--baseline')
+  const baseline=baselinePath?JSON.parse(await readFile(baselinePath,'utf8')):undefined
+  const plan = academyReleasePlan(base, await loadAuthoredPacks(), actor, option('--course'),baseline)
   const directory = path.join(root, 'content/ai-academy/generated/release')
   await mkdir(directory, { recursive: true })
   for (let i = 0; i < plan.length; i++) await writeFile(path.join(directory, `${String(i).padStart(2, '0')}-${plan[i].name}.sql`), plan[i].sql)
