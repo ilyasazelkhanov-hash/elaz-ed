@@ -113,8 +113,21 @@ class Query {
     this.filters.push((r) => typeof r[k] === 'string' && re.test(r[k]))
     return this
   }
-  order() {
+  order(key,options={}) {
+    ;(this.orders??=[]).push({key,...options})
     return this
+  }
+  in(key,values) {this.filters.push(row=>values.includes(row[key]));return this}
+  lt(key,value) {this.filters.push(row=>row[key]<value);return this}
+  or(expression) {
+    const split=value=>{let depth=0,start=0,parts=[];for(let i=0;i<value.length;i++){if(value[i]==='(')depth++;if(value[i]===')')depth--;if(value[i]===','&&depth===0){parts.push(value.slice(start,i));start=i+1}}parts.push(value.slice(start));return parts}
+    const predicate=text=>{
+      if(text.startsWith('and(')) {const children=split(text.slice(4,-1)).map(predicate);return row=>children.every(fn=>fn(row))}
+      const [,key,operator,value]=/^([\w]+)\.(lt|eq|is)\.(.*)$/.exec(text)??[]
+      if(!key)throw Error(`Unsupported fake filter: ${text}`)
+      return row=>operator==='is'?row[key]==null:operator==='lt'?row[key]<(key==='id'?Number(value):value):String(row[key])===value
+    }
+    const children=split(expression).map(predicate);this.filters.push(row=>children.some(fn=>fn(row)));return this
   }
   limit(n) {
     this.max = n
@@ -162,6 +175,7 @@ class Query {
     switch (this.op) {
       case 'select': {
         const rows = t.filter((r) => this.match(r))
+        if(this.orders)rows.sort((a,b)=>{for(const {key,ascending=true,nullsFirst=false} of this.orders){if(a[key]===b[key])continue;if(a[key]==null)return nullsFirst?-1:1;if(b[key]==null)return nullsFirst?1:-1;return (a[key]<b[key]?-1:1)*(ascending?1:-1)}return 0})
         if (this.opts.head) return { data: null, error: null, count: rows.length }
         return this.shape(rows)
       }
@@ -196,6 +210,7 @@ class Query {
       }
       case 'update': {
         const rows = t.filter((r) => this.match(r))
+        if(this.orders)rows.sort((a,b)=>{for(const {key,ascending=true,nullsFirst=false} of this.orders){if(a[key]===b[key])continue;if(a[key]==null)return nullsFirst?-1:1;if(b[key]==null)return nullsFirst?1:-1;return (a[key]<b[key]?-1:1)*(ascending?1:-1)}return 0})
         for (const r of rows) Object.assign(r, this.payload)
         return this.shape(rows)
       }

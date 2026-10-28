@@ -1,0 +1,17 @@
+{
+  "archive": 367,
+  "duplicates": 0,
+  "promotedOldPostsFirst": true,
+  "autoLoad": true,
+  "homeInfiniteFeed": true,
+  "retry": true,
+  "adminPromoteAndUnpromote": true,
+  "requests": 17,
+  "viewports": [
+    320,
+    390,
+    1024
+  ],
+  "pageErrors": [],
+  "evidence": "local production build + synthetic API, not live Telegram"
+}

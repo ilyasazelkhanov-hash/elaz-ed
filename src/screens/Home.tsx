@@ -83,7 +83,7 @@ export function Home() {
         </div>
       )}
 
-      <section className="mt-5 px-5" aria-label="Блог"><div className="mb-3 flex items-center justify-between"><h2 className="font-display text-lg font-semibold">Блог</h2><Tap className="flex min-h-11 items-center gap-1 text-sm font-semibold text-violet" onClick={()=>setTab('blog')}>Все публикации<ChevronRight size={16}/></Tap></div><Feed lessons={lessons} compact/></section>
+      <section className="mt-5 px-5" aria-label="Блог"><div className="mb-3 flex items-center justify-between"><h2 className="font-display text-lg font-semibold">Блог</h2><Tap className="flex min-h-11 items-center gap-1 text-sm font-semibold text-violet" onClick={()=>setTab('blog')}>Все публикации<ChevronRight size={16}/></Tap></div><Feed lessons={lessons} scroller={scroller}/></section>
 
     </div>
   )

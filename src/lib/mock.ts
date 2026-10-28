@@ -1,5 +1,6 @@
 // Демо-режим: тот же интерфейс, что у сервера, но всё живёт в localStorage. К настоящей базе не обращается.
 import seed from './seed.json'
+import {isBlogPost,comparePosts} from './content'
 import { ApiError } from './errors'
 import { adventSummaryDemo, makeAdventMock, resetAdventDemo } from './mockAdvent'
 import { dailyReward } from './game'
@@ -211,6 +212,13 @@ function grant(codes: string[]) {
 }
 
 export const mockApi: Api = {
+  async blogPage(cursor) {
+    await wait(150)
+    const posts=state.lessons.filter(l=>l.published&&isBlogPost(l)).sort(comparePosts)
+    const start=cursor?posts.findIndex(p=>p.id===cursor.id)+1:0
+    const page=posts.slice(start,start+30),last=page.at(-1)
+    return {posts:page.map(card),next:last&&start+page.length<posts.length?{pinned:!!last.pinned,date:last.published_at??null,id:last.id}:null}
+  },
   async certificationCatalog() { return {streak:me().streak,required_streak:10,unlocked:false,total:0,items:[]} },
   async certificationOpen() { throw new ApiError('not_found',404) },
   async certificationProgress() { throw new ApiError('not_found',404) },

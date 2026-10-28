@@ -468,7 +468,11 @@ export type LessonDraft = Omit<Lesson, 'id' | 'completed' | 'liked' | 'views' | 
   id?: number
 }
 
+export type BlogCursor = { pinned: boolean; date: string | null; id: number }
+export type BlogPage = { posts: Card[]; next: BlogCursor | null }
+
 export interface Api {
+  blogPage(cursor?: BlogCursor | null): Promise<BlogPage>
   certificationCatalog(): Promise<import('./certifications').CertificationCatalog>
   certificationOpen(id: string): Promise<{url:string}>
   certificationProgress(id:string,status:import('./certifications').CertificationStatus): Promise<{ok:boolean;status:import('./certifications').CertificationStatus}>

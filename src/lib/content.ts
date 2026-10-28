@@ -12,3 +12,8 @@ export function blogPostEntry(hash:string):number|null {
   const match=/^#\/blog\/([1-9]\d*)$/.exec(hash),id=Number(match?.[1])
   return Number.isSafeInteger(id)&&id>0?id:null
 }
+
+/** Editorial promotion first, then newest; ID breaks equal-date ties. */
+export function comparePosts(a: Pick<Card,'pinned'|'published_at'|'id'>,b: Pick<Card,'pinned'|'published_at'|'id'>) {
+  return Number(!!b.pinned)-Number(!!a.pinned)||(Date.parse(b.published_at??'')||0)-(Date.parse(a.published_at??'')||0)||b.id-a.id
+}

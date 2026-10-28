@@ -425,7 +425,7 @@ async function markRefunded(chargeId: string) {
 
 async function buildFeed(userId: number) {
   const [lessons, progress, likes] = await Promise.all([
-    db.from('feed_cards').select('*').eq('published', true).order('published_at', { ascending: false }).limit(300),
+    db.from('feed_cards').select('*').eq('published', true).order('pinned', {ascending:false}).order('published_at', { ascending: false }).order('id',{ascending:false}).limit(300),
     db.from('progress').select('lesson_id').eq('user_id', userId),
     db.from('likes').select('lesson_id').eq('user_id', userId),
   ])
@@ -479,6 +479,30 @@ async function boot(body: Row) {
     logEvent(row.id, 'open', null, { platform: str(body.platform, 20), theme: str(body.theme, 10) }),
   ])
   return { status: 'ok', me, feed, courses, advent, new_achievements: fresh, ...meta }
+}
+
+/** Keyset pagination: promoted posts first, then the complete chronological archive. */
+async function blogFeed(body: Row) {
+  const row = await member(body)
+  const cursor = body.cursor
+  if (cursor != null && (typeof cursor !== 'object' || typeof cursor.pinned !== 'boolean' || !Number.isSafeInteger(cursor.id) || cursor.id < 0 ||
+    (cursor.date !== null && (typeof cursor.date !== 'string' || !/^\d{4}-\d{2}-\d{2}T[\d:.+-]+Z?$/.test(cursor.date) || !Number.isFinite(Date.parse(cursor.date)))))) throw new HttpError(400, 'bad_cursor')
+  const promoted = cursor?.pinned ?? true
+  let query = db.from('feed_cards').select('*').eq('published', true).eq('kind', 'lesson').is('course_id', null).eq('pinned', promoted)
+    .order('published_at', {ascending:false,nullsFirst:false}).order('id', {ascending:false}).limit(31)
+  // id=0 denotes the beginning of the unpromoted group; real IDs are positive.
+  if (cursor?.id) {
+    if (cursor.date === null) query=query.is('published_at',null).lt('id',cursor.id)
+    else query=query.or(`published_at.lt.${cursor.date},and(published_at.eq.${cursor.date},id.lt.${cursor.id}),published_at.is.null`)
+  }
+  const result=await query
+  if(result.error) throw new HttpError(500,'db')
+  const posts=(result.data??[]).slice(0,30),last=posts.at(-1)
+  const next=(result.data??[]).length>30&&last?{pinned:promoted,date:last.published_at??null,id:last.id}:promoted?{pinned:false,date:null,id:0}:null
+  const likes=posts.length?await db.from('likes').select('lesson_id').eq('user_id',row.id).in('lesson_id',posts.map(p=>p.id)):{data:[],error:null}
+  if(likes.error)throw new HttpError(500,'db')
+  const liked=new Set((likes.data??[]).map(l=>l.lesson_id))
+  return {posts:posts.map(p=>({...p,liked:liked.has(p.id),completed:false})),next}
 }
 
 async function lesson(body: Row) {
@@ -2326,6 +2350,7 @@ const routes: Record<string, (body: Row) => Promise<unknown>> = {
   certifications,
   academy,
   boot,
+  blog_feed: blogFeed,
   lesson,
   quiz_start: quizStart,
   quiz_answer: quizAnswer,

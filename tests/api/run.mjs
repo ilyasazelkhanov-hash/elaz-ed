@@ -1144,6 +1144,32 @@ test('reopening an already opened door recovers a pending reward',async()=>{
 })
 
 
+test('blog archive paginates past 300, promotes old posts, breaks date ties and ends at the first', async()=>{
+ await everyoneBoots()
+ state.tables.lessons=Array.from({length:367},(_,i)=>({id:i+1,kind:'lesson',course_id:null,published:true,pinned:i<38,title:`Post ${i+1}`,published_at:i<2?null:'2026-01-01T00:00:00Z'}))
+ state.tables.lessons.push({id:1000,kind:'story',published:true,pinned:true},{id:1001,kind:'lesson',course_id:1,published:true,pinned:true},{id:1002,kind:'lesson',course_id:null,published:false,pinned:true})
+ state.tables.likes=[{user_id:BUYER,lesson_id:3}]
+ let cursor=null,posts=[],pages=0
+ do{const response=await call('blog_feed',{cursor},BUYER);assert.equal(response.status,200);posts.push(...response.body.posts);cursor=response.body.next;assert.ok(++pages<20)}while(cursor)
+ assert.equal(posts.length,367);assert.equal(new Set(posts.map(p=>p.id)).size,367)
+ assert.deepEqual(posts.slice(0,38).map(p=>p.id),Array.from({length:36},(_,i)=>38-i).concat([2,1]));assert.equal(posts.find(p=>p.id===3).liked,true)
+ assert.equal(posts[38].id,367);assert.equal(posts.at(-1).id,39)
+})
+test('blog pagination requires membership, validates cursor, and preserves database errors',async()=>{
+ await everyoneBoots()
+ assert.equal((await call('blog_feed')).status,401)
+ for(const cursor of [{pinned:true,id:1,date:'bad'},{pinned:true,id:-1,date:null},{pinned:'yes',id:1,date:null},{pinned:false,id:1,date:'2026-01-01T00:00:00Z,id.gt.0'}])assert.equal((await call('blog_feed',{cursor},BUYER)).status,400)
+ state.failNext={table:'feed_cards',op:'select'}
+ assert.equal((await call('blog_feed',{},BUYER)).status,500)
+})
+test('admin can promote and unpromote a blog post; ordinary members cannot',async()=>{
+ await everyoneBoots()
+ const draft={kind:'lesson',title:'Promoted blog',body:'Actual text',pinned:true,published:true,course_id:null}
+ assert.equal((await call('admin_save',{lesson:draft},BUYER)).status,403)
+ const saved=await call('admin_save',{lesson:draft},ADMIN);assert.equal(saved.status,200);assert.equal(saved.body.pinned,true)
+ const updated=await call('admin_save',{lesson:{...saved.body,pinned:false}},ADMIN);assert.equal(updated.status,200);assert.equal(updated.body.pinned,false)
+})
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()

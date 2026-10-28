@@ -130,6 +130,7 @@ export function AdminScreen() {
                 <p className="mt-1 flex items-center gap-2 text-[12px] text-mute">
                   <span className={`rounded-full px-2 py-0.5 font-semibold ${l.published ? 'bg-mint/15 text-mint' : 'bg-amber/15 text-amber'}`}>{l.published ? 'Опубликован' : 'Черновик'}</span>
                   <span>{l.kind === 'story' ? 'Сторис' : l.category}</span>
+                  {l.kind==='lesson'&&!l.course_id&&l.pinned&&<span className="font-semibold text-violet">Продвигается</span>}
                   <span className="flex items-center gap-0.5">
                     <Eye size={12} /> {l.views}
                   </span>

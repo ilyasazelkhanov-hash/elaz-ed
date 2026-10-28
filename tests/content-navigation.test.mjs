@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {isBlogPost,blogPostEntry,postDate} from '../src/lib/content.ts'
+import {isBlogPost,blogPostEntry,postDate,comparePosts} from '../src/lib/content.ts'
 import {parseReadPosts} from '../src/lib/blog-read.ts'
 
 test('blog classification keeps original storage compatible while separating posts from course lessons',()=>{
@@ -23,4 +23,10 @@ test('local read markers tolerate corrupt storage and remain bounded',()=>{
  assert.deepEqual(parseReadPosts(null),[])
  const ids=parseReadPosts(JSON.stringify(Array.from({length:600},(_,i)=>i+1)))
  assert.equal(ids.length,500);assert.equal(ids[0],101)
+})
+
+test('blog order puts promoted posts first, then date and deterministic ID, without mutating input',()=>{
+ const posts=[{id:4,pinned:false,published_at:'2026-10-28T00:00:00Z'},{id:1,pinned:true,published_at:'2020-01-01T00:00:00Z'},{id:3,pinned:false,published_at:'2026-10-28T00:00:00Z'},{id:2,pinned:true,published_at:null}]
+ assert.deepEqual(posts.slice().sort(comparePosts).map(p=>p.id),[1,2,4,3])
+ assert.deepEqual(posts.map(p=>p.id),[4,1,3,2])
 })

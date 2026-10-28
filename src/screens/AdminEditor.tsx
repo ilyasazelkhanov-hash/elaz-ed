@@ -258,6 +258,8 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             )}
           </div>
 
+          {post && <Check label="Продвигать" hint="Показывать в начале блога и ленты на главной. Среди продвигаемых сначала новые." on={d.pinned} onChange={(v) => set('pinned', v)} />}
+
           {!story && !post && (
             <>
               <Label hint="до 10 вопросов">Квиз</Label>
@@ -376,7 +378,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
 
 function Check({ label, hint, on, onChange }: { label: string; hint: string; on: boolean; onChange: (v: boolean) => void }) {
   return (
-    <Tap feedback="select" onClick={() => onChange(!on)} className="mt-5 flex w-full items-center gap-3 rounded-[18px] border border-line bg-card p-4 text-left">
+    <Tap role="switch" aria-label={label} aria-checked={on} feedback="select" onClick={() => onChange(!on)} className="mt-5 flex w-full items-center gap-3 rounded-[18px] border border-line bg-card p-4 text-left">
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-semibold">{label}</span>
         <span className="mt-0.5 block text-[12.5px] text-mute">{hint}</span>
