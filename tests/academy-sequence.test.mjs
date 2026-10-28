@@ -30,3 +30,12 @@ test('all course boundaries retain the previous and next lesson across modules w
 test('only explicit completed progress counts, while review or merely reading does not', () => {
   assert.deepEqual([...completedAcademyLessonCodes([{ lesson_code: 'L1', state: 'completed' }, { lesson_code: 'L2', status: 'completed' }, { lesson_code: 'L3', completed: true }, { lesson_code: 'L4', state: 'submitted' }, { lesson_code: 'L5', state: 'passed' }])], ['L1', 'L2', 'L3'])
 })
+
+test('persisted SQL completion timestamps count as progress without inventing completion for other states',()=>{
+ assert.deepEqual([...completedAcademyLessonCodes([
+  {lesson_code:'SQL',completed_at:'2026-10-28T12:00:00Z'},
+  {lesson_code:'BAD',completed_at:'not a date'},
+  {lesson_code:'DRAFT',state:'submitted',completed_at:'2026-10-28T12:00:00Z'},
+  {lesson_code:'READ'},
+ ])],['SQL'])
+})

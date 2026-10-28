@@ -1,6 +1,6 @@
 import { LessonGuidance } from './Guidance'
 import { LessonTrail, LessonNavigation } from './LessonJourney'
-import { academyLessonPosition, orderedAcademyLessons } from '../../lib/academy-sequence'
+import { academyLessonPosition, orderedAcademyLessons, isAcademyLessonComplete } from '../../lib/academy-sequence'
 import { isDemo } from '../../lib/api'
 import { useAcademyLocale, useAcademyTranslation } from '../../lib/academy-i18n'
 import { AcademyFiles, AcademyAttachmentLinks } from './Files'
@@ -45,7 +45,7 @@ export function Lesson({ code, go }: { code: string; go: Navigate }) {
   const d=lesson.data,blocks:any[]=Array.isArray(resource.data.localized_blocks?.[locale])?resource.data.localized_blocks[locale]:resource.data.blocks||[]
   const quiz=!!assessment&&(assessment.kind==='quiz'||assessment.data?.type==='quiz'||assessment.data?.questions?.length||assessment.type==='quiz')
   const assignment=!!assessment&&!quiz||['lab','assignment','project','practice'].includes(d.lesson_type)||/лаборатор|практик|задани|защита/i.test(text(d.format))
-  const ready=lesson.state==='published',completed=(progress?.state||progress?.status)==='completed'||progress?.completed===true
+  const ready=lesson.state==='published',completed=isAcademyLessonComplete(progress)
   const artifact=text(d.deliverable||d.artifact),criteria=(Array.isArray(d.acceptance)?d.acceptance:text(d.criteria).split('\n')).filter((item:any)=>typeof item==='string'&&item.trim()) as string[]
   const beginner=blocks.find(block=>block.learning_role==='beginner')?.study as StudyCase|undefined
   const moduleExample=blocks.find(block=>block.learning_role==='module_example')?.study as StudyCase|undefined

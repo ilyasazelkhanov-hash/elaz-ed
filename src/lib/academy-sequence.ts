@@ -1,5 +1,5 @@
 type Positioned = { code: string; position?: number; parent_code?: string | null }
-type Progress = { lesson_code: string; state?: string; status?: string; completed?: boolean }
+type Progress = { lesson_code: string; state?: string; status?: string; completed?: boolean; completed_at?: string }
 
 const compareCodes = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true }) || a.localeCompare(b, 'en')
 const numericCode = (a: Positioned, b: Positioned) => compareCodes(a.code, b.code)
@@ -48,6 +48,11 @@ export function academyLessonPosition<T extends Positioned>(code: string, lesson
   }
 }
 
+export function isAcademyLessonComplete(item?: Partial<Progress>|null) {
+  if(!item)return false
+  if(item.completed===true||(item.state||item.status)==='completed')return true
+  return !item.state&&!item.status&&typeof item.completed_at==='string'&&Number.isFinite(Date.parse(item.completed_at))
+}
 export function completedAcademyLessonCodes(progress: Progress[] = []) {
-  return new Set(progress.filter(item => (item.state || item.status) === 'completed' || item.completed === true).map(item => item.lesson_code))
+  return new Set(progress.filter(isAcademyLessonComplete).map(item => item.lesson_code))
 }

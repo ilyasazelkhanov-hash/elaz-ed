@@ -27,7 +27,7 @@ function blank(kind: Kind): LessonDraft {
     kind,
     title: '',
     subtitle: '',
-    category: kind === 'story' ? 'Новости' : 'Уроки',
+    category: kind === 'story' ? 'Новости' : 'Блог',
     emoji: kind === 'story' ? '📣' : '✨',
     gradient: 'aurora',
     cover_url: null,
@@ -36,7 +36,7 @@ function blank(kind: Kind): LessonDraft {
     copy_text: null,
     quiz: [],
     minutes: 3,
-    xp: kind === 'story' ? 5 : 50,
+    xp: kind === 'story' ? 5 : 0,
     pinned: false,
     published: false,
     course_id: null,
@@ -70,6 +70,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
   const [busy, setBusy] = useState<string | null>(null)
   const area = useRef<HTMLTextAreaElement>(null)
   const story = d.kind === 'story'
+  const post = !story && !d.course_id
   const set = <K extends keyof LessonDraft>(key: K, value: LessonDraft[K]) => setD((prev) => ({ ...prev, [key]: value }))
 
   const insert = ([before, after]: [string, string]) => {
@@ -158,7 +159,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
     <motion.div {...sheet} className="absolute inset-0 z-[31] bg-bg">
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(130px + var(--bottom))' }}>
         <Header
-          title={d.id ? 'Правка' : story ? 'Новая сторис' : 'Новый урок'}
+          title={d.id ? 'Правка' : story ? 'Новая сторис' : post ? 'Новая публикация' : 'Новый урок'}
           right={
             d.id ? (
               <Tap onClick={remove} aria-label="Удалить" className="grid h-10 w-10 place-items-center rounded-full border border-line bg-card text-rose">
@@ -187,12 +188,12 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
           {!story && (
             <>
               <Label>Подзаголовок</Label>
-              <input value={d.subtitle} onChange={(e) => set('subtitle', e.target.value)} placeholder="Одна строка: о чём урок" maxLength={200} className={field} />
+              <input value={d.subtitle} onChange={(e) => set('subtitle', e.target.value)} placeholder={post?'Одна строка: о чём публикация':'Одна строка: о чём урок'} maxLength={200} className={field} />
 
               <Label>Категория</Label>
-              <input value={d.category} onChange={(e) => set('category', e.target.value)} placeholder="Уроки" maxLength={30} className={field} />
+              <input value={d.category} onChange={(e) => set('category', e.target.value)} placeholder="Блог" maxLength={30} className={field} />
               <div className="no-bar mt-2 flex gap-1.5 overflow-x-auto">
-                {[...new Set([...categories, 'Уроки', 'Туториалы', 'Промпты', 'Разборы'])].map((c) => (
+                {[...new Set([...categories, 'Блог', 'Туториалы', 'Промпты', 'Разборы'])].map((c) => (
                   <Tap key={c} feedback="select" onClick={() => set('category', c)} className={`h-8 shrink-0 rounded-full border px-3 text-[12.5px] font-semibold ${d.category === c ? 'border-violet/60 bg-violet/15 text-ink' : 'border-line text-mute'}`}>
                     {c}
                   </Tap>
@@ -213,7 +214,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             ref={area}
             value={d.body}
             onChange={(e) => set('body', e.target.value)}
-            placeholder={story ? '# Первый слайд\n\nКороткая мысль.\n\n---\n\n## Второй слайд' : 'Текст урока. Заголовки — через ##, код — в тройных кавычках.'}
+            placeholder={story ? '# Первый слайд\n\nКороткая мысль.\n\n---\n\n## Второй слайд' : 'Текст материала. Заголовки — через ##, код — в тройных кавычках.'}
             rows={story ? 8 : 12}
             className={`${field} resize-y font-mono text-[14.5px] leading-relaxed`}
           />
@@ -223,19 +224,21 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
               <Label hint="YouTube, Rutube, VK или mp4">Видео</Label>
               <input value={d.video_url ?? ''} onChange={(e) => set('video_url', e.target.value || null)} placeholder="https://" inputMode="url" className={field} />
 
-              <Label hint="ссылка на картинку: большая в ленте, вместо эмодзи в уроке">Обложка</Label>
+              <Label hint="ссылка на картинку: обложка публикации или урока">Обложка</Label>
               <input value={d.cover_url ?? ''} onChange={(e) => set('cover_url', e.target.value || null)} placeholder="https://" inputMode="url" className={field} />
 
+              {!post&&<>
               <Label hint="если пусто — копируется весь урок">Текст для «Скопировать для нейронки»</Label>
               <textarea value={d.copy_text ?? ''} onChange={(e) => set('copy_text', e.target.value || null)} placeholder="Готовый промпт" rows={3} className={`${field} resize-y font-mono text-[14.5px]`} />
+              </>}
             </>
           )}
 
           <div className="mt-5 grid grid-cols-2 gap-2">
-            <div>
+            {!post&&<div>
               <p className="mb-2 text-[13px] font-semibold text-mute">XP за {story ? 'просмотр' : 'урок'}</p>
               <input type="number" inputMode="numeric" value={d.xp} onChange={(e) => set('xp', Number(e.target.value))} min={0} max={500} className={field} />
-            </div>
+            </div>}
             {!story && (
               <div>
                 <p className="mb-2 text-[13px] font-semibold text-mute">Минут {autoMinutes && <span className="font-normal text-faint">авто</span>}</p>
@@ -255,7 +258,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             )}
           </div>
 
-          {!story && (
+          {!story && !post && (
             <>
               <Label hint="до 10 вопросов">Квиз</Label>
               <div className="space-y-3">

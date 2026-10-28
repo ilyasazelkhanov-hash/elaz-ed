@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
+import {completedAcademyLessonCodes} from '../../src/lib/academy-sequence.ts'
 import {PGlite} from '@electric-sql/pglite'
 
 test('Academy completion: purchases, competencies, immutable shared blocks and private analytics',async t=>{
@@ -60,6 +61,7 @@ test('Academy completion: purchases, competencies, immutable shared blocks and p
   await rpc(2,'submission_submit',{submission_id:draft.id})
   await rpc(1,'review',{submission_id:draft.id,decision:'passed',scores:{quality:100},gates:{},feedback:'Checked'})
   await rpc(2,'complete',{code:'L'}); await rpc(2,'complete',{code:'L'})
+  assert.ok(completedAcademyLessonCodes((await rpc(2,'my')).progress).has('L'),'raw PostgreSQL completion must be recognized by the UI')
   assert.equal((await rpc(2,'skill_progress')).skills[0].verified,true)
   assert.equal((await db.query("select count(*)::int n from aa_events where event='lesson_completed'")).rows[0].n,1)
  })

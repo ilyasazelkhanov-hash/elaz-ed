@@ -1,0 +1,26 @@
+{
+  "mainNavigation": [
+    "Главная",
+    "Курсы",
+    "Блог",
+    "Профиль"
+  ],
+  "homeCoursesAboveFold": true,
+  "blog": "separate article reader with no quiz or XP claims",
+  "blogReload": true,
+  "blogLikeRollback": true,
+  "readMarkers": "local, separate from learning",
+  "courseCatalog": 28,
+  "courseUI": "native OG, no Academy navigation or branded cover",
+  "sqlProgress": "1 of 16; resumes lesson 2",
+  "legacyCourses": "hidden",
+  "additionalFeatures": "available in profile",
+  "blogEditor": "publication, no quiz or XP controls",
+  "viewports": [
+    320,
+    390,
+    1024
+  ],
+  "pageErrors": [],
+  "evidence": "local production build + synthetic API, not live Telegram"
+}

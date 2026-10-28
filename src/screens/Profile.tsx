@@ -1,11 +1,11 @@
-import { AtSign, ChevronRight, FlaskConical, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX } from 'lucide-react'
+import { AtSign, Award, BookOpen, Trophy, Compass, ChevronRight, FlaskConical, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX } from 'lucide-react'
 import { motion, useMotionTemplate, useTransform } from 'motion/react'
 import { useState } from 'react'
 import { isDemo } from '../lib/api'
 import { appLink } from '../lib/links'
 import { achievementCard, levelCard } from '../lib/shareCard'
 import { track } from '../lib/track'
-import { ACHIEVEMENTS, GRADIENTS, lessonsWord, LEVELS, levelOf } from '../lib/game'
+import { ACHIEVEMENTS, GRADIENTS, LEVELS, levelOf } from '../lib/game'
 import { sfx } from '../lib/sfx'
 import { addShortcut, INSTAGRAM } from '../lib/install'
 import { haptic, inTelegram, openLink, shareLink } from '../lib/tg'
@@ -13,6 +13,8 @@ import { getMode, setMode, type ThemeMode } from '../lib/theme'
 import { useTilt } from '../lib/tilt'
 import type { Me } from '../lib/types'
 import { useStore } from '../store'
+import { DailyCard, StreakCard } from './home/Daily'
+import { AdventBanner } from './advent/Banner'
 import { Avatar, Counter, Emoji, Pattern, Sheet, Tap } from '../ui'
 
 
@@ -47,10 +49,15 @@ export function Profile() {
       </div>
 
       <Tap className="mx-5 mt-4 flex w-[calc(100%-40px)] items-center justify-between rounded-2xl border border-line bg-card p-4 text-left" onClick={()=>push({type:'learning',path:'/courses/my-learning'})}><span><b className="block text-sm">Моё обучение</b><span className="mt-1 block text-xs text-mute">Курсы, работы и результаты</span></span><ChevronRight size={18}/></Tap>
+      <div className="mx-5 mt-4">{me.daily_claimed?<StreakCard/>:<DailyCard/>}</div>
+      <AdventBanner/>
+      <div className="mx-5 mt-4 grid grid-cols-2 gap-3" aria-label="Дополнительные разделы">
+       {[{label:'Рейтинг',icon:Trophy,open:()=>useStore.getState().setTab('top')},{label:'Мой маршрут',icon:Compass,open:()=>push({type:'journey'})},{label:'ИИ-сертификации',icon:Award,open:()=>push({type:'certifications'})},{label:'Демо Академии',icon:BookOpen,open:()=>push({type:'academy',path:'/academy'})}].map(item=><Tap key={item.label} onClick={item.open} className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><item.icon size={20} className="shrink-0 text-violet"/>{item.label}</Tap>)}
+      </div>
       <div className="mt-4 grid grid-cols-4 gap-2 px-5">
         <Stat emoji="⚡" value={me.xp} label="XP" />
         <Stat emoji="🔥" value={me.streak} label="стрик" />
-        <Stat emoji="📚" value={me.lessons_done} label={lessonsWord(me.lessons_done)} />
+        <Stat emoji="👥" value={me.invited} label="приглашено" />
         <Stat emoji="🏆" value={me.rank} label="место" />
       </div>
 

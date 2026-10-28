@@ -6,7 +6,7 @@ import { demoPlatformXp } from './lib/experience'
 import type { ShareCard } from './lib/shareCard'
 import type { AdminCourse, AdventSummary, Card, CompleteResult, Course, Kind, Lesson, Me, Meta } from './lib/types'
 
-export type Tab = 'home' | 'top' | 'profile'
+export type Tab = 'home' | 'courses' | 'blog' | 'top' | 'profile'
 
 /** Отступы карточки от краёв приложения — из неё раскрывается экран урока. */
 export interface Inset {
@@ -135,7 +135,11 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   setPhase: (phase) => set({ phase }),
-  setTab: (tab) => set({ tab }),
+  setTab: (tab) => {
+    const hash=tab==='home'?'':`#/${tab}`
+    window.history.replaceState(null,'',`${location.pathname}${location.search}${hash}`)
+    set({tab})
+  },
   push: (overlay) => set((s) => ({ stack: [...s.stack, overlay] })),
   pop: () => set((s) => ({ stack: s.stack.slice(0, -1) })),
   setMe: (me) => set({ me: isDemoProgress(me) }),

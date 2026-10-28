@@ -83,7 +83,7 @@ export function AdminScreen() {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold">Аналитика</span>
-            <span className="block text-[12.5px] text-mute">Активность, возврат, воронка и уроки</span>
+            <span className="block text-[12.5px] text-mute">Активность, публикации и обучение</span>
           </span>
           <ChevronRight size={18} className="text-faint" />
         </Tap>
@@ -99,20 +99,21 @@ export function AdminScreen() {
           <ChevronRight size={18} className="text-faint" />
         </Tap>
 
+        <Tap onClick={()=>push({type:'learning',path:'/courses/admin'})} className="mx-5 mt-2 flex min-h-16 w-[calc(100%-40px)] items-center gap-3 rounded-[18px] border border-line bg-card p-4 text-left"><GraduationCap size={22} className="shrink-0 text-violet"/><span className="min-w-0 flex-1"><b className="block text-sm">Материалы курсов</b><span className="mt-1 block text-xs text-mute">Программы, уроки, задания и проверка работ</span></span><ChevronRight size={18}/></Tap>
         <Tap onClick={() => push({ type: 'courses-admin' })} className="mx-5 mt-2 flex w-[calc(100%-40px)] items-center gap-3 rounded-[18px] border border-line bg-card p-3.5 text-left">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-violet/15 text-violet">
             <GraduationCap size={19} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-semibold">Курсы и заявки</span>
-            <span className="block text-[12.5px] text-mute">Закрытые курсы, цена в звёздах, доступ</span>
+            <span className="block text-[15px] font-semibold">Архив курсов и заявки</span>
+            <span className="block text-[12.5px] text-mute">Старые курсы, оплаты и выданные доступы</span>
           </span>
           <ChevronRight size={18} className="text-faint" />
         </Tap>
 
         <div className="mt-4 grid grid-cols-2 gap-2 px-5">
           <Tap onClick={() => push({ type: 'editor', lesson: null, kind: 'lesson' })} className="flex h-[52px] items-center justify-center gap-2 rounded-[18px] font-display text-[13.5px] font-semibold text-white" style={{ background: 'var(--aurora)' }}>
-            <Plus size={18} /> Урок
+            <Plus size={18} /> Публикация
           </Tap>
           <Tap onClick={() => push({ type: 'editor', lesson: null, kind: 'story' })} className="flex h-[52px] items-center justify-center gap-2 rounded-[18px] border border-line bg-card2 font-display text-[13.5px] font-semibold">
             <Plus size={18} /> Сторис
@@ -139,7 +140,7 @@ export function AdminScreen() {
               </div>
             </Tap>
           ))}
-          {lessons?.length === 0 && <p className="py-8 text-center text-[14px] text-mute">Пока пусто. Начни с первого урока.</p>}
+          {lessons?.length === 0 && <p className="py-8 text-center text-[14px] text-mute">Пока пусто. Добавь первую публикацию.</p>}
         </div>
       </div>
     </motion.div>

@@ -1,7 +1,8 @@
-import { House, Trophy, User } from 'lucide-react'
+import { House, BookOpen, Newspaper, User } from 'lucide-react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
+import { blogPostEntry } from './lib/content'
 import { coursesEntry } from './lib/learning-entry'
 import { academyEntry } from './lib/academy-entry'
 import { bindBack, initTelegram, inTelegram, startParam } from './lib/tg'
@@ -9,6 +10,7 @@ import { applyTheme, watchTheme } from './lib/theme'
 import { preloadMarkdown } from './Markdown'
 import { CourseScreen } from './screens/Course'
 import { Home } from './screens/Home'
+import { Blog } from './screens/Blog'
 import { LessonScreen } from './screens/Lesson'
 import { Profile } from './screens/Profile'
 import { RewardModal } from './screens/Reward'
@@ -29,7 +31,8 @@ const LabScreen = lazy(() => import('./screens/Lab').then((m) => ({ default: m.L
 const JourneyScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.JourneyScreen })))
 const ClubScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.ClubScreen })))
 const ServicesScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.ServicesScreen })))
-const CoursesScreen = lazy(() => import('./screens/Academy').then((m) => ({ default: m.CoursesScreen })))
+const CoursesScreen = lazy(() => import('./screens/Courses').then((m) => ({ default: m.CoursesScreen })))
+const MainCoursesTab = lazy(() => import('./screens/Courses').then(m=>({default:m.MainCoursesTab})))
 const AcademyScreen = lazy(() => import('./screens/Academy').then((m) => ({ default: m.AcademyScreen })))
 // Адвент нужен только в сезон — грузим экраны календаря, игр и кассы по требованию.
 const AdventScreen = lazy(() => import('./screens/advent/Advent').then((m) => ({ default: m.AdventScreen })))
@@ -114,9 +117,13 @@ function Shell() {
   useEffect(() => {
     const academyPath = academyEntry(location.hash, location.pathname, startParam)
     const coursesPath = coursesEntry(location.hash, location.pathname, startParam)
-    if (coursesPath) useStore.getState().push({type:'learning',path:coursesPath})
+    const postId=blogPostEntry(location.hash)
+    const mainTab=/^#\/(blog|profile|top)$/.exec(location.hash)?.[1] as Tab|undefined
+    if(postId){useStore.getState().setTab('blog');useStore.getState().push({type:'lesson',id:postId})}
+    else if(mainTab)useStore.getState().setTab(mainTab)
+    else if (coursesPath) {useStore.getState().setTab('courses');if(coursesPath!=='/courses')useStore.getState().push({type:'learning',path:coursesPath})}
     else if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
-    if (!coursesPath && !academyPath) {
+    if (!postId && !mainTab && !coursesPath && !academyPath) {
       const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
       const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
       if (id) useStore.getState().push({ type: 'lesson', id })
@@ -133,6 +140,8 @@ function Shell() {
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={tab} onScrollCapture={onScroll} className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
           {tab === 'home' && <Home />}
+          {tab === 'blog' && <Blog/>}
+          {tab === 'courses' && <Suspense fallback={<div role="status" className="p-5">Загружаем курсы…</div>}><MainCoursesTab/></Suspense>}
           {tab === 'top' && <Top />}
           {tab === 'profile' && <Profile />}
         </motion.div>
@@ -187,7 +196,7 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
     case 'stories':
       return <Stories startId={overlay.id} />
     case 'course':
-      return isAdmin ? <CourseScreen id={overlay.id} from={overlay.from} /> : <div className="absolute inset-0 z-30 flex flex-col justify-center bg-bg p-6"><h1 className="font-display text-xl">Старый курс скрыт</h1><p className="mt-3 text-sm text-mute">Актуальные материалы находятся в разделе «Курсы». Твои предыдущие результаты сохранены.</p><button className="mt-5 text-violet" onClick={()=>{useStore.getState().pop();useStore.getState().push({type:'learning',path:'/courses'})}}>Открыть курсы →</button></div>
+      return isAdmin ? <CourseScreen id={overlay.id} from={overlay.from} /> : <div className="absolute inset-0 z-30 flex flex-col justify-center bg-bg p-6"><h1 className="font-display text-xl">Старый курс скрыт</h1><p className="mt-3 text-sm text-mute">Актуальные материалы находятся в разделе «Курсы». Твои предыдущие результаты сохранены.</p><button className="mt-5 text-violet" onClick={()=>{useStore.getState().pop();useStore.getState().setTab('courses')}}>Открыть курсы →</button></div>
     case 'lab':
       return (
         <Suspense fallback={null}>
@@ -245,37 +254,15 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
   }
 }
 
-const TABS: { id: Tab; label: string; icon: typeof House }[] = [
-  { id: 'home', label: 'Главная', icon: House },
-  { id: 'top', label: 'Рейтинг', icon: Trophy },
-  { id: 'profile', label: 'Профиль', icon: User },
+const TABS: {id:Tab;label:string;icon:typeof House}[]=[
+ {id:'home',label:'Главная',icon:House},
+ {id:'courses',label:'Курсы',icon:BookOpen},
+ {id:'blog',label:'Блог',icon:Newspaper},
+ {id:'profile',label:'Профиль',icon:User},
 ]
-
-function Nav() {
-  const tab = useStore((s) => s.tab)
-  const setTab = useStore((s) => s.setTab)
-  // Повторное нажатие на открытую вкладку возвращает к началу экрана.
-  const toTop = () => document.querySelector('[data-tab-scroll]')?.scrollTo({ top: 0, behavior: 'smooth' })
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center" style={{ paddingBottom: 'calc(14px + var(--bottom))' }}>
-      <nav className="pointer-events-auto flex gap-1 rounded-full border border-line bg-float/85 p-1.5 shadow-[var(--shadow-float)] backdrop-blur-xl">
-        {TABS.map(({ id, label, icon: Icon }) => {
-          const active = tab === id
-          return (
-            <Tap key={id} feedback="select" onClick={() => (active ? toTop() : setTab(id))} aria-label={label} className={`relative flex h-11 items-center gap-2 rounded-full px-4 ${active ? 'text-white' : 'text-mute'}`}>
-              {active && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-full" style={{ background: 'var(--aurora)' }} transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
-              <Icon size={19} strokeWidth={2.2} className="relative" />
-              <AnimatePresence initial={false}>
-                {active && (
-                  <motion.span initial={{ width: 0, opacity: 0 }} animate={{ width: 'auto', opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="relative overflow-hidden whitespace-nowrap text-[13px] font-semibold">
-                    {label}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </Tap>
-          )
-        })}
-      </nav>
-    </div>
-  )
+function Nav(){
+ const tab=useStore(s=>s.tab),setTab=useStore(s=>s.setTab)
+ return <nav aria-label="Основные разделы" className="absolute inset-x-3 bottom-0 z-20 mb-3 grid grid-cols-4 rounded-[24px] border border-line bg-float/95 p-1.5 shadow-[var(--shadow-float)] backdrop-blur-xl" style={{marginBottom:'calc(12px + var(--bottom))'}}>
+  {TABS.map(({id,label,icon:Icon})=><Tap key={id} aria-label={label} aria-current={tab===id?'page':undefined} onClick={()=>tab===id?document.querySelector('[data-tab-scroll]')?.scrollTo({top:0,behavior:'smooth'}):setTab(id)} className={`flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 rounded-[18px] px-1 text-[11px] font-semibold ${tab===id?'bg-violet/15 text-violet':'text-mute'}`}><Icon size={21}/><span>{label}</span></Tap>)}
+ </nav>
 }
