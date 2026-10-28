@@ -8,7 +8,7 @@ const scalar = value => typeof value === 'string' || typeof value === 'number' ?
 export const escapeHtml = value => scalar(value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]))
 const e = escapeHtml
 const ordered = entities => [...entities].sort((a,b) => (Number(a.position)||0)-(Number(b.position)||0) || a.code.localeCompare(b.code))
-const route = entity => `/academy/${entity.kind === 'direction' ? 'directions' : 'courses'}/${encodeURIComponent(entity.code)}`
+const route = entity => entity.kind === 'direction' ? `/courses/directions/${encodeURIComponent(entity.code)}` : `/courses/${encodeURIComponent(entity.code)}`
 const status = entity => entity.state === 'published' ? 'Опубликована публичная программа' : 'Программа формируется'
 const link = entity => `<a href="${e(route(entity))}">${e(entity.title)}</a>`
 const card = entity => `<li><h2>${link(entity)}</h2><p>${e(entity.data?.outcome || entity.data?.description)}</p><p>${e(status(entity))}</p></li>`
@@ -21,14 +21,14 @@ function origin(siteUrl) {
   return url.origin
 }
 function document(shell, page, siteOrigin) {
-  const title = `${page.title} · AI Academy`, description = scalar(page.description).slice(0,350)
+  const title = `${page.title} · OG CRE8R²`, description = scalar(page.description).slice(0,350)
   const metadata = `<meta name="description" content="${e(description)}">\n<meta property="og:title" content="${e(title)}">\n<meta property="og:description" content="${e(description)}">\n<meta property="og:type" content="website">\n<link rel="canonical" href="${e(siteOrigin + page.path)}">`
   let html = shell.replace(/<title\b[^>]*>[\s\S]*?<\/title>/i, () => `<title>${e(title)}</title>`)
   html = html.replace(/<meta\b[^>]*(?:name=["']description["']|property=["']og:(?:title|description|type)["'])[^>]*>/gi,'').replace(/<link\b[^>]*rel=["']canonical["'][^>]*>/gi,'')
   // Public curriculum stays readable outside Telegram. The explicit app link opens the unchanged SPA shell.
   html = html.replace(/<script\b[^>]*type=["']module["'][^>]*>[\s\S]*?<\/script>/gi,'').replace(/<link\b[^>]*rel=["']modulepreload["'][^>]*>/gi,'')
   html = html.replace(/<\/head>/i, () => `${metadata}\n${previewStyle}\n</head>`)
-  const preview = `<main class="academy-static" aria-label="Публичная программа AI Academy" style="max-width:960px;margin:auto;padding:32px 24px;max-height:100dvh;overflow:auto"><nav><a href="/academy">AI Academy</a> · <a href="/learning/academy/videos/index.html">Видео</a> · <a href="/#/academy${e(page.path.replace(/^\/academy/,''))}">Открыть приложение</a></nav><h1>${e(page.title)}</h1>${page.body}<p>Это публичная программа из каталога. Учебные материалы, запись, доступ и актуальный статус занятий доступны в приложении. Готовность программы не означает, что учебные материалы уже опубликованы.</p></main>`
+  const preview = `<main class="academy-static" aria-label="Публичная программа курсов" style="max-width:960px;margin:auto;padding:32px 24px;max-height:100dvh;overflow:auto"><nav><a href="/courses">Курсы</a> · <a href="/?demo#/academy">Демо Академии</a> · <a href="/#${e(page.path)}">Открыть приложение</a></nav><h1>${e(page.title)}</h1>${page.body}<p>Это публичная программа из каталога. Учебные материалы, запись, доступ и актуальный статус занятий доступны в приложении. Готовность программы не означает, что учебные материалы уже опубликованы.</p></main>`
   if (!/<div\s+id=["']root["']\s*>\s*<\/div>/i.test(html)) throw new Error('Vite shell is missing an empty root element')
   return html.replace(/<div\s+id=["']root["']\s*>\s*<\/div>/i, () => `<div id="root">${preview}</div>`)
 }
@@ -43,7 +43,7 @@ export function buildAcademyPages(catalog, shell, { siteUrl = '' } = {}) {
   }
   const directions = ordered(publicEntities.filter(entity => entity.kind === 'direction'))
   const courses = ordered(publicEntities.filter(entity => entity.kind === 'course' && (!entity.parent_code || directions.some(direction => direction.code === entity.parent_code))))
-  const pages = [{ path:'/academy',title:'AI Academy',description:'Публичная программа AI Academy: направления, курсы и занятия. Готовность материалов указана у каждого курса.',body:`<p>Готовность материалов указана у каждого курса. Это план направлений и курсов; готовность учебных материалов подтверждается отдельно в приложении.</p><h2>Направления</h2><ul>${directions.map(card).join('')}</ul><h2>Все курсы</h2><ul>${courses.map(card).join('')}</ul>` }]
+  const pages = [{ path:'/courses',title:'Курсы',description:'Публичная программа курсов: направления, курсы и занятия. Готовность материалов указана у каждого курса.',body:`<p>Готовность материалов указана у каждого курса. Это план направлений и курсов; готовность учебных материалов подтверждается отдельно в приложении.</p><h2>Направления</h2><ul>${directions.map(card).join('')}</ul><h2>Все курсы</h2><ul>${courses.map(card).join('')}</ul>` }]
   for (const direction of directions) pages.push({ path:route(direction),title:scalar(direction.title),description:scalar(direction.data?.description),body:`<p>${e(direction.data?.description)}</p><p>${e(status(direction))}</p><ul>${courses.filter(course => course.parent_code === direction.code).map(card).join('')}</ul>` })
   for (const course of courses) {
     const modules = ordered(publicEntities.filter(entity => entity.kind === 'module' && entity.parent_code === course.code))

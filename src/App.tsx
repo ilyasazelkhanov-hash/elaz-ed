@@ -2,6 +2,7 @@ import { House, Trophy, User } from 'lucide-react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
+import { coursesEntry } from './lib/learning-entry'
 import { academyEntry } from './lib/academy-entry'
 import { bindBack, initTelegram, inTelegram, startParam } from './lib/tg'
 import { applyTheme, watchTheme } from './lib/theme'
@@ -28,6 +29,7 @@ const LabScreen = lazy(() => import('./screens/Lab').then((m) => ({ default: m.L
 const JourneyScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.JourneyScreen })))
 const ClubScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.ClubScreen })))
 const ServicesScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.ServicesScreen })))
+const CoursesScreen = lazy(() => import('./screens/Academy').then((m) => ({ default: m.CoursesScreen })))
 const AcademyScreen = lazy(() => import('./screens/Academy').then((m) => ({ default: m.AcademyScreen })))
 // Адвент нужен только в сезон — грузим экраны календаря, игр и кассы по требованию.
 const AdventScreen = lazy(() => import('./screens/advent/Advent').then((m) => ({ default: m.AdventScreen })))
@@ -93,7 +95,8 @@ function Shell() {
   const pop = useStore((s) => s.pop)
 
   useEffect(() => bindBack(stack.length > 0 ? () => {
-    if (stack[stack.length - 1]?.type === 'academy') window.dispatchEvent(new Event('og:academy-back'))
+    if (stack[stack.length - 1]?.type === 'learning') window.dispatchEvent(new Event('og:courses-back'))
+    else if (stack[stack.length - 1]?.type === 'academy') window.dispatchEvent(new Event('og:academy-back'))
     else pop()
   } : null), [stack, pop])
 
@@ -110,14 +113,18 @@ function Shell() {
   // Прямая ссылка на урок: t.me/бот?start=l12
   useEffect(() => {
     const academyPath = academyEntry(location.hash, location.pathname, startParam)
-    if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
-    const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
-    const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
-    if (id) useStore.getState().push({ type: 'lesson', id })
-    else if (course) useStore.getState().push({ type: 'course', id: course })
-    else if (startParam === 'certifications') useStore.getState().push({ type: 'certifications' })
-    // Кнопка из напоминания бота: t.me/бот?startapp=advent
-    else if (/(?:^|_)advent(?:_|$)/.test(startParam) && useStore.getState().advent) useStore.getState().push({ type: 'advent' })
+    const coursesPath = coursesEntry(location.hash, location.pathname, startParam)
+    if (coursesPath) useStore.getState().push({type:'learning',path:coursesPath})
+    else if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
+    if (!coursesPath && !academyPath) {
+      const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
+      const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
+      if (id) useStore.getState().push({ type: 'lesson', id })
+      else if (course) useStore.getState().push({ type: 'course', id: course })
+      else if (startParam === 'certifications') useStore.getState().push({ type: 'certifications' })
+      // Кнопка из напоминания бота: t.me/бот?startapp=advent
+      else if (/(?:^|_)advent(?:_|$)/.test(startParam) && useStore.getState().advent) useStore.getState().push({ type: 'advent' })
+    }
     preloadMarkdown()
   }, [])
 
@@ -167,7 +174,9 @@ function overlayKey(o: Overlay, i: number) {
 }
 
 function OverlayView({ overlay }: { overlay: Overlay }) {
+  const isAdmin=useStore(s=>s.me?.is_admin)
   switch (overlay.type) {
+    case 'learning': return <Suspense fallback={null}><CoursesScreen path={overlay.path}/></Suspense>
     case 'academy': return <Suspense fallback={null}><AcademyScreen path={overlay.path}/></Suspense>
     case 'journey': return <Suspense fallback={null}><JourneyScreen/></Suspense>
     case 'club': return <Suspense fallback={null}><ClubScreen/></Suspense>
@@ -178,7 +187,7 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
     case 'stories':
       return <Stories startId={overlay.id} />
     case 'course':
-      return <CourseScreen id={overlay.id} from={overlay.from} />
+      return isAdmin ? <CourseScreen id={overlay.id} from={overlay.from} /> : <div className="absolute inset-0 z-30 flex flex-col justify-center bg-bg p-6"><h1 className="font-display text-xl">Старый курс скрыт</h1><p className="mt-3 text-sm text-mute">Актуальные материалы находятся в разделе «Курсы». Твои предыдущие результаты сохранены.</p><button className="mt-5 text-violet" onClick={()=>{useStore.getState().pop();useStore.getState().push({type:'learning',path:'/courses'})}}>Открыть курсы →</button></div>
     case 'lab':
       return (
         <Suspense fallback={null}>

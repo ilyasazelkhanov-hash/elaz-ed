@@ -1,11 +1,11 @@
 # OG CRE8R²
 
 
-**[Читать курсы по модулям](docs/ai-academy/README.md)** · [Программы в мини-аппке](https://elaz-ed.vercel.app/academy) · [Видео и статус экспорта](docs/demo-videos/README.md)
+**[Читать курсы по модулям](docs/ai-academy/README.md)** · [Курсы в мини-аппке](https://elaz-ed.vercel.app/#/courses) · [Демо Академии](https://elaz-ed.vercel.app/?demo#/academy)
 
 Рабочий сайт: [elaz-ed.vercel.app](https://elaz-ed.vercel.app). [Состояние релиза, проверки, флаги и порядок обновления](docs/RELEASE-2026-10-19.md). Мастер для заказных приложений: [Azelkhanov-master](Azelkhanov-master/README.md).
 
-AI Academy: [бизнес и внедрение BI-101/201/301](docs/ai-academy/business.md), [маркетинг MK-101/201/301](docs/ai-academy/marketing.md), [дизайн DS-101/201/301](docs/ai-academy/design-systems.md), [контент и студия CR-101/201/301](docs/ai-academy/creative-production.md), [аналитика DT-101/201/301](docs/ai-academy/data-analytics.md), [курсы в основной мини-аппке и публикация](docs/ai-academy/main-mini-app.md), [инженерия и выпуск ENG-201/301, VC-301](docs/ai-academy/engineering-release.md), [помощники и агенты AG-101/201/301](docs/ai-academy/assistants.md), [интеграции AU-201/AU-301](docs/ai-academy/automation-systems.md), [автоматизация AU-101](docs/ai-academy/au-101.md), [full-stack курс VC-201](docs/ai-academy/vc-201.md), [новый курс ENG-101](docs/ai-academy/eng-101.md), [аудит интеграции](docs/ai-academy/integration-audit.md), [реализация и проверки](docs/ai-academy/implementation-report.md), [API и правила публикации](docs/ai-academy/backend-contract.md). [Учебный пакет Core/VC-101](docs/ai-academy/authored-content.md). [Понятный маршрут, подсказки и иллюстрации для всех 28 курсов](docs/ai-academy/learning-guidance.md). В основной мини-аппке: блок «AI Academy» на главной и `#/academy`; локальный каталог: `/?demo#/academy`. Проверки: `npm run test:academy`; проверка исходного curriculum: `npm run academy:seed`.
+AI Academy: [бизнес и внедрение BI-101/201/301](docs/ai-academy/business.md), [маркетинг MK-101/201/301](docs/ai-academy/marketing.md), [дизайн DS-101/201/301](docs/ai-academy/design-systems.md), [контент и студия CR-101/201/301](docs/ai-academy/creative-production.md), [аналитика DT-101/201/301](docs/ai-academy/data-analytics.md), [курсы в основной мини-аппке и публикация](docs/ai-academy/main-mini-app.md), [инженерия и выпуск ENG-201/301, VC-301](docs/ai-academy/engineering-release.md), [помощники и агенты AG-101/201/301](docs/ai-academy/assistants.md), [интеграции AU-201/AU-301](docs/ai-academy/automation-systems.md), [автоматизация AU-101](docs/ai-academy/au-101.md), [full-stack курс VC-201](docs/ai-academy/vc-201.md), [новый курс ENG-101](docs/ai-academy/eng-101.md), [аудит интеграции](docs/ai-academy/integration-audit.md), [реализация и проверки](docs/ai-academy/implementation-report.md), [API и правила публикации](docs/ai-academy/backend-contract.md). [Учебный пакет Core/VC-101](docs/ai-academy/authored-content.md). [Понятный маршрут, подсказки и иллюстрации для всех 28 курсов](docs/ai-academy/learning-guidance.md). В основной мини-аппке: раздел «Курсы» на главной и `#/courses`. Все 28 программ и 448 занятий относятся к основному обучению. `#/academy` — отдельное демо первого модуля с изолированным прогрессом. Старые OG-курсы скрыты из пользовательского каталога; демовидео убраны. Проверки: `npm run test:academy`; проверка исходного curriculum: `npm run academy:seed`.
 
 Telegram Mini App для подписчиков канала: уроки, сторис, квизы, XP, стрик, уровни, рейтинг.
 Бот — [@elazart_bot](https://t.me/elazart_bot).
@@ -17,7 +17,7 @@ Telegram Mini App для подписчиков канала: уроки, сто
 | Интерфейс (React + Vite + Tailwind + Motion) | `src/`, хостинг — Vercel |
 | API и вебхук бота | `supabase/functions/api/index.ts`, Supabase Edge Function |
 | База | Supabase, проект `dcdepwdxvadhludnubis`, схема — `supabase/migrations/` |
-| AI Academy | `src/screens/academy/`, `src/AcademyPublic.tsx`, публичные страницы — `scripts/academy-prerender.mjs` |
+| Основные курсы и отдельное демо Академии | `src/screens/academy/`, `src/AcademyPublic.tsx`, публичные страницы — `scripts/academy-prerender.mjs` |
 | Пространство клуба (копия мастера) | `src/platform-kit/`, `src/PlatformSpace.tsx`, сервер — `server/platform-kit/`, функция `supabase/functions/az-master-api`; открывается по `/?platform` или `/space` |
 | Мастер для заказных приложений | `Azelkhanov-master/` — отдельный проект со своими `node_modules`; OG от него не зависит |
 

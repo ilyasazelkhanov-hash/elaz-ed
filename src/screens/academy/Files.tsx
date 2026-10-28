@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { academyRequest } from '../../lib/academy'
+import { useLearningRequest } from '../../lib/learning-scope'
 import { openLink } from '../../lib/tg'
 import { Tap } from '../../ui'
 
 const extensions: Record<string, string> = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', txt: 'text/plain', zip: 'application/zip' }
 export function AcademyAttachmentLinks({ fileIds }: { fileIds: unknown }) {
+  const academyRequest=useLearningRequest()
   const [error, setError] = useState(''), [busy, setBusy] = useState(false)
   const ids = Array.isArray(fileIds) ? fileIds.filter((id): id is string => typeof id === 'string').slice(0, 10) : []
   async function download(fileId: string) {
@@ -14,6 +15,7 @@ export function AcademyAttachmentLinks({ fileIds }: { fileIds: unknown }) {
   return ids.length ? <div className="mt-3"><div className="flex flex-wrap gap-2">{ids.map((id, i) => <Tap key={id} className="academy-chip text-violet" disabled={busy} onClick={() => void download(id)}>Скачать вложение {i + 1}</Tap>)}</div>{error && <p role="alert" className="mt-2 text-xs text-rose">{error}</p>}</div> : null
 }
 export function AcademyFiles({ lessonCode, onChange, initialFileIds = [] }: { lessonCode: string; onChange: (fileIds: string[]) => void; initialFileIds?: string[] }) {
+  const academyRequest=useLearningRequest()
   const [files, setFiles] = useState(() => initialFileIds.map(id => ({ id, name: 'Прикреплённый файл' })))
   const [busy, setBusy] = useState(false), [error, setError] = useState('')
   async function upload(file: File) {

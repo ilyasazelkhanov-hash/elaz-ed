@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp, Plus, Save, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useStore } from '../../store'
-import { academyRequest } from '../../lib/academy'
+import { useLearningRequest } from '../../lib/learning-scope'
 import { useAcademyTranslation } from '../../lib/academy-i18n'
 import { SkillMapping } from './Competencies'
 import { BlockBank } from './BlockBank'
@@ -62,6 +62,7 @@ function Roles() {
 }
 
 export function Admin({ section, permissions }: { section?: string; permissions?: { editor?: boolean; instructor?: boolean; admin?: boolean } }) {
+  const academyRequest=useLearningRequest()
   const t = useAcademyTranslation()
   const isAdmin = useStore((s) => s.me?.is_admin)
   const canEdit = !!(isAdmin || permissions?.admin || permissions?.editor), canReview = !!(isAdmin || permissions?.admin || permissions?.instructor)

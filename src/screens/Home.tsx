@@ -1,20 +1,19 @@
 import { AnimatePresence } from 'motion/react'
 import { useMemo, useRef } from 'react'
 import { levelOf } from '../lib/game'
-import { AcademyCourses } from './home/AcademyCourses'
+import { MainCourses } from './home/AcademyCourses'
 import { useStore } from '../store'
 import { Avatar, Bar, Counter, Emoji, Odometer, Ring, Tap } from '../ui'
 import { AdventBanner } from './advent/Banner'
 import { DailyCard, StreakCard } from './home/Daily'
 import { Feed } from './home/Feed'
 import { HeroCarousel } from './home/Hero'
-import { CourseCard, SectionTitle, StoryBubble } from './home/parts'
+import { SectionTitle, StoryBubble } from './home/parts'
 import { Award, ChevronRight } from 'lucide-react'
 
 export function Home() {
   const me = useStore((s) => s.me)!
   const feed = useStore((s) => s.feed)
-  const courses = useStore((s) => s.courses)
   const setTab = useStore((s) => s.setTab)
   const scroller = useRef<HTMLDivElement>(null)
 
@@ -84,7 +83,7 @@ export function Home() {
         </AnimatePresence>
       </div>
 
-      <AcademyCourses />
+      <MainCourses />
 
       {stories.length > 0 && (
         <div className="no-bar mt-6 flex gap-3.5 overflow-x-auto px-5">
@@ -98,17 +97,6 @@ export function Home() {
         <>
           <SectionTitle>В фокусе</SectionTitle>
           <HeroCarousel cards={hero} />
-        </>
-      )}
-
-      {courses.length > 0 && (
-        <>
-          <SectionTitle count={courses.length > 1 ? courses.length : undefined}>Курсы</SectionTitle>
-          <div className="no-bar -mb-10 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-10">
-            {courses.map((c) => (
-              <CourseCard key={c.id} course={c} single={courses.length === 1} />
-            ))}
-          </div>
         </>
       )}
 

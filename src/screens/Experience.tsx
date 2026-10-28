@@ -31,12 +31,12 @@ function useExperience() {
   return { snapshot, error, loading, refresh }
 }
 export function JourneyScreen() {
-  const { feed, courses, push, me, toast } = useStore()
+  const { feed, push, me, toast } = useStore()
   const { snapshot } = useExperience()
   const [goal, setGoal] = useState(() => { try { return localStorage.getItem(GOAL_KEY) || GOALS[0].id } catch { return GOALS[0].id } })
   const [saving, setSaving] = useState(false)
   useEffect(() => { const id = (snapshot as Snapshot & { journey?: { entityId: string } } | null)?.journey?.entityId; if (GOALS.some((g) => g.id === id)) { setGoal(id!); try { localStorage.setItem(GOAL_KEY, id!) } catch {} } }, [snapshot])
-  const lessons = routeLessons(feed, courses, goal), done = lessons.filter((l) => l.completed).length
+  const lessons = routeLessons(feed.filter(card=>!card.course_id), [], goal), done = lessons.filter((l) => l.completed).length
   async function choose(id: string) {
     if (saving) return
     setSaving(true)
@@ -45,7 +45,7 @@ export function JourneyScreen() {
       localStorage.setItem(GOAL_KEY, id); setGoal(id)
     } catch(e) { toast(e instanceof Error ? e.message : 'Не удалось сохранить цель') } finally { setSaving(false) }
   }
-  return <Frame title="Мой маршрут"><p className="text-[15px] leading-relaxed text-mute">Выбери цель. Здесь будет несколько подходящих материалов и ближайший шаг.</p>
+  return <Frame title="Мой маршрут"><Cta onClick={()=>push({type:'learning',path:'/courses'})}>Открыть курсы →</Cta><p className="text-[15px] leading-relaxed text-mute">Выбери цель. Здесь будет несколько подходящих материалов и ближайший шаг.</p>
     <div className="grid gap-2">{GOALS.map((g) => <Tap disabled={saving} key={g.id} aria-pressed={goal === g.id} onClick={() => void choose(g.id)} className={`${panel} flex items-center gap-3 text-left ${goal === g.id ? 'ring-2 ring-violet' : ''}`}><Emoji char={g.emoji} size={30}/><span className="flex-1"><b className="block text-[14px]">{g.title}</b><span className="mt-1 block text-[12px] text-mute">{g.caption}</span></span>{goal === g.id && <Check size={20} className="text-violet"/>}</Tap>)}</div>
     <section className={panel}><div className="mb-3 flex justify-between"><h2 className="font-semibold">Твой следующий шаг</h2><span className="text-[13px] text-mute">{done}/{lessons.length}</span></div><Bar progress={lessons.length ? done / lessons.length : 0}/>{lessons.length ? lessons.map((l,i) => <Tap key={l.id} onClick={() => push({ type: 'lesson', id: l.id })} className="flex w-full items-center gap-3 border-b border-line py-4 text-left last:border-0"><span className="text-violet">{l.completed ? <Check size={20}/> : `${i+1}`}</span><span className="flex-1 text-[14px]">{l.title}<small className="mt-1 block text-mute">{l.minutes} мин · {l.completed ? 'Пройдено' : `+${l.xp} XP`}</small></span><ChevronRight size={17}/></Tap>) : <p className="mt-4 text-sm text-mute">Материалы появятся после публикации автором.</p>}</section>
     <section className={panel}><p className="font-semibold">Один профиль, весь прогресс</p><p className="mt-2 text-sm leading-relaxed text-mute">{me?.xp ?? 0} XP всего. Уроки: {me?.base_xp ?? me?.xp ?? 0} XP · активности клуба: {me?.platform_xp ?? 0} XP. История начислений сохраняется отдельно.</p></section>

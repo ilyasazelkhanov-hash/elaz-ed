@@ -46,6 +46,7 @@ export function Profile() {
         <HoloCard me={me} />
       </div>
 
+      <Tap className="mx-5 mt-4 flex w-[calc(100%-40px)] items-center justify-between rounded-2xl border border-line bg-card p-4 text-left" onClick={()=>push({type:'learning',path:'/courses/my-learning'})}><span><b className="block text-sm">Моё обучение</b><span className="mt-1 block text-xs text-mute">Курсы, работы и результаты</span></span><ChevronRight size={18}/></Tap>
       <div className="mt-4 grid grid-cols-4 gap-2 px-5">
         <Stat emoji="⚡" value={me.xp} label="XP" />
         <Stat emoji="🔥" value={me.streak} label="стрик" />

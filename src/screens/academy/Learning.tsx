@@ -9,7 +9,6 @@ import { Check, ChevronRight, FileText } from 'lucide-react'
 import { useState } from 'react'
 import { LessonReading } from './LessonReading'
 import { LessonVisuals } from './LessonVisuals'
-import { LessonVideos } from './Videos'
 import { LessonStudyNav,StudyHeading,StudyExample,LessonTask,LessonChecks,LessonResources,studySections,type StudyCase } from './LessonStudy'
 import { Bar, Cta, Tap } from '../../ui'
 import { Empty, External, FetchState, Sources, Status, formatLabel, panel, text, useAcademy, useAction, type Entity, type Navigate } from './shared'
@@ -67,7 +66,6 @@ export function Lesson({ code, go }: { code: string; go: Navigate }) {
       <section id={ids[1]} className="academy-study-stage" aria-label="Пример и иллюстрации"><StudyHeading number="02" title="Посмотри на примере" description="Сравни исходные данные, действие и результат. Найди, где его можно проверить."/>
         {explanation&&<StudyExample data={explanation} showConcept={false}/>}
         {beginner&&moduleExample&&<details className={`${panel} academy-study-sources`}><summary>Ещё один пример для всего модуля</summary><StudyExample data={moduleExample}/></details>}
-        <LessonVideos code={code}/>
         {isLesson&&<LessonVisuals code={code}/>}
       </section>
       <section id={ids[2]} className="academy-study-stage" aria-label="Самостоятельная практика"><StudyHeading number="03" title={quiz?'Подготовься к проверке':'Выполни практику'} description={quiz?'Попробуй объяснить правило на своём примере. Затем переходи к квизу.':'Сделай свою версию, а не копию учебного примера.'}/>

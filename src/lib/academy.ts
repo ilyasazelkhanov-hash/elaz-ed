@@ -16,7 +16,7 @@ const messages: Record<string,string> = {
   already_submitted:'Работа уже ожидает проверки.',artifact_required:'Добавьте текст работы или ссылку на результат.',
   access_required:'Для этого курса требуется отдельный доступ.',course_incomplete:'Сначала выполните обязательные занятия.',
   capstone_required:'Для сертификата требуется успешная защита проекта.',invalid_url:'Используйте открытую HTTPS-ссылку без ключей доступа.',
-  academy_not_ready:'Академия ещё не подключена к серверу. Повторите позже.',network:'Нет связи с сервером. Попробуйте ещё раз.',
+  academy_not_ready:'Учебные материалы пока недоступны. Повторите позже.',network:'Нет связи с сервером. Попробуйте ещё раз.',
   access_forbidden:'Материал пока недоступен. Проверьте публикацию курса и своё зачисление.',
   prerequisites_required:'Сначала завершите подготовительный курс или подтвердите входной уровень.',
   approval_required:'Сначала переведите запись в статус «Готов к публикации».',
@@ -44,7 +44,7 @@ async function demoClient() {
   demo ??= Promise.all([import('./academy-domain'),import('./academy-storage'),import.meta.env.DEV||import.meta.env.VITE_ACADEMY_PUBLIC_DEMO==='true'
     ? import('../../content/ai-academy/catalog.learning.json')
     : import('../../content/ai-academy/catalog.normalized.json')]).then(([{createAcademyEngine},{createAcademySnapshotStorage},{default:seed}]) => {
-    const key='og:academy:demo:v1'
+    const key='og:courses:preview:v1'
     const storage=createAcademySnapshotStorage<any>(localStorage,key)
     window.addEventListener('storage',event=>{if(event.key===key||event.key===null)storage.invalidate()})
     return createAcademyEngine(seed as any,storage)
@@ -72,4 +72,16 @@ export async function academyPublicRequest(action:'certificate_public'|'portfoli
   const res=await fetch(`${import.meta.env.VITE_API_URL??''}/academy_public`,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({action,payload})})
   if(!res.ok)throw new Error('Подтверждение недоступно или ссылка отозвана.')
   return res.json()
+}
+
+// A deliberately small public sample. It never calls the live API or inherits admin rights.
+let sample: Promise<any> | undefined
+export async function academyDemoRequest<T=any>(action: string, payload: Record<string,unknown> = {}): Promise<T> {
+  sample ??= Promise.all([import('./academy-domain'),import('./academy-storage'),import('../../content/ai-academy/demo.sample.json')]).then(([{createAcademyEngine},{createAcademySnapshotStorage},{default:seed}])=>{
+    const key='og:academy:sample:v1',storage=createAcademySnapshotStorage<any>(localStorage,key)
+    window.addEventListener('storage',event=>{if(event.key===key||event.key===null)storage.invalidate()})
+    return createAcademyEngine(seed as any,storage)
+  })
+  try { return await (await sample)({id:1,is_admin:false},action,payload) }
+  catch(error) { const code=error instanceof Error?error.message:'unknown';throw new Error(messages[code.replace(/^academy_/,'')]??messages[code]??'Действие недоступно в демо.') }
 }

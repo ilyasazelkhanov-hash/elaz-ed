@@ -5,16 +5,16 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/academy",
-      "destination": "/academy/index.html"
+      "source": "/courses",
+      "destination": "/courses/index.html"
     },
     {
-      "source": "/academy/directions/:code(VC|ENG|AU|AG|CR|DS|MK|DT|BI)",
-      "destination": "/academy/directions/:code/index.html"
+      "source": "/courses/directions/:code(VC|ENG|AU|AG|CR|DS|MK|DT|BI)",
+      "destination": "/courses/directions/:code/index.html"
     },
     {
-      "source": "/academy/courses/:code(CORE-000|VC-101|VC-201|VC-301|ENG-101|ENG-201|ENG-301|AU-101|AU-201|AU-301|AG-101|AG-201|AG-301|CR-101|CR-201|CR-301|DS-101|DS-201|DS-301|MK-101|MK-201|MK-301|DT-101|DT-201|DT-301|BI-101|BI-201|BI-301)",
-      "destination": "/academy/courses/:code/index.html"
+      "source": "/courses/:code(CORE-000|VC-101|VC-201|VC-301|ENG-101|ENG-201|ENG-301|AU-101|AU-201|AU-301|AG-101|AG-201|AG-301|CR-101|CR-201|CR-301|DS-101|DS-201|DS-301|MK-101|MK-201|MK-301|DT-101|DT-201|DT-301|BI-101|BI-201|BI-301)",
+      "destination": "/courses/:code/index.html"
     },
     {
       "source": "/((?!assets/).*)",
@@ -51,6 +51,23 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/academy",
+      "destination": "/?demo=1#/academy",
+      "permanent": false
+    },
+    {
+      "source": "/academy/courses/:code",
+      "destination": "/courses/:code",
+      "permanent": false
+    },
+    {
+      "source": "/academy/directions/:code",
+      "destination": "/courses/directions/:code",
+      "permanent": false
     }
   ]
 }
