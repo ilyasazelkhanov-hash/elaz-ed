@@ -271,10 +271,12 @@ export function createAcademyEngine(seed: AcademySeed, storage: Persistence) {
           for(const [locale,content_blocks] of Object.entries(localized_blocks))translations[locale]={...(translations[locale]??translations[locale.toUpperCase()]??{}),content_blocks}
           localizedLesson.data.translations=publicBlocks(translations)
         }
-        const node=children(lesson.code,'assessment').find(n=>n.state==='published')
+        const publishedChecks=children(lesson.code,'assessment').filter(n=>n.state==='published')
+        const assessments=publishedChecks.map(n=>({code:n.code,title:n.title,kind:n.data.kind,passing_score:n.data.passing_score??70,instructions:n.data.instructions,quiz_result:db.attempts.find(a=>a.user_id===actor.id&&a.assessment_code===n.code&&a.version===n.version&&a.state==='passed')??null})).map(a=>({...a,quiz_result:a.quiz_result?{passed:true,score:a.quiz_result.score}:null}))
+        const node=publishedChecks[0]
         const assessment=node ? {code:node.code,kind:node.data.kind,passing_score:node.data.passing_score??70,rubric_code:node.data.rubric_code,instructions:node.data.instructions} : data.assessment ? {code:lesson.code,kind:data.assessment.kind??'quiz',passing_score:data.assessment.passing_score??70} : null
         const siblings=courseLessons(courseFor(lesson).code), index=siblings.findIndex(l=>l.code===lesson.code)
-        result = { lesson: localizedLesson, blocks, localized_blocks, sources: sourcesFor(lesson.code), assessment, progress: db.progress.find(p => p.user_id === actor.id && p.lesson_code === lesson.code) ?? null, submissions: db.submissions.filter(s => s.user_id === actor.id && s.lesson_code === lesson.code), previous:siblings[index-1]?sanitize(siblings[index-1]):null,next:siblings[index+1]?sanitize(siblings[index+1]):null }; break
+        result = { lesson: localizedLesson, blocks, localized_blocks, sources: sourcesFor(lesson.code), assessment, assessments, progress: db.progress.find(p => p.user_id === actor.id && p.lesson_code === lesson.code) ?? null, submissions: db.submissions.filter(s => s.user_id === actor.id && s.lesson_code === lesson.code), previous:siblings[index-1]?sanitize(siblings[index-1]):null,next:siblings[index+1]?sanitize(siblings[index+1]):null }; break
       }
       case 'library': {
         const p = page(ordered(db.entities.filter(n => n.kind === 'source' && visibleSource(n) && matches(n) && (!payload.language || n.data.language===payload.language) && (!payload.source_type || (n.data.source_type ?? n.data.kind ?? n.data.type)===payload.source_type))))
