@@ -1,0 +1,43 @@
+name: Verify application
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12.10
+      - name: Install FFmpeg 8.1.2 and verify archive
+        shell: pwsh
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          $url = 'https://github.com/GyanD/codexffmpeg/releases/download/8.1.2/ffmpeg-8.1.2-essentials_build.zip'
+          Invoke-WebRequest $url -OutFile "$env:RUNNER_TEMP/ffmpeg.zip"
+          $expected = 'db580001caa24ac104c8cb856cd113a87b0a443f7bdf47d8c12b1d740584a2ec'
+          if ((Get-FileHash "$env:RUNNER_TEMP/ffmpeg.zip" -Algorithm SHA256).Hash -ne $expected) { throw 'FFmpeg checksum mismatch' }
+          Expand-Archive "$env:RUNNER_TEMP/ffmpeg.zip" "$env:RUNNER_TEMP/ffmpeg"
+          (Get-ChildItem "$env:RUNNER_TEMP/ffmpeg" -Directory | Select-Object -First 1).FullName + '/bin' >> $env:GITHUB_PATH
+      - run: npm ci
+      - name: All tests and production build in isolated directory
+        run: npm run test:all
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-results
+          path: test-results/*.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-summary
+          path: test-results/audit-validation.json
