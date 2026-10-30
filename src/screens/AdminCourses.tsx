@@ -1,6 +1,6 @@
 import { Check, Plus, Star, Trash2, Undo2, UserPlus, X } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, ApiError, errorText } from '../lib/api'
 import { GRADIENT_NAMES, GRADIENTS, plural } from '../lib/game'
 import { confirmDialog, haptic } from '../lib/tg'
@@ -29,14 +29,31 @@ export function CoursesAdminScreen() {
   const [requests, setRequests] = useState<AccessRequest[]>([])
   const [deciding, setDeciding] = useState<string | null>(null)
   const [payments, setPayments] = useState<Payment[]>([])
+  const [paymentQuery, setPaymentQuery] = useState('')
+  const paymentSearch = useRef('')
+  const paymentRequest = useRef(0)
+  const [paymentCursor, setPaymentCursor] = useState<number | null>(null)
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
+  const loadPayments = async (cursor: number | null = null) => {
+    const request = ++paymentRequest.current
+    setPaymentLoading(true)
+    setPaymentError('')
+    try {
+      const page = await api.adminPayments({ cursor, query: paymentSearch.current })
+      if (request !== paymentRequest.current) return
+      setPayments(list => cursor ? [...list, ...page.payments] : page.payments)
+      setPaymentCursor(page.next_cursor)
+    } catch (e) {
+      if (request !== paymentRequest.current) return
+      guard(e)
+      setPaymentError(errorText(e))
+    } finally { if (request === paymentRequest.current) setPaymentLoading(false) }
+  }
   const [refunding, setRefunding] = useState<number | null>(null)
 
   const load = () => {
-    // Покупки грузятся отдельно: если сервер ещё старой версии и не знает этого запроса, экран курсов всё равно работает.
-    api
-      .adminPayments()
-      .then(setPayments)
-      .catch(() => setPayments([]))
+    void loadPayments()
     return api
       .adminCourses()
       .then((d) => {
@@ -50,12 +67,12 @@ export function CoursesAdminScreen() {
   }
 
   const refund = async (p: Payment) => {
-    if (!(await confirmDialog(`Вернуть ${p.stars} ${plural(p.stars, ['звезду', 'звезды', 'звёзд'])} — ${p.name}? Доступ к курсу «${p.course}» закроется.`))) return
+    if (!(await confirmDialog(`Вернуть ${p.stars} ${plural(p.stars, ['звезду', 'звезды', 'звёзд'])} — ${p.name}? Оплаченный доступ к курсу «${p.course}» будет отозван. Независимые права доступа сохранятся.`))) return
     setRefunding(p.id)
     try {
       await api.adminRefund(p.id)
       haptic.success()
-      toast('Звёзды возвращены, доступ закрыт')
+      toast('Звёзды возвращены, оплаченный доступ отозван')
       setPayments((list) => list.map((x) => (x.id === p.id ? { ...x, refunded: true } : x)))
       void boot()
     } catch (e) {
@@ -148,9 +165,16 @@ export function CoursesAdminScreen() {
             {courses?.length === 0 && <p className="py-8 text-center text-[14px] text-mute">Курсов пока нет. Создай первый и добавь в него уроки в редакторе урока.</p>}
           </div>
 
-          {payments.length > 0 && (
+          {(
             <>
               <h2 className="mb-3 mt-7 font-display text-[15px] font-semibold">Покупки</h2>
+              <form onSubmit={e => { e.preventDefault(); paymentSearch.current = paymentQuery; void loadPayments() }} className="mb-3 flex gap-2">
+                <input aria-label="Поиск покупок" placeholder="Имя, @username, ID или номер платежа" value={paymentQuery} onChange={e => setPaymentQuery(e.target.value)} className={field} />
+                <button type="submit" disabled={paymentLoading}>Найти</button>
+              </form>
+              {paymentError && <div role="alert" className="mb-3 text-[14px] text-mute">{paymentError} <button onClick={() => void loadPayments()}>Повторить</button></div>}
+              {paymentLoading && <Spinner size={20} />}
+              {!paymentLoading && !paymentError && payments.length === 0 && <p className="text-mute">Покупки не найдены</p>}
               <div className="overflow-hidden rounded-[20px] border border-line bg-card">
                 {payments.map((p) => (
                   <div key={p.id} className="flex items-center gap-3 border-b border-line p-3.5 last:border-b-0">
@@ -166,7 +190,9 @@ export function CoursesAdminScreen() {
                         </span>
                       </p>
                     </div>
-                    {p.refunded ? (
+                    {p.refund_pending && !p.refunded ? (
+                      <span className="text-[12px] text-mute">Возврат обрабатывается</span>
+                    ) : p.refunded ? (
                       <span className="shrink-0 rounded-full bg-veil/8 px-2.5 py-1 text-[12px] font-semibold text-mute">Возвращено</span>
                     ) : (
                       <Tap onClick={() => refund(p)} disabled={refunding !== null} className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-line px-3 text-[13px] font-semibold text-mute disabled:opacity-50">
@@ -176,7 +202,8 @@ export function CoursesAdminScreen() {
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-[12.5px] leading-snug text-faint">Возврат делает Telegram: звёзды уходят обратно покупателю, доступ к курсу закрывается.</p>
+              {paymentCursor && <button disabled={paymentLoading} onClick={() => void loadPayments(paymentCursor)} className="mt-3 w-full py-3">Загрузить ещё</button>}
+              <p className="mt-2 text-[12.5px] leading-snug text-faint">Telegram возвращает звёзды покупателю. Оплаченный доступ отзывается; доступ, выданный отдельно, сохраняется.</p>
             </>
           )}
         </div>

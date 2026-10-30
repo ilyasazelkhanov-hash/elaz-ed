@@ -5,6 +5,7 @@ import { handleAcademyFiles } from './academy-files.ts'
 import { newsTelegramPost } from '../_shared/news.ts'
 import { rewardNotifications } from '../_shared/rewardNotifications.ts'
 import { handleCertifications, CertificationError } from './certifications.ts'
+import { processRefundJobs } from './payments.ts'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -279,7 +280,8 @@ function botSender(msg: Row): number {
 async function buildMe(row: Row) {
   const day = localDay(tzOf(row))
   // Место считаем среди подписчиков — так же, как строится таблица рейтинга.
-  const { count } = await db.from('users').select('id', { count: 'exact', head: true }).eq('subscribed', true).gt('xp', row.xp)
+  const { count, error: rankError } = await db.from('users').select('id', { count: 'exact', head: true }).eq('subscribed', true).or(`xp.gt.${Number(row.xp)},and(xp.eq.${Number(row.xp)},id.lt.${Number(row.id)})`)
+  if (rankError) throw new HttpError(500, 'db')
   let combined: Row | null = null
   let combinedRank: number | null = null
   if (OG_PLATFORM_ENABLED) {
@@ -335,7 +337,7 @@ function adminIds(s: Settings): number[] {
 }
 
 async function grantAccess(userId: number, courseId: number, source: 'stars' | 'admin' | 'invites') {
-  const { error } = await db.from('course_access').upsert({ user_id: userId, course_id: courseId, source }, { onConflict: 'user_id,course_id', ignoreDuplicates: true })
+  const { error } = await db.rpc('grant_course_access', { p_user: userId, p_course: courseId, p_source: source })
   if (error) throw new HttpError(500, 'db')
   return true
 }
@@ -420,19 +422,20 @@ async function markRefunded(chargeId: string) {
     return
   }
   const { data: course } = await db.from('courses').select('title').eq('id', p.course_id).maybeSingle()
-  await tg('sendMessage', { chat_id: p.user_id, text: `Звёзды за курс «${course?.title ?? ''}» возвращены. Доступ к курсу закрыт.` })
+  await tg('sendMessage', { chat_id: p.user_id, text: `Звёзды за курс «${course?.title ?? ''}» возвращены. ${p.access_retained ? 'Доступ к курсу сохранён.' : 'Доступ к курсу закрыт.'}` })
 }
 
 async function buildFeed(userId: number) {
-  const [lessons, progress, likes] = await Promise.all([
-    db.from('feed_cards').select('*').eq('published', true).order('pinned', {ascending:false}).order('published_at', { ascending: false }).order('id',{ascending:false}).limit(300),
+  const [lessons, stories, progress, likes] = await Promise.all([
+    db.from('feed_cards').select('*').eq('published', true).eq('kind','lesson').order('pinned', {ascending:false}).order('published_at', { ascending: false }).order('id',{ascending:false}).limit(300),
+    db.from('feed_cards').select('*').eq('published', true).eq('kind','story').order('published_at', { ascending: false }).order('id',{ascending:false}).limit(300),
     db.from('progress').select('lesson_id').eq('user_id', userId),
     db.from('likes').select('lesson_id').eq('user_id', userId),
   ])
-  if (lessons.error) throw new HttpError(500, 'db')
+  if (lessons.error || stories.error || progress.error || likes.error) throw new HttpError(500, 'db')
   const done = new Set((progress.data ?? []).map((p) => p.lesson_id))
   const liked = new Set((likes.data ?? []).map((l) => l.lesson_id))
-  return (lessons.data ?? []).map((l) => ({ ...l, completed: done.has(l.id), liked: liked.has(l.id) }))
+  return [...(lessons.data ?? []),...(stories.data ?? [])].map((l) => ({ ...l, completed: done.has(l.id), liked: liked.has(l.id) }))
 }
 
 // ---------- Обработчики ----------
@@ -582,7 +585,11 @@ async function complete(body: Row) {
   const { data: attempt, error: attemptError } = await query.maybeSingle()
   if (attemptError) throw new HttpError(500, 'db')
   // Historical completions have no recorded attempt; keep them idempotent without regrading.
-  if (previous && !attempt && !body.attemptId) return { already: true, gained: 0, base: 0, bonus: 0, score: previous.score, total: previous.total, new_achievements: [], me: await buildMe(row) }
+  if (previous && !attempt && !body.attemptId) {
+    const {data:receipt,error}=await db.rpc('complete_lesson_awarded',{p_user:row.id,p_lesson:id,p_score:previous.score,p_total:previous.total,p_xp:0,p_tz:tzOf(row)})
+    quizDbError(error)
+    return { already: true, gained: 0, base: 0, bonus: 0, score: previous.score, total: previous.total, new_achievements: receipt.new_achievements, me: await freshMe(row.id) }
+  }
   let answers: number[] = []
   let score = 0
   let bonus = 0
@@ -595,47 +602,30 @@ async function complete(body: Row) {
     bonus = attempt.bonus
   }
   const gained = les.xp + bonus
-  const { data: inserted, error } = await db.rpc('complete_lesson', {
+  const { data: receipt, error } = await db.rpc('complete_lesson_awarded', {
     p_user: row.id,
     p_lesson: id,
     p_score: score,
     p_total: quiz.length,
     p_xp: gained,
+    p_tz: tzOf(row),
   })
   // Раньше сбой базы выглядел как «урок уже пройден» и XP молча терялись.
   quizDbError(error)
-  if (!inserted) return { already: true, gained: 0, base: 0, bonus: 0, score, total: quiz.length, new_achievements: [], me: await buildMe(row) }
-
-  const earned: string[] = []
-  if (les.kind === 'lesson') {
-    const { data: now } = await db.from('users').select('lessons_done').eq('id', row.id).single()
-    const n = now?.lessons_done ?? 0
-    if (n >= 1) earned.push('first')
-    if (n >= 5) earned.push('five')
-    if (n >= 10) earned.push('ten')
-    if (quiz.length > 0 && score === quiz.length) earned.push('perfect')
-    const hour = new Date(Date.now() + tzOf(row) * 60_000).getUTCHours()
-    if (hour < 5) earned.push('night')
-  }
-  const fresh = earned.filter((c) => !(row.achievements ?? []).includes(c))
-  if (fresh.length) await db.rpc('grant_achievements', { p_user: row.id, p_codes: fresh })
+  if (!receipt.inserted) return { already: true, gained: 0, base: 0, bonus: 0, score, total: quiz.length, new_achievements: receipt.new_achievements, me: await freshMe(row.id) }
+  const fresh: string[] = receipt.new_achievements
   await logEvent(row.id, les.kind === 'story' ? 'story_done' : 'lesson_done', id, { score, total: quiz.length, xp: gained, answers: answers.slice(0, 10) })
   return { already: false, gained, base: les.xp, bonus, score, total: quiz.length, new_achievements: fresh, me: await freshMe(row.id) }
 }
 
 async function daily(body: Row) {
   const row = await member(body)
-  const { data, error } = await db.rpc('claim_daily', { p_user: row.id, p_today: localDay(tzOf(row, body.tz)) })
+  const { data, error } = await db.rpc('claim_daily_awarded', { p_user: row.id, p_today: localDay(tzOf(row, body.tz)) })
   if (error) throw new HttpError(500, 'db')
   const res = Array.isArray(data) ? data[0] : data
   const gained = res?.gained ?? 0
   const streak = res?.new_streak ?? 0
-  const earned: string[] = []
-  if (streak >= 3) earned.push('streak3')
-  if (streak >= 7) earned.push('streak7')
-  if (streak >= 30) earned.push('streak30')
-  const fresh = gained > 0 ? earned.filter((c) => !(row.achievements ?? []).includes(c)) : []
-  if (fresh.length) await db.rpc('grant_achievements', { p_user: row.id, p_codes: fresh })
+  const fresh: string[] = res?.new_achievements ?? []
   if (gained > 0) await logEvent(row.id, 'daily', null, { streak, xp: gained, froze: !!res?.used_freeze })
   return { gained, froze: !!res?.used_freeze, new_achievements: fresh, me: await freshMe(row.id) }
 }
@@ -743,7 +733,8 @@ async function courseRequest(body: Row) {
   // Пока заявка ждёт ответа, повторное нажатие ничего не шлёт: иначе админов можно завалить сообщениями.
   const { data: prev } = await db.from('access_requests').select('status').eq('user_id', row.id).eq('course_id', id).maybeSingle()
   if (prev?.status === 'pending') return { request: 'pending' }
-  await db.from('access_requests').upsert({ user_id: row.id, course_id: id, status: 'pending', created_at: new Date().toISOString(), decided_at: null })
+  const { error } = await db.from('access_requests').upsert({ user_id: row.id, course_id: id, status: 'pending', created_at: new Date().toISOString(), decided_at: null })
+  if (error) throw new HttpError(500, 'db')
   await logEvent(row.id, 'course_request', null, { course: id })
   const who = `${row.first_name || 'Без имени'}${row.username ? ` (@${row.username})` : ''}`
   const s = await getSettings()
@@ -771,17 +762,19 @@ async function courseInvoice(body: Row) {
   const { data: c } = await db.from('courses').select('*').eq('id', id).maybeSingle()
   if (!c?.published || c.price_stars <= 0) throw new HttpError(400, 'not_for_sale')
   if (row.is_admin || (await hasAccess(row.id, id))) throw new HttpError(400, 'already_open')
+  const { data: intent, error } = await db.rpc('course_purchase_intent', { p_user: row.id, p_course: id })
+  if (error || !intent) throw new HttpError(500, 'db')
+  if (intent.link) return { link: intent.link }
   const r = await tg('createInvoiceLink', {
-    title: String(c.title).slice(0, 32),
-    description: String(c.subtitle || `Доступ к курсу «${c.title}»`).slice(0, 255),
-    payload: `course:${id}:${row.id}`,
-    provider_token: '',
-    currency: 'XTR',
-    prices: [{ label: 'Доступ к курсу', amount: c.price_stars }],
+    title: String(c.title).slice(0, 32), description: String(c.subtitle || c.title).slice(0, 255),
+    payload: intent.payload, provider_token: '', currency: 'XTR',
+    prices: [{ label: 'Доступ к курсу', amount: intent.stars }],
   })
   if (!r.ok) throw new HttpError(502, 'telegram')
-  await logEvent(row.id, 'invoice', null, { course: id, stars: c.price_stars })
-  return { link: r.result }
+  const stored = await db.rpc('course_purchase_link', { p_user: row.id, p_payload: intent.payload, p_link: r.result })
+  if (stored.error || !stored.data) throw new HttpError(500, 'db')
+  await logEvent(row.id, 'invoice', null, { course: id, stars: intent.stars })
+  return { link: stored.data }
 }
 
 // Билет календаря за звёзды. Выдаёт его вебхук после подтверждения оплаты Telegram.
@@ -927,7 +920,8 @@ async function adminCourseSave(body: Row) {
 
 async function adminCourseDelete(body: Row) {
   await member(body, true)
-  await db.from('courses').delete().eq('id', Number(body.id))
+  const { error } = await db.from('courses').delete().eq('id', Number(body.id))
+  if (error) throw new HttpError(500, 'db')
   return { ok: true }
 }
 
@@ -954,26 +948,11 @@ async function adminGrant(body: Row) {
 
 async function adminPayments(body: Row) {
   await member(body, true)
-  const { data, error } = await db
-    .from('payments')
-    .select('id,user_id,course_id,stars,created_at,refunded_at,purpose,users(first_name,username),courses(title)')
-    .order('created_at', { ascending: false })
-    .limit(100)
+  const cursor = body.cursor
+  if (cursor != null && (!Number.isSafeInteger(cursor) || cursor <= 0)) throw new HttpError(400, 'bad_cursor')
+  const { data, error } = await db.rpc('admin_payment_page', { p_cursor: cursor ?? null, p_query: str(body.query, 100).trim() })
   if (error) throw new HttpError(500, 'db')
-  return {
-    // deno-lint-ignore no-explicit-any
-    payments: (data ?? []).map((p: any) => ({
-      id: p.id,
-      user_id: p.user_id,
-      course_id: p.course_id,
-      stars: p.stars,
-      created_at: p.created_at,
-      refunded: !!p.refunded_at,
-      name: p.users?.first_name || 'Без имени',
-      username: p.users?.username ?? null,
-      course: p.purpose === 'catchup' ? 'Билет календаря' : p.courses?.title ?? 'Курс удалён',
-    })),
-  }
+  return data
 }
 
 // Возврат звёзд делает сам Telegram по номеру оплаты; после этого закрываем доступ.
@@ -1051,7 +1030,8 @@ async function adminSave(body: Row) {
 
 async function adminDelete(body: Row) {
   await member(body, true)
-  await db.from('lessons').delete().eq('id', Number(body.id))
+  const { error } = await db.from('lessons').delete().eq('id', Number(body.id))
+  if (error) throw new HttpError(500, 'db')
   return { ok: true }
 }
 
@@ -1183,7 +1163,7 @@ async function webhook(req: Request) {
   // Оплату нельзя потерять: если базу не удалось обновить, отвечаем ошибкой — Telegram пришлёт уведомление ещё раз.
   let retry = false
   try {
-    const s = await getSettings()
+    const s = await getSettings(!!update.my_chat_member)
 
     const msg = update.message
     const cmd = msg?.chat?.type === 'private' && typeof msg.text === 'string' ? botCmd(msg.text) : ''
@@ -1217,17 +1197,12 @@ async function webhook(req: Request) {
     // Telegram ждёт ответа на проверку перед оплатой не дольше 10 секунд.
     const pcq = update.pre_checkout_query
     if (pcq) {
-      const m = /^course:(\d+):(\d+)$/.exec(pcq.invoice_payload ?? '')
       let ok = false
-      let reason = 'Курс сейчас недоступен. Звёзды не списаны.'
-      if (m && pcq.currency === 'XTR' && Number(m[2]) === pcq.from?.id) {
-        const { data: c } = await db.from('courses').select('price_stars,published').eq('id', Number(m[1])).maybeSingle()
-        ok = !!c?.published && c.price_stars > 0 && c.price_stars === pcq.total_amount
-        // Счёт мог остаться открытым с прошлого раза: второй раз за открытый курс не берём.
-        if (ok && (await hasAccess(pcq.from.id, Number(m[1])))) {
-          ok = false
-          reason = 'Курс уже открыт. Звёзды не списаны.'
-        }
+      let reason = 'Курс сейчас недоступен или уже открыт. Звёзды не списаны.'
+      if (pcq.currency === 'XTR' && /^(?:course:|purchase:)/.test(pcq.invoice_payload ?? '')) {
+        const checked = await db.rpc('check_course_checkout', { p_user: pcq.from?.id, p_payload: pcq.invoice_payload, p_stars: pcq.total_amount, p_query: pcq.id })
+        if (checked.error) throw new HttpError(500, 'db')
+        ok = checked.data === true
       }
       // Билет календаря: цена из настроек, календарь должен быть открыт.
       const t = /^catchup:(\d+):\d+$/.exec(pcq.invoice_payload ?? '')
@@ -1244,23 +1219,22 @@ async function webhook(req: Request) {
     }
 
     const paid = msg?.successful_payment
-    if (paid) {
-      const m = /^course:(\d+):(\d+)$/.exec(paid.invoice_payload ?? '')
-      if (m && Number(m[2]) === msg.from?.id) {
-        const courseId = Number(m[1])
-        const userId = Number(m[2])
-        // Журнал и доступ меняются в одной транзакции. Повтор оплаты после возврата доступ не вернёт.
-        const { data: payment, error } = await db.rpc('apply_star_payment', {
-          p_user: userId, p_course: courseId, p_stars: paid.total_amount, p_charge: paid.telegram_payment_charge_id,
-        })
-        if (error || !payment) {
-          console.error('payment', paid.telegram_payment_charge_id, error)
-          retry = true
-        } else if (!payment.duplicate && !payment.refunded) {
-          await logEvent(userId, 'purchase', null, { course: courseId, stars: paid.total_amount })
-          const { data: course } = await db.from('courses').select('id,title').eq('id', courseId).maybeSingle()
-          if (course) await notifyOpened(userId, course, s)
-        }
+    if (paid && /^(?:course:|purchase:)/.test(paid.invoice_payload ?? '')) {
+      const userId = msg.from?.id
+      if (paid.currency !== 'XTR') throw new HttpError(400, 'payment_currency')
+      const { data: payment, error } = await db.rpc('apply_course_purchase', {
+        p_user: userId, p_payload: paid.invoice_payload, p_stars: paid.total_amount, p_charge: paid.telegram_payment_charge_id,
+      })
+      if (error || !payment) {
+        console.error('payment', paid.telegram_payment_charge_id, error)
+        retry = true
+      } else if (!payment.duplicate && !payment.refunded && !payment.refund_pending) {
+        await logEvent(userId, 'purchase', null, { course: payment.course_id, stars: paid.total_amount })
+        const { data: course } = await db.from('courses').select('id,title').eq('id', payment.course_id).maybeSingle()
+        if (course) await notifyOpened(userId, course, s)
+      }
+      if (payment?.refund_pending) {
+        try { await processRefundJobs(db, tg) } catch (error) { console.error('refund worker', error) }
       }
     }
 
@@ -1303,7 +1277,7 @@ async function webhook(req: Request) {
     const mine = update.my_chat_member
     if (mine?.chat?.type === 'channel') {
       const st = mine.new_chat_member?.status
-      if (st === 'administrator' && (!s.channel?.id || s.channel.id === mine.chat.id)) {
+      if (st === 'administrator' && (s.channel?.id === mine.chat.id || (!s.channel?.id && adminIds(s).includes(Number(mine.from?.id))))) {
         await setSetting('channel', { id: mine.chat.id, title: mine.chat.title ?? '' })
         if (mine.from?.id) {
           await tg('sendMessage', { chat_id: mine.from.id, text: `Канал «${mine.chat.title ?? ''}» подключён. OG CRE8R² теперь проверяет подписку.` })
@@ -1331,7 +1305,11 @@ async function webhook(req: Request) {
 }
 
 // Идемпотентная настройка бота: вебхук, кнопка меню, команды. Секретов не возвращает.
-async function setup() {
+async function setup(req: Request) {
+  if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405)
+  const secret = Deno.env.get('SETUP_SECRET')
+  if (!secret) return json({ error: 'setup_disabled' }, 503)
+  if (req.headers.get('x-setup-secret') !== secret) return json({ error: 'forbidden' }, 403)
   if (!BOT_TOKEN) return json({ ok: false, error: 'no_token' }, 503)
   const s = await getSettings(true)
   const me = await tg('getMe')
@@ -1992,7 +1970,8 @@ async function adminAdventDoorDelete(body: Row) {
   const day = Number(body.day)
   const { count } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).eq('day', day)
   if ((count ?? 0) > 0) throw new HttpError(409, 'door_opened')
-  await db.from('advent_doors').delete().eq('day', day)
+  const { error } = await db.from('advent_doors').delete().eq('day', day)
+  if (error) throw new HttpError(500, 'db')
   return { ok: true }
 }
 
@@ -2161,7 +2140,8 @@ async function adminAdventPointDelete(body: Row) {
   const id = Number(body.id)
   const { count } = await db.from('reward_codes').select('code', { count: 'exact', head: true }).eq('point_id', id)
   if ((count ?? 0) > 0) throw new HttpError(409, 'point_used')
-  await db.from('advent_points').delete().eq('id', id)
+  const { error } = await db.from('advent_points').delete().eq('id', id)
+  if (error) throw new HttpError(500, 'db')
   return { ok: true }
 }
 
@@ -2171,7 +2151,8 @@ async function adminAdventRewardDelete(body: Row) {
   const id = Number(body.id)
   const { count } = await db.from('reward_codes').select('code', { count: 'exact', head: true }).eq('reward_id', id)
   if ((count ?? 0) > 0) throw new HttpError(409, 'reward_issued')
-  await db.from('advent_rewards').delete().eq('id', id)
+  const { error } = await db.from('advent_rewards').delete().eq('id', id)
+  if (error) throw new HttpError(500, 'db')
   return { ok: true }
 }
 
@@ -2413,8 +2394,13 @@ Deno.serve(async (req) => {
   const route = new URL(req.url).pathname.split('/').filter(Boolean).pop() ?? ''
   try {
     if (route === 'webhook' && req.method === 'POST') return await webhook(req)
-    if (route === 'setup') return await setup()
+    if (route === 'setup') return await setup(req)
     if (route === 'health' || route === 'api') return await health()
+    if (route === 'payment_refunds' && req.method === 'POST') {
+      const s = await getSettings()
+      if (!s.cron_key || !safeEqual(req.headers.get('x-cron-key') ?? '', String(s.cron_key))) return json({ ok: false }, 401)
+      return json(await processRefundJobs(db, tg))
+    }
     if (route === 'advent_push' && req.method === 'POST') return await adventPush(req)
     if (route === 'academy_public' && req.method === 'POST') return await academyPublic(req)
     // Только собственные ключи: иначе адрес вроде /constructor попадал во встроенные методы объекта.

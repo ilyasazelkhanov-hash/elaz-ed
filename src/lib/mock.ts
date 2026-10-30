@@ -447,10 +447,12 @@ export const mockApi: Api = {
     return username.replace(/^@/, '')
   },
 
-  async adminPayments() {
+  async adminPayments(input) {
     await wait()
     const sample: Payment = { id: 1, user_id: 104, course_id: DEMO_COURSE.id, stars: DEMO_COURSE.price_stars, created_at: new Date(Date.now() - 26 * 3_600_000).toISOString(), refunded: false, name: 'Марк', username: 'mark_dev', course: DEMO_COURSE.title }
-    return [...(state.payments ?? []), sample]
+    const query = input?.query?.trim().toLowerCase() ?? ''
+    const payments = [...(state.payments ?? []), sample].filter(p => (!input?.cursor || p.id < input.cursor) && (!query || [p.name,p.username,String(p.user_id)].some(value => value?.toLowerCase().includes(query)))).sort((a,b) => b.id-a.id)
+    return { payments: payments.slice(0,50), next_cursor: payments.length > 50 ? payments[49].id : null }
   },
 
   async adminRefund(id) {

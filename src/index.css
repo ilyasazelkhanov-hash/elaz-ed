@@ -327,7 +327,7 @@
 .cta-aurora {
   --edge: var(--edge-aurora);
   background: var(--aurora);
-  color: #fff;
+  color: #12091c;
 }
 .cta-inverse {
   --edge: var(--edge-inverse);

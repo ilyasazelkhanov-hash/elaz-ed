@@ -129,6 +129,7 @@ export interface Payment {
   stars: number
   created_at: string
   refunded: boolean
+  refund_pending?: boolean
   name: string
   username: string | null
   /** Название курса на момент запроса. */
@@ -502,7 +503,7 @@ export interface Api {
   adminRequest(userId: number, courseId: number, approve: boolean): Promise<void>
   /** Возвращает имя человека, которому открыт доступ. */
   adminGrant(courseId: number, username: string): Promise<string>
-  adminPayments(): Promise<Payment[]>
+  adminPayments(input?: { cursor?: number | null; query?: string }): Promise<{ payments: Payment[]; next_cursor: number | null }>
   /** Возвращает звёзды через Telegram и закрывает доступ, выданный за эту оплату. */
   adminRefund(id: number): Promise<void>
   adminList(input?:AdminListInput): Promise<{ lessons: Lesson[]; stats: AdminStats; next?:number|null }>

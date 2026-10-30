@@ -23,7 +23,9 @@
     "academy:enrich": "node scripts/academy-enrich-lessons.mjs",
     "test:audit-fixes": "node --test tests/audit-fixes-database.test.mjs",
     "test:knowledge": "node --experimental-strip-types --test tests/knowledge.test.mjs",
-    "test:multiple-assessments": "node scripts/check-multiple-assessments.mjs"
+    "test:multiple-assessments": "node scripts/check-multiple-assessments.mjs",
+    "test:audit-remediation": "node --experimental-strip-types --test tests/progress-awards.test.mjs tests/payment-database.test.mjs tests/payment-worker.test.mjs tests/admin-payment-search.test.mjs",
+    "test:all": "node scripts/test-all.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",
@@ -51,5 +53,8 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

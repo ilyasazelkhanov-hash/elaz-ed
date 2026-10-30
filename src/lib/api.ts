@@ -1,6 +1,6 @@
 import { ApiError } from './errors'
 import { initData, inTelegram, platform, startParam } from './tg'
-import type { AdminDoor, AdminPoint, AdventWinner, Api, Payment, RedeemPoint } from './types'
+import type { AdminDoor, AdminPoint, AdventWinner, Api, RedeemPoint } from './types'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? ''
 
@@ -60,7 +60,7 @@ const httpApi: Api = {
     await call('admin_request', { user_id: userId, course_id: courseId, approve })
   },
   adminGrant: async (courseId, username) => (await call<{ name: string }>('admin_grant', { course_id: courseId, username })).name,
-  adminPayments: async () => (await call<{ payments: Payment[] }>('admin_payments')).payments,
+  adminPayments: (input) => call('admin_payments', input ?? {}),
   adminRefund: async (id) => {
     await call('admin_refund', { id })
   },

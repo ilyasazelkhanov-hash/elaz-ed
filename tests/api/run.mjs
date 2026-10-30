@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url'
 import { reset, state } from './fake-supabase.mjs'
 
 const TOKEN = 'test-token'
+let setupSecret
 const SUPABASE_URL = 'https://test-project.supabase.co'
 const CHANNEL = -1001
 const ADMIN = 1
@@ -16,7 +17,7 @@ const OTHER = 3
 
 // --- Окружение Deno и подмена библиотек ---
 globalThis.Deno = {
-  env: { get: (k) => ({ BOT_TOKEN: TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: 'test' })[k] },
+  env: { get: (k) => ({ BOT_TOKEN: TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: 'test', SETUP_SECRET: setupSecret })[k] },
   serve: (handler) => {
     globalThis.__handler = handler
   },
@@ -164,6 +165,23 @@ test('урок платного курса закрыт без доступа, �
   assert.equal((await call('lesson', { id: 11 }, BUYER)).status, 200)
 })
 
+test('second distinct course charge queues automatic refund and preserves original access',async()=>{
+ await everyoneBoots()
+ await hook(paidUpdate(BUYER,1,'original'))
+ replies.refundStarPayment={ok:false,description:'temporary failure'}
+ await hook(paidUpdate(BUYER,1,'extra'))
+ assert.equal(access(BUYER,1).length,1)
+ assert.equal(state.tables.payments.find(p=>p.charge_id==='extra').refund_pending,true)
+ assert.equal(state.tables.payment_refund_jobs.length,1)
+ await hook(paidUpdate(BUYER,1,'extra'))
+ assert.equal(state.tables.payment_refund_jobs.length,1)
+})
+
+test('payment refund worker requires external cron secret',async()=>{
+ const res=await handler(new Request(SUPABASE_URL+'/functions/v1/api/payment_refunds',{method:'POST'}))
+ assert.equal(res.status,401)
+})
+
 // ---------- Счёт и проверка перед оплатой ----------
 
 test('счёт выставляется по цене из базы, а не из запроса', async () => {
@@ -173,7 +191,9 @@ test('счёт выставляется по цене из базы, а не и�
   const [invoice] = sent('createInvoiceLink')
   assert.equal(invoice.payload.currency, 'XTR')
   assert.deepEqual(invoice.payload.prices, [{ label: 'Доступ к курсу', amount: 500 }])
-  assert.equal(invoice.payload.payload, `course:1:${BUYER}`)
+  assert.match(invoice.payload.payload, /^purchase:[a-f0-9-]{36}$/)
+  assert.deepEqual(await call('course_invoice', { id: 1 }, BUYER),res)
+  assert.equal(sent('createInvoiceLink').length,1)
 })
 
 test('курс без цены не продаётся', async () => {
@@ -756,7 +776,12 @@ test('ход календаря: нажатия «догнать», билеты
 // ---------- Настройка бота ----------
 
 test('вебхук ставится на адрес своего проекта, а не на адрес из настроек', async () => {
-  const res = await handler(new Request(`${SUPABASE_URL}/functions/v1/api/setup`))
+  setupSecret = 'test-setup-secret'
+  const forbidden = await handler(new Request(`${SUPABASE_URL}/functions/v1/api/setup`, {method:'POST'}))
+  assert.equal(forbidden.status,403)
+  assert.equal(sent('setWebhook').length,0)
+  const res = await handler(new Request(`${SUPABASE_URL}/functions/v1/api/setup`, {method:'POST',headers:{'x-setup-secret':setupSecret}}))
+  setupSecret = undefined
   assert.equal(res.status, 200)
   assert.equal(sent('setWebhook')[0].payload.url, `${SUPABASE_URL}/functions/v1/api/webhook`)
   assert.ok(!JSON.stringify(await res.json()).includes(TOKEN))
@@ -1200,6 +1225,82 @@ test('scoped admin content list retains admin authorization and reports database
  assert.equal((await call('admin_list',{scope:'blog'},ADMIN)).status,500)
 })
 
+test('setup fails closed and GET never mutates',async()=>{
+ const before=calls.length
+ assert.equal((await handler(new Request(SUPABASE_URL+'/functions/v1/api/setup'))).status,405)
+ assert.equal((await handler(new Request(SUPABASE_URL+'/functions/v1/api/setup',{method:'POST'}))).status,503)
+ assert.equal(calls.length,before)
+})
+test('admin payment pages expose cursor and search old charges',async()=>{
+ await everyoneBoots()
+ state.tables.payments=Array.from({length:105},(_,i)=>({id:i+1,user_id:BUYER,course_id:1,stars:500,created_at:'2026-01-01',charge_id:'charge-'+(i+1)}))
+ const first=await call('admin_payments',{},ADMIN)
+ assert.equal(first.body.payments.length,50)
+ assert.equal(first.body.next_cursor,56)
+ assert.equal((await call('admin_payments',{cursor:56},ADMIN)).body.payments[0].id,55)
+ assert.ok((await call('admin_payments',{query:'charge-1'},ADMIN)).body.payments.some(p=>p.id===1))
+ assert.equal((await call('admin_payments',{cursor:-1},ADMIN)).status,400)
+ state.tables.users.push(...Array.from({length:1002},(_,i)=>({id:10000+i,first_name:'Matching Person',username:'match'+i})))
+ state.tables.payments.push({id:106,user_id:11001,course_id:1,stars:500,charge_id:'literal%_charge',refund_pending:true})
+ const named=await call('admin_payments',{query:'Matching'},ADMIN)
+ assert.deepEqual(named.body.payments.map(p=>p.id),[106])
+ assert.equal(named.body.payments[0].refund_pending,true)
+ assert.deepEqual((await call('admin_payments',{query:'%_'},ADMIN)).body.payments.map(p=>p.id),[106])
+ state.failNext={table:'payments',op:'select'}
+ assert.equal((await call('admin_payments',{},ADMIN)).status,500)
+})
+test('failed access request write sends no notification',async()=>{
+ await everyoneBoots()
+ const before=sent('sendMessage').length
+ state.failNext={table:'access_requests',op:'upsert'}
+ assert.equal((await call('course_request',{id:2},BUYER)).status,500)
+ assert.equal(sent('sendMessage').length,before)
+})
+test('admin deletes report failed writes',async()=>{
+ await everyoneBoots()
+ for(const [route,table,body] of [['admin_course_delete','courses',{id:1}],['admin_delete','lessons',{id:1}],['admin_advent_door_delete','advent_doors',{day:1}],['admin_advent_point_delete','advent_points',{id:1}],['admin_advent_reward_delete','advent_rewards',{id:1}]]){
+ state.failNext={table,op:'delete'}
+ assert.equal((await call(route,body,ADMIN)).status,500,route)
+ }
+})
+test('tied XP uses the same deterministic personal rank and top order',async()=>{
+ await everyoneBoots()
+ for(const u of state.tables.users)u.xp=100
+ const top=await call('top',{},BUYER)
+ assert.equal(top.body.rank,2)
+})
+test('boot preserves stories when the blog has more than 300 promoted entries',async()=>{
+ await everyoneBoots()
+ state.tables.lessons=Array.from({length:310},(_,i)=>({id:i+100,kind:'lesson',course_id:null,published:true,pinned:true,published_at:'2026-10-29',quiz:[]}))
+ state.tables.lessons.push({id:900,kind:'story',published:true,pinned:false,published_at:'2025-01-01',quiz:[]})
+ const result=await call('boot',{},BUYER)
+ assert.ok(result.body.feed.some(l=>l.id===900))
+})
+test('first channel binding requires an already bound administrator ID',async()=>{
+ state.tables.settings.find(s=>s.key==='channel').value={}
+ await call('boot',{force:true},BUYER)
+ await hook({my_chat_member:{chat:{id:-1999,type:'channel',title:'Foreign'},from:{id:777,username:'boss'},new_chat_member:{status:'administrator'}}})
+ assert.deepEqual(state.tables.settings.find(s=>s.key==='channel').value,{})
+ state.tables.settings.find(s=>s.key==='admins').value={boss:ADMIN}
+ await call('boot',{force:true},BUYER)
+ await hook({my_chat_member:{chat:{id:-1998,type:'channel',title:'Owned'},from:{id:ADMIN},new_chat_member:{status:'administrator'}}})
+ assert.equal(state.tables.settings.find(s=>s.key==='channel').value.id,-1998)
+})
+test('achievement failure returns error without XP and replay repairs a missing receipt',async()=>{
+ await everyoneBoots()
+ state.failNext={table:'users',op:'award'}
+ assert.equal((await call('complete',{id:11},BUYER)).status,500)
+ assert.equal(state.tables.progress.length,0)
+ const first=await call('complete',{id:11},BUYER)
+ assert.equal(first.status,200)
+ assert.ok(first.body.new_achievements.includes('first'))
+ const xp=state.tables.users.find(u=>u.id===BUYER).xp
+ state.tables.users.find(u=>u.id===BUYER).achievements=[]
+ const replay=await call('complete',{id:11},BUYER)
+ assert.equal(replay.body.already,true)
+ assert.ok(replay.body.new_achievements.includes('first'))
+ assert.equal(state.tables.users.find(u=>u.id===BUYER).xp,xp)
+})
 let failed = 0
 for (const { name, fn } of tests) {
   seed()

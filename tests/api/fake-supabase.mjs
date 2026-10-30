@@ -123,9 +123,9 @@ class Query {
     const split=value=>{let depth=0,start=0,parts=[];for(let i=0;i<value.length;i++){if(value[i]==='(')depth++;if(value[i]===')')depth--;if(value[i]===','&&depth===0){parts.push(value.slice(start,i));start=i+1}}parts.push(value.slice(start));return parts}
     const predicate=text=>{
       if(text.startsWith('and(')) {const children=split(text.slice(4,-1)).map(predicate);return row=>children.every(fn=>fn(row))}
-      const [,key,operator,value]=/^([\w]+)\.(lt|eq|is)\.(.*)$/.exec(text)??[]
+      const [,key,operator,value]=/^([\w]+)\.(lt|gt|eq|is|ilike)\.(.*)$/.exec(text)??[]
       if(!key)throw Error(`Unsupported fake filter: ${text}`)
-      return row=>operator==='is'?row[key]==null:operator==='lt'?row[key]<(key==='id'?Number(value):value):String(row[key])===value
+      return row=>operator==='is'?row[key]==null:operator==='ilike'?typeof row[key]==='string'&&likeToRegex(value).test(row[key]):operator==='lt'?row[key]<(typeof row[key]==='number'?Number(value):value):operator==='gt'?row[key]>(typeof row[key]==='number'?Number(value):value):String(row[key])===value
     }
     const children=split(expression).map(predicate);this.filters.push(row=>children.some(fn=>fn(row)));return this
   }
@@ -246,6 +246,41 @@ export function createClient() {
     from: (name) => new Query(name),
     // Функции базы здесь не проверяются: их логика живёт в миграциях.
     rpc: async (name, args) => {
+      if(name==='admin_payment_page'){
+        if(state.failNext?.table==='payments'&&state.failNext.op==='select'){state.failNext=null;return {data:null,error:{message:'injected'}}}
+        const q=String(args.p_query??'').trim().slice(0,100).replace(/^@/,'').toLowerCase()
+        const rows=table('payments').filter(p=>{
+          const u=table('users').find(u=>u.id===p.user_id)
+          return (args.p_cursor==null||p.id<args.p_cursor)&&(!q||[u?.first_name,u?.username,p.charge_id].some(v=>String(v??'').toLowerCase().includes(q))||String(p.user_id)===q)
+        }).sort((a,b)=>b.id-a.id)
+        return {data:{payments:rows.slice(0,50).map(p=>{const u=table('users').find(u=>u.id===p.user_id),c=table('courses').find(c=>c.id===p.course_id);return {id:p.id,user_id:p.user_id,course_id:p.course_id,stars:p.stars,created_at:p.created_at,refunded:!!p.refunded_at,refund_pending:!!p.refund_pending,name:u?.first_name||'Без имени',username:u?.username??null,course:p.purpose==='catchup'?'Билет календаря':c?.title??'Курс удалён'}}),next_cursor:rows.length>50?rows[49].id:null},error:null}
+      }
+      if(name==='complete_lesson_awarded'){
+        const before=structuredClone(state.tables),user=table('users').find(u=>u.id===args.p_user)
+        const prior=table('progress').find(p=>p.user_id===args.p_user&&p.lesson_id===args.p_lesson)
+        const result=prior?{data:false,error:null}:await createClient().rpc('complete_lesson',args)
+        if(result.error)return result
+        const lesson=table('lessons').find(l=>l.id===args.p_lesson),p=table('progress').find(p=>p.user_id===args.p_user&&p.lesson_id===args.p_lesson)
+        const codes=[]
+        if(lesson?.kind==='lesson'){
+          if(user.lessons_done>=1)codes.push('first');if(user.lessons_done>=5)codes.push('five');if(user.lessons_done>=10)codes.push('ten')
+          if(p.total>0&&p.score===p.total)codes.push('perfect')
+          if(new Date(Date.parse(p.completed_at)+(args.p_tz??0)*60000).getUTCHours()<5)codes.push('night')
+        }
+        const fresh=codes.filter(c=>!(user.achievements??[]).includes(c))
+        const award=await createClient().rpc('grant_achievements',{p_user:args.p_user,p_codes:fresh})
+        if(award.error){state.tables=before;return award}
+        return {data:{inserted:result.data,new_achievements:fresh},error:null}
+      }
+      if(name==='claim_daily_awarded'){
+        const before=structuredClone(state.tables),user=table('users').find(u=>u.id===args.p_user)
+        let gained=0
+        if(!user.last_claim||user.last_claim<args.p_today){const yesterday=new Date(Date.parse(args.p_today)-86400000).toISOString().slice(0,10);user.streak=user.last_claim===yesterday?(user.streak??0)+1:1;user.best_streak=Math.max(user.best_streak??0,user.streak);user.last_claim=args.p_today;gained=10+Math.min(user.streak,7)*5;user.xp=(user.xp??0)+gained}
+        const fresh=[[3,'streak3'],[7,'streak7'],[30,'streak30']].filter(([n,c])=>user.best_streak>=n&&!(user.achievements??[]).includes(c)).map(([,c])=>c)
+        const award=await createClient().rpc('grant_achievements',{p_user:args.p_user,p_codes:fresh})
+        if(award.error){state.tables=before;return award}
+        return {data:{gained,new_streak:user.streak,used_freeze:false,new_achievements:fresh},error:null}
+      }
       if (name === 'resolve_admin') {
         const admins=table('settings').find(s=>s.key==='admins')?.value??{}
         if(Object.values(admins).includes(args.p_user))return {data:true,error:null}
@@ -264,9 +299,50 @@ export function createClient() {
         if(!d){d={user_id:args.p_user,day:args.p_day,reward_id:args.p_reward,take:args.p_take};rows.push(d)}
         return {data:d.take,error:null}
       }
+      if(name==='grant_course_access'){
+        const prior=table('course_access').find(a=>a.user_id===args.p_user&&a.course_id===args.p_course)
+        if(prior){prior.manual_source=args.p_source;return {data:null,error:null}}
+        return await new Query('course_access').upsert({user_id:args.p_user,course_id:args.p_course,source:args.p_source,manual_source:args.p_source},{ignoreDuplicates:true})
+      }
+      if(name==='course_purchase_intent'){
+        const c=table('courses').find(c=>c.id===args.p_course)
+        let i=table('course_purchase_intents').find(i=>i.user_id===args.p_user&&i.course_id===args.p_course&&i.stars===c.price_stars)
+        if(!i){i={user_id:args.p_user,course_id:args.p_course,stars:c.price_stars,payload:'purchase:'+crypto.randomUUID(),link:null};table('course_purchase_intents').push(i)}
+        return {data:i,error:null}
+      }
+      if(name==='course_purchase_link'){
+        const i=table('course_purchase_intents').find(i=>i.user_id===args.p_user&&i.payload===args.p_payload)
+        if(!i)return {data:null,error:{message:'intent_not_found'}};i.link??=args.p_link;return {data:i.link,error:null}
+      }
+      if(name==='check_course_checkout'){
+        const legacy=/^course:(\d+):(\d+)$/.exec(args.p_payload??'')
+        const i=table('course_purchase_intents').find(i=>i.user_id===args.p_user&&i.payload===args.p_payload)
+        const cid=legacy&&Number(legacy[2])===args.p_user?Number(legacy[1]):i?.course_id
+        const c=table('courses').find(c=>c.id===cid)
+        const held=table('course_purchase_intents').find(i=>i.user_id===args.p_user&&i.course_id===cid&&i.checkout_query&&i.checkout_query!==args.p_query)
+        const ok=!!c?.published&&c.price_stars>0&&c.price_stars===args.p_stars&&!held&&!table('course_access').some(a=>a.user_id===args.p_user&&a.course_id===cid)
+        if(ok){if(i)i.checkout_query=args.p_query;else table('course_purchase_intents').push({user_id:args.p_user,course_id:cid,checkout_query:args.p_query})}
+        return {data:ok,error:null}
+      }
+      if(name==='apply_course_purchase'){
+        const legacy=/^course:(\d+):(\d+)$/.exec(args.p_payload??'')
+        const i=table('course_purchase_intents').find(i=>i.user_id===args.p_user&&i.payload===args.p_payload)
+        const cid=legacy&&Number(legacy[2])===args.p_user?Number(legacy[1]):i?.course_id
+        if(!cid)return {data:null,error:{message:'invalid_payment'}}
+        const result=await createClient().rpc('apply_star_payment',{...args,p_course:cid})
+        if(result.data)result.data.course_id=cid;return result
+      }
+      if(name==='claim_payment_refunds')return {data:table('payment_refund_jobs').filter(j=>!j.completed_at&&!j.lease_token).map(j=>Object.assign(j,{lease_token:crypto.randomUUID()})),error:null}
+      if(name==='finish_payment_refund'){
+        const j=table('payment_refund_jobs').find(j=>j.charge_id===args.p_charge&&j.lease_token===args.p_lease)
+        if(!j)return {data:false,error:null}
+        if(args.p_ok){await createClient().rpc('apply_star_refund',{p_charge:args.p_charge});j.completed_at=new Date().toISOString()}
+        else j.lease_token=null
+        return {data:true,error:null}
+      }
       if(name==='decide_course_request'){
         const before=structuredClone(state.tables)
-        if(args.p_approve){const grant=await new Query('course_access').upsert({user_id:args.p_user,course_id:args.p_course,source:'admin'},{ignoreDuplicates:true});if(grant.error){state.tables=before;return grant}}
+        if(args.p_approve){const grant=await createClient().rpc('grant_course_access',{p_user:args.p_user,p_course:args.p_course,p_source:'admin'});if(grant.error){state.tables=before;return grant}}
         const result=await new Query('access_requests').upsert({user_id:args.p_user,course_id:args.p_course,status:args.p_approve?'approved':'declined',decided_at:new Date().toISOString()})
         if(result.error)state.tables=before
         return result
@@ -337,6 +413,7 @@ export function createClient() {
         return { data: true, error: null }
       }
       if (name === 'grant_achievements') {
+        if(state.failNext?.table==='users'&&state.failNext.op==='award'){state.failNext=null;return {data:null,error:{message:'injected award failure'}}}
         const user = table('users').find(u => u.id === args.p_user)
         if (user) user.achievements = [...new Set([...(user.achievements ?? []), ...args.p_codes])]
         return { data: null, error: null }
@@ -394,18 +471,22 @@ export function createClient() {
           const prior = table('payments').find((p) => p.charge_id === charge)
           if (prior && (prior.user_id !== user || prior.course_id !== course || prior.stars !== stars)) throw { code: 'P0001' }
           if (prior?.refunded_at) return { data: { duplicate: true, refunded: true }, error: null }
-          if (!prior) await run(new Query('payments').insert({ user_id: user, course_id: course, stars, charge_id: charge }))
+          const extra=!prior&&table('course_access').some(a=>a.user_id===user&&a.course_id===course)
+          if (!prior) await run(new Query('payments').insert({ user_id: user, course_id: course, stars, charge_id: charge, refund_pending:extra }))
+          if(extra){table('payment_refund_jobs').push({charge_id:charge,user_id:user});return {data:{duplicate:false,refunded:false,refund_pending:true},error:null}}
           await run(new Query('course_access').upsert({ user_id: user, course_id: course, source: 'stars' }, { ignoreDuplicates: true }))
           return { data: { duplicate: !!prior, refunded: false }, error: null }
         }
         const p = table('payments').find((p) => p.charge_id === args.p_charge)
         if (!p) throw { code: 'P0002' }
         const fresh = !p.refunded_at
-        await run(new Query('payments').update({ refunded_at: p.refunded_at ?? new Date().toISOString() }).eq('charge_id', args.p_charge))
-        if (!table('payments').some((x) => x.user_id === p.user_id && x.course_id === p.course_id && !x.refunded_at)) {
-          await run(new Query('course_access').delete().eq('user_id', p.user_id).eq('course_id', p.course_id).eq('source', 'stars'))
+        await run(new Query('payments').update({ refunded_at: p.refunded_at ?? new Date().toISOString(),refund_pending:false }).eq('charge_id', args.p_charge))
+        if (!table('payments').some((x) => x.user_id === p.user_id && x.course_id === p.course_id && !x.refunded_at&&!x.refund_pending)) {
+          const a=table('course_access').find(a=>a.user_id===p.user_id&&a.course_id===p.course_id)
+          if(a?.manual_source)a.source=a.manual_source
+          else await run(new Query('course_access').delete().eq('user_id', p.user_id).eq('course_id', p.course_id).eq('source', 'stars'))
         }
-        return { data: { ...p, new_refund: fresh }, error: null }
+        return { data: { ...p, new_refund: fresh,access_retained:table('course_access').some(a=>a.user_id===p.user_id&&a.course_id===p.course_id) }, error: null }
       } catch (error) {
         state.tables = before
         return { data: null, error }

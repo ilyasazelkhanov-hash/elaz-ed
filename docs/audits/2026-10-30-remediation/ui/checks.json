@@ -1,0 +1,55 @@
+{
+  "results": [
+    {
+      "scenario": "focus",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "scenario": "bonus",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "scenario": "bonus-space",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "scenario": "bonus-pointer",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "scenario": "contrast",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "scenario": "focus",
+      "width": 1024,
+      "passed": true
+    },
+    {
+      "scenario": "bonus",
+      "width": 1024,
+      "passed": true
+    },
+    {
+      "scenario": "bonus-space",
+      "width": 1024,
+      "passed": true
+    },
+    {
+      "scenario": "bonus-pointer",
+      "width": 1024,
+      "passed": true
+    },
+    {
+      "scenario": "contrast",
+      "width": 1024,
+      "passed": true
+    }
+  ],
+  "failures": []
+}

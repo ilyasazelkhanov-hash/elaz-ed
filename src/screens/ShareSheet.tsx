@@ -19,7 +19,7 @@ export function ShareSheet() {
   const last = useRef(card)
   if (card) last.current = card
   return (
-    <Sheet open={!!card} onClose={() => useStore.setState({ share: null })}>
+    <Sheet open={!!card} focusManaged onClose={() => useStore.setState({ share: null })}>
       {last.current && <Body key={`${last.current.kind}-${last.current.lessonId ?? ''}-${last.current.title}`} card={last.current} />}
     </Sheet>
   )

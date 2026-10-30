@@ -8,6 +8,7 @@ import { academyEntry } from './lib/academy-entry'
 import { bindBack, initTelegram, inTelegram, startParam } from './lib/tg'
 import { applyTheme, watchTheme } from './lib/theme'
 import { preloadMarkdown } from './Markdown'
+import { FocusLayer } from './FocusLayer'
 import { CourseScreen } from './screens/Course'
 import { Home } from './screens/Home'
 import { Blog } from './screens/Blog'
@@ -95,6 +96,7 @@ function Shell() {
   const tab = useStore((s) => s.tab)
   const stack = useStore((s) => s.stack)
   const reward = useStore((s) => s.reward)
+  const share = useStore((s) => s.share)
   const pop = useStore((s) => s.pop)
 
   useEffect(() => bindBack(stack.length > 0 ? () => {
@@ -137,6 +139,7 @@ function Shell() {
 
   return (
     <motion.div className="relative z-10 h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+      <div className="h-full" inert={stack.length > 0 || !!reward || !!share}>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={tab} onScrollCapture={onScroll} className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
           {tab === 'home' && <Home />}
@@ -149,14 +152,17 @@ function Shell() {
 
       <div ref={scrim} className="glass top-scrim pointer-events-none absolute inset-x-0 top-0 z-20" />
       <Nav />
+      </div>
 
       <AnimatePresence>
         {stack.map((o, i) => (
-          <OverlayView key={overlayKey(o, i)} overlay={o} />
+          <FocusLayer key={overlayKey(o, i)} active={i === stack.length - 1 && !reward && !share} label={o.type === 'lesson' ? 'Публикация' : 'Экран приложения'}>
+            <OverlayView overlay={o} />
+          </FocusLayer>
         ))}
       </AnimatePresence>
 
-      <AnimatePresence>{reward && <RewardModal key="reward" reward={reward} />}</AnimatePresence>
+      <AnimatePresence>{reward && <FocusLayer key="reward" active={!share} label="Награда" className="absolute inset-0 z-50"><RewardModal reward={reward} /></FocusLayer>}</AnimatePresence>
 
       <ShareSheet />
     </motion.div>

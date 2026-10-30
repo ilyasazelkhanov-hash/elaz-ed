@@ -21,7 +21,8 @@ export function DailyCard() {
   const rotate = useTransform(progress, (p) => Math.sin(p * 40) * p * 9)
   const dash = useTransform(progress, (p) => 1 - p)
   const glow = useTransform(progress, [0, 1], [0, 1])
-  const orb = useRef<HTMLDivElement>(null)
+  const orb = useRef<HTMLButtonElement>(null)
+  const claiming = useRef(false)
   const anim = useRef<ReturnType<typeof animate> | null>(null)
   const ticker = useRef<number>(0)
   const [busy, setBusy] = useState(false)
@@ -35,6 +36,9 @@ export function DailyCard() {
   useEffect(() => stop, [])
 
   const claim = async () => {
+    if (claiming.current) return
+    claiming.current = true
+    stop()
     setBusy(true)
     try {
       const res = await api.daily()
@@ -52,6 +56,7 @@ export function DailyCard() {
       toast(errorText(e))
       animate(progress, 0, { duration: 0.3 })
       setBusy(false)
+      claiming.current = false
     }
   }
 
@@ -98,17 +103,21 @@ export function DailyCard() {
         <p className="tabular font-display text-[19px] font-semibold leading-tight">+{reward} XP</p>
         <p className="mt-1 text-[13px] font-medium opacity-80">{hint ? 'Не отпускай, пока не зарядится' : me.streak > 0 ? `Стрик ${days(me.streak)} — не обрывай` : 'Зажми кнопку и держи'}</p>
       </div>
-      <motion.div
+      <motion.button
         ref={orb}
-        role="button"
-        aria-label="Зажми, чтобы забрать бонус дня"
+        type="button"
+        disabled={busy}
+        aria-busy={busy}
+        aria-label="Забрать бонус дня"
+        onClick={(event) => { if (event.detail === 0) void claim() }}
+        onKeyDown={(event) => { if (event.repeat && (event.key === 'Enter' || event.key === ' ')) event.preventDefault() }}
         onPointerDown={press}
         onPointerUp={release}
         onPointerLeave={release}
         onPointerCancel={release}
         onContextMenu={(e) => e.preventDefault()}
         style={{ scale, touchAction: 'none', WebkitTouchCallout: 'none' }}
-        className="relative grid h-[76px] w-[76px] shrink-0 cursor-pointer place-items-center rounded-full bg-[#2a1020]"
+        className="relative grid h-[76px] w-[76px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-[#2a1020] p-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:cursor-wait"
       >
         <motion.div className="absolute inset-0 rounded-full" style={{ opacity: glow, boxShadow: '0 0 34px 6px rgb(255 255 255 / 0.75)' }} />
         <svg width="76" height="76" className="absolute inset-0 -rotate-90">
@@ -118,7 +127,7 @@ export function DailyCard() {
         <motion.div style={{ rotate }} className="relative">
           <Emoji char="🎁" size={38} animated />
         </motion.div>
-      </motion.div>
+      </motion.button>
     </motion.div>
   )
 }

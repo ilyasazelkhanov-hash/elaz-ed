@@ -7,6 +7,7 @@ import { haptic } from './lib/tg'
 import type { GradientName } from './lib/types'
 import { useDocumentVisible, useElementVisible, usePrefersReducedMotion } from './lib/visibility'
 import { useStore } from './store'
+import { FocusLayer } from './FocusLayer'
 
 // ---------- Эмодзи ----------
 
@@ -210,11 +211,18 @@ export function Bar({ progress, className = '' }: { progress: number; className?
 
 // ---------- Шторка ----------
 
-export function Sheet({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
+function SheetContainer({ managed, open, onClose, children }: { managed: boolean; open: boolean; onClose: () => void; children: ReactNode }) {
+  const className = 'fixed inset-0 z-[60] flex items-end justify-center'
+  return managed
+    ? <FocusLayer active={open} label="Поделиться" onClose={onClose} className={className}>{children}</FocusLayer>
+    : <motion.div className={className} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{children}</motion.div>
+}
+
+export function Sheet({ open, onClose, children, focusManaged = false }: { open: boolean; onClose: () => void; children: ReactNode; focusManaged?: boolean }) {
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-[60] flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <SheetContainer managed={focusManaged} open={open} onClose={onClose}>
           <div className="absolute inset-0 bg-black/65" onClick={onClose} />
           <motion.div
             className="relative w-full max-w-[480px] rounded-t-[32px] border-t border-line bg-card2 px-6 pt-3"
@@ -233,7 +241,7 @@ export function Sheet({ open, onClose, children }: { open: boolean; onClose: () 
             <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-veil/15" />
             {children}
           </motion.div>
-        </motion.div>
+        </SheetContainer>
       )}
     </AnimatePresence>
   )
