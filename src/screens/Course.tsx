@@ -158,9 +158,12 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
 
           {course.description && (
             <div className="mt-6">
+              <h2 className="mb-3 font-display text-[15px] font-semibold">О курсе</h2>
               <Markdown text={course.description} />
             </div>
           )}
+
+          {lessons.length > 0 && <div className="mt-6 rounded-[20px] border border-line bg-card p-4"><p className="text-xs font-semibold uppercase tracking-wide text-violet">Как устроено обучение</p><p className="mt-2 text-sm leading-relaxed">{lessons.length} {lessonsWord(lessons.length)} · {lessons.reduce((sum, item) => sum + item.minutes, 0)} мин на материалы</p><p className="mt-1 text-sm leading-relaxed text-mute">{course.access ? 'Выбирай урок в программе или продолжи с того места, где остановился.' : lessons.some(l => l.free_preview) ? 'Открытые уроки можно изучить до получения доступа к курсу.' : howToOpen}</p></div>}
 
           <h2 className="mb-3 mt-7 font-display text-[15px] font-semibold">Программа</h2>
           <div className="overflow-hidden rounded-[22px] border border-line bg-card/80">

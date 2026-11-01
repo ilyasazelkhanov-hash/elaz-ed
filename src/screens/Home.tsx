@@ -44,6 +44,7 @@ export function Home() {
         </div>
       </header>
 
+      <div className="mt-6"><MainCourses /></div>
       <AdventBanner />
       <Tap onClick={() => useStore.getState().push({type:'certifications'})} className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center gap-4 overflow-hidden rounded-[26px] border border-violet/25 bg-violet/10 p-5 text-left">
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[18px] bg-violet/15 text-violet"><Award size={32} strokeWidth={1.7}/></span>
@@ -77,7 +78,6 @@ export function Home() {
 
       <WeeklyGoal />
 
-      <MainCourses />
       <KnowledgeHub posts={lessons}/>
 
       {stories.length > 0 && (

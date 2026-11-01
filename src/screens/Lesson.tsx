@@ -21,6 +21,8 @@ const OPEN = { top: 0, right: 0, bottom: 0, left: 0 }
 
 export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const card = useStore((s) => s.feed.find((c) => c.id === id))
+  const feed = useStore((s) => s.feed)
+  const courses = useStore((s) => s.courses)
   const me = useStore((s) => s.me)!
   const pop = useStore((s) => s.pop)
   const { setMe, patchCard, setReward, toast, guard } = useStore.getState()
@@ -56,6 +58,11 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const quiz = lesson?.quiz ?? []
   const quizPending = !completed && quiz.length > 0 && !answers
   const bonus = quizResult?.bonus ?? 0
+  const course = courses.find(c => c.id === view?.course_id)
+  const courseLessons = course ? feed.filter(c => c.kind === 'lesson' && c.course_id === course.id).sort((a, b) => a.position - b.position || a.id - b.id) : []
+  const lessonIndex = courseLessons.findIndex(item => item.id === id)
+  const nextLesson = lessonIndex >= 0 ? courseLessons[lessonIndex + 1] : undefined
+  const canOpenNext = !!nextLesson && (!!course?.access || nextLesson.free_preview)
 
   const onScroll = () => {
     const el = scroller.current
@@ -146,6 +153,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
         <div className="relative -mt-7 rounded-t-[30px] bg-bg px-5 pt-6">
           {view && (
             <>
+              {course && lessonIndex >= 0 && <div className="mb-4 rounded-[18px] border border-line bg-card p-4"><p className="text-xs font-semibold text-violet">Урок {lessonIndex + 1} из {courseLessons.length}</p><p className="mt-1 text-sm text-mute">{course.title}</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-veil/8" role="progressbar" aria-label="Место в курсе" aria-valuemin={1} aria-valuemax={courseLessons.length} aria-valuenow={lessonIndex + 1}><div className="h-full rounded-full bg-violet" style={{width:`${(lessonIndex + 1) / courseLessons.length * 100}%`}} /></div></div>}
               <div className="flex flex-wrap items-center gap-1.5 text-[12px] font-semibold">
                 <span className="rounded-full bg-violet/15 px-2.5 py-1 text-violet">{view.category}</span>
                 <span className="rounded-full bg-veil/8 px-2.5 py-1 text-mute">{view.minutes} мин</span>
@@ -197,6 +205,8 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
               {/* Подзаголовок часто повторяет первую фразу текста — второй раз её не показываем. */}
               <Markdown text={lesson.subtitle && lesson.body.startsWith(lesson.subtitle) ? lesson.body.slice(lesson.subtitle.length).trimStart() : lesson.body} />
 
+              {lesson.subtitle && <section className="mt-8 rounded-[20px] border border-violet/20 bg-violet/10 p-4" aria-label="Тема урока"><h2 className="text-xs font-semibold uppercase tracking-wide text-violet">Вспомним тему</h2><p className="mt-2 text-sm leading-relaxed">{lesson.subtitle}</p></section>}
+
               <Tap onClick={copyForAi} className="mt-8 flex w-full items-center gap-3.5 rounded-[22px] border border-line bg-card p-4 text-left">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-violet/15 text-violet">
                   <Copy size={19} />
@@ -212,6 +222,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
                   <Quiz lessonId={id} quiz={quiz} practice={completed && !answers} onDone={(attempt) => { setAnswers(attempt.answers); setQuizResult(attempt) }} />
                 </div>
               )}
+              {nextLesson && <div className="mt-8 rounded-[20px] border border-line bg-card p-4"><p className="text-xs font-semibold uppercase tracking-wide text-violet">Следующий урок</p><p className="mt-2 font-semibold">{nextLesson.title}</p><p className="mt-1 text-xs text-mute">{nextLesson.minutes} мин{!canOpenNext ? ' · откроется вместе с курсом' : ''}</p>{canOpenNext && <><p className="mt-2 text-xs leading-relaxed text-mute">Переход не завершает текущий урок: отметь его пройденным отдельно.</p><Tap className="mt-3 min-h-11 text-sm font-semibold text-violet" onClick={() => { pop(); useStore.getState().push({type:'lesson',id:nextLesson.id}) }}>Открыть следующий урок →</Tap></>}</div>}
             </motion.div>
           )}
         </div>
