@@ -6,6 +6,7 @@ import { registerHooks } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { reset, state } from './fake-supabase.mjs'
+import { learningLocalParts } from '../../supabase/functions/api/learning-reminders.ts'
 
 const TOKEN = 'test-token'
 let setupSecret
@@ -154,6 +155,29 @@ test('цель недели хранится только у авторизов�
 test('рассылка недельных напоминаний закрыта без cron-секрета', async () => {
   const res = await handler(new Request(`${SUPABASE_URL}/functions/v1/api/learning_reminders`, { method: 'POST', body: '{}' }))
   assert.equal(res.status, 401)
+})
+
+test('недельное напоминание учитывает выполненную цель и не отправляется повторно', async () => {
+  state.tables.settings.push({ key: 'cron_key', value: 'secret-cron' })
+  await everyoneBoots()
+  await handler(new Request(`${SUPABASE_URL}/functions/v1/api/advent_push`, { method: 'POST' }))
+  const now = new Date()
+  const timezone = ['UTC', 'Etc/GMT+12', 'Etc/GMT-12'].find(zone => { const hour = learningLocalParts(zone, now).hour; return hour >= 8 && hour <= 21 })
+  const parts = learningLocalParts(timezone, now)
+  Object.assign(state.tables.users.find(u => u.id === BUYER), { learning_reminders: true, subscribed: true, learning_goal: 1, learning_reminder_day: parts.day, learning_reminder_hour: 8, learning_timezone: timezone })
+  state.tables.progress.push({ user_id: BUYER, lesson_id: 11, completed_at: now.toISOString() })
+  const run = () => handler(new Request(`${SUPABASE_URL}/functions/v1/api/learning_reminders`, { method: 'POST', headers: { 'x-cron-key': 'secret-cron' } }))
+  calls.length = 0
+  assert.equal((await run()).status, 200)
+  assert.equal(sent('sendMessage').length, 0)
+  const user = state.tables.users.find(u => u.id === BUYER)
+  user.learning_reminder_week = null
+  state.tables.progress = []
+  assert.equal((await run()).status, 200)
+  assert.equal(sent('sendMessage').length, 1)
+  assert.match(sent('sendMessage')[0].payload.text, /0 из 1/)
+  assert.equal((await run()).status, 200)
+  assert.equal(sent('sendMessage').length, 1)
 })
 
 test('админские адреса закрыты для обычного подписчика', async () => {

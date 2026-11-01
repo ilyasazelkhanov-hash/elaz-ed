@@ -133,6 +133,11 @@ class Query {
     this.max = n
     return this
   }
+  range(from, to) {
+    this.offset = from
+    this.max = to - from + 1
+    return this
+  }
   maybeSingle() {
     this.mode = 'maybe'
     return this
@@ -162,7 +167,7 @@ class Query {
     })
     if (this.mode === 'maybe') return out.length > 1 ? { data: null, error: { code: 'PGRST116' } } : { data: out[0] ?? null, error: null }
     if (this.mode === 'single') return out.length === 1 ? { data: out[0], error: null } : { data: null, error: { code: 'PGRST116' } }
-    return { data: this.max ? out.slice(0, this.max) : out, error: null, count: out.length }
+    return { data: this.max ? out.slice(this.offset ?? 0, (this.offset ?? 0) + this.max) : out, error: null, count: out.length }
   }
 
   run() {

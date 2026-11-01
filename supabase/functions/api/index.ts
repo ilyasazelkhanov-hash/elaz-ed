@@ -532,15 +532,16 @@ async function learningReminders(req: Request) {
     if (claimed.error || !claimed.data) continue
     const row = await db.from('users').select('*').eq('id', user.id).single()
     if (row.error || !row.data || !row.data.learning_reminders || !row.data.subscribed) { await db.from('users').update({ learning_reminder_claimed_at: null }).eq('id', user.id); continue }
-    const { data: progress } = await db.from('progress').select('lesson_id', { count: 'exact', head: true }).eq('user_id', user.id).gte('completed_at', localMidnightUtc(parts.week, String(user.learning_timezone || 'UTC')))
-    if ((progress?.count ?? 0) >= Number(user.learning_goal ?? 3)) { await db.from('users').update({ learning_reminder_week: parts.week, learning_reminder_claimed_at: null }).eq('id', user.id); continue }
+    const { count: completed, error: progressError } = await db.from('progress').select('lesson_id', { count: 'exact', head: true }).eq('user_id', user.id).gte('completed_at', localMidnightUtc(parts.week, String(user.learning_timezone || 'UTC')))
+    if (progressError || completed == null) { await db.from('users').update({ learning_reminder_claimed_at: null }).eq('id', user.id); continue }
+    if (completed >= Number(user.learning_goal ?? 3)) { await db.from('users').update({ learning_reminder_week: parts.week, learning_reminder_claimed_at: null }).eq('id', user.id); continue }
     const feed = await buildFeed(user.id)
     const candidate = feed.filter((item) => item.kind === 'lesson' && !item.completed).sort((a, b) => Number(b.pinned) - Number(a.pinned) || String(b.published_at ?? '').localeCompare(String(a.published_at ?? '')))
     let next: Row | null = null
     for (const item of candidate) if (await canRead(row.data, item)) { next = item; break }
     if (!next) { await db.from('users').update({ learning_reminder_week: parts.week, learning_reminder_claimed_at: null }).eq('id', user.id); continue }
     const link = `${s.app_url}/?sp=l${next.id}_r${user.id}`
-    const result = await tg('sendMessage', { chat_id: user.id, text: `На этой неделе уже ${progress?.count ?? 0} из ${Number(user.learning_goal ?? 3)} занятий. Продолжим с «${String(next.title).slice(0, 120)}»?`, reply_markup: { inline_keyboard: [[{ text: 'Продолжить урок', web_app: { url: link } }]] } })
+    const result = await tg('sendMessage', { chat_id: user.id, text: `На этой неделе уже ${completed} из ${Number(user.learning_goal ?? 3)} занятий. Продолжим с «${String(next.title).slice(0, 120)}»?`, reply_markup: { inline_keyboard: [[{ text: 'Продолжить урок', web_app: { url: link } }]] } })
     if (result.ok) {
       const { error: updateError } = await db.from('users').update({ learning_reminder_week: parts.week, learning_reminder_claimed_at: null }).eq('id', user.id).eq('learning_reminders', true)
       if (!updateError) sent++
