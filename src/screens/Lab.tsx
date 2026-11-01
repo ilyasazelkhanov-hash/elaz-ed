@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { isDemo } from '../lib/api'
 import { levelCard } from '../lib/shareCard'
 import { sfx } from '../lib/sfx'
-import { haptic, inTelegram, telegram, tgVersion } from '../lib/tg'
+import { haptic, inTelegram, shareLink, telegram, tgVersion } from '../lib/tg'
+import { appLink } from '../lib/links'
 import { useTilt } from '../lib/tilt'
 import { track } from '../lib/track'
 import { useStore } from '../store'
@@ -47,15 +48,24 @@ export function LabScreen() {
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(40px + var(--bottom))' }}>
         <Header title="Лаборатория" />
         <div className="px-5">
-          <p className="mt-2 text-[14.5px] leading-snug text-mute">Здесь собрано то, что мини-апп умеет внутри Telegram. Всё настоящее: жми и проверяй на своём телефоне.</p>
-          <div className="mt-4 flex items-center gap-3">
-            <Bar progress={tried.length / TOTAL} className="flex-1" />
-            <span className="tabular text-[12.5px] font-semibold text-mute">
-              {tried.length} из {TOTAL}
-            </span>
+          <section className="relative mt-3 overflow-hidden rounded-[26px] border border-violet/20 bg-card px-4 py-4 shadow-[var(--shadow-float)]">
+            <div className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full bg-violet/15 blur-3xl" />
+            <div className="relative flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-violet/12 text-[22px]">🧪</div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-[.16em] text-violet">Telegram внутри OG</p>
+                <p className="mt-1 text-[13.5px] leading-snug text-mute">Попробуй возможности мини-аппа — или собери короткую практику для своей группы.</p>
+              </div>
+              <span className="shrink-0 rounded-full border border-line bg-card2 px-2.5 py-1 text-[11px] font-semibold tabular text-mute">{tried.length}/{TOTAL}</span>
+            </div>
+            <div className="relative mt-4"><Bar progress={tried.length / TOTAL} className="h-1.5" /></div>
+          </section>
+
+          <div className="mt-6">
+            <GroupSprint onTry={() => mark('group_sprint')} />
           </div>
 
-          <div className="mt-5 space-y-2.5">
+          <LabSection title="Отклик и управление" detail="Проверь, как приложение ощущается на устройстве">
             <Haptics onTry={() => mark('haptics')} />
             <Tilt onTry={() => mark('tilt')} />
             <Shake onTry={() => mark('shake')} />
@@ -66,7 +76,9 @@ export function LabScreen() {
             <Fullscreen onTry={() => mark('fullscreen')} />
             <HomeScreen onTry={() => mark('home_screen')} />
             <Cloud onTry={() => mark('cloud')} />
+          </LabSection>
 
+          <LabSection title="Поделиться и поддержать" detail="Отправь результат или посмотри, как работают покупки">
             <Demo title="Картинка в сторис и в чат" text="Приложение рисует картинку и отдаёт её Telegram: в сторис, в чат с кнопкой или в галерею." ok>
               <Action
                 onClick={() => {
@@ -77,7 +89,6 @@ export function LabScreen() {
                 Собрать мою карточку
               </Action>
             </Demo>
-
             <Demo title="Оплата звёздами" text="Счёт открывается поверх приложения, оплата в два тапа. Так здесь продаются закрытые курсы." ok={!!paid} note="Появится, когда выйдет первый платный курс">
               <Action
                 onClick={() => {
@@ -88,7 +99,7 @@ export function LabScreen() {
                 Посмотреть на курсе
               </Action>
             </Demo>
-          </div>
+          </LabSection>
 
           {isDemo && <p className="mt-5 text-center text-[12.5px] text-faint">В браузере часть примеров недоступна — открой приложение в Telegram.</p>}
           {tried.length === TOTAL && (
@@ -102,7 +113,7 @@ export function LabScreen() {
   )
 }
 
-const TOTAL = 12
+const TOTAL = 13
 
 // ---------- Общие детали ----------
 
@@ -112,6 +123,18 @@ function Demo({ title, text, ok, note = NEED_TG, children }: { title: string; te
       <h2 className="text-[15.5px] font-semibold">{title}</h2>
       <p className="mt-1 text-[13.5px] leading-snug text-mute">{text}</p>
       <div className="mt-3.5">{ok ? children : <p className="rounded-[14px] bg-veil/5 px-3.5 py-2.5 text-[13px] text-faint">{note}</p>}</div>
+    </section>
+  )
+}
+
+function LabSection({ title, detail, children }: { title: string; detail: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-7">
+      <div className="mb-3 px-0.5">
+        <h2 className="text-[17px] font-semibold tracking-[-.02em]">{title}</h2>
+        <p className="mt-1 text-[12.5px] leading-snug text-mute">{detail}</p>
+      </div>
+      <div className="space-y-2.5">{children}</div>
     </section>
   )
 }
@@ -410,5 +433,62 @@ function Cloud({ onTry }: DemoProps) {
         </Tap>
       </div>
     </Demo>
+  )
+}
+
+const SPRINTS = [
+  { id: 'prompt', title: 'Промпт', emoji: '✍️', headline: 'Соберите сильный промпт', task: 'Каждый приносит одну рутинную задачу. Вместе перепишите её в промпт с ролью, контекстом, ограничениями и форматом ответа.' },
+  { id: 'verify', title: 'Фактчек', emoji: '🔎', headline: 'Проверьте ответ ИИ', task: 'Возьмите ответ нейросети и найдите в нём три проверяемых утверждения. Сверьте их с источниками и отметьте, что модель упустила.' },
+  { id: 'workflow', title: 'Автоматизация', emoji: '⚙️', headline: 'Найдите автоматизацию', task: 'Опишите повторяющийся процесс команды. Разбейте его на шаги и выберите один безопасный шаг, который можно автоматизировать первым.' },
+] as const
+
+/** Готовый групповой сценарий: организатор выбирает тему и отправляет приглашение в нужный чат. */
+function GroupSprint({ onTry }: DemoProps) {
+  const toast = useStore((s) => s.toast)
+  const [selected, setSelected] = useState<(typeof SPRINTS)[number]['id']>('prompt')
+  const sprint = SPRINTS.find((item) => item.id === selected) ?? SPRINTS[0]
+
+  const launch = () => {
+    const link = appLink()
+    if (!link) {
+      toast('Ссылка на приложение пока не настроена')
+      return
+    }
+    const message = `🚀 Учебный спринт OG CRE8R² · 20 минут\n\n${sprint.emoji} ${sprint.headline}\n${sprint.task}\n\nПлан: 3 минуты — выбрать пример · 12 минут — сделать вместе · 5 минут — поделиться выводом.`
+    onTry()
+    shareLink(link, message)
+  }
+
+  return (
+    <section className="relative overflow-hidden rounded-[26px] border border-violet/25 bg-card p-4 shadow-[var(--shadow-float)]">
+      <div className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-pink/10 blur-3xl" />
+      <div className="relative flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[.17em] text-violet">Сделайте вместе</p>
+          <h2 className="mt-1.5 font-display text-[19px] font-semibold leading-tight tracking-[-.04em]">Учебный спринт</h2>
+        </div>
+        <span className="rounded-full border border-line bg-card2 px-2.5 py-1 text-[11px] font-semibold text-mute">20 минут</span>
+      </div>
+      <p className="relative mt-2 text-[13px] leading-snug text-mute">Выбери тему — Telegram подготовит приглашение в групповой чат.</p>
+      <div className="relative mt-4 grid grid-cols-3 gap-2" role="group" aria-label="Тема группового спринта">
+        {SPRINTS.map((item) => (
+          <button key={item.id} type="button" aria-pressed={selected === item.id} onClick={() => setSelected(item.id)} className={`min-h-[58px] rounded-[15px] border px-1.5 py-2 text-center transition-colors ${selected === item.id ? 'border-violet/60 bg-violet/12 text-ink shadow-[inset_0_0_0_1px_rgb(165_139_255_/_0.12)]' : 'border-line bg-card2 text-mute'}`}>
+            <span className="block text-[17px] leading-none" aria-hidden="true">{item.emoji}</span>
+            <span className="mt-1.5 block text-[11px] font-semibold leading-tight">{item.title}</span>
+          </button>
+        ))}
+      </div>
+      <div className="relative mt-3 rounded-[17px] border border-line bg-card2/80 p-3.5">
+        <p className="text-[13.5px] font-semibold">{sprint.headline}</p>
+        <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute">{sprint.task}</p>
+        <div className="mt-3 flex items-center gap-2 border-t border-line pt-2.5 text-[10.5px] font-medium text-faint">
+          <span>03 мин · старт</span><span className="h-px flex-1 bg-line"/><span>12 мин · практика</span><span className="h-px flex-1 bg-line"/><span>05 мин · итог</span>
+        </div>
+      </div>
+      <Tap onClick={launch} className="relative mt-3 flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[16px] bg-[var(--aurora)] px-4 text-[14px] font-bold text-[#170f2e] shadow-[0_8px_24px_rgb(124_107_255_/_0.24)]">
+        <span>Отправить в группу</span><span aria-hidden="true">↗</span>
+      </Tap>
+      <p className="relative mt-2.5 text-center text-[10.5px] leading-snug text-faint">Предпросмотр и отправка — под твоим контролем</p>
+    </section>
   )
 }

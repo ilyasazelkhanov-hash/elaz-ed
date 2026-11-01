@@ -74,8 +74,8 @@ export function Home() {
         </AnimatePresence>
       </div>
 
-      <KnowledgeHub posts={lessons}/>
       <MainCourses />
+      <KnowledgeHub posts={lessons}/>
 
       {stories.length > 0 && (
         <div className="no-bar mt-6 flex gap-3.5 overflow-x-auto px-5">

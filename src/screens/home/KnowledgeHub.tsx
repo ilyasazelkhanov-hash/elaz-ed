@@ -1,4 +1,4 @@
-import {ArrowUpRight,BookOpen,Compass,Sparkles,Zap} from 'lucide-react'
+import {ArrowDown,ArrowUpRight,BookOpen,Compass,Sparkles,Zap} from 'lucide-react'
 import {useState} from 'react'
 import {knowledgeTopics,courseGuide,topicForPost} from '../../lib/knowledge'
 import {comparePosts,isBlogPost,postDate} from '../../lib/content'
@@ -9,12 +9,18 @@ import './knowledge.css'
 
 /** Editorial picks are labelled as picks, never fabricated live trend statistics. */
 export function KnowledgeHub({posts}:{posts:Card[]}){
- const [audience,setAudience]=useState<'beginner'|'practitioner'>('beginner'),[topic,setTopic]=useState('tools')
+ const [open,setOpen]=useState(false),[audience,setAudience]=useState<'beginner'|'practitioner'>('beginner'),[topic,setTopic]=useState('tools')
  const push=useStore(s=>s.push),setTab=useStore(s=>s.setTab)
  const current=knowledgeTopics.find(t=>t.id===topic)??knowledgeTopics[0]
  const code=audience==='beginner'?current.courseCodes[0]:current.courseCodes[Math.min(1,current.courseCodes.length-1)],guide=courseGuide(code)
  const picks=posts.filter(isBlogPost).filter(p=>topicForPost(p)===topic).sort(comparePosts).slice(0,2)
  return <section aria-label="База знаний" className="knowledge-hub mx-5 my-5 overflow-hidden rounded-[28px] border border-line">
+  <Tap aria-expanded={open} onClick={()=>setOpen(value=>!value)} className="relative flex min-h-[82px] w-full items-center gap-3 p-4 text-left">
+   <span className="knowledge-orb" aria-hidden="true"/><span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-[15px] border border-violet/20 bg-violet/10 text-violet"><Sparkles size={20}/></span>
+   <span className="relative min-w-0 flex-1"><span className="block text-[10px] font-bold uppercase tracking-[.14em] text-violet">Дополнительные материалы</span><b className="mt-1 block font-display text-[15px] leading-tight">Берлога знаний</b><span className="mt-1 block text-[11px] text-mute">Разборы, идеи и курсы по ИИ</span></span>
+   <span className="relative flex shrink-0 items-center gap-1 rounded-full border border-line bg-card/80 px-3 py-2 text-[11px] font-semibold text-mute">{open?'Свернуть':'Открыть'}<ArrowDown size={14} className={`transition-transform ${open?'rotate-180':''}`}/></span>
+  </Tap>
+  {open&&<>
   <div className="relative overflow-hidden p-5"><span className="knowledge-orb" aria-hidden="true"/><div className="relative">
    <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-violet"><Sparkles size={16}/>OG · Берлога знаний</p>
    <h2 className="font-display text-[26px] font-semibold leading-tight">Разобраться. Попробовать.<br/>Сделать своё.</h2>
@@ -28,5 +34,6 @@ export function KnowledgeHub({posts}:{posts:Card[]}){
    {picks.length>0&&<div className="mt-4"><h3 className="mb-2 flex items-center gap-2 text-xs font-semibold text-mute"><Zap size={15}/>Почитать по теме</h3>{picks.map(p=><Tap key={p.id} onClick={()=>push({type:'lesson',id:p.id})} className="flex min-h-14 w-full items-center gap-3 border-b border-line py-3 text-left last:border-0"><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{p.title}</span><span className="mt-1 block text-xs text-mute">{p.pinned?'Выбор редактора · ':''}{postDate(p.published_at)} · {p.minutes} мин</span></span><ArrowUpRight size={16}/></Tap>)}</div>}
    <Tap onClick={()=>setTab('blog')} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-violet/30 bg-violet/10 px-4 text-sm font-semibold text-violet"><Compass size={17}/>Все разборы и свежие публикации</Tap>
   </div>
+  </>}
  </section>
 }
