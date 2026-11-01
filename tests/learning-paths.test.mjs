@@ -35,11 +35,11 @@ test('five courses preserve old lesson IDs, completions, XP, access and news; re
   await db.query("insert into course_access(user_id,course_id,source) values(44,$1,'admin')",[cid])
   await db.exec(sql)
   assert.deepEqual((await db.query('select id,course_id,position from lessons where course_id is not null order by id')).rows,after)
-  assert.equal(after.length,30);assert(ids.every(id=>after.some(x=>x.id===id)))
+      assert.equal(after.length,33);assert(ids.every(id=>after.some(x=>x.id===id)))
   assert.equal((await db.query('select * from courses where published')).rows.length,5)
   for(const c of (await db.query('select id from courses')).rows){
    const rows=(await db.query('select position from lessons where course_id=$1 order by position',[c.id])).rows
-   assert.deepEqual(rows.map(x=>x.position),[1,2,3,4,5,6])
+   assert.deepEqual(rows.map(x=>x.position),c.id===cid?[1,2,3,4,5,6]:c.id===(await db.query("select (value->'courses'->>'text')::int id from settings where key='content_revision:ai-practice-paths-2026-11-01-v5'")).rows[0].id?[1,2,3,4,5,6,7,8]:c.id===(await db.query("select (value->'courses'->>'automation')::int id from settings where key='content_revision:ai-practice-paths-2026-11-01-v5'")).rows[0].id?[1,2,3,4,5,6,7]:[1,2,3,4,5,6])
   }
   assert.notEqual(after.find(x=>x.id===moved).course_id,cid)
   assert.equal((await db.query('select lesson_id from progress where user_id=42')).rows[0].lesson_id,moved)
@@ -62,7 +62,7 @@ test('a corrupted mapping cannot turn a news post into a course lesson and rolls
  try{
   const cid=(await db.query("select (value->>'course_id')::int as id from settings where key='content_revision:ai-practice-training-2026-10-26-v3'")).rows[0].id
   const news=(await db.query('select id,body from lessons where course_id is null order by id limit 1')).rows[0]
-  await db.query("insert into settings(key,value) values('content_revision:ai-practice-paths-2026-10-26-v4',jsonb_build_object('courses',jsonb_build_object('foundations',$1::int),'lessons',jsonb_build_object('foundations-context',$2::int)))",[cid,news.id])
+  await db.query("insert into settings(key,value) values('content_revision:ai-practice-paths-2026-11-01-v5',jsonb_build_object('courses',jsonb_build_object('foundations',$1::int),'lessons',jsonb_build_object('foundations-context',$2::int)))",[cid,news.id])
   await assert.rejects(db.exec(await readFile(new URL('paths.sql',root),'utf8')),/Lesson outside paths/)
   await db.exec('rollback')
   assert.equal((await db.query('select count(*)::int as n from courses')).rows[0].n,1)
@@ -75,10 +75,10 @@ test('every course includes guided lessons, visible result, advanced extension a
  assert.deepEqual(p.courses.map(c=>c.key),['foundations','text','media','coding','automation'])
  assert.equal(p.courses.flatMap(c=>c.lessons).filter(l=>l.legacy).length,14)
  for(const c of p.courses){
-  assert.equal(c.lessons.length,6)
+  assert.equal(c.lessons.length,c.key==='text'?8:c.key==='automation'?7:6)
   assert(c.lessons.some(l=>l.body.includes('```lesson-animation')),c.key)
   for(const l of c.lessons){
-   for(const text of ['Если ты новичок','Если уже работаешь с ИИ','Для продвинутых:','Куда нажать / что ввести','Что должно появиться','Критерии готовности'])assert(l.body.includes(text),l.key+': '+text)
+   for(const text of ['Если ты новичок','Если уже работаешь с ИИ','Для продвинутых:','Критерии готовности',...(l.legacy?['Куда нажать / что ввести','Что должно появиться']:[])])assert(l.body.includes(text),l.key+': '+text)
    assert(!l.body.includes('undefined'))
    assert(l.body.includes('## Какие инструменты выбрать'),l.key)
    assert(l.body.includes('## Другие конкретные инструменты для этой задачи'),l.key)
@@ -89,6 +89,11 @@ test('every course includes guided lessons, visible result, advanced extension a
    const assets=new Set(l.body.match(/\/learning\/ai-practice\/[a-zA-Z0-9./-]+\.(?:png|webp|jpg|svg|zip|md|csv|json|html)/g))
    for(const asset of assets)assert((await stat(new URL('../public'+asset,import.meta.url))).size>50,asset)
   }
+ }
+ for(const key of ['presentation-brief','carousel-brief','deal-radar']){
+  const lesson=p.courses.flatMap(c=>c.lessons).find(l=>l.key===key)
+  assert.ok(lesson,`missing adapted DBA practice ${key}`)
+  for(const section of ['## Чему научишься','## Пошагово в интерфейсе','## Запрос для разобранного примера','## Самостоятельная работа','## Критерии готовности'])assert(lesson.body.includes(section),key+': '+section)
  }
  assert.equal(p.courses[4].lessons[0].key,'block-native-automation')
  assert(p.courses[3].lessons.some(l=>l.title.includes('OpenCode')))
