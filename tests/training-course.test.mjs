@@ -49,7 +49,7 @@ test('training replaces only course lessons and preserves news, IDs and progress
  assert(lessons.find(x=>x.title.includes('OpenBot')).body.includes('OpenBot'))
  assert(lessons.find(x=>x.title.includes('OpenCode')).body.includes('Open project'))
  assert(!lessons.find(x=>x.title.includes('OpenCode')).body.includes('opencode-tui.webp'))
- assert(lessons[0].body.includes('Opus 5.5'))
+ assert(lessons[0].body.includes('Названия моделей, тарифы и кнопки быстро меняются'))
  assert(!lessons.some(x=>x.body.includes('opencode-tui.webp')||x.body.includes('elevenlabs-tts.webp')))
  assert(lessons.find(x=>x.title.includes('ChatGPT, Claude')).body.includes('claude-desktop.jpg'))
  assert(lessons.find(x=>x.title.includes('Музыка')).body.includes('Suno'))

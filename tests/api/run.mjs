@@ -141,6 +141,21 @@ test('встроенные методы объекта не считаются �
   }
 })
 
+test('цель недели хранится только у авторизованного пользователя и принимает IANA-часовой пояс', async () => {
+  assert.deepEqual(await call('learning_goal', { action: 'get' }), { status: 401, body: { error: 'no_auth' } })
+  await everyoneBoots()
+  const saved = await call('learning_goal', { action: 'save', settings: { enabled: true, goal: 5, day: 2, hour: 19, timezone: 'Asia/Almaty' } }, BUYER)
+  assert.equal(saved.status, 200)
+  assert.deepEqual([saved.body.enabled, saved.body.goal, saved.body.day, saved.body.hour, saved.body.timezone], [true, 5, 2, 19, 'Asia/Almaty'])
+  assert.equal(state.tables.users.find((u) => u.id === BUYER).learning_reminders, true)
+  assert.deepEqual(await call('learning_goal', { action: 'save', settings: { enabled: true, timezone: 'Not/A_Real_Zone' } }, BUYER), { status: 400, body: { error: 'bad_timezone' } })
+})
+
+test('рассылка недельных напоминаний закрыта без cron-секрета', async () => {
+  const res = await handler(new Request(`${SUPABASE_URL}/functions/v1/api/learning_reminders`, { method: 'POST', body: '{}' }))
+  assert.equal(res.status, 401)
+})
+
 test('админские адреса закрыты для обычного подписчика', async () => {
   await everyoneBoots()
   for (const route of ['admin_list', 'admin_courses', 'admin_payments', 'admin_refund', 'admin_save', 'admin_delete', 'admin_course_save', 'admin_course_delete', 'admin_grant', 'admin_request', 'admin_analytics', 'admin_announce', 'admin_advent_theme', 'admin_advent_save', 'admin_advent_reward_save', 'admin_advent_reward_delete', 'admin_advent_pulse', 'admin_advent_winners', 'admin_advent_ticket_grant', 'admin_advent_points', 'admin_advent_point_save', 'admin_advent_point_delete']) {

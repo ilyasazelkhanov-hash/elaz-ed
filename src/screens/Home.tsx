@@ -9,6 +9,7 @@ import { DailyCard, StreakCard } from './home/Daily'
 import {KnowledgeHub} from './home/KnowledgeHub'
 import { Feed } from './home/Feed'
 import { StoryBubble } from './home/parts'
+import { WeeklyGoal } from './home/WeeklyGoal'
 import { Award, ChevronRight } from 'lucide-react'
 
 export function Home() {
@@ -73,6 +74,8 @@ export function Home() {
           {me.daily_claimed ? <StreakCard key="streak" /> : <DailyCard key="daily" />}
         </AnimatePresence>
       </div>
+
+      <WeeklyGoal />
 
       <MainCourses />
       <KnowledgeHub posts={lessons}/>

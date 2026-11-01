@@ -2,6 +2,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { handleAcademy, AcademyError } from './academy.ts'
 import { handleAcademyFiles } from './academy-files.ts'
+import { learningLocalParts, localMidnightUtc } from './learning-reminders.ts'
 import { newsTelegramPost } from '../_shared/news.ts'
 import { rewardNotifications } from '../_shared/rewardNotifications.ts'
 import { handleCertifications, CertificationError } from './certifications.ts'
@@ -482,6 +483,79 @@ async function boot(body: Row) {
     logEvent(row.id, 'open', null, { platform: str(body.platform, 20), theme: str(body.theme, 10) }),
   ])
   return { status: 'ok', me, feed, courses, advent, new_achievements: fresh, ...meta }
+}
+
+async function learningGoal(body: Row) {
+  const row = await member(body)
+  if (body.action === 'save') {
+    const x = body.settings as Row | undefined
+    const enabled = x?.enabled === true
+    const goal = int(x?.goal, 1, 7, 3)
+    const day = int(x?.day, 0, 6, 0)
+    const hour = int(x?.hour, 8, 21, 18)
+    const timezone = str(x?.timezone, 64) || 'UTC'
+    try { new Intl.DateTimeFormat('en', { timeZone: timezone }) } catch { throw new HttpError(400, 'bad_timezone') }
+    const { error } = await db.from('users').update({ learning_reminders: enabled, learning_goal: goal, learning_reminder_day: day, learning_reminder_hour: hour, learning_timezone: timezone }).eq('id', row.id)
+    if (error) throw new HttpError(500, 'db')
+    Object.assign(row, { learning_reminders: enabled, learning_goal: goal, learning_reminder_day: day, learning_reminder_hour: hour, learning_timezone: timezone })
+  } else if (body.action !== 'get') throw new HttpError(400, 'bad_action')
+  const timezone = String(row.learning_timezone || 'UTC')
+  const parts = learningLocalParts(timezone)
+  const weekStart = localMidnightUtc(parts.week, timezone)
+  const [progress, feed] = await Promise.all([
+    db.from('progress').select('lesson_id', { count: 'exact', head: true }).eq('user_id', row.id).gte('completed_at', weekStart),
+    buildFeed(row.id),
+  ])
+  if (progress.error) throw new HttpError(500, 'db')
+  const next = feed.filter((item) => item.kind === 'lesson' && !item.completed).sort((a, b) => Number(b.pinned) - Number(a.pinned) || String(b.published_at ?? '').localeCompare(String(a.published_at ?? '')))
+  let nextLesson: { id: number; title: string } | null = null
+  for (const item of next) if (await canRead(row, item)) { nextLesson = { id: item.id, title: item.title }; break }
+  return { enabled: !!row.learning_reminders, goal: Number(row.learning_goal ?? 3), day: Number(row.learning_reminder_day ?? 0), hour: Number(row.learning_reminder_hour ?? 18), timezone, completed: progress.count ?? 0, nextLesson }
+}
+
+async function learningReminders(req: Request) {
+  const s = await getSettings()
+  if (!s.cron_key || !safeEqual(req.headers.get('x-cron-key') ?? '', String(s.cron_key))) return json({ ok: false }, 401)
+  if (!s.app_url) return json({ ok: true, sent: 0, disabled: 0, reason: 'off' })
+  const now = new Date()
+  const query = () => db.from('users').select('id,learning_goal,learning_reminder_day,learning_reminder_hour,learning_timezone,learning_reminder_week').eq('learning_reminders', true).eq('subscribed', true)
+  const { data: first, error } = await query().range(0, 499)
+  if (error) throw new HttpError(500, 'db')
+  let sent = 0, disabled = 0
+  let users = first ?? [], offset = 0
+  while (users.length) {
+   for (const user of users) {
+    const parts = learningLocalParts(String(user.learning_timezone || 'UTC'), now)
+    if (parts.day !== Number(user.learning_reminder_day ?? 0) || parts.hour < Number(user.learning_reminder_hour ?? 18) || String(user.learning_reminder_week ?? '') >= parts.week) continue
+    const leaseBefore = new Date(now.getTime() - 30 * 60_000).toISOString()
+    const claimed = await db.from('users').update({ learning_reminder_claimed_at: now.toISOString() }).eq('id', user.id).eq('learning_reminders', true).or(`learning_reminder_week.is.null,learning_reminder_week.lt.${parts.week}`).or(`learning_reminder_claimed_at.is.null,learning_reminder_claimed_at.lt.${leaseBefore}`).select('id').maybeSingle()
+    if (claimed.error || !claimed.data) continue
+    const row = await db.from('users').select('*').eq('id', user.id).single()
+    if (row.error || !row.data || !row.data.learning_reminders || !row.data.subscribed) { await db.from('users').update({ learning_reminder_claimed_at: null }).eq('id', user.id); continue }
+    const { data: progress } = await db.from('progress').select('lesson_id', { count: 'exact', head: true }).eq('user_id', user.id).gte('completed_at', localMidnightUtc(parts.week, String(user.learning_timezone || 'UTC')))
+    if ((progress?.count ?? 0) >= Number(user.learning_goal ?? 3)) { await db.from('users').update({ learning_reminder_week: parts.week, learning_reminder_claimed_at: null }).eq('id', user.id); continue }
+    const feed = await buildFeed(user.id)
+    const candidate = feed.filter((item) => item.kind === 'lesson' && !item.completed).sort((a, b) => Number(b.pinned) - Number(a.pinned) || String(b.published_at ?? '').localeCompare(String(a.published_at ?? '')))
+    let next: Row | null = null
+    for (const item of candidate) if (await canRead(row.data, item)) { next = item; break }
+    if (!next) { await db.from('users').update({ learning_reminder_week: parts.week, learning_reminder_claimed_at: null }).eq('id', user.id); continue }
+    const link = `${s.app_url}/?sp=l${next.id}_r${user.id}`
+    const result = await tg('sendMessage', { chat_id: user.id, text: `На этой неделе уже ${progress?.count ?? 0} из ${Number(user.learning_goal ?? 3)} занятий. Продолжим с «${String(next.title).slice(0, 120)}»?`, reply_markup: { inline_keyboard: [[{ text: 'Продолжить урок', web_app: { url: link } }]] } })
+    if (result.ok) {
+      const { error: updateError } = await db.from('users').update({ learning_reminder_week: parts.week, learning_reminder_claimed_at: null }).eq('id', user.id).eq('learning_reminders', true)
+      if (!updateError) sent++
+    } else if ([403, 400].includes(Number(result.error_code))) {
+      await db.from('users').update({ learning_reminders: false, learning_reminder_claimed_at: null }).eq('id', user.id)
+      disabled++
+    } else await db.from('users').update({ learning_reminder_claimed_at: null }).eq('id', user.id)
+   }
+   if (users.length < 500) break
+   offset += users.length
+   const page = await query().range(offset, offset + 499)
+   if (page.error) throw new HttpError(500, 'db')
+   users = page.data ?? []
+  }
+  return json({ ok: true, sent, disabled })
 }
 
 /** Keyset pagination: promoted posts first, then the complete chronological archive. */
@@ -2308,17 +2382,13 @@ async function academy(body: Row) {
   }
 }
 
-const academyPublicLimits=new Map<string,{count:number;expires:number}>()
+const ACADEMY_PUBLIC_LIMIT = 1000
 async function academyPublic(req:Request){
-  const ip=(req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown').slice(0,128),now=Date.now()
-  if(academyPublicLimits.size>4096)for(const [key,value] of academyPublicLimits)if(value.expires<now)academyPublicLimits.delete(key)
-  const bucket=academyPublicLimits.get(ip)
-  if(bucket&&bucket.expires>now){if(bucket.count++>=30)throw new HttpError(429,'academy_rate_limited')}
-  else {
-    if(academyPublicLimits.size>=4096){for(const [key,value] of academyPublicLimits)if(value.expires<=now)academyPublicLimits.delete(key)}
-    if(academyPublicLimits.size>=4096)academyPublicLimits.delete(academyPublicLimits.keys().next().value!)
-    academyPublicLimits.set(ip,{count:1,expires:now+60000})
-  }
+  // Do not key anonymous limits on caller-supplied forwarding headers. This fixed key is
+  // enforced atomically in PostgreSQL, so changing request headers or scaling isolates cannot bypass it.
+  const {data:allowed,error:limitError}=await db.rpc('az_rate_limit',{p_key:'academy_public:global',p_limit:ACADEMY_PUBLIC_LIMIT,p_seconds:60})
+  if(limitError)throw new HttpError(503,'academy_unavailable')
+  if(allowed!==true)throw new HttpError(429,'academy_rate_limited')
   const raw=await req.text();if(raw.length>2000)throw new HttpError(400,'academy_invalid_payload')
   let body:Row
   try{body=JSON.parse(raw||'{}')}catch{throw new HttpError(400,'academy_invalid_payload')}
@@ -2337,6 +2407,7 @@ async function certifications(body: Row) {
 }
 
 const routes: Record<string, (body: Row) => Promise<unknown>> = {
+  learning_goal: learningGoal,
   certifications,
   academy,
   boot,
@@ -2402,6 +2473,7 @@ Deno.serve(async (req) => {
       return json(await processRefundJobs(db, tg))
     }
     if (route === 'advent_push' && req.method === 'POST') return await adventPush(req)
+    if (route === 'learning_reminders' && req.method === 'POST') return await learningReminders(req)
     if (route === 'academy_public' && req.method === 'POST') return await academyPublic(req)
     // Только собственные ключи: иначе адрес вроде /constructor попадал во встроенные методы объекта.
     const handler = Object.hasOwn(routes, route) ? routes[route] : null

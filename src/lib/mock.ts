@@ -212,6 +212,8 @@ function grant(codes: string[]) {
 }
 
 export const mockApi: Api = {
+  async learningGoal() { return { enabled: false, goal: 3, day: 0, hour: 18, timezone: 'UTC', completed: 0, nextLesson: null } },
+  async saveLearningGoal(input) { return { ...input, completed: 0, nextLesson: null } },
   async blogPage(cursor) {
     await wait(150)
     const posts=state.lessons.filter(l=>l.published&&isBlogPost(l)).sort(comparePosts)

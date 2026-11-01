@@ -1,19 +1,20 @@
-import { AtSign, Award, BookOpen, Trophy, Compass, ChevronRight, FlaskConical, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX } from 'lucide-react'
+import { AtSign, Award, BookOpen, Trophy, Compass, ChevronRight, FlaskConical, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX, Bell, Target } from 'lucide-react'
 import { motion, useMotionTemplate, useTransform } from 'motion/react'
-import { useState } from 'react'
-import { isDemo } from '../lib/api'
+import { useEffect, useState } from 'react'
+import { api, isDemo } from '../lib/api'
 import { appLink } from '../lib/links'
 import { achievementCard, levelCard } from '../lib/shareCard'
 import { track } from '../lib/track'
 import { ACHIEVEMENTS, GRADIENTS, LEVELS, levelOf } from '../lib/game'
 import { sfx } from '../lib/sfx'
 import { addShortcut, INSTAGRAM } from '../lib/install'
-import { haptic, inTelegram, openLink, shareLink } from '../lib/tg'
+import { haptic, inTelegram, openLink, requestWriteAccess, shareLink } from '../lib/tg'
 import { getMode, setMode, type ThemeMode } from '../lib/theme'
 import { useTilt } from '../lib/tilt'
 import type { Me } from '../lib/types'
 import { useStore } from '../store'
 import { Avatar, Counter, Emoji, Pattern, Sheet, Tap } from '../ui'
+import type { LearningGoalState } from '../lib/types'
 
 
 const THEMES: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
@@ -30,9 +31,37 @@ export function Profile() {
   const [sound, setSound] = useState(sfx.enabled)
   const [theme, setTheme] = useState<ThemeMode>(getMode)
   const [open, setOpen] = useState<string | null>(null)
+  const [learning, setLearning] = useState<LearningGoalState | null>(null)
+  const [learningBusy, setLearningBusy] = useState(false)
+  const [learningNote, setLearningNote] = useState('')
   const lvl = levelOf(me.xp)
   const picked = ACHIEVEMENTS.find((a) => a.code === open)
   const earned = ACHIEVEMENTS.filter((a) => me.achievements.includes(a.code)).length
+
+  useEffect(() => { let live = true; void api.learningGoal().then((value) => { if (live) setLearning(value) }).catch(() => { if (live) setLearningNote('Не удалось загрузить настройки') }); return () => { live = false } }, [])
+
+  const changeLearning = async (enabled: boolean) => {
+    if (!learning || learningBusy) return
+    setLearningBusy(true); setLearningNote('')
+    try {
+      if (enabled && !isDemo) {
+        const allowed = await requestWriteAccess()
+        if (!allowed) { setLearningNote('Разрешение не выдано. Напоминания остались выключены.'); return }
+      }
+      const updated = await api.saveLearningGoal({ enabled, goal: learning.goal, day: learning.day, hour: learning.hour, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || learning.timezone })
+      setLearning(updated)
+      setLearningNote(enabled ? 'Готово — напомним не чаще раза в неделю.' : 'Напоминания выключены.')
+    } catch { setLearningNote('Не удалось сохранить. Попробуй ещё раз.') } finally { setLearningBusy(false) }
+  }
+
+  const saveLearningSchedule = async (patch: Partial<LearningGoalState>) => {
+    if (!learning || learningBusy) return
+    const next = { ...learning, ...patch, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || learning.timezone }
+    setLearning(next); setLearningBusy(true); setLearningNote('')
+    try { setLearning(await api.saveLearningGoal(next)); setLearningNote('Цель сохранена.') }
+    catch { setLearningNote('Не удалось сохранить настройки.') }
+    finally { setLearningBusy(false) }
+  }
 
   const invite = () => {
     const link = appLink()
@@ -135,6 +164,13 @@ export function Profile() {
         </span>
         <ChevronRight size={18} className="shrink-0 text-faint" />
       </Tap>
+
+      <section className="mx-5 mt-3 rounded-[24px] border border-line bg-card/80 p-4" aria-label="Недельная учебная цель">
+        <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-[14px] bg-mint/10 text-mint"><Target size={19}/></span><span className="min-w-0 flex-1"><b className="block text-[14px]">Цель недели</b><span className="mt-0.5 block text-[11.5px] text-mute">Один мягкий пинг в выбранный день</span></span>{learning&&<Tap aria-pressed={learning.enabled} disabled={learningBusy||isDemo} onClick={()=>void changeLearning(!learning.enabled)} className={`min-h-10 rounded-full px-3 text-xs font-semibold ${learning.enabled?'bg-mint/15 text-mint':'bg-violet/15 text-violet'} disabled:opacity-50`}>{learningBusy?'…':learning.enabled?'Включено':'Выключено'}</Tap>}</div>
+        {!learning&&<p className="mt-3 text-xs text-mute">Загрузка настроек…</p>}
+        {learning&&<><p className="mt-3 text-[12px] leading-relaxed text-mute">{learning.completed} из {learning.goal} уроков на этой неделе{learning.nextLesson?` · дальше «${learning.nextLesson.title}»`:''}</p><div className="mt-3 grid grid-cols-3 gap-2"><label className="text-[10px] font-medium text-faint">Уроков<select disabled={learningBusy} value={learning.goal} onChange={e=>void saveLearningSchedule({goal:Number(e.target.value)})} className="mt-1 h-10 w-full rounded-xl border border-line bg-card2 px-2 text-[13px] text-ink">{[1,3,5,7].map(n=><option key={n} value={n}>{n}</option>)}</select></label><label className="text-[10px] font-medium text-faint">День<select disabled={learningBusy} value={learning.day} onChange={e=>void saveLearningSchedule({day:Number(e.target.value)})} className="mt-1 h-10 w-full rounded-xl border border-line bg-card2 px-2 text-[13px] text-ink">{['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'].map((d,i)=><option key={d} value={i}>{d}</option>)}</select></label><label className="text-[10px] font-medium text-faint">Время<select disabled={learningBusy} value={learning.hour} onChange={e=>void saveLearningSchedule({hour:Number(e.target.value)})} className="mt-1 h-10 w-full rounded-xl border border-line bg-card2 px-2 text-[13px] text-ink">{Array.from({length:14},(_,i)=>i+8).map(h=><option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}</select></label></div><p role="status" className="mt-2 flex items-center gap-1.5 text-[10.5px] leading-snug text-faint"><Bell size={12}/>{learningNote||'Часовой пояс берётся с устройства. Уведомления можно отключить здесь в любой момент.'}</p>{learning.enabled&&<Tap onClick={()=>void changeLearning(false)} disabled={learningBusy} className="mt-2 min-h-10 text-xs font-semibold text-mute">Выключить напоминания</Tap>}</>}
+        {isDemo&&<p className="mt-2 text-[10.5px] text-faint">Настройки напоминаний доступны в Telegram.</p>}
+      </section>
 
       <div className="mx-5 mt-3 rounded-[24px] border border-line bg-card/80 p-4">
         <div className="flex items-baseline justify-between">

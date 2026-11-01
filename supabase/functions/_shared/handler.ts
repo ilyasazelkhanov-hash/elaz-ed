@@ -113,7 +113,9 @@ export function createHandler({ gateway: db, env, fetcher = fetch, now = Date.no
     if (route === '/health' && request.method === 'GET') return response({ok:true,version:'1'})
     if (route === '/auth/login' && request.method === 'GET') {
       requireValue(env.OIDC_CLIENT_ID && env.OIDC_CLIENT_SECRET, 'oidc_not_configured',503)
-      await limit('oidc:global',1000); await limit(`oidc:${request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown'}`,20)
+      // X-Forwarded-For is supplied by the request and is not a trusted client identity here.
+      // The database-backed global bucket bounds unauthenticated login attempts across instances.
+      await limit('oidc:global',1000)
       const state=randomToken(), browser=randomToken(), nonce=randomToken(), verifier=randomToken()
       await db.rpc('az_oidc_begin',{p_state_hash:await digest(state),p_browser_hash:await digest(browser),p_nonce:nonce,p_verifier:verifier})
       const login = new URL('https://oauth.telegram.org/auth'); login.search=new URLSearchParams({client_id:env.OIDC_CLIENT_ID,redirect_uri:callback,response_type:'code',scope:'openid profile',state,nonce,code_challenge:await digest(verifier),code_challenge_method:'S256'}).toString()

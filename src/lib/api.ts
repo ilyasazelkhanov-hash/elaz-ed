@@ -29,6 +29,8 @@ async function call<T>(route: string, payload: Record<string, unknown> = {}, kee
 }
 
 const httpApi: Api = {
+  learningGoal: () => call('learning_goal', { action: 'get' }),
+  saveLearningGoal: (input) => call('learning_goal', { action: 'save', settings: input }),
   blogPage: (cursor) => call('blog_feed', { cursor }),
   certificationCatalog: () => call('certifications', { action:'catalog' }),
   certificationOpen: (id) => call('certifications', { action:'open',id }),

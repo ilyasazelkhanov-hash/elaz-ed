@@ -5,6 +5,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/platform-api/v1/:path*",
+      "destination": "https://dcdepwdxvadhludnubis.supabase.co/functions/v1/az-master-api/v1/:path*"
+    },
+    {
       "source": "/courses",
       "destination": "/courses/index.html"
     },

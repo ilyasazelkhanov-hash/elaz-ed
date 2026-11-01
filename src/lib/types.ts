@@ -476,6 +476,8 @@ export type BlogCursor = { pinned: boolean; date: string | null; id: number }
 export type BlogPage = { posts: Card[]; next: BlogCursor | null }
 
 export interface Api {
+  learningGoal(): Promise<LearningGoalState>
+  saveLearningGoal(input: LearningGoalInput): Promise<LearningGoalState>
   blogPage(cursor?: BlogCursor | null): Promise<BlogPage>
   certificationCatalog(): Promise<import('./certifications').CertificationCatalog>
   certificationOpen(id: string): Promise<{url:string}>
@@ -539,3 +541,6 @@ export interface Api {
   redeemCheck(point: number, pin: string, code: string): Promise<RedeemCheck>
   redeem(point: number, pin: string, code: string): Promise<{ title: string; emoji: string }>
 }
+
+export interface LearningGoalState { enabled: boolean; goal: number; day: number; hour: number; timezone: string; completed: number; nextLesson: { id: number; title: string } | null }
+export interface LearningGoalInput { enabled: boolean; goal: number; day: number; hour: number; timezone: string }
