@@ -38,6 +38,7 @@ const groupByLesson={
  'block-4':'images','block-5':'video','block-6':'voice','block-music':'music','media-repurpose':'video','media-project':'video',
  'block-7':'coding','coding-spec':'chat','block-opencode':'coding','coding-mcp':'coding','coding-version':'coding','block-agent-reach':'coding',
  'block-native-automation':'automation','automation-files':'chat','automation-connectors':'automation','block-8':'automation','automation-canvas':'automation','automation-project':'automation',
+ 'carousel-brief':'images','presentation-brief':'images','deal-radar':'research',
 }
 export const additionalTools=catalog
 export function renderToolAlternatives(key){

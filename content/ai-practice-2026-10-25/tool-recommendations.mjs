@@ -32,6 +32,7 @@ export const recommendationByLesson={
  'block-4':'image','block-5':'video','block-6':'voice','block-music':'music','media-repurpose':'clip','media-project':'media',
  'block-7':'coding','coding-spec':'spec','block-opencode':'coding','coding-mcp':'mcp','coding-version':'version','block-agent-reach':'coding',
  'block-native-automation':'automation','automation-files':'files','automation-connectors':'connections','block-8':'workflow','automation-canvas':'workflow','automation-project':'workflow',
+ 'carousel-brief':'text','presentation-brief':'deck','deal-radar':'research',
 }
 export function renderRecommendations(key){
  const id=recommendationByLesson[key];if(!id)throw Error('No specific tool recommendation for '+key)
