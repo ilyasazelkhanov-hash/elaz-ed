@@ -334,9 +334,27 @@ test('refresh UI explains stale progress and protects an unsaved settings draft'
   delete globalThis.__profileSettings
 })
 
+function resetHandlerBody(source) {
+  return source.match(/onClick=\{async \(\) => \{\r?\n(\s+if \(!await confirmDialog\([\s\S]*?)\r?\n\s+\}\}/)?.[1]
+}
+
+test('demo reset handler extraction supports both LF and Windows CRLF source', async () => {
+  const source = (await readFile(new URL('../src/screens/Profile.tsx', import.meta.url), 'utf8')).replace(/\r\n/g, '\n')
+  const lf = resetHandlerBody(source)
+  const crlf = resetHandlerBody(source.replace(/\n/g, '\r\n'))
+  assert.ok(lf, 'LF checkout must expose the real reset handler')
+  assert.ok(crlf, 'Windows CRLF checkout must expose the same reset handler')
+  assert.equal(crlf.replace(/\r\n/g, '\n'), lf)
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+  for (const body of [lf, crlf]) {
+    const run = new AsyncFunction('confirmDialog', 'loadDemo', 'location', body.replace("import('../lib/mock')", 'loadDemo()'))
+    await run(async () => false, async () => assert.fail('cancel must not load demo'), { reload() { assert.fail('cancel must not reload') } })
+  }
+})
+
 test('demo reset confirmation describes its full scope and cancel has no side effects', async () => {
   const source = await readFile(new URL('../src/screens/Profile.tsx', import.meta.url), 'utf8')
-  const body = source.match(/onClick=\{async \(\) => \{\n(\s+if \(!await confirmDialog\([\s\S]*?)\n\s+\}\}/)?.[1]
+  const body = resetHandlerBody(source)
   assert.ok(body, 'must inspect the real reset button handler')
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
   const run = new AsyncFunction('confirmDialog', 'loadDemo', 'location', body.replace("import('../lib/mock')", 'loadDemo()'))
