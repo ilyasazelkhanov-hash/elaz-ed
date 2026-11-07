@@ -255,6 +255,15 @@ export function createClient() {
     from: (name) => new Query(name),
     // Функции базы здесь не проверяются: их логика живёт в миграциях.
     rpc: async (name, args) => {
+      if (name === 'az_rate_limit') {
+        if (state.failNext?.table === 'az_rate_limits' && state.failNext.op === 'rpc') { state.failNext = null; return { data: null, error: { message: 'injected' } } }
+        const limits = table('az_rate_limits'), now = Date.now()
+        let row = limits.find(row => row.key === args.p_key)
+        if (!row) { row = { key: args.p_key, window_at: now, count: 0 }; limits.push(row) }
+        if (row.window_at < now - args.p_seconds * 1000) { row.window_at = now; row.count = 0 }
+        row.count++
+        return { data: row.count <= args.p_limit, error: null }
+      }
       if(name==='admin_payment_page'){
         if(state.failNext?.table==='payments'&&state.failNext.op==='select'){state.failNext=null;return {data:null,error:{message:'injected'}}}
         const q=String(args.p_query??'').trim().slice(0,100).replace(/^@/,'').toLowerCase()

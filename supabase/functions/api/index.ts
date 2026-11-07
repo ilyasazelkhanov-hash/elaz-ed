@@ -10,6 +10,7 @@ import { processRefundJobs } from './payments.ts'
 import { cleanDiscoveryEvent, isDiscoveryEvent } from './discovery-events.ts'
 import { normalizeEditorial } from '../_shared/editorial.ts'
 import { assertNoCourseOverlap } from '../_shared/news-policy.ts'
+import { HttpError, readJson, rateLimit, JSON_BODY_LIMIT, SHARE_BODY_LIMIT, ACADEMY_BODY_LIMIT, PUBLIC_BODY_LIMIT, ANON_ROUTE_LIMIT, API_USER_LIMIT, HEALTH_LIMIT } from './request-guards.ts'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -32,21 +33,20 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, content-type, x-client-info, apikey',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Max-Age': '86400',
+  'Access-Control-Expose-Headers': 'Retry-After',
 }
 
 const GRADIENTS = ['aurora', 'sunset', 'mint', 'ocean', 'candy', 'lime']
 const SUB_TTL = 5 * 60_000
+// How long a confirmed subscription keeps working while Telegram cannot be reached.
+const SUB_GRACE = 24 * 3600_000
+// Routes that work without a Telegram login (cashier PIN redemption). Each gets its own quota.
+const ANON_ROUTES = new Set(['redeem', 'redeem_points'])
 const OG_PLATFORM_ENABLED = Deno.env.get('OG_PLATFORM_ENABLED') === 'true'
 const AUTH_TTL = 48 * 3600
 
-class HttpError extends Error {
-  constructor(public status: number, public code: string) {
-    super(code)
-  }
-}
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8' } })
+function json(data: unknown, status = 200, headers: Record<string, string> = {}) {
+  return new Response(JSON.stringify(data), { status, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8', ...headers } })
 }
 
 // ---------- Telegram ----------
@@ -89,21 +89,25 @@ async function verifyInitData(initData: unknown): Promise<TgUser> {
   if (!safeEqual(hex(await hmac(secretKey, check)), hash)) throw new HttpError(401, 'bad_auth')
   const authDate = Number(params.get('auth_date') ?? 0)
   if (!authDate || Date.now() / 1000 - authDate > AUTH_TTL) throw new HttpError(401, 'expired')
+  let user: TgUser
   try {
-    const user = JSON.parse(params.get('user') ?? '')
-    if (!user?.id) throw new Error('no user')
-    return user
+    user = JSON.parse(params.get('user') ?? '')
+    if (!Number.isSafeInteger(user?.id) || user.id <= 0) throw new Error('no user')
   } catch {
     throw new HttpError(401, 'bad_auth')
   }
+  // Only a verified identity may select a per-user quota. Never trust body IDs or IP headers.
+  await rateLimit(db, `api:user:${user.id}`, API_USER_LIMIT)
+  return user
 }
 
-async function tg(method: string, payload: Record<string, unknown> = {}) {
+async function tg(method: string, payload: Record<string, unknown> = {}, signal?: AbortSignal) {
   try {
     const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      ...(signal ? { signal } : {}),
     })
     // deno-lint-ignore no-explicit-any
     return (await r.json()) as { ok: boolean; result?: any; description?: string; error_code?: number }
@@ -117,13 +121,14 @@ async function webhookSecret() {
 }
 
 async function membership(channelId: number, userId: number) {
-  const r = await tg('getChatMember', { chat_id: channelId, user_id: userId })
-  if (!r.ok) {
-    const d = (r.description ?? '').toLowerCase()
+  const r = await tg('getChatMember', { chat_id: channelId, user_id: userId }, AbortSignal.timeout(5000))
+  if (!r?.ok) {
+    const d = (r?.description ?? '').toLowerCase()
     if (d.includes('user not found') || d.includes('participant')) return { ok: true, member: false }
     return { ok: false, member: false }
   }
-  const st = r.result.status
+  const st = r.result?.status
+  if (!['creator', 'administrator', 'member', 'restricted', 'left', 'kicked'].includes(st)) return { ok: false, member: false }
   const member = st === 'creator' || st === 'administrator' || st === 'member' || (st === 'restricted' && r.result.is_member === true)
   return { ok: true, member }
 }
@@ -218,9 +223,19 @@ async function refreshSub(row: Row, s: Settings, force: boolean): Promise<Row> {
   const channelId = s.channel?.id
   if (!channelId) return row
   const age = row.sub_checked_at ? Date.now() - Date.parse(row.sub_checked_at) : Infinity
-  if (!force && row.subscribed && age < SUB_TTL) return row
+  const fresh = row.subscribed && Number.isFinite(age) && age >= 0 && age < SUB_TTL
+  if (!force && fresh) return row
   const m = await membership(channelId, row.id)
-  if (!m.ok) return row
+  if (!m.ok) {
+    // A Telegram outage proves neither membership nor departure, so keep the database
+    // unchanged. Unsubscribed users stay on the gate as before. Confirmed members keep
+    // access for a bounded grace period, so a Telegram outage does not take the whole
+    // app down; a missing, invalid, future or older confirmation never grants access.
+    if (!row.subscribed) return row
+    const since = row.sub_checked_at ? Date.now() - Date.parse(row.sub_checked_at) : Infinity
+    if (Number.isFinite(since) && since >= 0 && since < SUB_GRACE) return row
+    throw new HttpError(503, 'membership_unavailable')
+  }
   const patch = { subscribed: m.member, sub_checked_at: new Date().toISOString() }
   await db.from('users').update(patch).eq('id', row.id)
   return { ...row, ...patch }
@@ -1269,7 +1284,7 @@ async function handleNews(chatId: number, s: Settings) {
 async function webhook(req: Request) {
   if (!BOT_TOKEN) return json({ ok: false }, 503)
   if (req.headers.get('x-telegram-bot-api-secret-token') !== (await webhookSecret())) return json({ ok: false }, 401)
-  const update = await req.json().catch(() => ({}))
+  const update = await readJson(req)
   // One Telegram bot has one webhook. New module invoices use UUID payloads;
   // legacy course:/catchup: payments and bot commands stay on their existing path.
   const platformPayload = update.pre_checkout_query?.invoice_payload ?? update.message?.successful_payment?.invoice_payload ?? update.message?.refunded_payment?.invoice_payload
@@ -2307,12 +2322,7 @@ async function adventPush(req: Request) {
   if (today < 1 || today > cfg.days) return json({ ok: true, sent: 0, reason: 'out_of_range' })
 
   const url = new URL(req.url)
-  let bodyJson: Row = {}
-  try {
-    bodyJson = await req.json()
-  } catch {
-    /* запрос без JSON-тела */
-  }
+  const bodyJson = await readJson(req)
 
   const type = String(bodyJson.type ?? url.searchParams.get('type') ?? 'morning')
   const isEvening = type === 'evening'
@@ -2439,9 +2449,12 @@ async function academyPublic(req:Request){
   const {data:allowed,error:limitError}=await db.rpc('az_rate_limit',{p_key:'academy_public:global',p_limit:ACADEMY_PUBLIC_LIMIT,p_seconds:60})
   if(limitError)throw new HttpError(503,'academy_unavailable')
   if(allowed!==true)throw new HttpError(429,'academy_rate_limited')
-  const raw=await req.text();if(raw.length>2000)throw new HttpError(400,'academy_invalid_payload')
   let body:Row
-  try{body=JSON.parse(raw||'{}')}catch{throw new HttpError(400,'academy_invalid_payload')}
+  try{body=await readJson(req,PUBLIC_BODY_LIMIT)}catch(error){
+    // Preserve the public lookup endpoint's existing validation error contract.
+    if(error instanceof HttpError&&(error.status===400||error.status===413))throw new HttpError(400,'academy_invalid_payload')
+    throw error
+  }
   if(!body||Array.isArray(body)||typeof body!=='object'||!body.payload||Array.isArray(body.payload)||typeof body.payload!=='object')throw new HttpError(400,'academy_invalid_payload')
   if(!['certificate_public','portfolio_public'].includes(body.action))throw new HttpError(404,'not_found')
   const value=body.action==='certificate_public'?body.payload?.code:body.payload?.slug
@@ -2516,7 +2529,10 @@ Deno.serve(async (req) => {
   try {
     if (route === 'webhook' && req.method === 'POST') return await webhook(req)
     if (route === 'setup') return await setup(req)
-    if (route === 'health' || route === 'api') return await health()
+    if (route === 'health' || route === 'api') {
+      await rateLimit(db, 'api:health', HEALTH_LIMIT)
+      return await health()
+    }
     if (route === 'payment_refunds' && req.method === 'POST') {
       const s = await getSettings()
       if (!s.cron_key || !safeEqual(req.headers.get('x-cron-key') ?? '', String(s.cron_key))) return json({ ok: false }, 401)
@@ -2528,10 +2544,15 @@ Deno.serve(async (req) => {
     // Только собственные ключи: иначе адрес вроде /constructor попадал во встроенные методы объекта.
     const handler = Object.hasOwn(routes, route) ? routes[route] : null
     if (!handler || req.method !== 'POST') return json({ error: 'not_found' }, 404)
-    const body = JSON.parse((await req.text()) || '{}')
+    // Signed-in routes are limited per verified Telegram user in verifyInitData. There is
+    // no shared pre-login quota: one anonymous flood must not lock everyone out. Requests
+    // without a valid signature stop at the HMAC check without touching the database.
+    if (ANON_ROUTES.has(route)) await rateLimit(db, `api:anon:${route}`, ANON_ROUTE_LIMIT)
+    const limit = route === 'share_upload' ? SHARE_BODY_LIMIT : route === 'academy' ? ACADEMY_BODY_LIMIT : JSON_BODY_LIMIT
+    const body = await readJson(req, limit)
     return json(await handler(body))
   } catch (e) {
-    if (e instanceof HttpError) return json({ error: e.code }, e.status)
+    if (e instanceof HttpError) return json({ error: e.code }, e.status, e.retryAfter ? { 'Retry-After': String(e.retryAfter) } : {})
     console.error(route, e)
     return json({ error: 'server' }, 500)
   }
