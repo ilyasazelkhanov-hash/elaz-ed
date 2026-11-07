@@ -25,12 +25,13 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const courses = useStore((s) => s.courses)
   const me = useStore((s) => s.me)!
   const pop = useStore((s) => s.pop)
-  const { setMe, patchCard, setReward, toast, guard } = useStore.getState()
+  const { setMe, patchCard, markLessonCompleted, setReward, toast, guard } = useStore.getState()
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [failed, setFailed] = useState<false | 'load' | 'locked'>(false)
   const [answers, setAnswers] = useState<number[] | null>(null)
   const [quizResult, setQuizResult] = useState<LessonQuizAttempt | null>(null)
   const [busy, setBusy] = useState(false)
+  const completing = useRef(false)
   const [revision,setRevision]=useState(0)
   const scroller = useRef<HTMLDivElement>(null)
   const quizRef = useRef<HTMLDivElement>(null)
@@ -78,19 +79,21 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   }
 
   const finish = async () => {
-    if (!lesson || busy) return
+    if (!lesson || completed || completing.current) return
+    completing.current = true
     setBusy(true)
     try {
       const fromXp = me.xp
       const res = await api.complete(id, answers ?? [], quizResult?.attemptId)
       setMe(res.me)
-      patchCard(id, { completed: true })
+      markLessonCompleted(id)
       setLesson({ ...lesson, completed: true })
       if (!res.already) setReward({ result: res, fromXp, lessonId: id })
     } catch (e) {
       guard(e)
       toast(errorText(e))
     } finally {
+      completing.current = false
       setBusy(false)
     }
   }

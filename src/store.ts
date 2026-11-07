@@ -78,6 +78,8 @@ interface Store {
   setMe: (me: Me) => void
   setAdvent: (advent: AdventSummary | null) => void
   patchCard: (id: number, patch: Partial<Card>) => void
+  /** Call only after the server confirms completion; never grants course access. */
+  markLessonCompleted: (id: number) => void
   setReward: (reward: Reward | null) => void
   toast: (text: string, emoji?: string) => void
   unlocked: (codes: string[]) => void
@@ -146,6 +148,22 @@ export const useStore = create<Store>((set, get) => ({
   setMe: (me) => set({ me: isDemoProgress(me) }),
   setAdvent: (advent) => set({ advent }),
   patchCard: (id, patch) => set((s) => ({ feed: s.feed.map((c) => (c.id === id ? { ...c, ...patch } : c)) })),
+  markLessonCompleted: (id) => set((s) => {
+    const card = s.feed.find(item => item.id === id)
+    return {
+      feed: s.feed.map(item => item.id === id && !item.completed ? { ...item, completed: true } : item),
+      courses: s.courses.map(course => {
+        const lesson = course.practice_lessons?.find(item => item.id === id)
+        const previous = lesson ?? (card?.kind === 'lesson' && card.course_id === course.id ? card : undefined)
+        if (!previous || previous.completed) return course
+        return {
+          ...course,
+          done: Math.min(course.lessons, course.done + 1),
+          ...(lesson ? { practice_lessons: course.practice_lessons!.map(item => item.id === id ? { ...item, completed: true } : item) } : {}),
+        }
+      }),
+    }
+  }),
   setReward: (reward) => set({ reward }),
 
   toast: (text, emoji) => {
