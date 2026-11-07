@@ -163,6 +163,16 @@ export function errorText(e: unknown) {
       return 'Клуб обновляется. Попробуй открыть приложение немного позже'
     case 'network':
       return 'Нет связи. Проверь интернет'
+    case 'rate_limited':
+      return 'Слишком много действий. Подожди минуту и попробуй ещё раз'
+    case 'rate_limit_unavailable':
+      return 'Сервис временно недоступен. Попробуй немного позже'
+    case 'membership_unavailable':
+      return 'Проверка подписки в Telegram временно недоступна. Попробуй немного позже'
+    case 'invalid_json':
+      return 'Не получилось отправить запрос. Открой приложение заново'
+    case 'request_too_large':
+      return 'Слишком много данных в запросе. Сократи текст или уменьши размер изображения'
     case 'locked':
       return 'Подписка на канал не найдена'
     case 'expired':
