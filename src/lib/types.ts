@@ -82,6 +82,10 @@ export interface Meta {
 
 export interface Course {
   id: number
+  /** Stable public curriculum identity, supplied from the server's import receipt. */
+  practice_key?: string
+  /** Public outline only. Lesson bodies still require the authenticated lesson API. */
+  practice_lessons?: PracticeLessonOutline[]
   title: string
   subtitle: string
   description: string
@@ -95,6 +99,15 @@ export interface Course {
   done: number
   access: boolean
   request: 'pending' | 'approved' | 'declined' | null
+}
+
+export interface PracticeLessonOutline {
+  key: string
+  id: number
+  title: string
+  minutes: number
+  free_preview: boolean
+  completed: boolean
 }
 
 export interface AdminCourse {

@@ -357,11 +357,17 @@ async function canRead(row: Row, les: Row): Promise<boolean> {
 }
 
 async function buildCourses(row: Row, feed: Row[]) {
-  const [courses, access, requests] = await Promise.all([
+  const [courses, access, requests, settings] = await Promise.all([
     db.from('courses').select('*').eq('published', true).order('position').order('id'),
     db.from('course_access').select('course_id').eq('user_id', row.id),
     db.from('access_requests').select('course_id,status').eq('user_id', row.id),
+    getSettings(),
   ])
+  // The import receipt is the identity source; titles, positions and numeric ID ranges are not.
+  const receipt = settings['content_revision:ai-practice-paths-2026-11-01-v5']
+  const courseMap = receipt?.courses && typeof receipt.courses === 'object' && !Array.isArray(receipt.courses) ? receipt.courses : {}
+  const lessonMap = receipt?.lessons && typeof receipt.lessons === 'object' && !Array.isArray(receipt.lessons) ? receipt.lessons : {}
+  const practiceKeys = ['foundations', 'text', 'media', 'coding', 'automation']
   const has = new Set((access.data ?? []).map((a) => a.course_id))
   const asked = new Map((requests.data ?? []).map((r) => [r.course_id, r.status]))
   const out = []
@@ -372,8 +378,17 @@ async function buildCourses(row: Row, feed: Row[]) {
       has.add(c.id)
     }
     const lessons = feed.filter((l) => l.course_id === c.id)
+    const keys = practiceKeys.filter(key => Number.isSafeInteger(courseMap[key]) && courseMap[key] === c.id)
+    const practiceKey = keys.length === 1 ? keys[0] : null
+    const outline = practiceKey ? Object.entries(lessonMap).flatMap(([key, id]) => {
+      if (!Number.isSafeInteger(id) || Number(id) <= 0 || !/^[a-z0-9-]+$/.test(key)) return []
+      if (Object.values(lessonMap).filter(value => value === id).length !== 1) return []
+      const lesson = lessons.find(l => l.id === id && l.kind === 'lesson' && l.published)
+      return lesson ? [{key, id: lesson.id, title: lesson.title, minutes: lesson.minutes, free_preview: !!lesson.free_preview, completed: !!lesson.completed, position: lesson.position}] : []
+    }).sort((a, b) => a.position - b.position || a.id - b.id).map(({position: _position, ...lesson}) => lesson) : []
     out.push({
       id: c.id,
+      ...(practiceKey ? {practice_key: practiceKey, practice_lessons: outline} : {}),
       title: c.title,
       subtitle: c.subtitle,
       description: c.description,
@@ -559,15 +574,17 @@ async function learningReminders(req: Request) {
   return json({ ok: true, sent, disabled })
 }
 
-/** Keyset pagination: promoted posts first, then the complete chronological archive. */
+/** Keyset pagination supports actual newest-first discovery as well as the legacy editorial order. */
 async function blogFeed(body: Row) {
   const row = await member(body)
+  const chronological = body.order === 'newest'
   const cursor = body.cursor
   if (cursor != null && (typeof cursor !== 'object' || typeof cursor.pinned !== 'boolean' || !Number.isSafeInteger(cursor.id) || cursor.id < 0 ||
     (cursor.date !== null && (typeof cursor.date !== 'string' || !/^\d{4}-\d{2}-\d{2}T[\d:.+-]+Z?$/.test(cursor.date) || !Number.isFinite(Date.parse(cursor.date)))))) throw new HttpError(400, 'bad_cursor')
   const promoted = cursor?.pinned ?? true
-  let query = db.from('feed_cards').select('*').eq('published', true).eq('kind', 'lesson').is('course_id', null).eq('pinned', promoted)
+  let query = db.from('feed_cards').select('*').eq('published', true).eq('kind', 'lesson').is('course_id', null)
     .order('published_at', {ascending:false,nullsFirst:false}).order('id', {ascending:false}).limit(31)
+  if (!chronological) query = query.eq('pinned', promoted)
   // id=0 denotes the beginning of the unpromoted group; real IDs are positive.
   if (cursor?.id) {
     if (cursor.date === null) query=query.is('published_at',null).lt('id',cursor.id)
@@ -576,7 +593,7 @@ async function blogFeed(body: Row) {
   const result=await query
   if(result.error) throw new HttpError(500,'db')
   const posts=(result.data??[]).slice(0,30),last=posts.at(-1)
-  const next=(result.data??[]).length>30&&last?{pinned:promoted,date:last.published_at??null,id:last.id}:promoted?{pinned:false,date:null,id:0}:null
+  const next=(result.data??[]).length>30&&last?{pinned:chronological?false:promoted,date:last.published_at??null,id:last.id}:!chronological&&promoted?{pinned:false,date:null,id:0}:null
   const likes=posts.length?await db.from('likes').select('lesson_id').eq('user_id',row.id).in('lesson_id',posts.map(p=>p.id)):{data:[],error:null}
   if(likes.error)throw new HttpError(500,'db')
   const liked=new Set((likes.data??[]).map(l=>l.lesson_id))

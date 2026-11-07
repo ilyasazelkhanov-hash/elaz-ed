@@ -1,41 +1,81 @@
-import { ArrowUpRight, Search, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Bookmark, Check, Plus, RefreshCw, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { Card } from '../../lib/types'
-import { isBlogPost, postDate, comparePosts } from '../../lib/content'
-import {useBlogFeed} from '../../lib/blog-feed'
+import { postDate } from '../../lib/content'
+import { newestPosts, postTeaser } from '../../lib/discovery'
+import { useBlogFeed } from '../../lib/blog-feed'
 import { useReadPosts } from '../../lib/blog-read'
+import { toggleFollowedTopic, toggleSavedPost, useFollowedTopics, useSavedPosts } from '../../lib/blog-library'
+import { knowledgeTopics, topicForPost } from '../../lib/knowledge'
 import { useStore } from '../../store'
 import { Tap } from '../../ui'
+import { useBlogView, type BlogFilter } from './blog-view'
+import './free-first.css'
 
-export function PostCard({card}:{card:Card}){
- const push=useStore(s=>s.push)
- return <Tap onClick={()=>push({type:'lesson',id:card.id})} className="block w-full rounded-[24px] border border-line bg-card p-5 text-left" aria-label={`Читать публикацию: ${card.title}`}>
-  <p className="flex items-center justify-between gap-3 text-xs text-mute"><span className="font-semibold text-violet">{card.pinned?'Продвигается · ':''}{card.category||'Блог'}</span><span>{postDate(card.published_at)}</span></p>
-  <h3 className="mt-3 text-lg font-semibold leading-snug">{card.title}</h3>{card.subtitle&&<p className="mt-2 line-clamp-2 text-sm leading-relaxed text-mute">{card.subtitle}</p>}
-  {card.cover_url&&<img src={card.cover_url} alt="" loading="lazy" className="mt-4 aspect-[2/1] w-full rounded-2xl object-cover"/>}
-  <p className="mt-4 flex items-center justify-between text-xs text-mute"><span>{card.minutes} мин чтения</span><span className="flex items-center gap-1 font-semibold text-violet">Читать<ArrowUpRight size={15}/></span></p>
- </Tap>
+export function PostCard({ card }: { card: Card }) {
+  const push = useStore(s => s.push)
+  const me = useStore(s => s.me)
+  const read = useReadPosts(me?.id ?? 0)
+  const saved = useSavedPosts(me?.id ?? 0)
+  const isSaved = saved.includes(card.id)
+  const date = postDate(card.published_at)
+  const teaser = postTeaser(card)
+  const open = () => push({ type: 'lesson', id: card.id })
+  return <article className="reader-post">
+    <Tap onClick={open} className="reader-post-open p-[18px]" aria-label={`Читать публикацию: ${card.title}`}>
+      <div className="reader-post-meta"><span className="font-semibold text-violet">{card.category || 'ИИ и инструменты'}</span>{date && <time dateTime={card.published_at ?? undefined}>{date}</time>}{card.pinned && <span className="rounded-full bg-violet/10 px-2 py-0.5 text-[11px] text-violet">Выбор автора</span>}</div>
+      <h3 className="reader-post-heading mt-3">{card.title}</h3>
+      {teaser && <p className="mt-2 line-clamp-2 text-base leading-relaxed text-mute">{teaser}</p>}
+      {card.cover_url && <img src={card.cover_url} alt="" loading="lazy" decoding="async" className="mt-4 aspect-[2/1] w-full rounded-2xl object-cover"/>}
+    </Tap>
+    <div className="reader-post-bottom"><span className="flex flex-wrap items-center gap-2 text-xs text-mute">{card.minutes > 0 && <span>{card.minutes} мин чтения</span>}{read.includes(card.id) && <span className="inline-flex items-center gap-1"><Check size={12}/>Прочитано</span>}</span><div className="flex shrink-0 items-center gap-1"><Tap onClick={open} className="flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-violet">Читать<ArrowUpRight size={16}/></Tap><Tap onClick={() => {if (me) { const value = toggleSavedPost(me.id, card.id); useStore.getState().toast(value ? 'Добавлено в сохранённые' : 'Удалено из сохранённых') }}} aria-label={isSaved ? 'Убрать из сохранённых' : 'Сохранить публикацию'} aria-pressed={isSaved} className="grid h-11 w-11 place-items-center rounded-full text-violet"><Bookmark size={19} fill={isSaved ? 'currentColor' : 'none'}/></Tap></div></div>
+  </article>
 }
-/** Standalone content is a blog; it never displays course completion or XP. */
-export function Feed({lessons,scroller,compact=false}:{lessons:Card[];scroller?:RefObject<HTMLDivElement|null>;compact?:boolean}){
- const [query,setQuery]=useState(''),[category,setCategory]=useState('Все'),[unread,setUnread]=useState(false)
- const me=useStore(s=>s.me),read=useReadPosts(me?.id??0)
- const remote=useBlogFeed(!compact,me?.id??0,lessons.map(p=>`${p.id}:${p.pinned}:${p.published_at}`).join('|')),sentinel=useRef<HTMLDivElement>(null)
- const posts=useMemo(()=>(compact?lessons:remote.posts??lessons).filter(isBlogPost).slice().sort(comparePosts),[lessons,remote.posts,compact])
- const categories=['Все',...new Set(posts.map(p=>p.category).filter(Boolean))]
- const found=posts.filter(p=>(category==='Все'||p.category===category)&&(!unread||!read.includes(p.id))&&`${p.title} ${p.subtitle} ${p.category}`.toLowerCase().includes(query.trim().toLowerCase()))
- useEffect(()=>{
-  const node=sentinel.current
-  if(compact||!node||!remote.more||remote.busy||remote.error||!('IntersectionObserver' in window))return
-  const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))void remote.load()},{root:scroller?.current??node.closest('[data-tab-scroll]'),rootMargin:'400px'})
-  observer.observe(node);return()=>observer.disconnect()
- },[compact,remote.more,remote.busy,remote.error,remote.load,posts.length,found.length,scroller])
- return <section aria-label={compact?'Последние публикации':'Публикации блога'}>
-  {!compact&&<><label className="flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-card px-4"><Search size={18} className="shrink-0 text-mute"/><input aria-label="Поиск в блоге" placeholder="Найти публикацию" className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none" value={query} onChange={e=>{setQuery(e.target.value)}}/>{query&&<Tap aria-label="Очистить поиск" onClick={()=>setQuery('')} className="grid h-11 w-11 place-items-center"><X size={17}/></Tap>}</label>
-  <div className="no-bar my-4 flex gap-2 overflow-x-auto pb-1" aria-label="Фильтры публикаций">{categories.map(c=><Tap key={c} aria-pressed={category===c} onClick={()=>{setCategory(c)}} className={`min-h-11 shrink-0 rounded-full border px-4 text-sm ${category===c?'border-violet bg-violet/10 text-violet':'border-line bg-card text-mute'}`}>{c}</Tap>)}<Tap onClick={()=>{setUnread(v=>!v)}} aria-pressed={unread} className={`min-h-11 shrink-0 rounded-full border px-4 text-sm ${unread?'border-violet bg-violet/10 text-violet':'border-line bg-card text-mute'}`}>Непрочитанные</Tap></div></>}
-  {found.length?<><div className="space-y-3">{found.slice(0,compact?3:undefined).map(card=><PostCard key={card.id} card={card}/>)}</div></>:<div className="rounded-2xl border border-dashed border-line p-6 text-center"><h2 className="font-semibold">{!compact&&remote.more?'Ищем публикации…':posts.length?'Публикаций не найдено':'Новые публикации скоро появятся'}</h2><p className="mt-2 text-sm text-mute">{posts.length?'Измени запрос или фильтры.':'Здесь будут новости и заметки об ИИ.'}</p>{posts.length>0&&<Tap className="mt-4 min-h-11 px-3 text-violet" onClick={()=>{setQuery('');setCategory('Все');setUnread(false)}}>Сбросить фильтры</Tap>}</div>}
-  {!compact&&<div ref={sentinel} className="mt-4 pb-4" aria-live="polite">
-   {remote.error?<div className="rounded-2xl border border-line bg-card p-4 text-sm"><p role="alert">Не удалось загрузить публикации. {remote.error}</p><Tap onClick={()=>void remote.load(true)} className="mt-3 min-h-12 w-full rounded-xl border border-line font-semibold">Попробовать ещё раз</Tap></div>:remote.more?<Tap disabled={remote.busy} onClick={()=>void remote.load(true)} className="min-h-12 w-full rounded-2xl border border-line bg-card text-sm font-semibold">{remote.busy?'Загружаем публикации…':'Ещё публикации'}</Tap>:posts.length>0?<p className="py-4 text-center text-sm text-mute">Это все публикации — ты дошёл до самой первой.</p>:null}
-  </div>}
- </section>
+
+/** Latest means chronological: editorial choices are labelled, with no artificial XP gate. */
+export function Feed({ lessons, scroller, compact = false }: { lessons: Card[]; scroller?: RefObject<HTMLDivElement | null>; compact?: boolean }) {
+  const { query, category, filter, topic, set } = useBlogView()
+  const [revision, setRevision] = useState(0)
+  const me = useStore(s => s.me)
+  const read = useReadPosts(me?.id ?? 0)
+  const saved = useSavedPosts(me?.id ?? 0)
+  const followed = useFollowedTopics(me?.id ?? 0)
+  const remote = useBlogFeed(!compact, me?.id ?? 0, `${revision}:${lessons.map(p => `${p.id}:${p.pinned}:${p.published_at}`).join('|')}`)
+  const sentinel = useRef<HTMLDivElement>(null)
+  const posts = useMemo(() => newestPosts(compact ? lessons : remote.posts ?? lessons), [lessons, remote.posts, compact])
+  const categories = ['Все', ...new Set(posts.map(p => p.category).filter(Boolean))]
+  const currentTopic = knowledgeTopics.find(item => item.id === topic)
+  const found = compact ? posts : posts.filter(p =>
+    (category === 'Все' || p.category === category) &&
+    (topic === 'all' || topicForPost(p) === topic) &&
+    (filter !== 'unread' || !read.includes(p.id)) &&
+    (filter !== 'saved' || saved.includes(p.id)) &&
+    `${p.title} ${p.subtitle} ${p.category}`.toLocaleLowerCase('ru').includes(query.trim().toLocaleLowerCase('ru'))
+  )
+  const clear = () => set({ query: '', category: 'Все', topic: 'all', filter: 'new' })
+  const activeFilters = !!query || category !== 'Все' || topic !== 'all'
+  useEffect(() => {
+    const node = sentinel.current
+    if (compact || !node || !remote.more || remote.busy || remote.error || !('IntersectionObserver' in window)) return
+    const observer = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) void remote.load() }, { root: scroller?.current ?? node.closest('[data-tab-scroll]'), rootMargin: '400px' })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [compact, remote.more, remote.busy, remote.error, remote.load, posts.length, found.length, scroller])
+
+  const emptyTitle = filter === 'saved' ? 'Сохрани то, что пригодится' : filter === 'unread' ? 'Всё прочитано' : 'Пока без публикаций'
+  const emptyDetail = filter === 'saved' ? 'Нажми на закладку у публикации — она появится здесь.' : filter === 'unread' ? 'Новые материалы появятся здесь после публикации.' : 'Здесь появятся бесплатные разборы и идеи об ИИ.'
+  return <section aria-label={compact ? 'Последние публикации' : 'Публикации блога'}>
+    {!compact && <>
+      <div className="reader-filter-tabs mb-4" aria-label="Режим публикаций">{([['new', 'Новые'], ['unread', 'Непрочитанные'], ['saved', 'Сохранённые']] as [BlogFilter, string][]).map(([id, label]) => <Tap key={id} aria-pressed={filter === id} onClick={() => set({ filter: id })}>{label}</Tap>)}</div>
+      <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-card px-4"><Search size={18} className="shrink-0 text-mute"/><input aria-label="Поиск в блоге" placeholder="О чём хочешь узнать?" className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none" value={query} onChange={e => set({ query: e.target.value })}/>{query && <Tap aria-label="Очистить поиск" onClick={() => set({ query: '' })} className="grid h-11 w-11 place-items-center"><X size={17}/></Tap>}</label>
+      <div className="mt-3 flex items-center gap-2"><label className="min-w-0 flex-1"><span className="sr-only">Тема публикаций</span><select aria-label="Тема публикаций" value={topic} onChange={e => set({ topic: e.target.value, category: 'Все' })} className="min-h-12 w-full rounded-2xl border border-line bg-card px-3 text-base text-ink"><option value="all">Все темы</option>{knowledgeTopics.map(item => <option key={item.id} value={item.id}>{item.label}{followed.includes(item.id) ? ' · моя тема' : ''}</option>)}</select></label><Tap disabled={remote.busy} aria-label="Обновить публикации" onClick={() => setRevision(value => value + 1)} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-line bg-card text-violet disabled:opacity-40"><RefreshCw size={19} className={remote.busy ? 'animate-spin' : ''}/></Tap></div>
+      {currentTopic && <div className="mt-3 rounded-2xl border border-line bg-card p-4"><p className="text-sm leading-relaxed text-mute">{currentTopic.beginner}</p><Tap aria-pressed={followed.includes(currentTopic.id)} onClick={() => { if (me) toggleFollowedTopic(me.id, currentTopic.id) }} className="mt-2 flex min-h-11 items-center gap-1.5 text-sm font-semibold text-violet">{followed.includes(currentTopic.id) ? <Check size={16}/> : <Plus size={16}/>}{followed.includes(currentTopic.id) ? 'В моих темах' : 'Добавить в мои темы'}</Tap></div>}
+      {categories.length > 2 && <div className="no-bar mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Категории публикаций">{categories.map(item => <Tap key={item} aria-pressed={category === item} onClick={() => set({ category: item })} className={`min-h-11 shrink-0 rounded-full border px-3 text-sm ${category === item ? 'border-violet/40 bg-violet/10 text-violet' : 'border-line bg-card text-mute'}`}>{item === 'Все' ? 'Все рубрики' : item}</Tap>)}</div>}
+      <div className="my-4 flex min-h-6 items-center justify-between gap-3"><p className="text-xs text-mute" role="status">{remote.busy ? 'Загружаем публикации…' : `${found.length} в загруженной подборке`}</p>{activeFilters && <Tap onClick={clear} className="flex min-h-11 items-center gap-1 text-xs font-semibold text-violet">Сбросить<X size={13}/></Tap>}</div>
+    </>}
+    {found.length > 0 ? <div className="space-y-3">{found.slice(0, compact ? 3 : undefined).map(card => <PostCard key={card.id} card={card}/>)}</div> : <div className="reader-empty"><Bookmark size={25} className="mx-auto mb-3 text-violet"/><h2 className="text-lg font-semibold">{!compact && remote.more ? 'Ищем публикации…' : activeFilters ? 'По запросу пока пусто' : emptyTitle}</h2><p className="mt-2 text-base leading-relaxed text-mute">{!compact && remote.more ? 'Подгружаем архив, чтобы найти подходящее.' : activeFilters ? 'Попробуй другую тему или сократи поисковый запрос.' : emptyDetail}</p>{!compact && (activeFilters || filter !== 'new') && <Tap className="mt-4 inline-flex min-h-11 items-center gap-2 px-3 text-sm font-semibold text-violet" onClick={clear}>Все обновления<ArrowRight size={16}/></Tap>}</div>}
+    {!compact && <div ref={sentinel} className="mt-4 pb-4" aria-live="polite">
+      {remote.error ? <div className="rounded-2xl border border-line bg-card p-4 text-base"><p role="alert">Не удалось загрузить публикации. Попробуй ещё раз.</p><Tap onClick={() => void remote.load(true)} className="mt-3 min-h-12 w-full rounded-xl border border-line text-sm font-semibold">Повторить загрузку</Tap></div> : remote.more ? <Tap disabled={remote.busy} onClick={() => void remote.load(true)} className="min-h-12 w-full rounded-2xl border border-line bg-card text-sm font-semibold">{remote.busy ? 'Загружаем публикации…' : 'Ещё публикации'}</Tap> : posts.length > 0 && found.length > 0 ? <p className="py-4 text-center text-sm text-mute">Все доступные публикации загружены.</p> : null}
+    </div>}
+  </section>
 }

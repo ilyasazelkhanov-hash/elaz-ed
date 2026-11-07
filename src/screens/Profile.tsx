@@ -1,4 +1,4 @@
-import { AtSign, Award, BookOpen, Trophy, Compass, ChevronRight, FlaskConical, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX, Bell, Target } from 'lucide-react'
+import { AtSign, Award, BookOpen, Bookmark, Newspaper, Trophy, Compass, ChevronRight, FlaskConical, Lock, Megaphone, Moon, RotateCcw, Send, Settings2, Share2, Smartphone, Sun, SunMoon, Volume2, VolumeX, Bell, Target } from 'lucide-react'
 import { motion, useMotionTemplate, useTransform } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { api, isDemo } from '../lib/api'
@@ -15,6 +15,11 @@ import type { Me } from '../lib/types'
 import { useStore } from '../store'
 import { Avatar, Counter, Emoji, Pattern, Sheet, Tap } from '../ui'
 import type { LearningGoalState } from '../lib/types'
+import { useReadPosts } from '../lib/blog-read'
+import { useFollowedTopics, useSavedPosts } from '../lib/blog-library'
+import { updateSummary } from '../lib/discovery'
+import { knowledgeTopics } from '../lib/knowledge'
+import { openBlogLibrary } from './home/blog-view'
 
 
 const THEMES: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
@@ -25,6 +30,7 @@ const THEMES: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
 
 export function Profile() {
   const me = useStore((s) => s.me)!
+  const feed = useStore((s) => s.feed)
   const meta = useStore((s) => s.meta)
   const push = useStore((s) => s.push)
   const toast = useStore((s) => s.toast)
@@ -37,6 +43,10 @@ export function Profile() {
   const lvl = levelOf(me.xp)
   const picked = ACHIEVEMENTS.find((a) => a.code === open)
   const earned = ACHIEVEMENTS.filter((a) => me.achievements.includes(a.code)).length
+  const saved = useSavedPosts(me.id)
+  const read = useReadPosts(me.id)
+  const followed = useFollowedTopics(me.id)
+  const unread = updateSummary(feed, read).unread
 
   useEffect(() => { let live = true; void api.learningGoal().then((value) => { if (live) setLearning(value) }).catch(() => { if (live) setLearningNote('Не удалось загрузить настройки') }); return () => { live = false } }, [])
 
@@ -66,16 +76,25 @@ export function Profile() {
   const invite = () => {
     const link = appLink()
     if (!link) return toast('Ссылка появится, когда бот будет настроен')
-    shareLink(link, 'OG CRE8R²: уроки и разборы с XP, стриком и рейтингом. Заходи.')
+    shareLink(link, 'OG CRE8R²: бесплатные разборы, инструменты и понятные идеи об ИИ. Заходи в берлогу знаний.')
   }
 
   return (
     <div data-tab-scroll className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 18px)', paddingBottom: 'calc(120px + var(--bottom))' }}>
+      <section className="mb-6 px-5" aria-label="Моя библиотека">
+        <p className="text-xs font-semibold uppercase tracking-wider text-violet">Моя берлога</p>
+        <h1 className="mt-2 font-display text-[27px] font-semibold">Профиль</h1>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <Tap onClick={() => openBlogLibrary('saved')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Bookmark size={21} className="text-violet"/><span className="mt-3 block text-base font-semibold">Сохранённые</span><span className="mt-1 block text-sm text-mute">{saved.length ? `${saved.length} публикаций` : 'Полезное под рукой'}</span></Tap>
+          <Tap onClick={() => openBlogLibrary('unread')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Newspaper size={21} className="text-violet"/><span className="mt-3 block text-base font-semibold">Ещё почитать</span><span className="mt-1 block text-sm text-mute">{unread ? `${unread} в подборке` : 'Все обновления'}</span></Tap>
+        </div>
+        {followed.length > 0 && <><h2 className="mb-2 mt-5 text-sm font-semibold text-mute">Мои темы</h2><div className="no-bar flex gap-2 overflow-x-auto">{followed.map(id => {const topic = knowledgeTopics.find(item => item.id === id); return topic ? <Tap key={id} onClick={() => openBlogLibrary('new', id)} className="min-h-11 shrink-0 rounded-full border border-violet/25 bg-violet/10 px-3 text-sm font-medium text-violet">{topic.label}</Tap> : null})}</div></>}
+      </section>
       <div className="px-5">
         <HoloCard me={me} />
       </div>
 
-      <Tap className="mx-5 mt-4 flex w-[calc(100%-40px)] items-center justify-between rounded-2xl border border-line bg-card p-4 text-left" onClick={()=>push({type:'learning',path:'/courses/my-learning'})}><span><b className="block text-sm">Моё обучение</b><span className="mt-1 block text-xs text-mute">Курсы, работы и результаты</span></span><ChevronRight size={18}/></Tap>
+      <Tap className="mx-5 mt-4 flex w-[calc(100%-40px)] items-center justify-between rounded-2xl border border-line bg-card p-4 text-left" onClick={()=>push({type:'learning',path:'/og-practice'})}><span><b className="block text-sm">Моя практика OG</b><span className="mt-1 block text-xs text-mute">Курсы, задания и твой следующий урок</span></span><ChevronRight size={18}/></Tap>
       <div className="mx-5 mt-4 grid grid-cols-2 gap-3" aria-label="Дополнительные разделы">
        {[{label:'Рейтинг',icon:Trophy,open:()=>useStore.getState().setTab('top')},{label:'Мой маршрут',icon:Compass,open:()=>push({type:'journey'})},{label:'ИИ-сертификации',icon:Award,open:()=>push({type:'certifications'})},{label:'Демо Академии',icon:BookOpen,open:()=>push({type:'academy',path:'/academy'})}].map(item=><Tap key={item.label} onClick={item.open} className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><item.icon size={20} className="shrink-0 text-violet"/>{item.label}</Tap>)}
       </div>

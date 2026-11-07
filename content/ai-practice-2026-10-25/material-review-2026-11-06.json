@@ -1,0 +1,26 @@
+{
+  "checked_at": "2026-11-06",
+  "scope": "Public official documentation reviewed for three naming/interface claims. No account features, paid plans or live AI runs tested.",
+  "sources": [
+    {
+      "url": "https://support.google.com/gemini/answer/18560919?hl=en",
+      "claim": "Gems transition to skills starts 17 November 2026 for personal accounts aged 18+, with old Gems removed 17 December; work and education accounts follow separate 2027 timelines.",
+      "change": "Replaced broad November claim with account-specific dates and direct transition documentation."
+    },
+    {
+      "url": "https://support.google.com/gemininotebook/answer/16179559?hl=en",
+      "claim": "Official Google help uses Gemini Notebook and notebook.google.com. Citations open source passages for checking.",
+      "change": "Kept current product name and domain; added direct help link for source checks."
+    },
+    {
+      "url": "https://support.google.com/gemininotebook/answer/18323649?hl=en",
+      "claim": "Document report creation uses Studio, Reports, Document, then a template or custom generation settings.",
+      "change": "Updated originating training-labs.mjs report route and added current official help link."
+    },
+    {
+      "url": "https://help.mistral.ai/en/articles/682992-le-chat-is-now-vibe",
+      "claim": "Mistral renamed Le Chat to Vibe and retains chat.mistral.ai with the same login.",
+      "change": "Kept current name and URL; no correction needed."
+    }
+  ]
+}

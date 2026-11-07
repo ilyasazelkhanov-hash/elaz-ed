@@ -1,4 +1,4 @@
-import { House, Trophy, User } from 'lucide-react'
+import { BookOpen, House, Newspaper, User } from 'lucide-react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
@@ -137,6 +137,21 @@ function Shell() {
     preloadMarkdown()
   }, [])
 
+  // Opening another OG lesson in an already loaded app changes only the hash.
+  // Mounted course windows handle their own navigation; otherwise open one here.
+  useEffect(() => {
+    const openPracticeLink = () => {
+      const path = coursesEntry(location.hash, '', '')
+      if (!path || !/^\/courses\/(?:og-practice|start)(?:\/|$)/.test(path)) return
+      const store = useStore.getState()
+      if (store.stack.some(overlay => overlay.type === 'learning')) return
+      store.setTab('courses')
+      store.push({type: 'learning', path})
+    }
+    window.addEventListener('hashchange', openPracticeLink)
+    return () => window.removeEventListener('hashchange', openPracticeLink)
+  }, [])
+
   return (
     <motion.div className="relative z-10 h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
       <div className="h-full" inert={stack.length > 0 || !!reward || !!share}>
@@ -264,7 +279,8 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
 
 const TABS: { id: Tab; label: string; icon: typeof House }[] = [
   { id: 'home', label: 'Главная', icon: House },
-  { id: 'top', label: 'Рейтинг', icon: Trophy },
+  { id: 'blog', label: 'Обновления', icon: Newspaper },
+  { id: 'courses', label: 'Курсы', icon: BookOpen },
   { id: 'profile', label: 'Профиль', icon: User },
 ]
 
@@ -275,20 +291,14 @@ function Nav() {
   const toTop = () => document.querySelector('[data-tab-scroll]')?.scrollTo({ top: 0, behavior: 'smooth' })
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center" style={{ paddingBottom: 'calc(14px + var(--bottom))' }}>
-      <nav aria-label="Основные разделы" className="pointer-events-auto flex gap-1 rounded-full border border-line bg-float/85 p-1.5 shadow-[var(--shadow-float)] backdrop-blur-xl">
+      <nav aria-label="Основные разделы" className="pointer-events-auto mx-4 flex w-full max-w-[420px] gap-1 rounded-[24px] border border-line bg-float/95 p-1.5 shadow-[var(--shadow-float)] backdrop-blur-xl">
         {TABS.map(({ id, label, icon: Icon }) => {
-          const active = tab === id || id==='home'&&(tab==='courses'||tab==='blog')
+          const active = tab === id || id==='profile'&&tab==='top'
           return (
-            <Tap key={id} feedback="select" onClick={() => (tab===id ? toTop() : setTab(id))} aria-label={label} aria-current={active?'page':undefined} className={`relative flex h-11 items-center gap-2 rounded-full px-4 ${active ? 'text-white' : 'text-mute'}`}>
-              {active && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-full" style={{ background: 'var(--aurora)' }} transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
-              <Icon size={19} strokeWidth={2.2} className="relative" />
-              <AnimatePresence initial={false}>
-                {active && (
-                  <motion.span initial={{ width: 0, opacity: 0 }} animate={{ width: 'auto', opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="relative overflow-hidden whitespace-nowrap text-[13px] font-semibold">
-                    {label}
-                  </motion.span>
-                )}
-              </AnimatePresence>
+            <Tap key={id} feedback="select" onClick={() => (tab===id ? toTop() : setTab(id))} aria-label={label} aria-current={active?'page':undefined} className={`relative flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 ${active ? 'text-on-violet' : 'text-mute'}`}>
+              {active && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-[18px] bg-violet" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
+              <Icon size={19} strokeWidth={2} className="relative" aria-hidden="true"/>
+              <span className="relative whitespace-nowrap text-[11px] font-semibold">{label}</span>
             </Tap>
           )
         })}

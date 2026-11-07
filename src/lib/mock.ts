@@ -1,18 +1,19 @@
 // Демо-режим: тот же интерфейс, что у сервера, но всё живёт в localStorage. К настоящей базе не обращается.
 import seed from './seed.json'
-import {isBlogPost,comparePosts} from './content'
+import {newestPosts} from './discovery'
 import { ApiError } from './errors'
 import { adventSummaryDemo, makeAdventMock, resetAdventDemo } from './mockAdvent'
 import { dailyReward } from './game'
 import { demoPlatformXp } from './experience'
 import { tgUser } from './tg'
+import {addDemoPractice, demoPracticeOutline} from './mockOgPractice'
 import type { AdminCourse, Analytics, Api, Boot, Card, CompleteResult, Course, DailyResult, Lesson, LessonDraft, LessonQuizAttempt, Me, Payment, QuizQuestion, TopUser } from './types'
 
 const KEY = 'elaz-ed-demo-v2'
 
 interface DemoState {
   lessons: Lesson[]
-  courses: AdminCourse[]
+  courses: (AdminCourse & {practice_key?: string})[]
   nextId: number
   xp: number
   streak: number
@@ -117,11 +118,11 @@ function initial(): DemoState {
 function load(): DemoState {
   try {
     const raw = localStorage.getItem(KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) return addDemoPractice(JSON.parse(raw))
   } catch {
     /* приватный режим */
   }
-  return initial()
+  return addDemoPractice(initial())
 }
 
 let state = load()
@@ -188,6 +189,7 @@ function courses(): Course[] {
       const lessons = state.lessons.filter((l) => l.course_id === c.id && l.published)
       return {
         id: c.id,
+        ...(c.practice_key ? {practice_key: c.practice_key, practice_lessons: demoPracticeOutline(c, lessons, state.done)} : {}),
         title: c.title,
         subtitle: c.subtitle,
         description: c.description,
@@ -216,7 +218,7 @@ export const mockApi: Api = {
   async saveLearningGoal(input) { return { ...input, completed: 0, nextLesson: null } },
   async blogPage(cursor) {
     await wait(150)
-    const posts=state.lessons.filter(l=>l.published&&isBlogPost(l)).sort(comparePosts)
+    const posts=newestPosts(state.lessons)
     const start=cursor?posts.findIndex(p=>p.id===cursor.id)+1:0
     const page=posts.slice(start,start+30),last=page.at(-1)
     return {posts:page.map(card),next:last&&start+page.length<posts.length?{pinned:!!last.pinned,date:last.published_at??null,id:last.id}:null}
@@ -518,7 +520,7 @@ export const mockApi: Api = {
 }
 
 export function resetDemo() {
-  state = initial()
+  state = addDemoPractice(initial())
   save()
   resetAdventDemo()
 }

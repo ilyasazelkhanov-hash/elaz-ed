@@ -1,5 +1,6 @@
 import guides from '../../content/knowledge/course-guides.json' with {type:'json'}
 import type {Card} from './types'
+import {ogPracticeCourses} from './og-practice.ts'
 
 export type KnowledgeTopicId='tools'|'vibecoding'|'automation'|'agents'|'creative'|'design'|'marketing'|'data'|'business'
 export type CourseGuide={code:string;plainTitle:string;forWhom:string;outcome:string;tryNow:string;nextCodes:string[]}
@@ -53,3 +54,18 @@ const goals:Record<string,string[]>={
  'goal:services':['CORE-000','BI-101','MK-101'],
 }
 export function curatedGoalCourses(goal:string):CourseGuide[]{return(goals[goal]??goals['goal:tools']).map(code=>byCode.get(code)!)}
+
+const practiceGoals:Record<string,string[]>={
+ 'goal:tools':['foundations','text','automation'],
+ 'goal:content':['foundations','text','media'],
+ 'goal:apps':['foundations','coding'],
+ 'goal:services':['foundations','text','automation'],
+}
+/** Participant routes use OG's own courses; Academy guides remain available to its separate catalog. */
+export function curatedPracticeCourses(goal:string){
+ return (practiceGoals[goal]??practiceGoals['goal:tools']).flatMap(key=>ogPracticeCourses.filter(course=>course.key===key))
+}
+const practiceTopics:Record<KnowledgeTopicId,string>={tools:'foundations',vibecoding:'coding',automation:'automation',agents:'foundations',creative:'media',design:'media',marketing:'text',data:'text',business:'automation'}
+export function practiceCourseForTopic(topic:KnowledgeTopicId){
+ return ogPracticeCourses.find(course=>course.key===practiceTopics[topic])!
+}

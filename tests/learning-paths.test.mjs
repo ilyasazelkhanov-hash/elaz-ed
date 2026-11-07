@@ -2,7 +2,43 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFile,stat} from 'node:fs/promises'
 import {PGlite} from '@electric-sql/pglite'
+import {pathExercises} from '../content/ai-practice-2026-10-25/path-exercises.mjs'
 const root=new URL('../content/ai-practice-2026-10-25/',import.meta.url)
+
+test('standalone course practice checks transfer, boundary cases and only the final lesson closes the course',async()=>{
+ const p=JSON.parse(await readFile(new URL('paths.json',root),'utf8'))
+ const all=p.courses.flatMap(c=>c.lessons)
+ assert.equal(Object.keys(pathExercises).length,20)
+ for(const [key,exercise]of Object.entries(pathExercises)){
+  const lesson=all.find(l=>l.key===key)
+  assert.ok(lesson,key)
+  for(const text of [exercise.task,exercise.question,exercise.answer,...exercise.criteria])assert.ok(lesson.body.includes(text),`${key}: missing authored practice`)
+  assert.doesNotMatch(lesson.body,/Повтори упражнение на новой копии брифа|Чем подтверждается выполнение: обещанием помощника/)
+ }
+ assert.equal(new Set(Object.values(pathExercises).map(e=>e.question)).size,20)
+ assert.match(pathExercises['text-report'].answer,/40000 \/ 18/)
+ assert.match(pathExercises['automation-project'].task,/C1.*C2.*C3/)
+ for(const course of p.courses)for(const [index,lesson]of course.lessons.entries()){
+  assert.equal(lesson.body.includes('## Завершение курса'),index===course.lessons.length-1,lesson.key)
+  if(index<course.lessons.length-1)assert.ok(lesson.body.includes(`Следующий урок этого курса: ${index+2}.`),lesson.key)
+ }
+})
+
+test('the lightweight OG course directory matches generated programs without lesson bodies',async()=>{
+ const p=JSON.parse(await readFile(new URL('paths.json',root),'utf8'))
+ const directory=JSON.parse(await readFile(new URL('course-directory.json',root),'utf8'))
+ assert.deepEqual(directory.map(({search_terms,...course})=>course),p.courses.map(({key,title,goal,project,emoji,lessons})=>({key,title,goal,project,emoji,lessons:lessons.map(({key,title,minutes})=>({key,title,minutes}))})))
+ for(const course of directory){
+  assert.equal(new Set(course.search_terms).size,course.search_terms.length)
+  assert.ok(course.search_terms.length>0)
+  assert.ok(!course.search_terms.some(term=>term.includes('Учебный бриф')),'own-site asset labels are not tool metadata')
+ }
+ assert.ok(directory.find(c=>c.key==='media').search_terms.includes('Suno'))
+ assert.ok(directory.find(c=>c.key==='text').search_terms.includes('Perplexity'))
+ assert.ok(directory.find(c=>c.key==='foundations').search_terms.includes('Perplexity'))
+ assert.ok(JSON.stringify(directory).length<20000)
+ assert.doesNotMatch(JSON.stringify(directory),/"body"|"prompt"|"quiz"/)
+})
 async function fixture(){
  const db=new PGlite()
  await db.exec('create role anon; create role authenticated; create role service_role bypassrls;')

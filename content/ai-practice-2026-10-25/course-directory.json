@@ -1,0 +1,381 @@
+[
+  {
+    "key": "foundations",
+    "title": "Основы ИИ и инструменты",
+    "goal": "Выберешь инструмент, соберёшь контекст и настроишь повторяемую процедуру.",
+    "project": "Личный набор: бриф, карта доступа, свой Skill и сравнение двух инструментов.",
+    "emoji": "🧭",
+    "search_terms": [
+      "Официальная справка Claude о моделях",
+      "Изменения в приложении Claude",
+      "Справка Google о Gems и переходе в Skills",
+      "Модели и доступ в Gemini",
+      "ChatGPT",
+      "Claude",
+      "DeepSeek",
+      "Gemini",
+      "Qwen Studio",
+      "Mistral Vibe",
+      "Perplexity",
+      "Gemini Notebook",
+      "Adobe Firefly",
+      "Canva",
+      "Runway",
+      "Descript",
+      "ElevenLabs",
+      "Suno",
+      "OpenCode Desktop",
+      "n8n",
+      "AI Studio: начать",
+      "Бесплатный и платный API: условия",
+      "Claude: текущие модели",
+      "Claude: объединение чата и Cowork",
+      "Открыть ChatGPT / GPT",
+      "Открыть Claude",
+      "Открыть DeepSeek",
+      "Открыть Gemini",
+      "Открыть Qwen Studio",
+      "Открыть Mistral Vibe — раньше Le Chat",
+      "Claude: актуальный экран Skills",
+      "Формат SKILL.md",
+      "Claude: разговоры, проекты и файлы",
+      "MCP: устройство протокола",
+      "Skills: устройство навыка",
+      "MCP-подключения в OpenCode",
+      "Открыть Make",
+      "Открыть Zapier",
+      "Skills в Claude",
+      "Формат Agent Skills",
+      "OpenBot",
+      "OpenBot: загрузка и возможности",
+      "Документация и лицензия",
+      "Открыть Cursor",
+      "Открыть GitHub Copilot",
+      "Gamma",
+      "Поиск по категориям",
+      "Каталог инструментов",
+      "Сравнение кандидатов"
+    ],
+    "lessons": [
+      {
+        "key": "block-1",
+        "title": "1. Что умеет ИИ и как выбрать первый инструмент",
+        "minutes": 25
+      },
+      {
+        "key": "foundations-context",
+        "title": "2. Контекст и проект: помощник понимает твою задачу",
+        "minutes": 30
+      },
+      {
+        "key": "block-connections",
+        "title": "3. Плагины, коннекторы, Skills и MCP без путаницы",
+        "minutes": 30
+      },
+      {
+        "key": "foundations-skill",
+        "title": "4. Свой навык: процедура, примеры и проверка",
+        "minutes": 35
+      },
+      {
+        "key": "block-openbot",
+        "title": "5. Собери команду в OpenBot и передавай результат",
+        "minutes": 40
+      },
+      {
+        "key": "foundations-compare",
+        "title": "6. Выбор инструмента: сравнение на своей задаче",
+        "minutes": 35
+      }
+    ]
+  },
+  {
+    "key": "text",
+    "title": "Текст и исследования с ИИ",
+    "goal": "Проведёшь исследование, проверишь расчёты и превратишь факты в понятный материал.",
+    "project": "Справка с доказательствами, проверенный отчёт и пять слайдов.",
+    "emoji": "🔎",
+    "search_terms": [
+      "Perplexity",
+      "Gemini Notebook",
+      "Agent Reach: установка и каналы",
+      "Открыть DeepSeek",
+      "Открыть Gemini",
+      "Открыть Qwen Studio",
+      "Открыть Mistral Vibe — раньше Le Chat",
+      "Claude: коннекторы",
+      "Agent Reach",
+      "Claude",
+      "Создание notebook и Studio",
+      "Отчёты в Gemini Notebook",
+      "Чат и проверка цитат",
+      "Актуальные лимиты",
+      "ChatGPT",
+      "Формат повторяемых инструкций Agent Skills",
+      "Открыть ChatGPT / GPT",
+      "Открыть Claude",
+      "Gamma",
+      "Gamma: создание с агентом",
+      "Тарифы Gamma",
+      "Открыть Midjourney",
+      "Открыть Ideogram",
+      "Открыть Recraft"
+    ],
+    "lessons": [
+      {
+        "key": "block-2",
+        "title": "1. Собери исследование, которому можно доверять",
+        "minutes": 35
+      },
+      {
+        "key": "text-notebook",
+        "title": "2. Gemini Notebook: от документов к справке",
+        "minutes": 35
+      },
+      {
+        "key": "block-3",
+        "title": "3. Управляй качеством ответа, а не длиной промпта",
+        "minutes": 30
+      },
+      {
+        "key": "text-report",
+        "title": "4. Анализ таблицы: расчёты, график и вывод",
+        "minutes": 35
+      },
+      {
+        "key": "text-deck",
+        "title": "5. Gamma: справка превращается в презентацию",
+        "minutes": 35
+      },
+      {
+        "key": "text-project",
+        "title": "6. Итог: исследование, редактура и доказательства",
+        "minutes": 45
+      },
+      {
+        "key": "presentation-brief",
+        "title": "7. Презентация: от цели и источников к слайдам",
+        "minutes": 40
+      },
+      {
+        "key": "carousel-brief",
+        "title": "8. Карусель: идея, сюжет и текст карточек",
+        "minutes": 35
+      }
+    ]
+  },
+  {
+    "key": "media",
+    "title": "Медиа с ИИ: изображения, видео и звук",
+    "goal": "Создашь изображения, видео, голос и музыку, затем соберёшь единый комплект.",
+    "project": "Обложка, ролик 15 секунд, дорожки голоса/музыки и проверка прав.",
+    "emoji": "🎬",
+    "search_terms": [
+      "Adobe Firefly",
+      "Canva",
+      "Canva: редактор макетов",
+      "Photopea: работа со слоями",
+      "Firefly: генерация",
+      "Firefly: бесплатный доступ и платные планы",
+      "Открыть Midjourney",
+      "Открыть Ideogram",
+      "Открыть Recraft",
+      "Открыть Gemini",
+      "Descript API и MCP",
+      "Runway",
+      "Remotion: кадр, fps и длительность",
+      "Runway: доступ к генератору",
+      "Runway: условия Free",
+      "Runway: расход кредитов",
+      "Открыть Kling AI",
+      "Открыть Pika",
+      "Открыть Luma",
+      "Открыть HeyGen",
+      "ElevenLabs",
+      "Descript",
+      "Whisper: инструкции и требования",
+      "ElevenLabs: попробовать",
+      "ElevenLabs: тарифы и лицензии",
+      "Eleven v4: актуальная модель озвучки",
+      "Открыть Qwen Studio",
+      "Suno",
+      "Suno: создать музыку и сравнить планы",
+      "Suno iOS: Create, Custom и Instrumental",
+      "Suno: коммерческие права",
+      "ElevenLabs: другой вариант генерации аудио",
+      "Открыть Stable Audio",
+      "Открыть Udio",
+      "Текущее ограничение экспорта",
+      "Открыть Pika Soundtrack",
+      "Descript: монтаж и клипы",
+      "Ограничения и тарифы"
+    ],
+    "lessons": [
+      {
+        "key": "block-4",
+        "title": "1. Сделай визуал, который решает задачу",
+        "minutes": 40
+      },
+      {
+        "key": "block-5",
+        "title": "2. Собери ролик по сценам, а не одним запросом",
+        "minutes": 45
+      },
+      {
+        "key": "block-6",
+        "title": "3. Преврати запись в точный текст и понятную речь",
+        "minutes": 30
+      },
+      {
+        "key": "block-music",
+        "title": "4. Музыка: создай подложку и проверь условия использования",
+        "minutes": 35
+      },
+      {
+        "key": "media-repurpose",
+        "title": "5. Монтаж по тексту: запись превращается в клип",
+        "minutes": 35
+      },
+      {
+        "key": "media-project",
+        "title": "6. Итог: единый комплект изображения, видео и звука",
+        "minutes": 55
+      }
+    ]
+  },
+  {
+    "key": "coding",
+    "title": "Вайбкодинг: от идеи до рабочего прототипа",
+    "goal": "Создашь страницу, поработаешь в OpenCode и научишься принимать изменения агента.",
+    "project": "Учебная страница, критерии приёмки, история версий и комплект проекта.",
+    "emoji": "🛠️",
+    "search_terms": [
+      "OpenCode Desktop",
+      "Claude",
+      "Node.js: установка",
+      "Cursor: доступ и ограничения тарифов",
+      "Gemini CLI: официальный старт",
+      "Открыть Cursor",
+      "Открыть GitHub Copilot",
+      "Открыть DeepSeek",
+      "Открыть Qwen Studio",
+      "MCP V2",
+      "Плагины V2",
+      "ChatGPT",
+      "Открыть ChatGPT / GPT",
+      "Открыть Claude",
+      "Открыть Gemini",
+      "Открыть Mistral Vibe — раньше Le Chat",
+      "OpenCode V2: Desktop для своей ОС",
+      "Провайдеры V2",
+      "Инструкции AGENTS.md в V2",
+      "Context7 MCP",
+      "OpenCode V2: MCP",
+      "GitHub Desktop",
+      "GitHub Desktop: создание репозитория"
+    ],
+    "lessons": [
+      {
+        "key": "block-7",
+        "title": "1. Вайбкодинг: создай свою первую страницу",
+        "minutes": 45
+      },
+      {
+        "key": "coding-spec",
+        "title": "2. Техническое задание: состояния, ограничения и приёмка",
+        "minutes": 35
+      },
+      {
+        "key": "block-opencode",
+        "title": "3. OpenCode: план, первая правка и проверка проекта",
+        "minutes": 45
+      },
+      {
+        "key": "coding-mcp",
+        "title": "4. MCP и плагины: документация вместо догадок агента",
+        "minutes": 40
+      },
+      {
+        "key": "coding-version",
+        "title": "5. Версии и публикация: сохрани рабочий результат",
+        "minutes": 40
+      },
+      {
+        "key": "block-agent-reach",
+        "title": "6. Итог: рабочая страница и проверяемая передача проекта",
+        "minutes": 60
+      }
+    ]
+  },
+  {
+    "key": "automation",
+    "title": "Автоматизация с ИИ: от поручения к процессу",
+    "goal": "Начнёшь со встроенных задач ChatGPT, Claude и Gemini, затем соберёшь процесс с проверками.",
+    "project": "Поручение по файлам, карта доступа, журнал повторов и управляемый запуск.",
+    "emoji": "⚙️",
+    "search_terms": [
+      "ChatGPT",
+      "Claude",
+      "ChatGPT: задачи и ограничения",
+      "ChatGPT: файлы и контекст проектов",
+      "Claude: расписания Cowork",
+      "Gemini: Tasks & workflows",
+      "Открыть Make",
+      "Открыть Zapier",
+      "Открыть Gemini",
+      "Открыть Mistral Vibe — раньше Le Chat",
+      "Claude: актуальные возможности и границы",
+      "Skills",
+      "Новый интерфейс Claude и локальные файлы",
+      "Открыть ChatGPT / GPT",
+      "Открыть Claude",
+      "Открыть DeepSeek",
+      "Открыть Qwen Studio",
+      "Claude: Connectors и доступ",
+      "n8n",
+      "n8n: документация и учебные процессы",
+      "n8n: облачный пробный доступ и планы",
+      "Make: кредиты и расходы ИИ",
+      "n8n: первое workflow",
+      "Perplexity",
+      "Gemini Notebook"
+    ],
+    "lessons": [
+      {
+        "key": "block-native-automation",
+        "title": "1. Автоматизация в ChatGPT, Claude и Gemini: начни без конструктора",
+        "minutes": 40
+      },
+      {
+        "key": "automation-files",
+        "title": "2. Claude Desktop: отчёт из папки файлов",
+        "minutes": 35
+      },
+      {
+        "key": "automation-connectors",
+        "title": "3. Коннектор: отчёт читает нужные данные",
+        "minutes": 35
+      },
+      {
+        "key": "block-8",
+        "title": "4. Автоматизируй процесс без повторов и потерь",
+        "minutes": 40
+      },
+      {
+        "key": "automation-canvas",
+        "title": "5. Карта процесса: от заявки до проверенного черновика",
+        "minutes": 35
+      },
+      {
+        "key": "automation-project",
+        "title": "6. Итог: повторяемый процесс с ошибками и остановкой",
+        "minutes": 50
+      },
+      {
+        "key": "deal-radar",
+        "title": "7. Deal Radar: личный радар полезных предложений",
+        "minutes": 35
+      }
+    ]
+  }
+]

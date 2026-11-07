@@ -1340,6 +1340,48 @@ test('achievement failure returns error without XP and replay repairs a missing 
  assert.ok(replay.body.new_achievements.includes('first'))
  assert.equal(state.tables.users.find(u=>u.id===BUYER).xp,xp)
 })
+test('newest discovery paginates fresh posts ahead of old editorial promotions without gaps',async()=>{
+ await everyoneBoots()
+ for(let index=0;index<52;index++)state.tables.lessons.push({id:500+index,kind:'lesson',title:'Publication '+index,course_id:null,published:true,pinned:index<35,published_at:new Date(Date.UTC(index<35?2024:2025,0,1,0,0,index)).toISOString(),quiz:[]})
+ let cursor=null;const ids=[]
+ do{
+  const response=await call('blog_feed',{order:'newest',cursor},BUYER)
+  assert.equal(response.status,200)
+  if(!ids.length)assert.equal(response.body.posts[0].id,551)
+  ids.push(...response.body.posts.map(post=>post.id));cursor=response.body.next
+ }while(cursor)
+ assert.equal(ids.length,52);assert.equal(new Set(ids).size,52)
+ assert.deepEqual(ids.slice(0,17),Array.from({length:17},(_,index)=>551-index))
+})
+
+test('OG course import receipts expose published outlines, while paid bodies remain protected',async()=>{
+ state.tables.settings.push({key:'content_revision:ai-practice-paths-2026-11-01-v5',value:{courses:{foundations:1,text:2},lessons:{'block-1':11,'foundations-context':10,foreign:22,hidden:12}}})
+ Object.assign(state.tables.lessons.find(lesson=>lesson.id===10),{position:2,minutes:30,body:'PRIVATE PAID BODY'})
+ Object.assign(state.tables.lessons.find(lesson=>lesson.id===11),{position:1,minutes:25,body:'FREE PREVIEW'})
+ state.tables.lessons.push({id:22,kind:'lesson',title:'Other course',course_id:2,free_preview:false,published:true,position:1},{id:12,kind:'lesson',title:'Hidden',course_id:1,published:false,body:'PRIVATE DRAFT'})
+ // This existing cron route refreshes the 15-second settings cache before rejecting the missing cron key.
+ await handler(new Request(`${SUPABASE_URL}/functions/v1/api/advent_push`,{method:'POST'}))
+ const response=await call('boot',{},BUYER)
+ assert.equal(response.status,200)
+ const course=response.body.courses.find(course=>course.id===1)
+ assert.equal(course.practice_key,'foundations')
+ assert.deepEqual(course.practice_lessons.map(lesson=>lesson.key),['block-1','foundations-context'])
+ assert.equal(course.access,false)
+ assert.ok(!JSON.stringify(course).includes('PRIVATE'))
+ assert.ok(!JSON.stringify(course.practice_lessons).includes('body'))
+ assert.equal((await call('lesson',{id:10},BUYER)).status,403)
+ assert.equal((await call('lesson',{id:11},BUYER)).status,200)
+})
+test('ambiguous OG import receipts cannot assign one course to two programs',async()=>{
+ state.tables.settings.push({key:'content_revision:ai-practice-paths-2026-11-01-v5',value:{courses:{foundations:1,text:1},lessons:{'block-1':11}}})
+ await handler(new Request(`${SUPABASE_URL}/functions/v1/api/advent_push`,{method:'POST'}))
+ const response=await call('boot',{},BUYER)
+ assert.equal(response.status,200)
+ const course=response.body.courses.find(course=>course.id===1)
+ assert.equal(course.practice_key,undefined)
+ assert.equal(course.practice_lessons,undefined)
+})
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()

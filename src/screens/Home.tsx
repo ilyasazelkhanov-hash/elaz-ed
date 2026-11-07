@@ -1,95 +1,79 @@
 import { AnimatePresence } from 'motion/react'
+import { ArrowRight, ArrowUpRight, Bookmark, ChevronRight, Compass, Sparkles, WandSparkles } from 'lucide-react'
 import { useMemo, useRef } from 'react'
-import { levelOf } from '../lib/game'
-import { MainCourses } from './home/AcademyCourses'
+import { useReadPosts } from '../lib/blog-read'
+import { useFollowedTopics, useSavedPosts } from '../lib/blog-library'
+import { updateSummary } from '../lib/discovery'
+import { useBlogFeed } from '../lib/blog-feed'
+import { knowledgeTopics } from '../lib/knowledge'
 import { useStore } from '../store'
-import { Avatar, Bar, Counter, Emoji, Odometer, Ring, Tap } from '../ui'
+import { Avatar, Counter, Emoji, Odometer, Tap } from '../ui'
 import { AdventBanner } from './advent/Banner'
+import { MainCourses } from './home/AcademyCourses'
+import { openBlogLibrary } from './home/blog-view'
 import { DailyCard, StreakCard } from './home/Daily'
-import {KnowledgeHub} from './home/KnowledgeHub'
 import { Feed } from './home/Feed'
 import { StoryBubble } from './home/parts'
-import { WeeklyGoal } from './home/WeeklyGoal'
-import { Award, ChevronRight } from 'lucide-react'
+import './home/free-first.css'
+
+const homeTopics = [
+  { id: 'tools', title: 'ИИ без сложностей', detail: 'Инструменты и основы', icon: Sparkles },
+  { id: 'creative', title: 'Контент и визуалы', detail: 'Идеи для творчества', icon: WandSparkles },
+  { id: 'vibecoding', title: 'Код и приложения', detail: 'Создавать с ИИ', icon: Compass },
+  { id: 'automation', title: 'Автоматизация', detail: 'Меньше рутины', icon: ArrowRight },
+]
 
 export function Home() {
-  const me = useStore((s) => s.me)!
-  const feed = useStore((s) => s.feed)
-  const setTab = useStore((s) => s.setTab)
+  const me = useStore(s => s.me)!
+  const feed = useStore(s => s.feed)
+  const setTab = useStore(s => s.setTab)
+  const push = useStore(s => s.push)
   const scroller = useRef<HTMLDivElement>(null)
+  const read = useReadPosts(me.id)
+  const saved = useSavedPosts(me.id)
+  const followed = useFollowedTopics(me.id)
+  const latest = useBlogFeed(true, me.id, 'home-latest')
+  const summary = updateSummary(latest.posts ?? feed, read)
+  const stories = useMemo(() => feed.filter(c => c.kind === 'story' && c.published), [feed])
 
-  const stories = useMemo(() => feed.filter((c) => c.kind === 'story'), [feed])
-  // Уроки закрытых курсов живут на странице курса, а не в общей ленте.
-  const lessons = useMemo(() => feed.filter((c) => c.kind === 'lesson' && !c.course_id), [feed])
-  const lvl = levelOf(me.xp)
+  return <div ref={scroller} data-tab-scroll className="scroll h-full" style={{ paddingBottom: 'calc(110px + var(--bottom))' }}>
+    <header className="flex items-center justify-between gap-3 px-5 pb-5" style={{ paddingTop: 'calc(var(--top) + 18px)' }}>
+      <div><p className="font-display text-[17px] font-bold tracking-tight">OG CRE8R<span className="text-violet">²</span></p><p className="mt-1 text-xs text-mute">Твоя берлога знаний об ИИ</p></div>
+      <Tap feedback="soft" onClick={() => setTab('profile')} aria-label="Профиль" className="rounded-full border border-line p-1"><Avatar name={me.name} photo={me.photo} id={me.id} size={38}/></Tap>
+    </header>
 
-  return (
-    // Верхний отступ живёт в шапке, а не в контейнере: иначе прилипающие фильтры отсчитывают его дважды.
-    <div ref={scroller} data-tab-scroll className="scroll h-full" style={{ paddingBottom: 'calc(120px + var(--bottom))' }}>
-      <header className="flex items-center gap-3 px-5" style={{ paddingTop: 'calc(var(--top) + 14px)' }}>
-        <Tap feedback="soft" onClick={() => setTab('profile')} aria-label="Профиль">
-          <Avatar name={me.name} photo={me.photo} id={me.id} size={44} />
-        </Tap>
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] leading-tight text-mute">Привет,</p>
-          <p className="truncate font-display text-[17px] font-semibold leading-tight">{me.name}</p>
-        </div>
-        <div className="flex h-9 items-center gap-1.5 rounded-full border border-line bg-card/80 pl-2 pr-3">
-          <Emoji char="🔥" size={18} animated={me.streak > 0} className={me.streak > 0 ? '' : 'opacity-40 grayscale'} />
-          <Counter value={me.streak} className="tabular font-display text-[13px] font-semibold" />
-        </div>
-        <div id="xp-pill" className="flex h-9 items-center gap-1.5 rounded-full border border-line bg-card/80 pl-2 pr-3">
-          <Emoji char="⚡" size={18} />
-          <Odometer value={me.xp} className="font-display text-[13px] font-semibold" />
-        </div>
-      </header>
+    <section className="reader-hero mx-5 p-5" aria-label="Об OG CRE8R">
+      <p className="reader-eyebrow flex items-center gap-2 text-violet"><span className="h-1.5 w-1.5 rounded-full bg-violet" aria-hidden="true"/>Читай. Пробуй. Создавай.</p>
+      <h1 className="reader-hero-title mt-4 font-semibold">Понятно об ИИ.<br/><span className="text-violet">Полезно тебе.</span></h1>
+      <p className="mt-4 text-base leading-relaxed text-mute">Бесплатные разборы, инструменты и идеи, которые помогают освоиться с ИИ и применять его каждый день.</p>
+      <Tap onClick={() => push({ type: 'learning', path: '/start' })} className="mt-5 flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl bg-violet px-4 py-3 text-left text-base font-semibold text-on-violet"><span>Я начинаю — с чего начать?</span><ArrowUpRight size={19} className="shrink-0"/></Tap>
+      <p className="mt-3 text-center text-xs text-mute">Бесплатный маршрут для первого шага</p>
+    </section>
 
-      <div className="mt-6"><MainCourses /></div>
-      <AdventBanner />
-      <Tap onClick={() => useStore.getState().push({type:'certifications'})} className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center gap-4 overflow-hidden rounded-[26px] border border-violet/25 bg-violet/10 p-5 text-left">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[18px] bg-violet/15 text-violet"><Award size={32} strokeWidth={1.7}/></span>
-        <span className="min-w-0 flex-1"><span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-violet">Паспорт достижений</span><span className="mt-1 block font-display text-[17px] font-semibold leading-tight">ИИ-сертификации</span><span className="mt-1 block text-[12px] leading-snug text-mute">{me.streak>=10?'Серия 10+ · каталог открыт':'Собери стрик 10 дней · открой каталог'}</span></span>
-        <ChevronRight className="shrink-0 text-violet" size={20}/>
-      </Tap>
-      <Tap onClick={() => useStore.getState().push({type:'journey'})} className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center gap-3 rounded-[24px] border border-line bg-card/80 p-4 text-left"><Emoji char="🧭" size={30}/><span className="flex-1"><b className="block text-[14px]">Мой следующий шаг</b><span className="mt-1 block text-[12px] text-mute">Короткий маршрут к твоей цели</span></span><span aria-hidden="true">→</span></Tap>
+    <section className="mt-7 px-5" aria-label="Последние обновления">
+      <div className="mb-4 flex items-end justify-between gap-2"><div><p className="reader-eyebrow mb-1.5 text-mute">Свежий взгляд</p><h2 className="reader-section-title">Новое в берлоге</h2></div><Tap className="flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-violet" onClick={() => openBlogLibrary()}>Все<ChevronRight size={17}/></Tap></div>
+      {summary.posts.length > 0 && <p className="mb-4 text-sm leading-relaxed text-mute">{summary.unread ? `${summary.unread} ещё не прочитано` : 'Ты прочитал все загруженные публикации'}<span className="mx-2" aria-hidden="true">·</span>Новые — в начале</p>}
+      <Feed lessons={summary.posts} scroller={scroller} compact/>
+      {summary.posts.length > 0 && <Tap onClick={() => openBlogLibrary(summary.unread ? 'unread' : 'new')} className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-line text-sm font-semibold">{summary.unread ? 'Продолжить читать' : 'Открыть все обновления'}<ArrowRight size={17}/></Tap>}
+    </section>
 
-      <Tap
-        aria-label="Мой уровень и прогресс"
-        feedback="soft"
-        onClick={() => setTab('profile')}
-        className="mx-5 mt-5 flex w-[calc(100%-40px)] items-center gap-4 rounded-[26px] border border-line bg-card/80 p-4 text-left"
-      >
-        <Ring size={68} progress={lvl.progress}>
-          <Emoji char={lvl.emoji} size={34} animated />
-        </Ring>
-        <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-medium uppercase tracking-wider text-mute">Уровень {lvl.index}</p>
-          <p className="font-display text-[18px] font-semibold leading-tight">{lvl.title}</p>
-          <Bar progress={lvl.progress} className="mt-2.5" />
-          <p className="tabular mt-1.5 text-[12px] text-mute">{lvl.next ? `Ещё ${lvl.left} XP до уровня «${lvl.next.title}»` : 'Максимальный уровень'}</p>
-        </div>
-      </Tap>
+    <section className="mt-7 px-5" aria-label="Темы публикаций">
+      <div className="mb-4 flex items-center justify-between gap-3"><h2 className="reader-section-title">Что тебе интересно?</h2><Tap aria-label="Все темы публикаций" onClick={() => openBlogLibrary()} className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-line"><ArrowUpRight size={18}/></Tap></div>
+      <div className="reader-topics">{homeTopics.map(topic => <Tap key={topic.id} onClick={() => openBlogLibrary('new', topic.id)} className="reader-topic"><topic.icon size={19} className="mb-3 text-violet"/><span>{topic.title}</span><small className="mt-1 block text-xs leading-relaxed text-mute">{topic.detail}</small></Tap>)}</div>
+      {followed.length > 0 && <div className="no-bar mt-3 flex gap-2 overflow-x-auto" aria-label="Мои темы">{followed.map(id => {const topic = knowledgeTopics.find(item => item.id === id); return topic ? <Tap key={id} onClick={() => openBlogLibrary('new', id)} className="min-h-11 shrink-0 rounded-full border border-violet/25 bg-violet/10 px-3 text-sm text-violet">{topic.label}</Tap> : null})}</div>}
+      <Tap onClick={() => openBlogLibrary('saved')} className="mt-3 flex min-h-16 w-full items-center gap-3 rounded-[19px] border border-line bg-card p-4 text-left"><Bookmark size={21} className="shrink-0 text-violet"/><span className="min-w-0 flex-1"><b className="block text-base font-semibold">Отложить на потом</b><span className="mt-1 block text-sm text-mute">{saved.length ? `В сохранённых: ${saved.length}` : 'Сохраняй полезное и возвращайся к нему'}</span></span><ChevronRight size={18} className="shrink-0 text-mute"/></Tap>
+    </section>
 
-      <div className="mx-5 mt-3" aria-label="Бонус дня и стрик">
-        <AnimatePresence mode="wait" initial={false}>
-          {me.daily_claimed ? <StreakCard key="streak" /> : <DailyCard key="daily" />}
-        </AnimatePresence>
-      </div>
+    {stories.length > 0 && <section className="mt-7" aria-label="Короткие истории"><h2 className="reader-section-title mb-4 px-5">Коротко и наглядно</h2><div className="no-bar flex gap-3.5 overflow-x-auto px-5">{stories.map((story, index) => <StoryBubble key={story.id} card={story} index={index}/>)}</div></section>}
 
-      <WeeklyGoal />
+    <div className="mt-7"><MainCourses/></div>
 
-      <KnowledgeHub posts={lessons}/>
-
-      {stories.length > 0 && (
-        <div className="no-bar mt-6 flex gap-3.5 overflow-x-auto px-5">
-          {stories.map((s, i) => (
-            <StoryBubble key={s.id} card={s} index={i} />
-          ))}
-        </div>
-      )}
-
-      <section className="mt-5 px-5" aria-label="Блог"><div className="mb-3 flex items-center justify-between"><h2 className="font-display text-lg font-semibold">Блог</h2><Tap className="flex min-h-11 items-center gap-1 text-sm font-semibold text-violet" onClick={()=>setTab('blog')}>Все публикации<ChevronRight size={16}/></Tap></div><Feed lessons={lessons} scroller={scroller}/></section>
-
-    </div>
-  )
+    <section className="reader-break mx-5 mt-7 pt-6" aria-label="Бонус дня и стрик">
+      <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="font-display text-base font-semibold">Рад видеть тебя снова</h2><p className="mt-1 text-sm text-mute">Маленький бонус за любопытство</p></div><Tap onClick={() => setTab('profile')} aria-label="Мой уровень и прогресс" className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-line px-3"><Emoji char="🔥" size={17}/><Counter value={me.streak} className="text-sm font-semibold"/><ChevronRight size={14} className="text-mute"/></Tap></div>
+      <AnimatePresence mode="wait" initial={false}>{me.daily_claimed ? <StreakCard key="streak"/> : <DailyCard key="daily"/>}</AnimatePresence>
+      <Tap onClick={() => setTab('profile')} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 text-sm text-mute"><span id="xp-pill" className="flex items-center gap-1"><Emoji char="⚡" size={16}/><Odometer value={me.xp}/> XP</span><span aria-hidden="true">·</span>Мой прогресс<ChevronRight size={15}/></Tap>
+    </section>
+    <AdventBanner/>
+    <p className="mx-8 mt-7 text-center text-sm leading-relaxed text-mute">Есть пара минут? Этого достаточно,<br/>чтобы узнать что-то полезное.</p>
+  </div>
 }

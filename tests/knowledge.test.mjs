@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
-import {courseGuide,knowledgeTopics,topicForCourse,topicForPost,relatedCourseGuides,curatedGoalCourses} from '../src/lib/knowledge.ts'
+import {courseGuide,knowledgeTopics,topicForCourse,topicForPost,relatedCourseGuides,curatedGoalCourses,curatedPracticeCourses,practiceCourseForTopic} from '../src/lib/knowledge.ts'
 const guides=JSON.parse(await readFile(new URL('../content/knowledge/course-guides.json',import.meta.url)))
 const courses=JSON.parse(await readFile(new URL('../content/ai-academy/course-directory.json',import.meta.url)))
 const codes=new Set(courses.map(course=>course.code))
@@ -44,4 +44,26 @@ test('personal goals point to real courses without using articles or artificial 
   const path=curatedGoalCourses(goal);assert.ok(path.length>=2);assert.equal(path[0].code,'CORE-000');assert.ok(path.every(guide=>codes.has(guide.code)))
  }
  assert.deepEqual(curatedGoalCourses('goal:apps').map(guide=>guide.code),['CORE-000','VC-101','ENG-101'])
+})
+test('OG participant goals lead from foundations to the relevant practical result',()=>{
+ const expected={
+  'goal:tools':['foundations','text','automation'],
+  'goal:content':['foundations','text','media'],
+  'goal:apps':['foundations','coding'],
+  'goal:services':['foundations','text','automation'],
+ }
+ for(const [goal,keys] of Object.entries(expected)){
+  const path=curatedPracticeCourses(goal)
+  assert.deepEqual(path.map(course=>course.key),keys)
+  assert.ok(path.every(course=>course.lessons.length>0&&course.project.length>10))
+ }
+ assert.deepEqual(curatedPracticeCourses('unknown'),curatedPracticeCourses('goal:tools'))
+})
+test('every knowledge topic opens an existing OG course with a matching practical task',()=>{
+ const expected={tools:'foundations',vibecoding:'coding',automation:'automation',agents:'foundations',creative:'media',design:'media',marketing:'text',data:'text',business:'automation'}
+ for(const topic of knowledgeTopics){
+  const course=practiceCourseForTopic(topic.id)
+  assert.equal(course.key,expected[topic.id])
+  assert.ok(course.lessons.length>0)
+ }
 })
