@@ -1,0 +1,84 @@
+{
+  "status": "draft_not_published",
+  "checked_at": "2026-11-07",
+  "protocol_revision": "2026-07-28",
+  "spec_repository": "modelcontextprotocol/modelcontextprotocol",
+  "spec_commit": "cf59bb0d8b43e711420f5f7313aa6cca3f1e1898",
+  "implementation": "Original small synchronous read-only teaching implementation. No upstream code, schemas or prose are copied.",
+  "license_note": "The upstream LICENSE records a transition: new code/spec contributions Apache-2.0, unrelicensed historical contributions MIT, documentation excluding specifications CC-BY-4.0. Read the pinned LICENSE before incorporating upstream material; this draft only cites interface specifications.",
+  "sources": [
+    {
+      "path": "docs/specification/2026-07-28/basic/index.mdx",
+      "facts": [
+        "String or integer request IDs, non-null",
+        "Every result needs resultType",
+        "Per-request protocolVersion and clientCapabilities are required",
+        "Missing request metadata uses -32602",
+        "serverInfo is self-reported, not authorization"
+      ],
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/cf59bb0d8b43e711420f5f7313aa6cca3f1e1898/docs/specification/2026-07-28/basic/index.mdx"
+    },
+    {
+      "path": "docs/specification/2026-07-28/basic/versioning.mdx",
+      "facts": [
+        "No initialize handshake for current revision",
+        "Unsupported version uses -32022 and data.supported/data.requested",
+        "Legacy revisions 2025-11-25 and earlier",
+        "Modern-only initialize diagnostic should mention supported versions"
+      ],
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/cf59bb0d8b43e711420f5f7313aa6cca3f1e1898/docs/specification/2026-07-28/basic/versioning.mdx"
+    },
+    {
+      "path": "docs/specification/2026-07-28/basic/transports/stdio.mdx",
+      "facts": [
+        "One newline-delimited UTF-8 JSON-RPC message per line",
+        "stdout only protocol messages; stderr for diagnostics",
+        "stdin closure is graceful shutdown",
+        "Client discovery is recommended but not mandatory"
+      ],
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/cf59bb0d8b43e711420f5f7313aa6cca3f1e1898/docs/specification/2026-07-28/basic/transports/stdio.mdx"
+    },
+    {
+      "path": "docs/specification/2026-07-28/server/discover.mdx",
+      "facts": [
+        "server/discover mandatory for server",
+        "supportedVersions and capabilities in result",
+        "Server identity in result._meta"
+      ],
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/cf59bb0d8b43e711420f5f7313aa6cca3f1e1898/docs/specification/2026-07-28/server/discover.mdx"
+    },
+    {
+      "path": "docs/specification/2026-07-28/server/tools.mdx",
+      "facts": [
+        "tools/list and tools/call",
+        "Unknown tool/malformed call are protocol errors",
+        "Input-validation/tool execution failures use isError result"
+      ],
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/cf59bb0d8b43e711420f5f7313aa6cca3f1e1898/docs/specification/2026-07-28/server/tools.mdx"
+    },
+    {
+      "path": "schema/2026-07-28/schema.ts",
+      "facts": [
+        "Discovery field names",
+        "Error structures",
+        "CallToolResult and resultType structures"
+      ],
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/cf59bb0d8b43e711420f5f7313aa6cca3f1e1898/schema/2026-07-28/schema.ts"
+    },
+    {
+      "path": "LICENSE",
+      "facts": [
+        "Current project licensing transition"
+      ],
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/cf59bb0d8b43e711420f5f7313aa6cca3f1e1898/LICENSE"
+    }
+  ],
+  "verification": {
+    "node": "24.22.1",
+    "sdk": "none",
+    "transport": "stdio",
+    "external_model": "not_used",
+    "sdk_interop": "not_run",
+    "official_conformance": "not_run"
+  }
+}

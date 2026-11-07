@@ -13,6 +13,7 @@ import {useCourseViewTelemetry} from '../Course'
 import {celebrate, Tap} from '../../ui'
 import {PracticeArtwork} from './PracticeArtwork'
 import {PracticeReader} from './PracticeReader'
+import {CoursePathway} from '../courses/CoursePathway'
 
 type Route = (path: string) => void
 const minutes = (n: number) => n >= 60 ? Math.floor(n / 60) + ' ч' + (n % 60 ? ' ' + n % 60 + ' мин' : '') : n + ' мин'
@@ -33,7 +34,7 @@ const purchase = (course: Course) => {
 
 export function OGPractice({path, go}: {path: string; go: Route}) {
  const parts = path.split('/').filter(Boolean), course = ogPracticeCourses.find(c => c.key === parts[1]), lesson = course?.lessons.find(l => l.key === parts[2])
- const liveCourses = useStore(state => state.courses), feed = useStore(state => state.feed)
+ const liveCourses = useStore(state => state.courses), feed = useStore(state => state.feed), user = useStore(state => state.me?.id ?? 0)
  const [filter, setFilter] = useState('Все'), [query, setQuery] = useState('')
  const [progress, setProgress] = useState(readPracticeProgress)
  const courses = useMemo(() => ogPracticeCourses.filter(c => practiceMatches(c, filter, query)), [filter, query])
@@ -56,6 +57,8 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
   <Tap onClick={() => go('/start')} className="mt-4 flex min-h-20 w-full items-center gap-3 rounded-[22px] border border-mint/25 bg-mint/8 p-4 text-left"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-mint/15 text-success"><BookOpen size={20}/></span><span className="min-w-0 flex-1"><b className="block text-sm">Впервые с ИИ? Начни бесплатно</b><span className="mt-1 block text-xs leading-relaxed text-mute">Короткий старт: первый запрос, проверка ответа и выбор задачи.</span></span><ArrowRight size={17} className="shrink-0 text-success"/></Tap>
   {isDemo && <p role="note" className="mt-4 rounded-2xl border border-line bg-card px-4 py-3 text-xs leading-relaxed text-mute">Демо: в курсах показаны отдельные короткие примеры. Покупки условные, звёзды не списываются. Цены настоящих курсов доступны в Telegram.</p>}
   {resume && canOpenPracticeLesson(resumeCourse, resumeLesson) && <Tap onClick={() => go(practicePath(resume.course.key, resume.lesson.key))} className="mt-4 flex min-h-20 w-full items-center gap-3 rounded-2xl border border-violet/20 bg-violet/8 p-4 text-left"><span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-violet">Продолжить обучение</span><b className="mt-1 block text-sm leading-snug">{resume.lesson.title}</b><span className="mt-1 block text-xs text-mute">{resume.course.title}</span></span><ArrowRight size={18} className="shrink-0 text-violet"/></Tap>}
+  <CoursePathway key={`practice:${user}`} scope={`practice:${user}`} mode="practice" go={go}/>
+  <h2 className="mt-6 font-display text-lg font-semibold">Все программы</h2>
   <label className="mt-5 flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-card pl-4 pr-1"><Search size={17} className="shrink-0 text-mute"/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Найти курс, инструмент или урок" aria-label="Найти учебную тему" className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none"/>{query && <Tap aria-label="Очистить поиск" onClick={() => setQuery('')} className="grid h-11 w-11 shrink-0 place-items-center text-mute"><X size={17}/></Tap>}</label>
   <div className="no-bar my-4 flex gap-2 overflow-x-auto pb-1" aria-label="Темы обучения">{practiceTopics.map(item => <Tap key={item} aria-pressed={filter === item} onClick={() => setFilter(item)} className={chip(filter === item)}>{item}</Tap>)}</div>
   <p role="status" className="mb-3 text-xs text-mute">{query || filter !== 'Все' ? 'Найдено курсов: ' + courses.length : 'Выбери результат, который хочешь получить'}</p>
