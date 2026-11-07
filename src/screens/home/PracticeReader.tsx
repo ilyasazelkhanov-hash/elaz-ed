@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, BookOpen, ChevronDown, Clock3, FileText, ListChecks, PencilLine } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronDown, Clock3, ListChecks } from 'lucide-react'
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Markdown } from '../../Markdown'
 import { practiceSections } from '../../lib/og-practice'
@@ -19,11 +19,11 @@ export type PracticeReaderProps = {
 }
 
 const sections = [
- {key: 'reading', label: 'Объяснение', icon: BookOpen},
- {key: 'practice', label: 'Практика', icon: PencilLine},
- {key: 'check', label: 'Самопроверка', icon: ListChecks},
- {key: 'resources', label: 'Инструменты и файлы', icon: FileText},
- {key: 'all', label: 'Весь урок', icon: null},
+ {key: 'reading', label: 'Объяснение', short: 'Читать'},
+ {key: 'practice', label: 'Практика', short: 'Практика'},
+ {key: 'check', label: 'Самопроверка', short: 'Проверить'},
+ {key: 'resources', label: 'Инструменты и файлы', short: 'Инструменты и файлы'},
+ {key: 'all', label: 'Весь урок', short: 'Весь урок'},
 ] as const
 
 /** Receives an authorized lesson body. This component never imports the paid books. */
@@ -38,12 +38,17 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
  const [draft, setDraft] = useState(() => readPracticeReaderDraft(storageKey))
  const [saveState, setSaveState] = useState<'saved' | 'unavailable'>(storageKey ? 'saved' : 'unavailable')
  const [showAnswer, setShowAnswer] = useState(false)
- const nav = useRef<HTMLElement>(null), answerId = useId(), draftId = useId()
+ const menu = useRef<HTMLDetailsElement>(null), contentRef = useRef<HTMLDivElement>(null)
+ const answerId = useId(), draftId = useId(), contentId = useId()
  const view = draft.view === 'all' || content[draft.view] ? draft.view : 'all'
  const activeSection = sections.find(section => section.key === view)!
  useEffect(() => {
-  nav.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView({block: 'nearest', inline: 'nearest'})
- }, [view])
+  const closeOutside = (event: PointerEvent) => {
+   if (menu.current?.open && !menu.current.contains(event.target as Node)) menu.current.open = false
+  }
+  document.addEventListener('pointerdown', closeOutside)
+  return () => document.removeEventListener('pointerdown', closeOutside)
+ }, [])
  const updateDraft = (next: typeof draft) => {
   setDraft(next)
   if (!storageKey) return
@@ -52,8 +57,18 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
    setSaveState('saved')
   } catch { setSaveState('unavailable') }
  }
- const select = (next: PracticeReaderView) => {
+ const select = (next: PracticeReaderView, focusContent = false) => {
   updateDraft({...draft, view: next})
+  if (menu.current?.open) {
+   menu.current.open = false
+   menu.current.querySelector('summary')?.focus({preventScroll: true})
+  }
+  // Keep the newly selected section visible below the sticky navigation, including
+  // when the learner moves to practice from the bottom of a long explanation.
+  requestAnimationFrame(() => {
+   contentRef.current?.scrollIntoView({block: 'start', behavior: 'instant'})
+   if (focusContent) contentRef.current?.focus({preventScroll: true})
+  })
  }
  return <article className="og-reader" data-og-lesson>
   <Tap onClick={onBack} className="og-reader-back"><ArrowLeft size={17}/>К программе</Tap>
@@ -63,10 +78,16 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
    <div className="og-reader-meta"><span>Урок {index + 1} из {total}</span><span><Clock3 size={14}/>{lesson.minutes} мин с практикой</span></div>
    {lesson.subtitle && <p className="og-reader-outcome"><span>Твой результат</span>{lesson.subtitle}</p>}
   </header>
-  <nav ref={nav} className="og-reader-nav no-bar" aria-label="Разделы урока">
-   {sections.filter(section => section.key === 'all' || content[section.key]).map(({key, label, icon: Icon}) => <Tap key={key} aria-pressed={view === key} onClick={() => select(key)} className="og-reader-section">{Icon && <Icon size={15}/>}<span>{label}</span></Tap>)}
+  <nav className="og-reader-nav" aria-label="Разделы урока">
+   {sections.slice(0, 3).filter(section => section.key !== 'all' && content[section.key]).map(({key, label, short}) => <Tap key={key} aria-label={short === label ? label : `${short}: ${label}`} aria-controls={contentId} aria-pressed={view === key} onClick={() => select(key)} className="og-reader-section">{short}</Tap>)}
+   <details ref={menu} className="og-reader-more" onBlur={event => {if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false}} onKeyDown={event => {if (event.key === 'Escape' && menu.current?.open) {event.preventDefault(); event.stopPropagation(); menu.current.open = false; menu.current.querySelector('summary')?.focus()}}}>
+    <summary aria-label={view === 'resources' || view === 'all' ? `Ещё, выбран раздел: ${activeSection.label}` : 'Ещё разделы'} className={'og-reader-section' + (view === 'resources' || view === 'all' ? ' is-active' : '')}>Ещё<ChevronDown size={14}/></summary>
+    <div className="og-reader-menu">
+     {sections.slice(3).filter(section => section.key === 'all' || content[section.key]).map(({key, label}) => <Tap key={key} aria-controls={contentId} aria-pressed={view === key} onClick={() => select(key)}>{label}</Tap>)}
+    </div>
+   </details>
   </nav>
-  <div className="og-reader-content" data-og-content data-section={view}>
+  <div ref={contentRef} id={contentId} tabIndex={-1} className="og-reader-content" data-og-content data-section={view}>
    <p className="og-reader-section-label">{activeSection.label}</p>
    {view === 'check' ? <>
     <Markdown text={check.question}/>
@@ -82,7 +103,7 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
     </div>}
    </> : <Markdown key={view} text={view === 'all' ? lesson.body : content[view]}/>}
   </div>
-  {view === 'reading' && content.practice && <Tap onClick={() => select('practice')} className="og-reader-to-practice"><span><span>Теперь попробуй сам</span><b>Перейти к практике</b></span><ArrowRight size={19}/></Tap>}
+  {view === 'reading' && content.practice && <Tap onClick={() => select('practice', true)} className="og-reader-to-practice"><span><span>Теперь попробуй сам</span><b>Перейти к практике</b></span><ArrowRight size={19}/></Tap>}
   {children && <div className="og-reader-completion">{children}</div>}
   <footer className="og-reader-footer">
    {onPrevious && <Tap onClick={onPrevious}><ArrowLeft size={16}/><span>Предыдущий</span></Tap>}
