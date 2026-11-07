@@ -59,21 +59,42 @@ test('JSON reader permits exact byte limit, split UTF-8, empty bodies and text/p
   assert.deepEqual(await readJson(stream.request, raw.length), { text: 'қазақша' })
   assert.deepEqual(await readJson(new Request(BASE, { method: 'POST' })), {})
 })
-test('stream overflow cancels immediately despite missing or false Content-Length', async () => {
+// Supabase only delivers a reply once the request body is fully read, so 413 drains first.
+test('stream overflow reads the rest of the body before 413, despite missing or false Content-Length', async () => {
   for (const headers of [{}, { 'content-length': '1' }]) {
-    const stream = streamed([bytes('{"a":"'), bytes('я'.repeat(30)), bytes('unread')], headers)
+    const stream = streamed([bytes('{"a":"'), bytes('я'.repeat(30)), bytes('drained')], headers)
     await rejectsCode(readJson(stream.request, 32), 413, 'request_too_large')
-    assert.equal(stream.cancelled(), true)
-    assert.equal(stream.pulled(), 2)
+    assert.equal(stream.pulled(), 3)
+    assert.equal(stream.cancelled(), false)
   }
   const stream = streamed([bytes('x'.repeat(33))], {}, { cancelRejects: true })
   await rejectsCode(readJson(stream.request, 32), 413, 'request_too_large')
 })
-test('oversized Content-Length cancels without reading any chunk', async () => {
-  const stream = streamed([bytes('{}')], { 'content-length': '33' })
-  await rejectsCode(readJson(stream.request, 32), 413, 'request_too_large')
-  assert.equal(stream.pulled(), 0)
-  assert.equal(stream.cancelled(), true)
+test('oversized Content-Length drains a bounded body, and cancels one above the drain cap', async () => {
+  const bounded = streamed([bytes('x'.repeat(40))], { 'content-length': '40' })
+  await rejectsCode(readJson(bounded.request, 32, { drainLimit: 64 }), 413, 'request_too_large')
+  assert.equal(bounded.pulled(), 1)
+  assert.equal(bounded.cancelled(), false)
+  const huge = streamed([bytes('{}')], { 'content-length': '100' })
+  await rejectsCode(readJson(huge.request, 32, { drainLimit: 64 }), 413, 'request_too_large')
+  assert.equal(huge.pulled(), 0)
+  assert.equal(huge.cancelled(), true)
+})
+test('draining gives up past the size cap or the time cap, still answering 413', async () => {
+  const big = streamed([bytes('x'.repeat(40)), bytes('x'.repeat(40)), bytes('x'.repeat(40)), bytes('never')])
+  await rejectsCode(readJson(big.request, 32, { drainLimit: 64 }), 413, 'request_too_large')
+  assert.equal(big.cancelled(), true)
+  assert.ok(big.pulled() < 4)
+  let cancelled = false
+  const slow = new Request(BASE, { method: 'POST', duplex: 'half', body: new ReadableStream({
+    start(controller) { controller.enqueue(bytes('x'.repeat(40))) },
+    pull() { return new Promise(() => {}) },
+    cancel() { cancelled = true },
+  }, { highWaterMark: 0 }) })
+  const started = Date.now()
+  await rejectsCode(readJson(slow, 32, { drainMs: 50 }), 413, 'request_too_large')
+  assert.ok(Date.now() - started < 2000)
+  assert.equal(cancelled, true)
 })
 test('invalid JSON, scalar/array/null and invalid UTF-8 return 400', async () => {
   for (const raw of ['{', 'null', '[]', 'true', '1', '"text"']) await rejectsCode(readJson(new Request(BASE, { method: 'POST', body: raw })), 400, 'invalid_json')
