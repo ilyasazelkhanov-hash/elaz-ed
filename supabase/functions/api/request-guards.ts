@@ -18,13 +18,49 @@ export class HttpError extends Error {
   }
 }
 
-export async function readJson(request: Request, limit = JSON_BODY_LIMIT): Promise<Record<string, any>> {
+// In production (2026-11-07) Supabase never delivered a reply to a request whose body was left
+// unread: oversized requests hung until the client gave up instead of receiving 413. So the rest
+// of an oversized body is read and thrown away before answering. Past these caps the sender is
+// abusive; reading stops so it cannot hold the function open.
+export const DRAIN_LIMIT = 16 * 1024 * 1024
+export const DRAIN_MS = 10_000
+export type DrainOptions = { drainLimit?: number; drainMs?: number }
+
+async function discardRest(reader: ReadableStreamDefaultReader<Uint8Array>, received: number, { drainLimit = DRAIN_LIMIT, drainMs = DRAIN_MS }: DrainOptions) {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const expired = new Promise<'expired'>(resolve => { timer = setTimeout(() => resolve('expired'), drainMs) })
+  try {
+    while (received <= drainLimit) {
+      const next = await Promise.race([reader.read(), expired])
+      if (next === 'expired') break
+      if (next.done) return
+      received += next.value.byteLength
+    }
+    void reader.cancel().catch(() => {})
+  } catch {
+    // A broken sender stream still gets 413.
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+function release(reader: ReadableStreamDefaultReader<Uint8Array>) {
+  try { reader.releaseLock() } catch { /* A read may still be pending after cancel. */ }
+}
+
+export async function readJson(request: Request, limit = JSON_BODY_LIMIT, drain: DrainOptions = {}): Promise<Record<string, any>> {
   const length = request.headers.get('content-length')
   if (length !== null && (!/^\d+$/.test(length) || !Number.isSafeInteger(Number(length)))) {
     throw new HttpError(400, 'invalid_json')
   }
   if (length !== null && Number(length) > limit) {
-    void request.body?.cancel().catch(() => {})
+    const reader = request.body?.getReader()
+    if (reader) {
+      // Nothing is kept: the declared size alone decides 413.
+      if (Number(length) <= (drain.drainLimit ?? DRAIN_LIMIT)) await discardRest(reader, 0, drain)
+      else void reader.cancel().catch(() => {})
+      release(reader)
+    }
     throw new HttpError(413, 'request_too_large')
   }
   const reader = request.body?.getReader()
@@ -37,8 +73,8 @@ export async function readJson(request: Request, limit = JSON_BODY_LIMIT): Promi
       if (done) break
       size += value.byteLength
       if (size > limit) {
-        // Do not wait for a sender-controlled cancellation before returning 413.
-        void reader.cancel().catch(() => {})
+        parts.length = 0
+        await discardRest(reader, size, drain)
         throw new HttpError(413, 'request_too_large')
       }
       parts.push(value)
@@ -47,7 +83,7 @@ export async function readJson(request: Request, limit = JSON_BODY_LIMIT): Promi
     if (error instanceof HttpError) throw error
     throw new HttpError(400, 'invalid_json')
   } finally {
-    reader.releaseLock()
+    release(reader)
   }
   const bytes = new Uint8Array(size)
   let offset = 0
