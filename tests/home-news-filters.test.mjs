@@ -21,6 +21,7 @@ test('news filters combine topic, search, category and personal state across app
  assert.equal(firstPage.length, 2)
 })
 
+let feedHarnessId = 0
 async function feedPresentation() {
  const file = new URL('../src/screens/home/Feed.tsx', import.meta.url)
  let compiled = (await transformWithOxc(await readFile(file, 'utf8'), file.pathname, { lang: 'tsx', jsx: { runtime: 'automatic' } })).code
@@ -33,18 +34,18 @@ async function feedPresentation() {
  compiled = compiled.replace(/import ["']\.\/free-first\.css["'];?/g, '')
  for (const name of ['react', 'react/jsx-runtime', 'lucide-react']) compiled = compiled.replaceAll(`from "${name}"`, `from ${JSON.stringify(import.meta.resolve(name))}`)
  for (const name of ['content', 'discovery', 'knowledge']) compiled = compiled.replaceAll(`from "../../lib/${name}"`, `from ${JSON.stringify(new URL(`../src/lib/${name}.ts`, import.meta.url).href)}`)
- const state = { view: { ...defaults }, posts: null, more: true, legacy: false, busy: false, error: '', read: [], saved: [], requests: [], clicks: [], actions: [] }
+ const state = { view: { ...defaults }, posts: null, more: true, legacy: false, busy: false, error: '', read: [], saved: [], requests: [], clicks: [], actions: [], loadCalls: [] }
  const store = { me: { id: 1 }, push() {}, setTab(tab) { state.actions.push(tab) } }
  const useStore = selector => selector(store)
  useStore.getState = () => store
  globalThis.__homeNewsHarness = {
   useBlogView: () => ({ ...state.view, set: value => Object.assign(state.view, value) }), useStore,
-  useBlogFeed: (enabled, user, revision) => { state.requests.push({ enabled, user, revision }); return { posts: state.posts, more: state.more, legacy: state.legacy, busy: state.busy, error: state.error, load: () => state.actions.push('load') } },
+  useBlogFeed: (enabled, user, revision) => { state.requests.push({ enabled, user, revision }); return { posts: state.posts, more: state.more, legacy: state.legacy, busy: state.busy, error: state.error, load: retry => { state.loadCalls.push(retry); state.actions.push('load') } } },
   useReadPosts: () => state.read, useSavedPosts: () => state.saved, useFollowedTopics: () => [],
   toggleFollowedTopic() {}, toggleSavedPost() {}, track() {},
   Tap: ({ children, onClick, feedback, ...props }) => { state.clicks.push({ ...props, onClick, children }); return createElement('button', props, children) },
  }
- const { Feed } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`)
+ const { Feed } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}#fixture-${++feedHarnessId}`)
  return { state, render: lessons => { state.clicks = []; return renderToStaticMarkup(createElement(Feed, { lessons, compact: true })) } }
 }
 
@@ -96,4 +97,29 @@ test('home renders accessible filters, a bounded matching list and an explicit p
  state.view.query = 'несуществующая новость'
  html = render(posts)
  assert.match(html, /В загруженной подборке пока пусто/)
+})
+
+
+test('home news keeps error, loading and empty states distinct without losing cached posts or retry behavior', async () => {
+ const { state, render } = await feedPresentation()
+ state.busy = true
+ let html = render([])
+ assert.match(html, /Загружаем публикации/)
+ assert.doesNotMatch(html, /reader-empty|В загруженной подборке пока пусто|Пока без публикаций/)
+ state.busy = false; state.error = 'PRIVATE_BACKEND_ERROR'
+ html = render([])
+ assert.match(html, /role="alert"/)
+ assert.doesNotMatch(html, /PRIVATE_BACKEND_ERROR|reader-empty|В загруженной подборке пока пусто|Пока без публикаций/)
+ let retry = state.clicks.find(button => button.children === 'Повторить загрузку')
+ assert.ok(retry); assert.equal(retry.disabled, false)
+ retry.onClick(); assert.equal(state.loadCalls.at(-1), true)
+ const cached = card(91, { title: 'Сохранённая загруженная новость' })
+ html = render([cached]); assert.match(html, /Сохранённая загруженная новость/); assert.match(html, /role="alert"/)
+ state.busy = true
+ html = render([cached]); assert.match(html, /Сохранённая загруженная новость/)
+ retry = state.clicks.find(button => button.children === 'Повторить загрузку'); assert.equal(retry.disabled, true)
+ state.busy = false; state.error = ''; state.posts = []; state.more = false
+ html = render([]); assert.match(html, /Пока без публикаций/); assert.doesNotMatch(html, /role="alert"|Повторить загрузку/)
+ state.posts = [cached]
+ html = render([]); assert.match(html, /Сохранённая загруженная новость/); assert.doesNotMatch(html, /reader-empty|role="alert"/)
 })
