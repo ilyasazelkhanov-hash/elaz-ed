@@ -8,6 +8,7 @@
     "build": "npm run academy:content && tsc --noEmit && vite build && node scripts/academy-prerender.mjs",
     "test:api": "node --experimental-transform-types --no-warnings tests/api/run.mjs",
     "test:api-guards": "node --experimental-transform-types --no-warnings --test tests/api/request-guards.test.mjs tests/api/rate-limit-database.test.mjs",
+    "test:profile": "node --experimental-strip-types --test tests/profile-settings.test.mjs",
     "test:frontend-errors": "node --experimental-strip-types --test tests/frontend-api-errors.test.mjs",
     "test:database": "node --experimental-strip-types --test tests/api/quiz-database.test.mjs",
     "test:experience": "node --experimental-strip-types --test tests/experience.test.mjs tests/content-navigation.test.mjs tests/blog-read.test.mjs",
