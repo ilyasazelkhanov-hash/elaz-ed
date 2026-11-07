@@ -1,10 +1,12 @@
 import {ArrowLeft, ArrowRight, BookOpen, Check, Clock3, LockKeyhole, Search, ShieldCheck, Sparkles, X} from 'lucide-react'
-import {useEffect, useMemo, useState} from 'react'
+import {useEffect, useMemo, useRef, useState} from 'react'
 import {api, ApiError, errorText, isDemo} from '../../lib/api'
 import {canOpenPracticeLesson, practiceOffer, resolvePracticeCourse, resolvePracticeLesson} from '../../lib/og-course-access'
 import {getPracticeResume, ogPracticeCourses, practiceMatches, practicePath, practiceTopics, readPracticeProgress, subscribePracticeProgress, writePracticeProgress, type PracticeCourse} from '../../lib/og-practice'
 import type {Course, Lesson} from '../../lib/types'
 import {useStore} from '../../store'
+import {track} from '../../lib/track'
+import {useCourseViewTelemetry} from '../Course'
 import {Tap} from '../../ui'
 import {PracticeArtwork} from './PracticeArtwork'
 import {PracticeReader} from './PracticeReader'
@@ -58,19 +60,20 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
 function PracticeProgram({course, go}: {course: PracticeCourse; go: Route}) {
  const liveCourses = useStore(state => state.courses), feed = useStore(state => state.feed)
  const live = resolvePracticeCourse(course, liveCourses), offer = practiceOffer(live)
+ useCourseViewTelemetry(live?.id)
  const outline = course.lessons.map(lesson => ({lesson, remote: resolvePracticeLesson(live, lesson, feed)}))
  const preview = outline.find(item => item.remote?.free_preview), next = outline.find(item => item.remote && !item.remote.completed), count = outline.filter(item => item.remote?.completed).length
  const duration = course.lessons.reduce((sum, lesson) => sum + lesson.minutes, 0)
  return <section>
   <Tap onClick={() => go('/og-practice')} className="mb-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-violet"><ArrowLeft size={17}/>Все курсы</Tap>
-  <div className="overflow-hidden rounded-[26px] border border-line bg-card"><PracticeArtwork courseKey={course.key}/><div className="p-5"><p className="text-[11px] font-bold uppercase tracking-[.15em] text-violet">Платный курс · {offer.label}</p><h1 className="mt-2 font-display text-[27px] font-semibold leading-tight">{course.title}</h1><p className="mt-3 text-sm leading-relaxed text-mute">{course.goal}</p><p className="mt-4 flex items-center gap-2 text-xs text-mute"><Clock3 size={14}/>{course.lessons.length} уроков · {minutes(duration)} · в своём темпе</p></div></div>
+  <div className="overflow-hidden rounded-[26px] border border-line bg-card"><PracticeArtwork courseKey={course.key}/><div className="p-5"><p className="text-[11px] font-bold uppercase tracking-[.15em] text-violet">Курс · {offer.label}</p><h1 className="mt-2 font-display text-[27px] font-semibold leading-tight">{course.title}</h1><p className="mt-3 text-sm leading-relaxed text-mute">{course.goal}</p><p className="mt-4 flex items-center gap-2 text-xs text-mute"><Clock3 size={14}/>{course.lessons.length} уроков · {minutes(duration)} · в своём темпе</p></div></div>
   <div className="mt-4 rounded-[23px] border border-violet/20 bg-violet/8 p-5"><p className="text-xs font-semibold uppercase tracking-wide text-violet">Твой итоговый проект</p><p className="mt-2 text-sm leading-relaxed">{course.project}</p><p className="mt-3 text-xs leading-relaxed text-mute">В каждом уроке: понятное объяснение, разобранный пример, самостоятельная работа и критерии готовности.</p></div>
   <div className="mt-4 rounded-[23px] border border-line bg-card p-4" data-course-access>
    {live?.access ? <><p className="flex items-center gap-2 text-sm font-semibold text-success"><Check size={17}/>Доступ к курсу открыт</p><p className="mt-2 text-xs text-mute">Пройдено {count} из {course.lessons.length} уроков</p><div role="progressbar" aria-label="Прогресс курса" aria-valuemin={0} aria-valuemax={course.lessons.length} aria-valuenow={count} className="mt-2 h-1.5 overflow-hidden rounded-full bg-card2"><div className="h-full rounded-full bg-violet" style={{width: count / course.lessons.length * 100 + '%'}}/></div>{next && <Tap onClick={() => go(practicePath(course.key, next.lesson.key))} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet px-4 text-sm font-semibold text-on-violet">{count ? 'Продолжить курс' : 'Начать курс'}<ArrowRight size={17}/></Tap>}{!next && count === course.lessons.length && <p role="status" className="mt-3 text-sm text-success">Курс пройден. Проверь итоговый проект по критериям последнего урока.</p>}</>
-   : <><p className="text-sm font-semibold">{live ? 'Полная программа — после открытия доступа' : 'Продажи курса пока не открыты'}</p><p className="mt-2 text-xs leading-relaxed text-mute">{live ? 'Посмотри пробный урок и реши, подходит ли тебе формат. Покупка открывает только этот курс.' : 'Программа уже доступна для знакомства. Цена и пробный урок появятся здесь после публикации курса.'}</p>{preview && <Tap onClick={() => go(practicePath(course.key, preview.lesson.key))} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-violet/35 bg-violet/8 px-3 text-sm font-semibold text-violet"><BookOpen size={17}/>Бесплатный пробный урок</Tap>}{live && <Tap onClick={() => purchase(live)} className="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet px-3 text-sm font-semibold text-on-violet">{offer.action}<ArrowRight size={17}/></Tap>}</>}
+   : <><p className="text-sm font-semibold">{live ? 'Полная программа — после открытия доступа' : 'Продажи курса пока не открыты'}</p><p className="mt-2 text-xs leading-relaxed text-mute">{live ? `${preview ? 'Посмотри пробный урок' : 'Посмотри программу'} и реши, подходит ли тебе формат. Доступ открывается отдельно к этому курсу.` : 'Программа уже доступна для знакомства. Условия доступа появятся после публикации курса.'}</p>{preview && <Tap onClick={() => go(practicePath(course.key, preview.lesson.key))} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-violet/35 bg-violet/8 px-3 text-sm font-semibold text-violet"><BookOpen size={17}/>Бесплатный пробный урок</Tap>}{live && <Tap onClick={() => purchase(live)} className="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet px-3 text-sm font-semibold text-on-violet">{offer.action}<ArrowRight size={17}/></Tap>}</>}
    {isDemo && <p className="mt-3 text-xs leading-relaxed text-mute">Демо с короткими примерами. Условная оплата без списания звёзд.</p>}
   </div>
-  <h2 className="mb-2 mt-7 font-display text-lg font-semibold">Программа курса</h2><p className="mb-3 text-xs leading-relaxed text-mute">{live?.access ? 'Выбирай урок и сохраняй результат практики.' : 'Пробный урок открыт бесплатно. Остальные входят в платную программу.'}</p>
+  <h2 className="mb-2 mt-7 font-display text-lg font-semibold">Программа курса</h2><p className="mb-3 text-xs leading-relaxed text-mute">{live?.access ? 'Выбирай урок и сохраняй результат практики.' : preview ? 'Пробный урок открыт бесплатно. Остальные уроки — после получения доступа к курсу.' : live ? 'Уроки полной программы открываются после получения доступа к курсу.' : 'Материалы появятся после публикации курса.'}</p>
   <div className="overflow-hidden rounded-[23px] border border-line bg-card">{outline.map(({lesson, remote}, index) => {
    const available = canOpenPracticeLesson(live, remote)
    return <Tap key={lesson.key} onClick={() => go(practicePath(course.key, lesson.key))} className="flex min-h-[82px] w-full items-center gap-3 border-b border-line px-4 py-4 text-left last:border-b-0" data-practice-lesson={lesson.key}>
@@ -86,6 +89,7 @@ function SecurePracticeLesson({course, lesson, go}: {course: PracticeCourse; les
  const live = resolvePracticeCourse(course, liveCourses), remote = resolvePracticeLesson(live, lesson, feed), allowed = canOpenPracticeLesson(live, remote)
  const [result, setResult] = useState<{id: number; lesson: Lesson | null; error?: string} | null>(null), [retry, setRetry] = useState(0)
  const [busy, setBusy] = useState(false)
+ const previewed = useRef<string | null>(null)
  const id = remote?.id, courseId = live?.id
  useEffect(() => {
   if (!allowed || !id || !courseId) return
@@ -100,6 +104,13 @@ function SecurePracticeLesson({course, lesson, go}: {course: PracticeCourse; les
   return () => {active = false}
  }, [id, courseId, allowed, retry, lesson.key])
  const loaded = result?.id === id ? result?.lesson : null, error = result?.id === id ? result?.error : null
+ useEffect(() => {
+  if (!me?.id || !courseId || !loaded || !loaded.free_preview || live?.access || loaded.course_id !== courseId) return
+  const key = `${me.id}:${courseId}:${loaded.id}`
+  if (previewed.current === key) return
+  previewed.current = key
+  track('course_preview', {course_id: courseId, source: 'course'}, loaded.id)
+ }, [loaded, courseId, live?.access, me?.id])
  const back = () => go(practicePath(course.key))
  if (!allowed || error === 'course_locked') return <section className="rounded-[25px] border border-line bg-card p-5" data-paid-lesson-locked><Tap onClick={back} className="mb-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-violet"><ArrowLeft size={17}/>К программе</Tap><div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-violet/10 text-violet"><LockKeyhole size={22}/></div><p className="text-xs font-semibold uppercase tracking-wide text-violet">Платный курс</p><h1 className="mt-2 font-display text-[24px] font-semibold leading-tight">{lesson.title}</h1><p className="mt-3 text-sm leading-relaxed text-mute">{live && remote ? 'Этот урок входит в полную программу. Открой курс, чтобы перейти к материалам и практике.' : 'Урок пока недоступен. Открой программу, чтобы посмотреть опубликованные материалы.'}</p>{live && <Tap onClick={() => purchase(live)} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet px-3 text-sm font-semibold text-on-violet">{practiceOffer(live).action}<ArrowRight size={16}/></Tap>}<Tap onClick={back} className="mt-2 flex min-h-11 w-full items-center justify-center text-sm font-semibold text-violet">Программа и бесплатный пробный урок</Tap></section>
  if (!loaded) return <section className="rounded-[25px] border border-line bg-card p-5" aria-busy={!error}><Tap onClick={back} className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-violet"><ArrowLeft size={17}/>К программе</Tap><h1 className="mt-3 font-display text-xl font-semibold">{lesson.title}</h1><p role="status" className="mt-3 text-sm text-mute">{error ? 'Не удалось загрузить урок. Проверь соединение и попробуй ещё раз.' : 'Открываем урок…'}</p>{error && <Tap onClick={() => setRetry(value => value + 1)} className="mt-4 min-h-11 font-semibold text-violet">Повторить загрузку</Tap>}</section>

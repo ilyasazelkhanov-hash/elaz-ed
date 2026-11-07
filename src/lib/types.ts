@@ -1,3 +1,6 @@
+import type { EditorialMetadata } from './editorial'
+export type { EditorialMetadata, EditorialSource } from './editorial'
+
 export type Kind = 'lesson' | 'story'
 export type GradientName = 'aurora' | 'sunset' | 'mint' | 'ocean' | 'candy' | 'lime'
 
@@ -32,6 +35,8 @@ export interface Card {
   pinned: boolean
   published: boolean
   published_at: string | null
+  /** Missing on older material; never infer verification from publication date. */
+  editorial?: EditorialMetadata | null
   views: number
   likes: number
   quiz_count: number
@@ -460,12 +465,14 @@ export interface AdminStats {
 export type ShareKind = 'level' | 'lesson' | 'streak' | 'achievement'
 
 export interface ClientEvent {
-  name: 'share' | 'copy' | 'story_open' | 'theme' | 'lab' | 'catchup'
+  name: 'share' | 'copy' | 'story_open' | 'theme' | 'lab' | 'catchup' | 'guide_open' | 'guide_copy' | 'guide_try' | 'guide_feedback' | 'blog_save' | 'course_view' | 'course_preview' | 'checkout_start' | 'checkout_result' | 'discovery_open'
   lesson_id?: number
   props?: Record<string, string | number | boolean>
 }
 
 export interface Analytics {
+  /** Measurement begins at migration deployment; absent on older servers and in demo. */
+  discovery?: import('./discovery-analytics').DiscoveryReport
   totals: { users: number; subscribed: number; new7: number; dau: number; wau: number; mau: number }
   series: { d: string; active: number; fresh: number; done: number }[]
   funnel: { opened: number; subscribed: number; done1: number; done3: number; streak3: number }

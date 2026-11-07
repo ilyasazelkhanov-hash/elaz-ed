@@ -27,6 +27,9 @@
     "test:knowledge": "node --experimental-strip-types --test tests/knowledge.test.mjs",
     "test:multiple-assessments": "node scripts/check-multiple-assessments.mjs",
     "test:audit-remediation": "node --experimental-strip-types --test tests/progress-awards.test.mjs tests/payment-database.test.mjs tests/payment-worker.test.mjs tests/admin-payment-search.test.mjs",
+    "test:roadmap": "node --experimental-strip-types --test tests/discovery-events.test.mjs tests/track-queue.test.mjs tests/editorial.test.mjs tests/discovery-server.test.mjs tests/discovery-database.test.mjs tests/discovery-analytics.test.mjs tests/course-funnel.test.mjs tests/release-operations.test.mjs",
+    "release:manifest": "node scripts/release-manifest.mjs",
+    "release:smoke": "node --use-env-proxy scripts/release-smoke.mjs",
     "test:all": "node scripts/test-all.mjs"
   },
   "dependencies": {

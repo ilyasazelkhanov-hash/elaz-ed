@@ -10,6 +10,7 @@ import { knowledgeTopics, topicForPost } from '../../lib/knowledge'
 import { useStore } from '../../store'
 import { Tap } from '../../ui'
 import { useBlogView, type BlogFilter } from './blog-view'
+import { track } from '../../lib/track'
 import './free-first.css'
 
 export function PostCard({ card }: { card: Card }) {
@@ -28,7 +29,7 @@ export function PostCard({ card }: { card: Card }) {
       {teaser && <p className="mt-2 line-clamp-2 text-base leading-relaxed text-mute">{teaser}</p>}
       {card.cover_url && <img src={card.cover_url} alt="" loading="lazy" decoding="async" className="mt-4 aspect-[2/1] w-full rounded-2xl object-cover"/>}
     </Tap>
-    <div className="reader-post-bottom"><span className="flex flex-wrap items-center gap-2 text-xs text-mute">{card.minutes > 0 && <span>{card.minutes} мин чтения</span>}{read.includes(card.id) && <span className="inline-flex items-center gap-1"><Check size={12}/>Прочитано</span>}</span><div className="flex shrink-0 items-center gap-1"><Tap onClick={open} className="flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-violet">Читать<ArrowUpRight size={16}/></Tap><Tap onClick={() => {if (me) { const value = toggleSavedPost(me.id, card.id); useStore.getState().toast(value ? 'Добавлено в сохранённые' : 'Удалено из сохранённых') }}} aria-label={isSaved ? 'Убрать из сохранённых' : 'Сохранить публикацию'} aria-pressed={isSaved} className="grid h-11 w-11 place-items-center rounded-full text-violet"><Bookmark size={19} fill={isSaved ? 'currentColor' : 'none'}/></Tap></div></div>
+    <div className="reader-post-bottom"><span className="flex flex-wrap items-center gap-2 text-xs text-mute">{card.minutes > 0 && <span>{card.minutes} мин чтения</span>}{read.includes(card.id) && <span className="inline-flex items-center gap-1"><Check size={12}/>Прочитано</span>}</span><div className="flex shrink-0 items-center gap-1"><Tap onClick={open} className="flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-violet">Читать<ArrowUpRight size={16}/></Tap><Tap onClick={() => {if (me) { const value = toggleSavedPost(me.id, card.id, saved => track('blog_save',{saved,source:'blog'},card.id)); useStore.getState().toast(value ? 'Добавлено в сохранённые' : 'Удалено из сохранённых') }}} aria-label={isSaved ? 'Убрать из сохранённых' : 'Сохранить публикацию'} aria-pressed={isSaved} className="grid h-11 w-11 place-items-center rounded-full text-violet"><Bookmark size={19} fill={isSaved ? 'currentColor' : 'none'}/></Tap></div></div>
   </article>
 }
 

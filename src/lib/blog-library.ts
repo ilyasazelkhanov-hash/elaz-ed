@@ -32,10 +32,11 @@ function subscribe(listener: () => void) {
 }
 export function readSavedPosts(user: number) { return parseSavedPosts(snapshot(idsKey(user))) }
 export function readFollowedTopics(user: number) { return parseFollowedTopics(snapshot(topicsKey(user))) }
-export function toggleSavedPost(user: number, id: number) {
+export function toggleSavedPost(user: number, id: number, onChange?: (saved: boolean) => void) {
  if (!Number.isSafeInteger(id) || id <= 0) return false
  const current = readSavedPosts(user), selected = !current.includes(id)
  write(idsKey(user), selected ? [...current,id].slice(-500) : current.filter(value => value !== id))
+ onChange?.(selected)
  return selected
 }
 export function toggleFollowedTopic(user: number, topic: string) {

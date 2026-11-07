@@ -1,11 +1,12 @@
 import { Check, ChevronLeft, ChevronRight, Lock, Send, Star, Users } from 'lucide-react'
 import { motion } from 'motion/react'
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText, isDemo } from '../lib/api'
 import { GRADIENTS, lessonsWord, plural } from '../lib/game'
 import { appLink } from '../lib/links'
 import { sfx } from '../lib/sfx'
 import { canPayStars, confirmDialog, haptic, inTelegram, openInvoice, shareLink } from '../lib/tg'
+import { track } from '../lib/track'
 import { Markdown } from '../Markdown'
 import { insetOf, useStore, type Inset } from '../store'
 import { Bar, celebrate, Cta, Emoji, Pattern, Tap } from '../ui'
@@ -13,6 +14,26 @@ import { Bar, celebrate, Cta, Emoji, Pattern, Tap } from '../ui'
 const clip = (i: Inset, radius: number) => `inset(${i.top}px ${i.right}px ${i.bottom}px ${i.left}px round ${radius}px)`
 const OPEN = { top: 0, right: 0, bottom: 0, left: 0 }
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+// A payment overlay can sit above the same mounted program. Count that course once.
+const activeCourseViews = new Map<string, number>()
+export function useCourseViewTelemetry(courseId: number | undefined) {
+  const userId = useStore(s => s.me?.id)
+  const viewed = useRef<string | null>(null)
+  useEffect(() => {
+    if (!userId || !courseId || !Number.isSafeInteger(courseId) || courseId <= 0) return
+    const key = `${userId}:${courseId}`
+    const active = activeCourseViews.get(key) ?? 0
+    activeCourseViews.set(key, active + 1)
+    if (!active && viewed.current !== key) track('course_view', {course_id: courseId, source: 'course'})
+    viewed.current = key
+    return () => {
+      const remaining = (activeCourseViews.get(key) ?? 1) - 1
+      if (remaining > 0) activeCourseViews.set(key, remaining)
+      else activeCourseViews.delete(key)
+    }
+  }, [courseId, userId])
+}
 
 /** Страница закрытого курса: программа, цена и способы открыть доступ. */
 export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
@@ -22,7 +43,9 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
   const { pop, push, toast, boot, guard } = useStore.getState()
   const [busy, setBusy] = useState<string | null>(null)
   const [nudge, setNudge] = useState(0)
+  const purchasePending = useRef(false)
   const lessons = useMemo(() => feed.filter((c) => c.course_id === id).sort((a, b) => a.position - b.position || a.id - b.id), [feed, id])
+  useCourseViewTelemetry(course?.id)
 
   if (!course) return null
   const g = GRADIENTS[course.gradient] ?? GRADIENTS.ocean
@@ -61,30 +84,46 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
   }
 
   const buy = async () => {
-    if (busy) return
-    if (!isDemo && !canPayStars) return toast('Оплата звёздами работает в приложении Telegram')
-    // В демо настоящего счёта нет, поэтому курс открывается только после явного согласия.
-    if (isDemo && !(await confirmDialog(`Это демо. В Telegram здесь откроется счёт на ${course.price_stars} звёзд, и без оплаты курс не откроется. Открыть курс условно, чтобы посмотреть?`))) return
-    setBusy('buy')
+    if (busy || purchasePending.current) return
+    purchasePending.current = true
+    let started = false, reported = false
+    const report = (status: 'paid' | 'cancelled' | 'failed' | 'pending') => {
+      reported = true
+      track('checkout_result', {course_id: id, source: 'course', status})
+    }
     try {
+      if (!isDemo && !canPayStars) return toast('Оплата звёздами работает в приложении Telegram')
+      // В демо настоящего счёта нет, поэтому курс открывается только после явного согласия.
+      if (isDemo && !(await confirmDialog(`Это демо. В Telegram здесь откроется счёт на ${course.price_stars} звёзд, и без оплаты курс не откроется. Открыть курс условно, чтобы посмотреть?`))) return
+      setBusy('buy')
+      track('checkout_start', {course_id: id, source: 'course'})
+      started = true
       const link = await api.courseInvoice(id)
       if (!link) {
+        if (!isDemo) throw new Error('Не удалось открыть счёт. Попробуй ещё раз.')
         await boot()
         toast('В демо оплата условная: звёзды не списаны')
         await opened()
         return
       }
       const status = await openInvoice(link)
+      report(status)
       if (status === 'paid') {
         if (await waitForAccess()) await opened()
         else toast('Оплата прошла. Курс откроется через минуту — обнови приложение')
       } else if (status === 'failed') {
         toast('Оплата не прошла. Звёзды не списаны')
+      } else if (status === 'pending') {
+        toast('Платёж обрабатывается. Доступ появится после подтверждения оплаты')
+      } else if (status === 'cancelled') {
+        toast('Оплата отменена')
       }
     } catch (e) {
+      if (started && !reported) report('failed')
       guard(e)
       toast(errorText(e))
     } finally {
+      purchasePending.current = false
       setBusy(null)
     }
   }

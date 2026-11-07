@@ -3,8 +3,9 @@ import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText } from '../lib/api'
 import { GRADIENT_NAMES, GRADIENTS, readMinutes, slidesOf } from '../lib/game'
+import { editorialReviewLabel, normalizeEditorial } from '../lib/editorial'
 import { confirmDialog, haptic } from '../lib/tg'
-import type { AdminCourse, GradientName, Kind, Lesson, LessonDraft, QuizQuestion } from '../lib/types'
+import type { AdminCourse, EditorialMetadata, GradientName, Kind, Lesson, LessonDraft, QuizQuestion } from '../lib/types'
 import { useStore } from '../store'
 import { EmojiTile, Spinner, Tap } from '../ui'
 import { Header, sheet } from './Admin'
@@ -42,6 +43,7 @@ function blank(kind: Kind): LessonDraft {
     course_id: null,
     position: 0,
     free_preview: false,
+    editorial: kind === 'lesson' ? { kind: 'evergreen' } : null,
   }
 }
 
@@ -101,7 +103,8 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
           return { ...q, options: kept.map((x) => x.o), correct: Math.max(0, kept.findIndex((x) => x.i === q.correct)) }
         })
         .filter((q) => q.q.trim() && q.options.length >= 2)
-      const draft = { ...d, quiz, published: publish ?? d.published, minutes: autoMinutes ? readMinutes(d.body) : d.minutes }
+      const editorial = normalizeEditorial(d.editorial, { requireUpdateReview: post && (publish ?? d.published) })
+      const draft = { ...d, editorial, quiz, published: publish ?? d.published, minutes: autoMinutes ? readMinutes(d.body) : d.minutes }
       const saved = await api.adminSave(draft)
       setD({ ...saved })
       haptic.success()
@@ -220,6 +223,8 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             rows={story ? 8 : 12}
             className={`${field} resize-y font-mono text-[14.5px] leading-relaxed`}
           />
+
+          {post && <EditorialFields value={d.editorial} onChange={value => set('editorial', value)}/>}
 
           {!story && (
             <>
@@ -376,6 +381,38 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
       </div>
     </motion.div>
   )
+}
+
+function EditorialFields({ value, onChange }: { value?: EditorialMetadata | null; onChange: (value: EditorialMetadata) => void }) {
+  const update = <K extends keyof EditorialMetadata>(key: K, next: EditorialMetadata[K]) => onChange({ kind: 'evergreen', ...value, [key]: next })
+  const today = new Date().toISOString().slice(0, 10)
+  const textFields = [
+    ['audience', 'Для кого', 240, 'Например, новичку с небольшой рабочей задачей'],
+    ['outcome', 'Что получится', 300, 'Конкретный результат после своей попытки'],
+    ['access_note', 'Что понадобится и какие есть ограничения', 400, 'Бесплатный способ повторения, аккаунт или ограничения операции'],
+    ['reviewer', 'Ответственный за проверку', 80, 'Имя автора или редактора'],
+  ] as const
+  return <section aria-label="Качество и актуальность" className="mt-6 rounded-[20px] border border-line bg-card/60 p-4">
+    <h2 className="text-base font-semibold">Качество и актуальность</h2>
+    <p role="status" className="mt-2 text-sm leading-relaxed text-mute">{editorialReviewLabel(value)}</p>
+    {!value ? <><p className="mt-2 text-sm leading-relaxed text-mute">У старого материала сведения не заполнены. Дата публикации не считается проверкой.</p><Tap onClick={() => onChange({ kind: 'evergreen' })} className="mt-3 min-h-11 w-full rounded-2xl border border-line px-3 text-sm font-semibold text-violet">Добавить сведения</Tap></> : <>
+      <label className="mt-4 block text-sm font-semibold text-mute">Тип материала
+        <select value={value.kind} onChange={e => update('kind', e.target.value as EditorialMetadata['kind'])} className={`${field} mt-2`}>
+          <option value="evergreen">Практика и устойчивые принципы</option><option value="update">Изменение функций, цен или условий</option>
+        </select>
+      </label>
+      <p className="mt-2 text-sm leading-relaxed text-mute">{value.kind === 'update' ? 'Перед публикацией нужны первоисточник, выполненная проверка, ответственный и следующая дата. Данные о тарифах и функциях сверь в самом сервисе.' : 'Добавь пример и критерии результата. Дату и имя указывай только после выполненной проверки; они не заполняются автоматически.'}</p>
+      {textFields.map(([key, title, max, placeholder]) => <label key={key} className="mt-4 block text-sm font-semibold text-mute">{title}<input value={value[key] ?? ''} onChange={e => update(key, e.target.value)} maxLength={max} placeholder={placeholder} className={`${field} mt-2`}/></label>)}
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">{(['checked_on', 'review_due'] as const).map(key => <label key={key} className="block min-w-0 text-sm font-semibold text-mute">{key === 'checked_on' ? 'Когда проверено' : 'Следующая проверка'}<input type="date" value={value[key] ?? ''} max={key === 'checked_on' ? today : undefined} onChange={e => update(key, e.target.value)} className={`${field} mt-2 min-w-0`}/></label>)}</div>
+      <label className="mt-4 block text-sm font-semibold text-mute">Пример и его разбор<textarea value={value.example ?? ''} onChange={e => update('example', e.target.value)} rows={3} maxLength={1500} placeholder="Исходные данные, наблюдаемый результат и почему он подходит или не подходит" className={`${field} mt-2 resize-y`}/></label>
+      <label className="mt-4 block text-sm font-semibold text-mute">Критерии результата, по одному в строке<textarea value={(value.criteria ?? []).join('\n')} onChange={e => update('criteria', e.target.value.split('\n'))} rows={3} placeholder="До пяти конкретных проверок" className={`${field} mt-2 resize-y`}/></label>
+      <h3 className="mt-5 text-sm font-semibold text-mute">Первоисточники · до 5</h3>
+      {(value.sources ?? []).map((source, index) => <fieldset key={index} className="mt-3 min-w-0 space-y-2 rounded-2xl border border-line p-3"><legend className="px-1 text-xs text-mute">Источник {index + 1}</legend><input aria-label={`Название источника ${index + 1}`} value={source.title} onChange={e => update('sources', value.sources!.map((item, i) => i === index ? { ...item, title: e.target.value } : item))} maxLength={120} placeholder="Официальная документация или объявление автора" className={field}/><input aria-label={`Ссылка источника ${index + 1}`} type="url" inputMode="url" value={source.url} onChange={e => update('sources', value.sources!.map((item, i) => i === index ? { ...item, url: e.target.value } : item))} maxLength={2048} placeholder="https://" className={field}/><Tap onClick={() => update('sources', value.sources!.filter((_, i) => i !== index))} className="min-h-11 px-2 text-sm text-mute">Убрать источник</Tap></fieldset>)}
+      {(value.sources?.length ?? 0) < 5 && <Tap onClick={() => update('sources', [...value.sources ?? [], { title: '', url: '' }])} className="mt-3 min-h-11 w-full rounded-2xl border border-line px-3 text-sm font-semibold text-violet">Добавить первоисточник</Tap>}
+      <label className="mt-4 block text-sm font-semibold text-mute">Что исправлено<textarea value={value.correction_note ?? ''} onChange={e => update('correction_note', e.target.value)} rows={3} maxLength={1000} placeholder="Например: исправлена формула и пояснён расчёт. Эта заметка видна читателю." className={`${field} mt-2 resize-y`}/></label>
+      <p className="mt-3 text-xs leading-relaxed text-mute">Изменение статьи само по себе не отправляет новый анонс в канал.</p>
+    </>}
+  </section>
 }
 
 function Check({ label, hint, on, onChange }: { label: string; hint: string; on: boolean; onChange: (v: boolean) => void }) {

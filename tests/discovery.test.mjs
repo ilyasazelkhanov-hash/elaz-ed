@@ -37,3 +37,12 @@ test('bookmarks and interests stay user scoped and work in memory when browser s
   assert.equal(toggleSavedPost(901,-1),false)
  }finally{Object.defineProperty(globalThis,'localStorage',{configurable:true,value:original})}
 })
+
+test('bookmark callback observes the resulting transition and ignores invalid input',()=>{
+ const transitions=[]
+ const observe=(saved)=>transitions.push(saved)
+ assert.equal(toggleSavedPost(907,42,observe),true)
+ assert.equal(toggleSavedPost(907,42,observe),false)
+ assert.equal(toggleSavedPost(907,-1,observe),false)
+ assert.deepEqual(transitions,[true,false])
+})

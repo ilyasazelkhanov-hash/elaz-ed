@@ -1382,6 +1382,36 @@ test('ambiguous OG import receipts cannot assign one course to two programs',asy
  assert.equal(course.practice_lessons,undefined)
 })
 
+test('discovery tracking sanitizes self reports and never accepts a client payment',async()=>{
+ await everyoneBoots()
+ const before=state.tables.events.length
+ const response=await call('track',{events:[
+  {name:'guide_try',props:{guide_id:'first-request',content_version:'free-guides-v1',source:'telegram_guide',answer:'PRIVATE'}},
+  {name:'purchase',props:{course_id:1,stars:500}},
+  {name:'guide_feedback',props:{guide_id:'first-request',content_version:'free-guides-v1',source:'free_start',useful:true}},
+  {name:'guide_try',props:{guide_id:'unknown',content_version:'v1'}},
+ ]},BUYER)
+ assert.equal(response.status,200)
+ const rows=state.tables.events.slice(before)
+ assert.deepEqual(rows.map(e=>e.name),['guide_try','guide_feedback'])
+ assert.ok(!JSON.stringify(rows).includes('PRIVATE'))
+ assert.ok(rows.every(e=>e.user_id===BUYER))
+ state.failNext={table:'events',op:'insert'}
+ assert.equal((await call('track',{events:[{name:'guide_open',props:{guide_id:'first-request',content_version:'free-guides-v1'}}]},BUYER)).status,500)
+})
+test('editorial metadata survives author save and rejects incomplete published updates',async()=>{
+ await everyoneBoots()
+ const incomplete=await call('admin_save',{lesson:{title:'News',published:true,editorial:{kind:'update'}}},ADMIN)
+ assert.equal(incomplete.status,400)
+ assert.equal(incomplete.body.error,'editorial_invalid')
+ const editorial={kind:'update',checked_on:'2026-11-01',review_due:'2026-12-01',reviewer:'Author',sources:[{title:'Official',url:'https://example.org/docs'}]}
+ const saved=await call('admin_save',{lesson:{title:'News',published:true,editorial}},ADMIN)
+ assert.equal(saved.status,200)
+ assert.deepEqual(saved.body.editorial,editorial)
+ const legacy=await call('admin_save',{lesson:{id:10,title:'Legacy',published:true}},ADMIN)
+ assert.equal(legacy.status,200)
+})
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()

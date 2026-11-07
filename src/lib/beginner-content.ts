@@ -1,3 +1,5 @@
+import type { EditorialMetadata } from './editorial'
+
 /** Original, free introductory material. These guides are independent of the paid course books. */
 export const beginnerGuides = [
  {
@@ -70,7 +72,19 @@ export const beginnerGuides = [
   checks:['Сохранены исходник, запрос и проверенная версия.','Лишние персональные данные исключены.','Шаблон проверен на втором примере с изменённым условием.'],
   task:'Создай папку «Мои полезные запросы». Добавь туда первый проверенный пример и короткую заметку: «Что делает», «Что передать», «Что проверить».',
  },
-]
+].map(guide => ({
+ ...guide,
+ editorial: {
+  kind: 'evergreen',
+  audience: 'Новичку, который хочет выполнить одну небольшую задачу с ИИ.',
+  outcome: guide.result,
+  example: guide.example,
+  criteria: guide.checks,
+  access_note: guide.id === 'image-brief'
+   ? 'Бриф и эскиз композиции можно сделать вручную бесплатно. Для генерации или экспорта проверь условия выбранного сервиса; бесплатный доступ к ним не обещается.'
+   : 'Нужны свои или вымышленные исходные данные. Можно начать с черновика вручную; если используешь ИИ, сначала проверь доступную функцию и лимиты в своём аккаунте.',
+ } satisfies EditorialMetadata,
+}))
 
 export const beginnerGlossary = [
  ['Промпт','Задание для ИИ: что сделать, по каким исходным данным и с какими ограничениями.'],

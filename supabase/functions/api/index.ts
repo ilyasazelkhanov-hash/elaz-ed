@@ -7,6 +7,8 @@ import { newsTelegramPost } from '../_shared/news.ts'
 import { rewardNotifications } from '../_shared/rewardNotifications.ts'
 import { handleCertifications, CertificationError } from './certifications.ts'
 import { processRefundJobs } from './payments.ts'
+import { cleanDiscoveryEvent, isDiscoveryEvent } from './discovery-events.ts'
+import { normalizeEditorial } from '../_shared/editorial.ts'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -103,7 +105,7 @@ async function tg(method: string, payload: Record<string, unknown> = {}) {
       body: JSON.stringify(payload),
     })
     // deno-lint-ignore no-explicit-any
-    return (await r.json()) as { ok: boolean; result?: any; description?: string }
+    return (await r.json()) as { ok: boolean; result?: any; description?: string; error_code?: number }
   } catch {
     return { ok: false, description: 'network' }
   }
@@ -737,13 +739,20 @@ async function track(body: Row) {
   const row = await member(body)
   const events = (Array.isArray(body.events) ? body.events : [])
     .slice(0, 20)
-    .filter((e: Row) => CLIENT_EVENTS.includes(e?.name))
+    .filter((e: Row) => CLIENT_EVENTS.includes(e?.name) || isDiscoveryEvent(e?.name))
     .map((e: Row) => {
+      if (isDiscoveryEvent(e.name)) {
+        const clean = cleanDiscoveryEvent(e)
+        return clean ? {user_id:row.id,...clean} : null
+      }
       const lessonId = Number(e.lesson_id)
       const props = e.props && typeof e.props === 'object' && JSON.stringify(e.props).length <= 300 ? e.props : {}
       return { user_id: row.id, name: e.name, lesson_id: Number.isInteger(lessonId) && lessonId > 0 ? lessonId : null, props }
-    })
-  if (events.length) await db.from('events').insert(events)
+    }).filter((e): e is NonNullable<typeof e> => e !== null)
+  if (events.length) {
+    const {error}=await db.from('events').insert(events)
+    if(error) throw new HttpError(500,'db')
+  }
   return { ok: true }
 }
 
@@ -937,7 +946,13 @@ function cleanLesson(input: Row) {
       return { q: str(q?.q, 300), options, correct: int(q?.correct, 0, Math.max(0, options.length - 1), 0), explain: str(q?.explain, 400) }
     })
     .filter((q: { q: string; options: string[] }) => q.q && q.options.length >= 2)
+  let editorial
+  if(Object.hasOwn(input,'editorial')) {
+    try { editorial=normalizeEditorial(input.editorial,{requireUpdateReview:!!input.published}) }
+    catch { throw new HttpError(400,'editorial_invalid') }
+  }
   return {
+    ...(editorial!==undefined ? {editorial} : {}),
     kind: input.kind === 'story' ? 'story' : 'lesson',
     title,
     subtitle: str(input.subtitle, 200),
@@ -1095,7 +1110,9 @@ async function adminAnalytics(body: Row) {
   if (error) throw new HttpError(500, 'db')
   const { data: pays } = await db.from('payments').select('stars').is('refunded_at', null)
   const stars = { total: (pays ?? []).reduce((n, p) => n + p.stars, 0), count: (pays ?? []).length }
-  return { ...data, stars }
+  const discovery=await db.rpc('discovery_summary')
+  if(discovery.error) console.error('discovery_summary unavailable',discovery.error.code ?? 'db')
+  return { ...data, stars, discovery:discovery.error || !discovery.data ? {available:false} : discovery.data }
 }
 
 async function adminSave(body: Row) {
@@ -1265,7 +1282,7 @@ async function webhook(req: Request) {
       if (appUrl) {
         await tg('sendMessage', {
           chat_id: msg.chat.id,
-          text: 'Это OG CRE8R². Уроки, туториалы и новости — в одном месте, с XP и стриком.\n\nДоступ открыт подписчикам канала.',
+          text: 'Это OG CRE8R² — понятно об ИИ. Бесплатные разборы для первых шагов, полезные обновления и отдельные платные курсы с практикой.\n\nМатериалы приложения доступны подписчикам канала.',
           reply_markup: {
             inline_keyboard: [[{ text: 'Открыть OG CRE8R²', web_app: { url: payload ? `${appUrl}/?sp=${payload}` : appUrl } }]],
           },
@@ -1441,7 +1458,10 @@ async function setup(req: Request) {
 async function health() {
   const { error } = await db.from('settings').select('key').limit(1)
   const s = error ? {} : await getSettings()
-  return json({ ok: !error, token: !!BOT_TOKEN, db: !error, channel: s.channel?.title ?? null, app_url: s.app_url ?? null })
+  const schemaReady=!!s['release_schema:og-roadmap-v1']
+  return json({ ok: !error, token: !!BOT_TOKEN, db: !error, channel: s.channel?.title ?? null, app_url: s.app_url ?? null,
+    release:{api:'og-roadmap-v1',content_revision:s['content_revision:ai-practice-paths-2026-11-01-v5']?'ai-practice-paths-2026-11-01-v5':null,receipt_present:!!s['content_revision:ai-practice-paths-2026-11-01-v5'],schema_ready:schemaReady,
+      capabilities:['blog_newest','practice_outline','discovery_events',...(schemaReady?['editorial_metadata','discovery_analytics']:[])]} })
 }
 
 // ---------- Адвент-календарь ----------

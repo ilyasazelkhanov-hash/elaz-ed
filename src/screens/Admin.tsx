@@ -2,6 +2,7 @@ import { ChartNoAxesColumn, ChevronLeft, ChevronRight, Eye, Gift, GraduationCap,
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { api, errorText } from '../lib/api'
+import { editorialReviewLabel, editorialReviewStatus } from '../lib/editorial'
 import { inTelegram } from '../lib/tg'
 import type { AdminContentScope, AdminStats, Lesson } from '../lib/types'
 import { useStore } from '../store'
@@ -35,6 +36,7 @@ export function AdminScreen({scope}:{scope?:AdminContentScope}) {
  const {guard,toast}=useStore.getState()
  const [lessons,setLessons]=useState<Lesson[]>([]),[stats,setStats]=useState<AdminStats|null>(null)
  const [query,setQuery]=useState(''),[search,setSearch]=useState(''),[cursor,setCursor]=useState<number|null>(null),[next,setNext]=useState<number|null>(null)
+ const [reviewOnly,setReviewOnly]=useState(false)
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[revision,setRevision]=useState(0),[oldServer,setOldServer]=useState(false)
  const previousStack=useRef(stackSize)
  useEffect(()=>{const task=setTimeout(()=>{setSearch(query.trim());setCursor(null)},250);return()=>clearTimeout(task)},[query])
@@ -51,6 +53,7 @@ export function AdminScreen({scope}:{scope?:AdminContentScope}) {
   return()=>{alive=false}
  },[scope,cursor,search,revision,guard,toast])
  const info=scope?sections[scope]:null
+ const visibleLessons=scope==='blog'&&reviewOnly?lessons.filter(item=>['missing','incomplete','due'].includes(editorialReviewStatus(item.editorial))):lessons
  return <motion.div {...sheet}><div className="scroll h-full" style={{paddingTop:'calc(var(--top) + 16px)',paddingBottom:'calc(40px + var(--bottom))'}}>
   <Header title={info?.title??'Админка'}/>
   {!scope?<>
@@ -68,10 +71,12 @@ export function AdminScreen({scope}:{scope?:AdminContentScope}) {
    {scope!=='legacy'&&<Tap onClick={()=>push({type:'editor',lesson:null,kind:scope==='stories'?'story':'lesson'})} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] bg-violet px-4 text-sm font-semibold text-white"><Plus size={18}/>{info!.create}</Tap>}
    <label className="mt-4 flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-card px-4"><Search size={18} className="shrink-0 text-mute"/><input aria-label="Поиск по заголовку" maxLength={120} placeholder="Поиск по заголовку во всём разделе" value={query} onChange={e=>setQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none"/></label>
    <p className="mb-3 mt-4 text-xs text-mute">Опубликованные материалы и черновики</p>
+   {scope==='blog'&&<div className="mb-4 rounded-2xl border border-line bg-card p-3"><label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={reviewOnly} onChange={e=>setReviewOnly(e.target.checked)} className="h-5 w-5 accent-violet"/>Требуют проверки среди загруженных</label><p className="mt-1 text-xs leading-relaxed text-mute">Показывает просроченные и незаполненные сведения только среди уже загруженных материалов. Для продолжения списка нажми «Загрузить ещё».</p></div>}
    {oldServer&&<p role="status" className="mb-4 rounded-2xl border border-line bg-card p-4 text-sm leading-relaxed text-mute">Для просмотра всего архива требуется обновление сервера. Пока показаны доступные материалы этого раздела.</p>}
-   <div className="space-y-2">{lessons.map(item=><Tap key={item.id} aria-label={`Редактировать: ${item.title}`} onClick={()=>push({type:'editor',lesson:item,kind:item.kind})} className="flex w-full items-center gap-3 rounded-[20px] border border-line bg-card p-3 text-left"><EmojiTile emoji={item.emoji} gradient={item.gradient} size={50} radius={16}/><span className="min-w-0 flex-1"><span className="block text-[15px] font-semibold leading-snug">{item.title}</span><span className="mt-2 flex flex-wrap items-center gap-2 text-xs text-mute"><span className={`rounded-full px-2 py-0.5 font-semibold ${item.published?'bg-mint/15 text-mint':'bg-amber/15 text-amber'}`}>{item.published?'Опубликован':'Черновик'}</span>{scope==='blog'&&item.pinned&&<span className="font-semibold text-violet">Продвигается</span>}<span className="flex items-center gap-1"><Eye size={12}/>{item.views}</span><span className="flex items-center gap-1"><Heart size={12}/>{item.likes}</span></span></span><ChevronRight size={16} className="shrink-0 text-faint"/></Tap>)}</div>
+   <div className="space-y-2">{visibleLessons.map(item=><Tap key={item.id} aria-label={`Редактировать: ${item.title}`} onClick={()=>push({type:'editor',lesson:item,kind:item.kind})} className="flex w-full items-center gap-3 rounded-[20px] border border-line bg-card p-3 text-left"><EmojiTile emoji={item.emoji} gradient={item.gradient} size={50} radius={16}/><span className="min-w-0 flex-1"><span className="block text-[15px] font-semibold leading-snug">{item.title}</span><span className="mt-2 flex flex-wrap items-center gap-2 text-xs text-mute"><span className={`rounded-full px-2 py-0.5 font-semibold ${item.published?'bg-mint/15 text-mint':'bg-amber/15 text-amber'}`}>{item.published?'Опубликован':'Черновик'}</span>{scope==='blog'&&item.pinned&&<span className="font-semibold text-violet">Продвигается</span>}<span className="flex items-center gap-1"><Eye size={12}/>{item.views}</span><span className="flex items-center gap-1"><Heart size={12}/>{item.likes}</span></span>{scope==='blog'&&<span className="mt-2 block text-xs leading-relaxed text-mute">{editorialReviewLabel(item.editorial)}{item.editorial?.review_due?` · ${item.editorial.review_due}`:''}</span>}</span><ChevronRight size={16} className="shrink-0 text-faint"/></Tap>)}</div>
    {loading&&<div role="status" className="py-6 text-center text-sm text-mute">Загружаем {scope==='stories'?'сторис':'материалы'}…</div>}
    {!loading&&!error&&!lessons.length&&<p className="py-8 text-center text-sm text-mute">{search?'По этому заголовку ничего не найдено.':'Здесь пока нет материалов.'}</p>}
+   {!loading&&!error&&reviewOnly&&lessons.length>0&&!visibleLessons.length&&<p className="py-6 text-center text-sm text-mute">Среди загруженных нет материалов для проверки.{next!==null?' Можно загрузить ещё.':''}</p>}
    {!loading&&!error&&next!==null&&<Tap onClick={()=>setCursor(next)} className="mt-4 min-h-12 w-full rounded-2xl border border-line bg-card text-sm font-semibold">Загрузить ещё</Tap>}
   </section>}
   {error&&<div className="mx-5 mt-4 rounded-2xl border border-line bg-card p-4 text-sm"><p role="alert">Не удалось загрузить раздел. {error}</p><Tap onClick={()=>setRevision(v=>v+1)} className="mt-3 min-h-11 w-full font-semibold text-violet">Повторить загрузку</Tap></div>}

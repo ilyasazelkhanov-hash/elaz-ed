@@ -29,6 +29,7 @@ export function AdventBanner() {
   const theme = themeOf(advent.theme)
   return (
     <Tap
+      aria-label="Адвент-календарь"
       feedback="soft"
       onClick={() => push({ type: 'advent' })}
       className="relative mx-5 mt-5 flex min-h-[104px] w-[calc(100%-40px)] items-center gap-3.5 overflow-hidden rounded-[26px] p-4 text-left"

@@ -3,9 +3,67 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      production_smoke:
+        description: Run read-only checks against the deployed frontend and API
+        required: false
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
+  edge-api:
+    name: Edge API and release tools
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: API behavior with isolated database and Telegram fakes
+        run: npm run test:api
+      - name: Release contract and recovery reconciliation
+        run: node --test tests/release-operations.test.mjs
+      - name: Synthetic recovery comparison
+        run: node scripts/verify-recovery.mjs --fixture
+      - name: Fingerprint release sources
+        run: node scripts/release-manifest.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-source-manifest
+          path: test-results/release-manifest.json
+  edge-types:
+    name: Edge API typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5.6
+      - name: Typecheck the actual Edge Function graph
+        run: deno check --no-config --no-lock supabase/functions/api/index.ts
+  production-smoke:
+    name: Published release smoke
+    if: github.event_name == 'workflow_dispatch' && inputs.production_smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+      - name: Verify deployed identity, release contract and auth denials
+        run: node scripts/release-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-release-smoke
+          path: test-results/release-smoke.json
   verify:
     runs-on: windows-latest
     timeout-minutes: 45

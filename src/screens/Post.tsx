@@ -6,9 +6,11 @@ import { toggleSavedPost, useSavedPosts } from '../lib/blog-library'
 import { practiceCourseForTopic, topicForPost } from '../lib/knowledge'
 import { practicePath } from '../lib/og-practice'
 import { postDate } from '../lib/content'
+import { track } from '../lib/track'
 import { useStore } from '../store'
 import { Video } from '../Video'
 import { Markdown } from '../Markdown'
+import { EditorialMetadata } from '../EditorialMetadata'
 import { Cta, Tap } from '../ui'
 import './home/free-first.css'
 
@@ -25,7 +27,7 @@ export function PostScreen({ post, preview, error, retry, like, share }: { post:
   const date = postDate(view?.published_at)
   const save = () => {
     if (!me || !id) return
-    const selected = toggleSavedPost(me.id, id)
+    const selected = toggleSavedPost(me.id, id, (selected) => track('blog_save',{source:'post',saved:selected},id))
     useStore.getState().toast(selected ? 'Добавлено в сохранённые' : 'Удалено из сохранённых')
   }
   useEffect(() => {
@@ -47,6 +49,7 @@ export function PostScreen({ post, preview, error, retry, like, share }: { post:
         <div className="reader-post-meta"><span className="font-semibold text-violet">{view.category || 'ИИ и инструменты'}</span>{date && <time dateTime={view.published_at ?? undefined}>{date}</time>}{view.minutes > 0 && <span>{view.minutes} мин чтения</span>}</div>
         <h1 className="mt-4 font-display text-[25px] font-semibold leading-[1.3] tracking-tight" style={{ overflowWrap: 'anywhere' }}>{view.title}</h1>
         {view.subtitle && <p className="mt-4 text-lg leading-relaxed text-mute">{view.subtitle}</p>}
+        <EditorialMetadata metadata={view.editorial}/>
         {view.cover_url && <img src={view.cover_url} alt="" className="mt-5 max-h-80 w-full rounded-2xl object-cover"/>}
       </>}
       {!post && !error && <div role="status" aria-label="Загрузка публикации" className="mt-6 space-y-3">{[1, 2, 3].map(i => <div key={i} className="skeleton h-5 rounded-full"/>)}</div>}
@@ -54,6 +57,7 @@ export function PostScreen({ post, preview, error, retry, like, share }: { post:
       {post && <>
         {post.video_url && <div className="mt-5"><Video url={post.video_url}/></div>}
         <div className="mt-6"><Markdown text={post.subtitle && post.body.startsWith(post.subtitle) ? post.body.slice(post.subtitle.length).trimStart() : post.body}/></div>
+        <EditorialMetadata metadata={post.editorial} section="sources"/>
         <footer className="mt-8 flex flex-wrap items-center gap-2 border-t border-line py-5">
           <Tap onClick={like} aria-label="Нравится" aria-pressed={post.liked} className="flex min-h-11 items-center gap-2 rounded-full border border-line bg-card px-4"><Heart size={19} className={post.liked ? 'text-pink' : 'text-mute'} fill={post.liked ? 'currentColor' : 'none'}/><span>{post.likes || 0}</span></Tap>
           <Tap onClick={save} aria-pressed={isSaved} className="flex min-h-11 items-center gap-2 rounded-full border border-line bg-card px-4 text-sm"><Bookmark size={17} fill={isSaved ? 'currentColor' : 'none'}/>{isSaved ? 'Сохранено' : 'Сохранить'}</Tap>

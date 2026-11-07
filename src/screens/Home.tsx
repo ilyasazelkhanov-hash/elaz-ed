@@ -50,6 +50,13 @@ export function Home() {
       <p className="mt-3 text-center text-xs text-mute">Бесплатный маршрут для первого шага</p>
     </section>
 
+    <section className="mx-5 mt-6" aria-label="Бонус дня и стрик">
+      <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="font-display text-base font-semibold">Рад видеть тебя снова</h2><p className="mt-1 text-sm text-mute">Маленький бонус за любопытство</p></div><Tap onClick={() => setTab('profile')} aria-label="Мой уровень и прогресс" className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-line px-3"><Emoji char="🔥" size={17}/><Counter value={me.streak} className="text-sm font-semibold"/><ChevronRight size={14} className="text-mute"/></Tap></div>
+      <AnimatePresence mode="wait" initial={false}>{me.daily_claimed ? <StreakCard key="streak"/> : <DailyCard key="daily"/>}</AnimatePresence>
+      <Tap onClick={() => setTab('profile')} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 text-sm text-mute"><span id="xp-pill" className="flex items-center gap-1"><Emoji char="⚡" size={16}/><Odometer value={me.xp}/> XP</span><span aria-hidden="true">·</span>Мой прогресс<ChevronRight size={15}/></Tap>
+    </section>
+    <AdventBanner/>
+
     <section className="mt-7 px-5" aria-label="Последние обновления">
       <div className="mb-4 flex items-end justify-between gap-2"><div><p className="reader-eyebrow mb-1.5 text-mute">Свежий взгляд</p><h2 className="reader-section-title">Новое в берлоге</h2></div><Tap className="flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-violet" onClick={() => openBlogLibrary()}>Все<ChevronRight size={17}/></Tap></div>
       {summary.posts.length > 0 && <p className="mb-4 text-sm leading-relaxed text-mute">{summary.unread ? `${summary.unread} ещё не прочитано` : 'Ты прочитал все загруженные публикации'}<span className="mx-2" aria-hidden="true">·</span>Новые — в начале</p>}
@@ -68,12 +75,7 @@ export function Home() {
 
     <div className="mt-7"><MainCourses/></div>
 
-    <section className="reader-break mx-5 mt-7 pt-6" aria-label="Бонус дня и стрик">
-      <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="font-display text-base font-semibold">Рад видеть тебя снова</h2><p className="mt-1 text-sm text-mute">Маленький бонус за любопытство</p></div><Tap onClick={() => setTab('profile')} aria-label="Мой уровень и прогресс" className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-line px-3"><Emoji char="🔥" size={17}/><Counter value={me.streak} className="text-sm font-semibold"/><ChevronRight size={14} className="text-mute"/></Tap></div>
-      <AnimatePresence mode="wait" initial={false}>{me.daily_claimed ? <StreakCard key="streak"/> : <DailyCard key="daily"/>}</AnimatePresence>
-      <Tap onClick={() => setTab('profile')} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 text-sm text-mute"><span id="xp-pill" className="flex items-center gap-1"><Emoji char="⚡" size={16}/><Odometer value={me.xp}/> XP</span><span aria-hidden="true">·</span>Мой прогресс<ChevronRight size={15}/></Tap>
-    </section>
-    <AdventBanner/>
+
     <p className="mx-8 mt-7 text-center text-sm leading-relaxed text-mute">Есть пара минут? Этого достаточно,<br/>чтобы узнать что-то полезное.</p>
   </div>
 }

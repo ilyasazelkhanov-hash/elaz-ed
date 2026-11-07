@@ -129,6 +129,7 @@ export const api: Api = isDemo ? demoApi : httpApi
 export function errorText(e: unknown) {
   const code = e instanceof ApiError ? e.code : typeof e === 'string' ? e : ''
   switch (code) {
+    case 'editorial_invalid': return 'Проверь источники, даты и ответственного за проверку материала'
     case 'streak_required': return 'Нужен активный стрик от 10 дней. Подаренные курсы доступны отдельно'
     case 'complete_first': return 'Сначала отметь, что курс пройден'
     case 'platform_not_ready':

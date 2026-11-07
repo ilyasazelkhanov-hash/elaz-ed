@@ -63,6 +63,14 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const lessonIndex = courseLessons.findIndex(item => item.id === id)
   const nextLesson = lessonIndex >= 0 ? courseLessons[lessonIndex + 1] : undefined
   const canOpenNext = !!nextLesson && (!!course?.access || nextLesson.free_preview)
+  const previewed = useRef<string | null>(null)
+  useEffect(() => {
+    if (!me?.id || !lesson || lesson.id !== id || lesson.kind !== 'lesson' || !lesson.published || !lesson.free_preview || !course || course.access) return
+    const key = `${me.id}:${course.id}:${lesson.id}`
+    if (previewed.current === key) return
+    previewed.current = key
+    track('course_preview', {course_id: course.id, source: 'course'}, lesson.id)
+  }, [id, lesson, course?.id, course?.access, me?.id])
 
   const onScroll = () => {
     const el = scroller.current

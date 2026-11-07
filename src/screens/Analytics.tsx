@@ -1,6 +1,8 @@
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { api, errorText } from '../lib/api'
+import { beginnerGuides } from '../lib/beginner-content'
+import { coursePaymentTotals, discoveryRate, discoveryTimestamp, type DiscoveryReport } from '../lib/discovery-analytics'
 import type { Analytics } from '../lib/types'
 import { useStore } from '../store'
 import { EmojiTile, Tap } from '../ui'
@@ -52,6 +54,11 @@ export function AnalyticsScreen() {
           </div>
         ) : (
           <div className="px-5">
+            <DiscoveryAnalytics report={data.discovery} />
+            <div className="mt-9 border-t border-line pt-6">
+              <h2 className="font-display text-[17px] font-semibold">Активность и архивная XP-воронка</h2>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-mute">Прежние показатели приложения, уроков и стриков. Бесплатная польза измеряется отдельно выше.</p>
+            </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
               <Tile value={data.totals.dau} label="Заходили сегодня" />
               <Tile value={data.totals.wau} label="За 7 дней" />
@@ -78,7 +85,7 @@ export function AnalyticsScreen() {
               </div>
             </Section>
 
-            <Section title="Воронка" hint="За всё время">
+            <Section title="Архивная XP-воронка" hint="За всё время · уроки и стрики">
               <Funnel
                 steps={[
                   ['Открыли приложение', data.funnel.opened],
@@ -144,6 +151,102 @@ export function AnalyticsScreen() {
       </div>
     </motion.div>
   )
+}
+
+const DISCOVERY_SOURCE: Record<string,string> = {
+  direct:'Прямой вход',home:'Главная',free_start:'Бесплатный старт',guide_next:'Следующее упражнение',
+  telegram_guide:'Telegram: упражнение',blog:'Блог',post:'Публикация',course:'Курс',
+  telegram_post:'Telegram: публикация',telegram_course:'Telegram: курс',
+}
+
+/** Pure presentation: no legacy values or demo conversions stand in for missing telemetry. */
+export function DiscoveryAnalytics({report}:{report?:DiscoveryReport}) {
+  if (!report?.available) return <section aria-label="Бесплатная польза" className="mt-5 rounded-[22px] border border-line bg-card p-4">
+    <h2 className="font-display text-[18px] font-semibold">Бесплатная польза</h2>
+    <p className="mt-3 text-sm font-semibold">Пока недоступно</p>
+    <p className="mt-1 text-[13px] leading-relaxed text-mute">Сервер ещё не прислал новый отчёт. В демо и на старом сервере эти показатели отсутствуют. После запуска измерений понадобится время для накопления данных и завершения окон наблюдения.</p>
+  </section>
+
+  const payments = coursePaymentTotals(report.courses)
+  return <section aria-label="Бесплатная польза" className="mt-5">
+    <div className="rounded-[22px] border border-violet/25 bg-violet/8 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-violet">Новая аналитика</p>
+      <h2 className="mt-1 font-display text-[20px] font-semibold">Бесплатная польза</h2>
+      <p className="mt-2 text-[13px] leading-relaxed text-mute">Помогают ли упражнения начать и вернуться к чтению. Последние {report.window_days} суток, UTC.</p>
+      <p className="mt-3 text-[11.5px] leading-relaxed text-mute">События собираются с {discoveryTimestamp(report.started_at)}.<br/>Срез: {discoveryTimestamp(report.as_of)}. История до начала измерений не восстановлена.</p>
+    </div>
+
+    <div className="mt-3 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+      <DiscoveryRate label="Попробовали за 7 суток" part={report.activation.attempted} whole={report.activation.eligible} waiting={report.activation.waiting}
+        hint="Самооценка: нажали «Попробовал». Новые участники за 30 суток с полными 7 сутками наблюдения; попытка в первые 168 часов после регистрации." />
+      <DiscoveryRate label="Вернулись на второй неделе" part={report.return14.returned} whole={report.return14.eligible} waiting={report.return14.waiting}
+        hint="Чтение упражнения или бесплатной статьи через 168–336 часов после первой отметки «Попробовал». В знаменателе только участники с полными 14 сутками; первая отметка — за 30 суток." />
+      <DiscoveryRate label="Повторное чтение за 7 суток" part={report.repeat7.repeated} whole={report.repeat7.readers} empty="Нет читателей за 7 суток"
+        hint="Читали в 2 и более разные даты UTC за последние 7 × 24 часа. В знаменателе читатели упражнений и бесплатных статей; закрытые уроки исключены." />
+      <DiscoveryRate label="Упражнение помогло" part={report.feedback.positive} whole={report.feedback.responses} empty="Нет ответов"
+        hint="Самооценка за 30 суток. Последняя оценка каждой пары «участник + упражнение»; один участник может оценить несколько упражнений." />
+    </div>
+
+    <Section title="Бесплатные упражнения" hint="Уникальные участники за 30 суток в каждом действии. «Попробовал» — самооценка, а не проверка навыка.">
+      {report.guides.length === 0 ? <Empty>Открытий упражнений пока нет.</Empty> : <div className="space-y-2">
+        {report.guides.map(guide => <article key={guide.id ?? 'unknown'} className="rounded-[18px] border border-line bg-card p-4">
+          <h3 className="text-[14px] font-semibold leading-snug">{beginnerGuides.find(item => item.id === guide.id)?.title ?? guide.id ?? 'Неизвестное упражнение'}</h3>
+          <dl className="mt-3 grid grid-cols-3 gap-2">
+            <Count label="Открыли" value={guide.opened}/><Count label="Скопировали" value={guide.copied}/><Count label="Попробовали" value={guide.tried}/>
+          </dl>
+        </article>)}
+      </div>}
+    </Section>
+
+    <Section title="Откуда пришли новички" hint="Первый зафиксированный вход в разделы у новых участников за 30 суток. Участники без такого события в список не входят.">
+      {report.sources.length === 0 ? <Empty>Источники новых участников пока не зафиксированы.</Empty> : <dl className="overflow-hidden rounded-[18px] border border-line bg-card">
+        {report.sources.map(source => <div key={source.source} className="flex items-baseline justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0">
+          <dt className="min-w-0 break-words text-[13px]">{DISCOVERY_SOURCE[source.source] ?? source.source}</dt><dd className="shrink-0 font-display text-[15px] font-semibold">{source.users}</dd>
+        </div>)}
+      </dl>}
+    </Section>
+
+    <Section title="Интерес к курсам" hint="За 30 суток. Просмотры, бесплатные уроки и начало оплаты — независимые количества уникальных участников, без обязательной последовательности.">
+      {report.courses.length === 0 ? <Empty>Курсов для отчёта пока нет.</Empty> : <div className="space-y-3">
+        {report.courses.map(course => <article key={course.id} className="rounded-[20px] border border-line bg-card p-4">
+          <h3 className="text-[15px] font-semibold leading-snug">{course.title}</h3>
+          <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 min-[440px]:grid-cols-3">
+            <Count label="Смотрели курс" value={course.viewed}/><Count label="Открыли бесплатный урок" value={course.previewed}/>
+            <Count label="Начали оплату" value={course.checkout_users}/><Count label="Покупателей без возврата" value={course.buyers}/>
+          </dl>
+          <div className="mt-4 rounded-[14px] bg-veil/5 p-3">
+            <p className="text-[12px] text-mute">Покупка в течение 7 суток от начала оплаты</p>
+            <p className="mt-1 font-display text-[24px] font-semibold">{discoveryRate(course.converted,course.mature_checkout_users)}</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-mute">{course.converted} из {course.mature_checkout_users} с полными 7 сутками наблюдения. Ожидают полного окна: {course.checkout_users-course.mature_checkout_users}.</p>
+          </div>
+          <p className="mt-3 text-[12px] leading-relaxed text-mute">Покупок без возврата: {course.purchases} · звёзд: {course.stars}.<br/>Возвращено: {course.refunded} покупок на {course.refunded_stars} звёзд. Ожидают возврата: {course.refund_pending}.</p>
+        </article>)}
+      </div>}
+    </Section>
+
+    <Section title="Оплаты курсов в Telegram Stars" hint="Только покупки, подтверждённые сервером, за последние 30 суток. Статус возврата — на момент среза.">
+      <div className="rounded-[20px] border border-line bg-card p-4">
+        <p className="text-[12px] text-mute">Звёзды без возвратов и ожидающих возврата</p>
+        <p className="mt-2 font-display text-[28px] font-semibold">{payments.stars} <span className="text-[15px]">Stars</span></p>
+        <p className="mt-2 text-[12.5px] leading-relaxed text-mute">Покупок без возврата: {payments.purchases}.<br/>Возвращено: {payments.refunded} покупок на {payments.refunded_stars} звёзд.<br/>Ожидают возврата: {payments.refund_pending} покупок; исключены из суммы выше.</p>
+        <p className="mt-3 border-t border-line pt-3 text-[11.5px] leading-relaxed text-mute">Это остаток звёзд по покупкам периода с учётом текущих возвратов, а не денежная выручка. Отметка клиента об успешной оплате не подтверждает покупку. Возвращённые и ожидающие возврата покупки также исключены из конверсии.</p>
+      </div>
+    </Section>
+  </section>
+}
+
+function DiscoveryRate({label,part,whole,waiting,hint,empty='Нет завершённых наблюдений'}:{label:string;part:number;whole:number;waiting?:number;hint:string;empty?:string}) {
+  return <div className="min-w-0 rounded-[20px] border border-line bg-card p-4">
+    <h3 className="text-[13px] font-semibold leading-snug">{label}</h3>
+    <p className="mt-3 font-display text-[28px] font-semibold leading-none">{discoveryRate(part,whole)}</p>
+    <p className="mt-2 text-[12px] text-mute">{whole > 0 ? `${part} из ${whole}` : empty}</p>
+    {waiting !== undefined && <p className="mt-1 text-[11.5px] text-mute">Ожидают полного окна: {waiting}</p>}
+    <p className="mt-3 text-[11.5px] leading-relaxed text-mute">{hint}</p>
+  </div>
+}
+
+function Count({label,value}:{label:string;value:number}) {
+  return <div className="flex min-w-0 flex-col"><dt className="mt-1 break-words text-[11.5px] leading-snug text-mute">{label}</dt><dd className="order-first font-display text-[20px] font-semibold">{value}</dd></div>
 }
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {

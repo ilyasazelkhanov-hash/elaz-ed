@@ -4,6 +4,8 @@ import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
 import { blogPostEntry } from './lib/content'
 import { coursesEntry } from './lib/learning-entry'
+import { parseGuideStartParam } from './lib/discovery-events'
+import { track } from './lib/track'
 import { academyEntry } from './lib/academy-entry'
 import { bindBack, initTelegram, inTelegram, startParam } from './lib/tg'
 import { applyTheme, watchTheme } from './lib/theme'
@@ -117,6 +119,7 @@ function Shell() {
 
   // Прямая ссылка на урок: t.me/бот?start=l12
   useEffect(() => {
+    const freeGuide = parseGuideStartParam(startParam)
     const academyPath = academyEntry(location.hash, location.pathname, startParam)
     const coursesPath = coursesEntry(location.hash, location.pathname, startParam)
     const postId=blogPostEntry(location.hash)
@@ -125,7 +128,9 @@ function Shell() {
     else if(mainTab)useStore.getState().setTab(mainTab)
     else if (coursesPath) {useStore.getState().setTab('courses');if(coursesPath!=='/courses')useStore.getState().push({type:'learning',path:coursesPath})}
     else if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
-    if (!postId && !mainTab && !coursesPath && !academyPath) {
+    else if (freeGuide) {useStore.getState().setTab('courses');useStore.getState().push({type:'learning',path:'/courses/start/'+freeGuide.guideId})}
+    track('discovery_open',{source:freeGuide?'telegram_guide':postId?'blog':/(?:^|_)l\d+(?:_|$)/.test(startParam)?'telegram_post':/(?:^|_)c\d+(?:_|$)/.test(startParam)?'telegram_course':'direct'})
+    if (!postId && !mainTab && !coursesPath && !academyPath && !freeGuide) {
       const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
       const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
       if (id) useStore.getState().push({ type: 'lesson', id })

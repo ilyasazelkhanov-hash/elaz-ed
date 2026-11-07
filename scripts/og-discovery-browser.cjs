@@ -32,6 +32,9 @@ const browserPath=process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
    const latest=page.getByRole('region',{name:'Последние обновления'}),courses=page.getByRole('region',{name:'Курсы',exact:true})
    await expect(latest.locator('.reader-post').first()).toBeVisible()
    assert.ok((await latest.boundingBox()).y<(await courses.boundingBox()).y)
+   const bonus=page.getByRole('region',{name:'Бонус дня и стрик'}),advent=page.getByRole('button',{name:'Адвент-календарь',exact:true})
+   assert.ok((await bonus.boundingBox()).y<(await latest.boundingBox()).y,'Daily bonus and streak appear before updates')
+   if(await advent.count())assert.ok((await bonus.boundingBox()).y<(await advent.boundingBox()).y&&(await advent.boundingBox()).y<(await latest.boundingBox()).y,'Advent appears between the streak and updates')
    await shot('01-home-free-first')
   })
   await step('five-free-guides-copy-and-self-check',async()=>{
