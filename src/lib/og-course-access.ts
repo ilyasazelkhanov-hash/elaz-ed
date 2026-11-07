@@ -14,6 +14,13 @@ export function resolvePracticeCourse(outline: CourseIdentity, courses: Course[]
  return legacy.length === 1 ? legacy[0] : null
 }
 
+/** Which OG practice course a server course id is, using the same matching as the practice screens. */
+export function practiceKeyForCourse(id: number, courses: Course[], outlines: CourseIdentity[]): string | null {
+ if (!validId(id)) return null
+ const matches = outlines.filter(outline => resolvePracticeCourse(outline, courses)?.id === id)
+ return matches.length === 1 ? matches[0].key : null
+}
+
 export function resolvePracticeLesson(course: Course | null, outline: LessonIdentity, feed: Card[]): PracticeLessonOutline | null {
  if (!course) return null
  if (course.practice_lessons !== undefined) {

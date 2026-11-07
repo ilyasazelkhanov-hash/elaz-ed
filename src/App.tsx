@@ -12,6 +12,7 @@ import { applyTheme, watchTheme } from './lib/theme'
 import { preloadMarkdown } from './Markdown'
 import { FocusLayer } from './FocusLayer'
 import { CourseScreen } from './screens/Course'
+import { LegacyCourse } from './screens/LegacyCourse'
 import { Home } from './screens/Home'
 import { Blog } from './screens/Blog'
 import { LessonScreen } from './screens/Lesson'
@@ -222,7 +223,7 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
     case 'stories':
       return <Stories startId={overlay.id} />
     case 'course':
-      return isAdmin ? <CourseScreen id={overlay.id} from={overlay.from} /> : <div className="absolute inset-0 z-30 flex flex-col justify-center bg-bg p-6"><h1 className="font-display text-xl">Старый курс скрыт</h1><p className="mt-3 text-sm text-mute">Актуальные материалы находятся в разделе «Курсы». Твои предыдущие результаты сохранены.</p><button className="mt-5 text-violet" onClick={()=>{useStore.getState().pop();useStore.getState().setTab('courses')}}>Открыть курсы →</button></div>
+      return isAdmin ? <CourseScreen id={overlay.id} from={overlay.from} /> : <LegacyCourse overlay={overlay} />
     case 'lab':
       return (
         <Suspense fallback={null}>

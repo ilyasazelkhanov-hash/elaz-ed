@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
-import {resolvePracticeCourse,resolvePracticeLesson,canOpenPracticeLesson,practiceOffer} from '../src/lib/og-course-access.ts'
+import {resolvePracticeCourse,resolvePracticeLesson,canOpenPracticeLesson,practiceOffer,practiceKeyForCourse} from '../src/lib/og-course-access.ts'
 import {demoPracticeContent,addDemoPractice} from '../src/lib/mockOgPractice.ts'
 
 const outline={key:'foundations',title:'Основы ИИ и инструменты'}
@@ -42,4 +42,24 @@ test('production practice reader imports metadata and the authenticated API, nev
  assert.match(ui,/api\.lesson\(id\)/)
  const helper=await readFile(new URL('../src/lib/og-practice.ts',import.meta.url),'utf8')
  assert.doesNotMatch(helper,/paths\.json|training\.json/)
+})
+
+test('old course links resolve to the matching OG program, and only to an unambiguous one',()=>{
+ const outlines=[outline,{key:'text',title:'Текст и исследования с ИИ'}]
+ const courses=[{...offer,practice_key:'foundations'},{...offer,id:41,title:'Текст и исследования с ИИ',practice_key:'text'},{...offer,id:7,title:'Ролики с ИИ'}]
+ assert.equal(practiceKeyForCourse(40,courses,outlines),'foundations')
+ assert.equal(practiceKeyForCourse(41,courses,outlines),'text')
+ assert.equal(practiceKeyForCourse(7,courses,outlines),null) // a really retired course keeps the notice
+ assert.equal(practiceKeyForCourse(99,courses,outlines),null)
+ assert.equal(practiceKeyForCourse(0,courses,outlines),null)
+ assert.equal(practiceKeyForCourse(40,[offer],[outline]),'foundations') // server without practice_key
+ assert.equal(practiceKeyForCourse(40,[offer,{...offer,id:41}],[outline]),null) // ambiguous titles
+})
+test('students opening an old course screen are redirected instead of always seeing the notice',async()=>{
+ const app=await readFile(new URL('../src/App.tsx',import.meta.url),'utf8')
+ assert.ok(app.includes('isAdmin ? <CourseScreen id={overlay.id} from={overlay.from} /> : <LegacyCourse overlay={overlay} />'))
+ const screen=await readFile(new URL('../src/screens/LegacyCourse.tsx',import.meta.url),'utf8')
+ assert.ok(screen.includes('practiceKeyForCourse(overlay.id, courses, ogPracticeCourses)'))
+ assert.ok(screen.includes("{ type: 'learning', path: `/courses${practicePath(key)}` }"))
+ assert.ok(screen.includes('item === overlay ? next : item'))
 })
