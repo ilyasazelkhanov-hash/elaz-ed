@@ -1,10 +1,7 @@
 import { AnimatePresence } from 'motion/react'
 import { ArrowRight, ArrowUpRight, Bookmark, ChevronRight, Compass, Sparkles, WandSparkles } from 'lucide-react'
 import { useMemo, useRef } from 'react'
-import { useReadPosts } from '../lib/blog-read'
 import { useFollowedTopics, useSavedPosts } from '../lib/blog-library'
-import { updateSummary } from '../lib/discovery'
-import { useBlogFeed } from '../lib/blog-feed'
 import { knowledgeTopics } from '../lib/knowledge'
 import { useStore } from '../store'
 import { Avatar, Counter, Emoji, Odometer, Tap } from '../ui'
@@ -29,11 +26,8 @@ export function Home() {
   const setTab = useStore(s => s.setTab)
   const push = useStore(s => s.push)
   const scroller = useRef<HTMLDivElement>(null)
-  const read = useReadPosts(me.id)
   const saved = useSavedPosts(me.id)
   const followed = useFollowedTopics(me.id)
-  const latest = useBlogFeed(true, me.id, 'home-latest')
-  const summary = updateSummary(latest.posts ?? feed, read)
   const stories = useMemo(() => feed.filter(c => c.kind === 'story' && c.published), [feed])
 
   return <div ref={scroller} data-tab-scroll className="scroll h-full" style={{ paddingBottom: 'calc(110px + var(--bottom))' }}>
@@ -57,11 +51,9 @@ export function Home() {
     </section>
     <AdventBanner/>
 
-    <section className="mt-7 px-5" aria-label="Последние обновления">
-      <div className="mb-4 flex items-end justify-between gap-2"><div><p className="reader-eyebrow mb-1.5 text-mute">Свежий взгляд</p><h2 className="reader-section-title">Новое в берлоге</h2></div><Tap className="flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-violet" onClick={() => openBlogLibrary()}>Все<ChevronRight size={17}/></Tap></div>
-      {summary.posts.length > 0 && <p className="mb-4 text-sm leading-relaxed text-mute">{summary.unread ? `${summary.unread} ещё не прочитано` : 'Ты прочитал все загруженные публикации'}<span className="mx-2" aria-hidden="true">·</span>Новые — в начале</p>}
-      <Feed lessons={summary.posts} scroller={scroller} compact/>
-      {summary.posts.length > 0 && <Tap onClick={() => openBlogLibrary(summary.unread ? 'unread' : 'new')} className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-line text-sm font-semibold">{summary.unread ? 'Продолжить читать' : 'Открыть все обновления'}<ArrowRight size={17}/></Tap>}
+    <section className="mt-7 px-5" aria-label="Последние новости">
+      <div className="mb-4 flex items-end justify-between gap-2"><div><p className="reader-eyebrow mb-1.5 text-mute">Свежий взгляд</p><h2 className="reader-section-title">Новое в берлоге</h2></div><Tap aria-label="Открыть все новости с выбранными фильтрами" className="flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-violet" onClick={() => setTab('blog')}>Все<ChevronRight size={17}/></Tap></div>
+      <Feed lessons={feed} scroller={scroller} compact/>
     </section>
 
     <section className="mt-7 px-5" aria-label="Темы публикаций">

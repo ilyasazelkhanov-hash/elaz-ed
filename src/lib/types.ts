@@ -34,6 +34,8 @@ export interface Card {
   xp: number
   pinned: boolean
   published: boolean
+  /** False keeps an archived/shared course reference out of news, while its direct link remains valid. */
+  news_eligible?: boolean
   published_at: string | null
   /** Missing on older material; never infer verification from publication date. */
   editorial?: EditorialMetadata | null
@@ -493,7 +495,7 @@ export type AdminContentScope = 'blog' | 'stories' | 'legacy'
 export type AdminListInput = {scope:AdminContentScope|'summary';cursor?:number|null;query?:string}
 
 export type BlogCursor = { pinned: boolean; date: string | null; id: number }
-export type BlogPage = { posts: Card[]; next: BlogCursor | null }
+export type BlogPage = { posts: Card[]; next: BlogCursor | null; /** Bounded boot selection from a server without archive pagination. */ legacy?: boolean }
 
 export interface Api {
   learningGoal(): Promise<LearningGoalState>

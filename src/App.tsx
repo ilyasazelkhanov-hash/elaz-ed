@@ -284,7 +284,7 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
 
 const TABS: { id: Tab; label: string; icon: typeof House }[] = [
   { id: 'home', label: 'Главная', icon: House },
-  { id: 'blog', label: 'Обновления', icon: Newspaper },
+  { id: 'blog', label: 'Новости', icon: Newspaper },
   { id: 'courses', label: 'Курсы', icon: BookOpen },
   { id: 'profile', label: 'Профиль', icon: User },
 ]

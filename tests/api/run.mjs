@@ -1412,6 +1412,28 @@ test('editorial metadata survives author save and rejects incomplete published u
  assert.equal(legacy.status,200)
 })
 
+test('news eligibility excludes archived course references without removing their direct reader',async()=>{
+ await everyoneBoots()
+ state.tables.lessons.push({id:250,kind:'lesson',course_id:null,published:true,news_eligible:false,title:'Archived reference',body:'Archived standalone body',quiz:[]},{id:251,kind:'lesson',course_id:null,published:true,news_eligible:true,title:'Actual news',body:'Separate news',quiz:[]})
+ const page=await call('blog_feed',{order:'newest'},BUYER)
+ assert.equal(page.status,200)
+ assert.ok(page.body.posts.some(p=>p.id===251))
+ assert.ok(!page.body.posts.some(p=>p.id===250))
+ assert.equal((await call('lesson',{id:250},BUYER)).status,200)
+ assert.equal((await call('admin_announce',{id:250},ADMIN)).status,400)
+})
+test('published standalone news cannot copy a course body while archived references remain editable',async()=>{
+ await everyoneBoots()
+ const body='Distinct authored paid practice with a specific project and checks.'
+ state.tables.lessons.find(l=>l.id===10).body=body
+ const response=await call('admin_save',{lesson:{title:'Copied news',body,published:true}},ADMIN)
+ assert.equal(response.status,400)
+ assert.equal(response.body.error,'course_material_in_news')
+ const archived=await call('admin_save',{lesson:{title:'Archived reference',body,published:true,news_eligible:false}},ADMIN)
+ assert.equal(archived.status,200)
+ assert.equal(archived.body.news_eligible,false)
+})
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()

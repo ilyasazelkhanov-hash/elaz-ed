@@ -1,6 +1,7 @@
 import { ApiError } from './errors'
 import { initData, inTelegram, platform, startParam } from './tg'
-import type { AdminDoor, AdminPoint, AdventWinner, Api, RedeemPoint } from './types'
+import { newestPosts } from './discovery'
+import type { AdminDoor, AdminPoint, AdventWinner, Api, BlogPage, Boot, Card, RedeemPoint } from './types'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? ''
 
@@ -28,10 +29,34 @@ async function call<T>(route: string, payload: Record<string, unknown> = {}, kee
   return data as T
 }
 
+/** Old authenticated boot feeds are bounded; only clearly standalone news may enter the selection. */
+function isLegacyNewsCard(value: unknown): value is Card {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const card = value as Record<string, unknown>
+  return Number.isSafeInteger(card.id) && Number(card.id) > 0 && card.kind === 'lesson' && card.course_id === null &&
+    card.published === true && card.news_eligible !== false && typeof card.title === 'string' && typeof card.subtitle === 'string' &&
+    typeof card.category === 'string' && typeof card.minutes === 'number' && Number.isFinite(card.minutes) && card.minutes >= 0 &&
+    (card.published_at === null || (typeof card.published_at === 'string' && Number.isFinite(Date.parse(card.published_at))))
+}
+
+async function blogPage(cursor?: Parameters<Api['blogPage']>[0]): Promise<BlogPage> {
+  try {
+    return await call<BlogPage>('blog_feed', { cursor, order: 'newest' })
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 404 || error.code !== 'not_found') throw error
+  }
+  // Read fresh data without repeating start/referral attribution from the initial boot.
+  const boot = await call<Boot>('boot')
+  if (boot?.status === 'locked') throw new ApiError('locked', 403)
+  if (boot?.status === 'setup') throw new ApiError('platform_not_ready', 503)
+  if (boot?.status !== 'ok' || !Number.isSafeInteger(boot.me?.id) || boot.me.id <= 0 || !Array.isArray(boot.feed)) throw new ApiError('server', 502)
+  return { posts: newestPosts(boot.feed.filter(isLegacyNewsCard)), next: null, legacy: true }
+}
+
 const httpApi: Api = {
   learningGoal: () => call('learning_goal', { action: 'get' }),
   saveLearningGoal: (input) => call('learning_goal', { action: 'save', settings: input }),
-  blogPage: (cursor) => call('blog_feed', { cursor, order: 'newest' }),
+  blogPage,
   certificationCatalog: () => call('certifications', { action:'catalog' }),
   certificationOpen: (id) => call('certifications', { action:'open',id }),
   certificationProgress: (id,status) => call('certifications', { action:'progress',id,status }),
@@ -130,6 +155,8 @@ export function errorText(e: unknown) {
   const code = e instanceof ApiError ? e.code : typeof e === 'string' ? e : ''
   switch (code) {
     case 'editorial_invalid': return 'Проверь источники, даты и ответственного за проверку материала'
+    case 'course_material_in_news': return 'Этот текст повторяет материал курса. Оставь его в курсе, а для новости подготовь отдельную публикацию'
+    case 'bad_news_eligibility': return 'Проверь настройку показа публикации в новостях'
     case 'streak_required': return 'Нужен активный стрик от 10 дней. Подаренные курсы доступны отдельно'
     case 'complete_first': return 'Сначала отметь, что курс пройден'
     case 'platform_not_ready':

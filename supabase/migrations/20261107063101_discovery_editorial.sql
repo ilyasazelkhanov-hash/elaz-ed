@@ -1,13 +1,14 @@
 -- Additive metadata and service-only reporting. Existing private lesson bodies stay private.
 alter table public.lessons add column if not exists editorial jsonb;
+alter table public.lessons add column if not exists news_eligible boolean not null default true;
 alter table public.lessons add constraint lessons_editorial_object check (editorial is null or jsonb_typeof(editorial) = 'object');
 
 create or replace view public.feed_cards with (security_invoker = true) as
 select id, kind, title, subtitle, category, emoji, gradient, cover_url, minutes, xp,
  pinned, published, published_at, views, likes, jsonb_array_length(quiz) as quiz_count,
  (video_url is not null and video_url <> '') as has_video,
- case when kind = 'story' then body end as body, course_id, position, free_preview, editorial
-from public.lessons;
+ case when kind = 'story' then body end as body, course_id, position, free_preview, editorial, news_eligible
+from public.lessons where kind='story' or course_id is not null or news_eligible;
 
 insert into public.settings(key,value) values
  ('discovery_measurement_started_at',to_jsonb(now())),

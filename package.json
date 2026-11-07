@@ -10,8 +10,8 @@
     "test:database": "node --experimental-strip-types --test tests/api/quiz-database.test.mjs",
     "test:experience": "node --experimental-strip-types --test tests/experience.test.mjs tests/content-navigation.test.mjs",
     "test:og-practice": "node --experimental-strip-types --test tests/og-practice.test.mjs tests/learning-paths.test.mjs tests/reference-expansion.test.mjs",
-    "test:discovery": "node --experimental-strip-types --test tests/discovery.test.mjs tests/free-start.test.mjs tests/practice-reader.test.mjs tests/og-course-access.test.mjs",
-    "test:news": "node --experimental-strip-types --test tests/news-summary.test.mjs tests/news-database.test.mjs tests/news-worker.test.mjs tests/news-refresh.test.mjs",
+    "test:discovery": "node --experimental-strip-types --test tests/discovery.test.mjs tests/free-start.test.mjs tests/practice-reader.test.mjs tests/og-course-access.test.mjs tests/home-news-filters.test.mjs tests/blog-feed-compat.test.mjs",
+    "test:news": "node --experimental-strip-types --test tests/news-summary.test.mjs tests/news-database.test.mjs tests/news-worker.test.mjs tests/news-refresh.test.mjs tests/news-boundaries.test.mjs tests/news-policy.test.mjs tests/news-publish.test.mjs",
     "test:content-revision": "node --test tests/content-revision.test.mjs tests/editorial-presentation.test.mjs",
     "test:training": "node --test tests/training-course.test.mjs",
     "test:lesson-animations": "node --experimental-strip-types --test tests/lesson-animations.test.mjs",
@@ -30,7 +30,8 @@
     "test:roadmap": "node --experimental-strip-types --test tests/discovery-events.test.mjs tests/track-queue.test.mjs tests/editorial.test.mjs tests/discovery-server.test.mjs tests/discovery-database.test.mjs tests/discovery-analytics.test.mjs tests/course-funnel.test.mjs tests/release-operations.test.mjs",
     "release:manifest": "node scripts/release-manifest.mjs",
     "release:smoke": "node --use-env-proxy scripts/release-smoke.mjs",
-    "test:all": "node scripts/test-all.mjs"
+    "test:all": "node scripts/test-all.mjs",
+    "news:publish": "node --experimental-strip-types scripts/publish-news.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",

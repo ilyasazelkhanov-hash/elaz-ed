@@ -12,7 +12,14 @@
       "cover_url": "https://elaz-ed.vercel.app/learning/ai-practice/lesson-1.png",
       "minutes": 6,
       "xp": 50,
-      "position": 1
+      "position": 1,
+      "news_eligible": false,
+      "provenance": {
+        "role": "course_practice",
+        "source_pack": "ai-practice-2026-10-25",
+        "source_file": "training-labs.mjs",
+        "source_lesson_key": "block-1"
+      }
     },
     {
       "key": "reference-block-2",
@@ -24,7 +31,14 @@
       "cover_url": "https://elaz-ed.vercel.app/learning/ai-practice/lesson-4.png",
       "minutes": 6,
       "xp": 50,
-      "position": 2
+      "position": 2,
+      "news_eligible": false,
+      "provenance": {
+        "role": "course_practice",
+        "source_pack": "ai-practice-2026-10-25",
+        "source_file": "training-labs.mjs",
+        "source_lesson_key": "block-2"
+      }
     },
     {
       "key": "reference-block-3",
@@ -36,7 +50,14 @@
       "cover_url": "https://elaz-ed.vercel.app/learning/ai-practice/lesson-5.png",
       "minutes": 6,
       "xp": 50,
-      "position": 3
+      "position": 3,
+      "news_eligible": false,
+      "provenance": {
+        "role": "course_practice",
+        "source_pack": "ai-practice-2026-10-25",
+        "source_file": "training-labs.mjs",
+        "source_lesson_key": "block-3"
+      }
     },
     {
       "key": "reference-block-4",
@@ -48,7 +69,14 @@
       "cover_url": "https://elaz-ed.vercel.app/learning/ai-practice/lesson-6.png",
       "minutes": 6,
       "xp": 50,
-      "position": 4
+      "position": 4,
+      "news_eligible": false,
+      "provenance": {
+        "role": "course_practice",
+        "source_pack": "ai-practice-2026-10-25",
+        "source_file": "training-labs.mjs",
+        "source_lesson_key": "block-4"
+      }
     },
     {
       "key": "reference-block-5",
@@ -60,7 +88,14 @@
       "cover_url": "https://elaz-ed.vercel.app/learning/ai-practice/lesson-7.png",
       "minutes": 6,
       "xp": 50,
-      "position": 5
+      "position": 5,
+      "news_eligible": false,
+      "provenance": {
+        "role": "course_practice",
+        "source_pack": "ai-practice-2026-10-25",
+        "source_file": "training-labs.mjs",
+        "source_lesson_key": "block-5"
+      }
     },
     {
       "key": "reference-block-native-automation",
@@ -72,7 +107,14 @@
       "cover_url": "https://elaz-ed.vercel.app/learning/ai-practice/lesson-10.png",
       "minutes": 6,
       "xp": 50,
-      "position": 6
+      "position": 6,
+      "news_eligible": false,
+      "provenance": {
+        "role": "course_practice",
+        "source_pack": "ai-practice-2026-10-25",
+        "source_file": "training-labs.mjs",
+        "source_lesson_key": "block-native-automation"
+      }
     },
     {
       "key": "reference-block-8",
@@ -84,7 +126,14 @@
       "cover_url": "https://elaz-ed.vercel.app/learning/ai-practice/lesson-11.png",
       "minutes": 6,
       "xp": 50,
-      "position": 7
+      "position": 7,
+      "news_eligible": false,
+      "provenance": {
+        "role": "course_practice",
+        "source_pack": "ai-practice-2026-10-25",
+        "source_file": "training-labs.mjs",
+        "source_lesson_key": "block-8"
+      }
     },
     {
       "key": "reference-block-opencode",
@@ -96,7 +145,14 @@
       "cover_url": "https://elaz-ed.vercel.app/learning/ai-practice/lesson-13.png",
       "minutes": 6,
       "xp": 50,
-      "position": 8
+      "position": 8,
+      "news_eligible": false,
+      "provenance": {
+        "role": "course_practice",
+        "source_pack": "ai-practice-2026-10-25",
+        "source_file": "training-labs.mjs",
+        "source_lesson_key": "block-opencode"
+      }
     }
   ]
 }

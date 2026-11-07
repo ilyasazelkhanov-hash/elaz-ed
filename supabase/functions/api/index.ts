@@ -9,6 +9,7 @@ import { handleCertifications, CertificationError } from './certifications.ts'
 import { processRefundJobs } from './payments.ts'
 import { cleanDiscoveryEvent, isDiscoveryEvent } from './discovery-events.ts'
 import { normalizeEditorial } from '../_shared/editorial.ts'
+import { assertNoCourseOverlap } from '../_shared/news-policy.ts'
 
 const BOT_TOKEN = Deno.env.get('BOT_TOKEN') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
@@ -584,7 +585,7 @@ async function blogFeed(body: Row) {
   if (cursor != null && (typeof cursor !== 'object' || typeof cursor.pinned !== 'boolean' || !Number.isSafeInteger(cursor.id) || cursor.id < 0 ||
     (cursor.date !== null && (typeof cursor.date !== 'string' || !/^\d{4}-\d{2}-\d{2}T[\d:.+-]+Z?$/.test(cursor.date) || !Number.isFinite(Date.parse(cursor.date)))))) throw new HttpError(400, 'bad_cursor')
   const promoted = cursor?.pinned ?? true
-  let query = db.from('feed_cards').select('*').eq('published', true).eq('kind', 'lesson').is('course_id', null)
+  let query = db.from('feed_cards').select('*').eq('published', true).eq('kind', 'lesson').is('course_id', null).neq('news_eligible',false)
     .order('published_at', {ascending:false,nullsFirst:false}).order('id', {ascending:false}).limit(31)
   if (!chronological) query = query.eq('pinned', promoted)
   // id=0 denotes the beginning of the unpromoted group; real IDs are positive.
@@ -946,12 +947,14 @@ function cleanLesson(input: Row) {
       return { q: str(q?.q, 300), options, correct: int(q?.correct, 0, Math.max(0, options.length - 1), 0), explain: str(q?.explain, 400) }
     })
     .filter((q: { q: string; options: string[] }) => q.q && q.options.length >= 2)
+  if(Object.hasOwn(input,'news_eligible') && typeof input.news_eligible!=='boolean')throw new HttpError(400,'bad_news_eligibility')
   let editorial
   if(Object.hasOwn(input,'editorial')) {
     try { editorial=normalizeEditorial(input.editorial,{requireUpdateReview:!!input.published}) }
     catch { throw new HttpError(400,'editorial_invalid') }
   }
   return {
+    ...(Object.hasOwn(input,'news_eligible') ? {news_eligible:input.news_eligible} : {}),
     ...(editorial!==undefined ? {editorial} : {}),
     kind: input.kind === 'story' ? 'story' : 'lesson',
     title,
@@ -1120,8 +1123,17 @@ async function adminSave(body: Row) {
   const input = body.lesson ?? {}
   const clean = cleanLesson(input)
   const id = Number(input.id)
+  const prior=id?await db.from('lessons').select('published_at,news_eligible').eq('id',id).maybeSingle():null
+  if(id&&!prior?.data)throw new HttpError(404,'not_found')
+  const eligible=clean.news_eligible ?? prior?.data?.news_eligible ?? true
+  if(clean.published && clean.kind==='lesson' && !clean.course_id && eligible){
+    const courses=await db.from('lessons').select('id,body').not('course_id','is',null).eq('published',true)
+    if(courses.error)throw new HttpError(500,'db')
+    try{assertNoCourseOverlap(clean.body,(courses.data??[]).map(item=>({id:item.id,body:String(item.body??'')})))}
+    catch{throw new HttpError(400,'course_material_in_news')}
+  }
   if (id) {
-    const { data: prev } = await db.from('lessons').select('published_at').eq('id', id).maybeSingle()
+    const prev=prior!.data
     if (!prev) throw new HttpError(404, 'not_found')
     const patch = { ...clean, published_at: prev.published_at ?? (clean.published ? new Date().toISOString() : null) }
     const { data, error } = await db.from('lessons').update(patch).eq('id', id).select('*').single()
@@ -1150,7 +1162,7 @@ async function adminAnnounce(body: Row) {
   const s = await getSettings()
   const { data: les } = await db.from('lessons').select('*').eq('id', Number(body.id)).maybeSingle()
   if (!les || !les.published) throw new HttpError(400, 'not_published')
-  if (les.course_id || les.kind !== 'lesson') throw new HttpError(400, 'news_only')
+  if (les.course_id || les.kind !== 'lesson' || les.news_eligible===false) throw new HttpError(400, 'news_only')
   if (!s.channel?.id || !s.bot?.username) throw new HttpError(400, 'not_ready')
   // The durable queue owns news delivery; manual clicks must not duplicate it.
   if (s.news_publishing?.enabled && les.kind === 'lesson' && !les.course_id) return { ok: true, queued: true }

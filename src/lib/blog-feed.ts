@@ -6,6 +6,7 @@ import type {BlogCursor,Card} from './types'
 /** One request at a time; stale/unmounted responses cannot overwrite a new feed. */
 export function useBlogFeed(enabled:boolean,user:number,revision:string){
  const [posts,setPosts]=useState<Card[]|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[more,setMore]=useState(true)
+ const [legacy,setLegacy]=useState(false)
  const cursor=useRef<BlogCursor|null>(null),pending=useRef(false),ended=useRef(false),failed=useRef(false),generation=useRef(0)
  const load=useCallback(async(retry=false)=>{
   if(!enabled||pending.current||ended.current||(failed.current&&!retry))return
@@ -14,14 +15,14 @@ export function useBlogFeed(enabled:boolean,user:number,revision:string){
   try{
    const page=await api.blogPage(cursor.current)
    if(current!==generation.current)return
-   cursor.current=page.next;ended.current=!page.next;setMore(!!page.next)
+   cursor.current=page.next;ended.current=!page.next;setMore(!!page.next);setLegacy(page.legacy===true)
    setPosts(previous=>[...new Map([...(previous??[]),...page.posts].map(post=>[post.id,post])).values()])
   }catch(e){if(current===generation.current){failed.current=true;useStore.getState().guard(e);setError(errorText(e))}}
   finally{if(current===generation.current){pending.current=false;setBusy(false)}}
  },[enabled,user,revision])
  useEffect(()=>{
-  generation.current++;cursor.current=null;pending.current=false;ended.current=false;failed.current=false;setPosts(null);setMore(true);setError('');void load()
+  generation.current++;cursor.current=null;pending.current=false;ended.current=false;failed.current=false;setPosts(null);setMore(true);setLegacy(false);setError('');void load()
   return()=>{generation.current++}
  },[load])
- return {posts,busy,error,more,load}
+ return {posts,busy,error,more,legacy,load}
 }

@@ -4,6 +4,10 @@ import type { Card } from './types'
 export function isBlogPost(item?: Pick<Card,'kind'|'course_id'> | null) {
   return !!item && item.kind === 'lesson' && item.course_id == null
 }
+/** Listing eligibility is separate from the standalone reader, preserving existing shared links. */
+export function isNewsPost(item?: (Pick<Card,'kind'|'course_id'> & {news_eligible?:boolean}) | null) {
+  return isBlogPost(item) && item?.news_eligible !== false
+}
 export function postDate(value?: string | null) {
   if (!value || !Number.isFinite(Date.parse(value))) return ''
   return new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long'}).format(new Date(value))

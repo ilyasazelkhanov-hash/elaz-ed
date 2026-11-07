@@ -86,7 +86,7 @@ export function Profile() {
         <h1 className="mt-2 font-display text-[27px] font-semibold">Профиль</h1>
         <div className="mt-5 grid grid-cols-2 gap-3">
           <Tap onClick={() => openBlogLibrary('saved')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Bookmark size={21} className="text-violet"/><span className="mt-3 block text-base font-semibold">Сохранённые</span><span className="mt-1 block text-sm text-mute">{saved.length ? `${saved.length} публикаций` : 'Полезное под рукой'}</span></Tap>
-          <Tap onClick={() => openBlogLibrary('unread')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Newspaper size={21} className="text-violet"/><span className="mt-3 block text-base font-semibold">Ещё почитать</span><span className="mt-1 block text-sm text-mute">{unread ? `${unread} в подборке` : 'Все обновления'}</span></Tap>
+          <Tap onClick={() => openBlogLibrary('unread')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Newspaper size={21} className="text-violet"/><span className="mt-3 block text-base font-semibold">Ещё почитать</span><span className="mt-1 block text-sm text-mute">{unread ? `${unread} в подборке` : 'Все новости'}</span></Tap>
         </div>
         {followed.length > 0 && <><h2 className="mb-2 mt-5 text-sm font-semibold text-mute">Мои темы</h2><div className="no-bar flex gap-2 overflow-x-auto">{followed.map(id => {const topic = knowledgeTopics.find(item => item.id === id); return topic ? <Tap key={id} onClick={() => openBlogLibrary('new', id)} className="min-h-11 shrink-0 rounded-full border border-violet/25 bg-violet/10 px-3 text-sm font-medium text-violet">{topic.label}</Tap> : null})}</div></>}
       </section>

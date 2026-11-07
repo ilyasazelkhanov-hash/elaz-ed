@@ -2,6 +2,10 @@ import {readFile,writeFile} from 'node:fs/promises'
 import {labs,renderLab} from './training-labs.mjs'
 const dir=new URL('./',import.meta.url)
 const training=JSON.parse(await readFile(new URL('training.json',dir),'utf8'))
+// Historical standalone editions remain stable when the paid labs are revised.
+let archived=[]
+try{archived=JSON.parse(await readFile(new URL('reference-posts.json',dir),'utf8')).posts}catch(error){if(error.code!=='ENOENT')throw error}
+const editions=new Map(archived.map(post=>[post.key,post]))
 const selected=[
  ['block-1','Как выбрать ИИ-инструмент и не утонуть в каталогах','🧭','Выбор инструментов'],
  ['block-2','Gemini Notebook: исследование по своим документам','📚','Исследования'],
@@ -16,7 +20,9 @@ const posts=selected.map(([key,title,emoji,category],i)=>{
  const l=labs[key],course=training.lessons.find(x=>x.key===key)
  let body=renderLab(key,'https://elaz-ed.vercel.app').replace(/^## Дополнительная практика: [^\n]+\n\n/,'')
  body='Проверено по публичным официальным страницам на 26 октября 2026. Доступ и лимиты зависят от аккаунта.\n\n'+body+'\nПолная практика с объяснением, схемами и проверкой — в курсе «ИИ с нуля», в разделе «'+course.category+'». Это разбор применения, а не обещание автоматического результата.'
- return {key:'reference-'+key,title,emoji,category,subtitle:l.explain.slice(0,185),body,cover_url:course.cover_url,minutes:6,xp:50,position:i+1}
+ // Keep historical reading links, but shared course exercises are not news.
+ const edition=editions.get('reference-'+key)||{key:'reference-'+key,title,emoji,category,subtitle:l.explain.slice(0,185),body,cover_url:course.cover_url,minutes:6,xp:50,position:i+1}
+ return {...edition,news_eligible:false,provenance:{role:'course_practice',source_pack:'ai-practice-2026-10-25',source_file:'training-labs.mjs',source_lesson_key:key}}
 })
 const batch='content_import:reference-practice-2026-10-26-v1'
 const payload={batch,checked_at:'2026-10-26',posts}
@@ -29,13 +35,18 @@ begin
 select value->'lessons' into m from public.settings where key=p->>'batch';
 m:=coalesce(m,'{}'::jsonb);
 for l in select value from jsonb_array_elements(p->'posts') loop
+ if l->'news_eligible' is distinct from 'false'::jsonb or l->'provenance'->>'role' is distinct from 'course_practice' then
+  raise exception 'Course practice cannot be imported as news: %',l->>'key';
+ end if;
  lid:=(m->>(l->>'key'))::bigint;
  if lid is null then
-  insert into public.lessons(kind,title,subtitle,category,emoji,gradient,cover_url,body,minutes,xp,pinned,published,published_at,course_id,position,free_preview,quiz)
-  values('lesson',l->>'title',l->>'subtitle',l->>'category',l->>'emoji','aurora',l->>'cover_url',l->>'body',6,50,false,true,now()+i*interval '1 second',null,(l->>'position')::int,true,'[]'::jsonb) returning id into lid;
+  insert into public.lessons(kind,title,subtitle,category,emoji,gradient,cover_url,body,minutes,xp,pinned,published,published_at,course_id,position,free_preview,quiz,news_eligible)
+  values('lesson',l->>'title',l->>'subtitle',l->>'category',l->>'emoji','aurora',l->>'cover_url',l->>'body',6,50,false,true,now()+i*interval '1 second',null,(l->>'position')::int,true,'[]'::jsonb,(l->>'news_eligible')::boolean) returning id into lid;
   m:=m||jsonb_build_object(l->>'key',lid);
  end if;
  if not exists(select 1 from public.lessons where id=lid and course_id is null and title=l->>'title') then raise exception 'Reference post mismatch %',lid; end if;
+ -- A repeat import restores the source policy without replacing bodies or IDs.
+ update public.lessons set news_eligible=false where id=lid and news_eligible is distinct from false;
  i:=i+1;
 end loop;
 insert into public.settings(key,value) values(p->>'batch',jsonb_build_object('lessons',m,'count',8,'checked_at',p->>'checked_at')) on conflict(key) do update set value=excluded.value;

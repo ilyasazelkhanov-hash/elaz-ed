@@ -88,6 +88,10 @@ class Query {
     this.filters.push((r) => r[k] === v)
     return this
   }
+  neq(k, v) {
+    this.filters.push((r) => r[k] !== v)
+    return this
+  }
   gt(k, v) {
     this.filters.push((r) => r[k] > v)
     return this
