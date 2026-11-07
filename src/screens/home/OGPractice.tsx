@@ -6,15 +6,30 @@ import {getPracticeResume, ogPracticeCourses, practiceMatches, practicePath, pra
 import type {Course, Lesson} from '../../lib/types'
 import {useStore} from '../../store'
 import {track} from '../../lib/track'
+import {openCourseAccess} from '../../lib/course-checkout'
+import {sfx} from '../../lib/sfx'
+import {canPayStars, confirmDialog, haptic, openInvoice} from '../../lib/tg'
 import {useCourseViewTelemetry} from '../Course'
-import {Tap} from '../../ui'
+import {celebrate, Tap} from '../../ui'
 import {PracticeArtwork} from './PracticeArtwork'
 import {PracticeReader} from './PracticeReader'
 
 type Route = (path: string) => void
 const minutes = (n: number) => n >= 60 ? Math.floor(n / 60) + ' ч' + (n % 60 ? ' ' + n % 60 + ' мин' : '') : n + ' мин'
 const chip = (active: boolean) => 'min-h-11 shrink-0 rounded-full border px-4 text-xs font-semibold ' + (active ? 'border-violet bg-violet/10 text-violet' : 'border-line bg-card text-mute')
-const purchase = (course: Course) => useStore.getState().push({type: 'course', id: course.id})
+// Pay or request access right here. The old course screen is admin-only, so routing
+// students there showed «Старый курс скрыт» instead of the invoice.
+const purchase = (course: Course) => {
+ const store = useStore.getState()
+ void openCourseAccess(course, {
+  demo: isDemo, canPay: canPayStars, confirm: confirmDialog, openInvoice,
+  invoice: id => api.courseInvoice(id), request: id => api.courseRequest(id), refresh: () => useStore.getState().boot(),
+  hasAccess: id => !!useStore.getState().courses.find(c => c.id === id)?.access,
+  track: (name, props) => track(name, props), notify: store.toast, guard: store.guard, errorText,
+  celebrate: () => {celebrate(); sfx.levelUp(); haptic.success()},
+  wait: ms => new Promise(resolve => setTimeout(resolve, ms)),
+ })
+}
 
 export function OGPractice({path, go}: {path: string; go: Route}) {
  const parts = path.split('/').filter(Boolean), course = ogPracticeCourses.find(c => c.key === parts[1]), lesson = course?.lessons.find(l => l.key === parts[2])
