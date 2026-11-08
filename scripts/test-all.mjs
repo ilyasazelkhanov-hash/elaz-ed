@@ -35,6 +35,7 @@ for(const [name,command] of Object.entries(pkg.scripts)){
  await run(name,args)
 }
 // Explicit build stages avoid shell parsing and npm rewriting the source checkout.
+await run('build-news-assets',['scripts/materialize-news-assets.mjs'])
 await run('build-content',['scripts/academy-content.mjs'])
 await run('build-types',['node_modules/typescript/bin/tsc','--noEmit'])
 await run('build-vite',['node_modules/vite/bin/vite.js','build'])

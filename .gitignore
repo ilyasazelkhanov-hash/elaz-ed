@@ -8,3 +8,4 @@ dist
 supabase/.temp/
 test-results/
 /content/ai-academy/generated/
+/public/news/chatgpt-images-2-6.gif
