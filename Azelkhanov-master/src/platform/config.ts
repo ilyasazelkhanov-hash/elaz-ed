@@ -192,30 +192,58 @@ export function resolveModules(ids: string[]): ModuleId[] {
   return [...result]
 }
 export function validateConfig(config: AppConfig, brand: BrandConfig) {
-  resolveModules(config.modules)
-  if (!presets[config.preset]) throw new Error('Unknown preset')
-  if (!/^[a-z0-9][a-z0-9-]{1,63}$/.test(config.id)) throw new Error('Invalid app id')
+  if (!config || typeof config !== 'object' || Array.isArray(config)) throw new Error('Invalid app config')
+  if (!Array.isArray(config.modules) || config.modules.some((id) => typeof id !== 'string'))
+    throw new Error('Invalid modules')
+  const enabled = resolveModules(config.modules)
+  if (typeof config.preset !== 'string' || !Object.hasOwn(presets, config.preset)) throw new Error('Unknown preset')
+  if (typeof config.id !== 'string' || !/^[a-z0-9][a-z0-9-]{1,63}$/.test(config.id)) throw new Error('Invalid app id')
+  if (typeof config.name !== 'string' || !config.name.trim()) throw new Error('Invalid app name')
+  if (!['telegram', 'channel', 'invite', 'employee'].includes(config.access)) throw new Error('Invalid access mode')
+  if (typeof config.currency !== 'string' || !/^[A-Z]{3}$/.test(config.currency)) throw new Error('Invalid currency')
+  const homeBlocks = ['wallet', 'stories', 'hero', 'missions', 'learning', 'events', 'content', 'commerce', 'team']
+  if (!Array.isArray(config.homeBlocks) || config.homeBlocks.some((id) => !homeBlocks.includes(id)))
+    throw new Error('Invalid home blocks')
   if (
+    !Array.isArray(config.navigation) ||
     config.navigation.length > 5 ||
     !config.navigation.length ||
     new Set(config.navigation).size !== config.navigation.length ||
-    config.navigation.some((id) => !['home', 'profile', ...config.modules].includes(id))
+    config.navigation.some((id) => !['home', 'profile', ...enabled].includes(id))
   )
     throw new Error('Invalid navigation')
-  if (!brand.name.trim() || !brand.monogram || brand.radius < 0 || brand.radius > 48) throw new Error('Invalid brand')
   if (
+    !brand || typeof brand !== 'object' || Array.isArray(brand) ||
+    typeof brand.name !== 'string' || !brand.name.trim() ||
+    typeof brand.monogram !== 'string' || !brand.monogram ||
+    !Number.isFinite(brand.radius) || brand.radius < 0 || brand.radius > 48
+  ) throw new Error('Invalid brand')
+  if (!brand.fonts || typeof brand.fonts !== 'object' || Array.isArray(brand.fonts) ||
+    ['body', 'display'].some((key) => typeof brand.fonts[key as keyof typeof brand.fonts] !== 'string' ||
+      !brand.fonts[key as keyof typeof brand.fonts].trim())) throw new Error('Invalid brand fonts')
+  if (!['full', 'reduced'].includes(brand.motion)) throw new Error('Invalid brand motion')
+  if (
+    !brand.colors || typeof brand.colors !== 'object' || Array.isArray(brand.colors) ||
     ['primary', 'ink', 'background', 'accent', 'surface', 'muted'].some(
       (key) => !/^#[a-f0-9]{6}$/i.test(String(brand.colors[key as keyof typeof brand.colors])),
     ) ||
     Object.values(brand.colors).some((value) => !/^#[a-f0-9]{6}$/i.test(value))
   )
     throw new Error('Invalid brand color')
-  new Intl.DateTimeFormat(config.locale, { timeZone: config.timezone }).format()
+  if (typeof config.locale !== 'string' || !config.locale.trim()) throw new Error('Invalid locale')
+  if (typeof config.timezone !== 'string' || !config.timezone.trim()) throw new Error('Invalid timezone')
+  try {
+    new Intl.DateTimeFormat(config.locale, { timeZone: config.timezone }).format()
+  } catch {
+    throw new Error('Invalid locale or timezone')
+  }
   if (
     config.progression &&
     (!Number.isInteger(config.progression.xpPerLevel) ||
       config.progression.xpPerLevel < 1 ||
+      !Array.isArray(config.progression.levels) ||
       !config.progression.levels.length ||
+      config.progression.levels.some((level) => typeof level !== 'string' || !level.trim()) ||
       !Number.isInteger(config.progression.stampsPerReward) ||
       config.progression.stampsPerReward < 1)
   )
@@ -227,8 +255,9 @@ export function validateConfig(config: AppConfig, brand: BrandConfig) {
     config.progression?.weeklyGoal &&
     (!Number.isInteger(config.progression.weeklyGoal.target) ||
       config.progression.weeklyGoal.target < 1 ||
+      typeof config.progression.weeklyGoal.title !== 'string' ||
       !config.progression.weeklyGoal.title.trim())
   )
     throw new Error('Invalid weekly goal')
-  return { config: { ...config, modules: resolveModules(config.modules) }, brand }
+  return { config: { ...config, modules: enabled }, brand }
 }

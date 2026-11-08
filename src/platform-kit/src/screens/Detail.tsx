@@ -23,6 +23,7 @@ import { demoMode, telegram } from '../platform/client.ts'
 import { Art, Button, Empty, Meter, Modal, PageHeader, QR, SectionTitle, money } from '../components/ui.tsx'
 import type { Data, Entity } from '../platform/contracts.ts'
 import { useBrand } from '../platform/brand-context.ts'
+import { entityTag } from '../platform/entity-tag.ts'
 
 export default function EntityDetail({ id }: { id: string }) {
   const brand = useBrand()
@@ -168,7 +169,7 @@ export default function EntityDetail({ id }: { id: string }) {
         <Art kind={e.cover} className="az-detail-art" />
         <div className="az-detail-copy">
           <div className="az-detail-meta">
-            <span className="az-eyebrow">{e.tag}</span>
+            <span className="az-eyebrow">{entityTag(e, s.config)}</span>
             <div>
               <button
                 aria-label="В избранное"

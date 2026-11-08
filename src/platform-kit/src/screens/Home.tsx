@@ -17,9 +17,12 @@ import {
 import { usePlatform } from '../platform/store.ts'
 import { Art, Button, Meter, Scene, SectionTitle } from '../components/ui.tsx'
 import type { BrandConfig, Entity } from '../platform/contracts.ts'
+import { entityTag } from '../platform/entity-tag.ts'
 
 export function EntityCard({ entity, small = false }: { entity: Entity; small?: boolean }) {
   const push = usePlatform((s) => s.push)
+  const config = usePlatform((s) => s.snapshot?.config)
+  const tag = config ? entityTag(entity, config) : entity.tag
   return (
     <motion.button
       className={`az-entity-card ${small ? 'az-small-card' : ''}`}
@@ -35,7 +38,7 @@ export function EntityCard({ entity, small = false }: { entity: Entity; small?: 
     >
       <Art kind={entity.cover} />
       <div className="az-entity-card-copy">
-        {entity.tag && <span className="az-eyebrow">{entity.tag}</span>}
+        {tag && <span className="az-eyebrow">{tag}</span>}
         <h3>{entity.title}</h3>
         <p>{entity.subtitle}</p>
         <span className="az-card-arrow">

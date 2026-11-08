@@ -13,6 +13,28 @@ on:
 permissions:
   contents: read
 jobs:
+  master:
+    name: Master platform and client templates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: Azelkhanov-master
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: Azelkhanov-master/package-lock.json
+      - name: Install standalone master dependencies
+        run: npm ci --ignore-scripts
+      - name: Test generator, templates, API and local database
+        run: npm test
+      - name: Typecheck master server
+        run: npm run test:server-types
+      - name: Build standalone master
+        run: npm run build
   edge-api:
     name: Edge API and release tools
     runs-on: ubuntu-latest
@@ -99,3 +121,4 @@ jobs:
         with:
           name: validation-summary
           path: test-results/audit-validation.json
+
