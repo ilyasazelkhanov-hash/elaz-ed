@@ -1,3 +1,4 @@
+import { CoverImage } from '../CoverImage'
 import { Eye, Megaphone, Plus, Trash2, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -231,8 +232,10 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
               <Label hint="YouTube, Rutube, VK или mp4">Видео</Label>
               <input value={d.video_url ?? ''} onChange={(e) => set('video_url', e.target.value || null)} placeholder="https://" inputMode="url" className={field} />
 
-              <Label hint="ссылка на картинку: обложка публикации или урока">Обложка</Label>
+              <Label hint="HTTPS-ссылка: JPEG, PNG, WebP или GIF">Обложка</Label>
               <input value={d.cover_url ?? ''} onChange={(e) => set('cover_url', e.target.value || null)} placeholder="https://" inputMode="url" className={field} />
+              {d.cover_url && /^https:\/\//i.test(d.cover_url) && <CoverImage src={d.cover_url} className="mt-3 max-h-64 w-full rounded-2xl object-cover"/>}
+              <p className="mt-2 text-xs leading-relaxed text-mute">Для GIF используй прямую ссылку с .gif на заранее проверенный файл. Автопубликация принимает до 2 МБ. Редактор сохраняет ссылку без проверки содержимого; при уменьшении движения доступна кнопка воспроизведения.</p>
 
               {!post&&<>
               <Label hint="если пусто — копируется весь урок">Текст для «Скопировать для нейронки»</Label>

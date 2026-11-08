@@ -1,3 +1,4 @@
+import { CoverImage } from '../CoverImage'
 import { Check, ChevronLeft, Copy, Eye, Heart, Send, X } from 'lucide-react'
 import { AnimatePresence, motion, useMotionValue } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
@@ -146,7 +147,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
         <div className="relative overflow-hidden" style={{ background: g.css, color: g.ink, paddingTop: 'calc(var(--top) + 54px)' }}>
           <Pattern name={view?.gradient ?? 'aurora'} full />
           {view?.cover_url ? (
-            <img src={view.cover_url} alt="" className="relative mx-auto mb-12 h-[190px] w-[calc(100%-40px)] rounded-[24px] object-cover" />
+            <CoverImage src={view.cover_url} loading="eager" className="relative mx-auto mb-12 h-[190px] w-[calc(100%-40px)] rounded-[24px] object-cover" />
           ) : (
             <div className="relative flex justify-center pb-14">
               <motion.div initial={{ scale: 0.5, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.12 }}>

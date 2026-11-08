@@ -28,7 +28,7 @@ async function feedPresentation() {
  const mocks = {
   '../../lib/blog-feed': 'useBlogFeed', '../../lib/blog-read': 'useReadPosts',
   '../../lib/blog-library': 'toggleFollowedTopic, toggleSavedPost, useFollowedTopics, useSavedPosts',
-  '../../store': 'useStore', '../../ui': 'Tap', './blog-view': 'useBlogView', '../../lib/track': 'track',
+  '../../CoverImage': 'CoverImage', '../../store': 'useStore', '../../ui': 'Tap', './blog-view': 'useBlogView', '../../lib/track': 'track',
  }
  for (const [path, names] of Object.entries(mocks)) compiled = compiled.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.', '\\.')}["'];?`, 'g'), `const { ${names} } = globalThis.__homeNewsHarness;`)
  compiled = compiled.replace(/import ["']\.\/free-first\.css["'];?/g, '')
@@ -42,6 +42,7 @@ async function feedPresentation() {
   useBlogView: () => ({ ...state.view, set: value => Object.assign(state.view, value) }), useStore,
   useBlogFeed: (enabled, user, revision) => { state.requests.push({ enabled, user, revision }); return { posts: state.posts, more: state.more, legacy: state.legacy, busy: state.busy, error: state.error, load: retry => { state.loadCalls.push(retry); state.actions.push('load') } } },
   useReadPosts: () => state.read, useSavedPosts: () => state.saved, useFollowedTopics: () => [],
+  CoverImage: ({src, className}) => createElement('img', {src, className, alt: ''}),
   toggleFollowedTopic() {}, toggleSavedPost() {}, track() {},
   Tap: ({ children, onClick, feedback, ...props }) => { state.clicks.push({ ...props, onClick, children }); return createElement('button', props, children) },
  }
@@ -123,3 +124,4 @@ test('home news keeps error, loading and empty states distinct without losing ca
  state.posts = [cached]
  html = render([]); assert.match(html, /Сохранённая загруженная новость/); assert.doesNotMatch(html, /reader-empty|role="alert"/)
 })
+

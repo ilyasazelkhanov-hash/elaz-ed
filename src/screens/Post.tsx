@@ -1,3 +1,4 @@
+import { CoverImage } from '../CoverImage'
 import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, Heart, Lightbulb, Send } from 'lucide-react'
 import { useEffect } from 'react'
 import type { Card, Lesson } from '../lib/types'
@@ -50,7 +51,7 @@ export function PostScreen({ post, preview, error, retry, like, share }: { post:
         <h1 className="mt-4 font-display text-[25px] font-semibold leading-[1.3] tracking-tight" style={{ overflowWrap: 'anywhere' }}>{view.title}</h1>
         {view.subtitle && <p className="mt-4 text-lg leading-relaxed text-mute">{view.subtitle}</p>}
         <EditorialMetadata metadata={view.editorial}/>
-        {view.cover_url && <img src={view.cover_url} alt="" className="mt-5 max-h-80 w-full rounded-2xl object-cover"/>}
+        {view.cover_url && <CoverImage src={view.cover_url} loading="eager" className="mt-5 max-h-80 w-full rounded-2xl object-cover"/>}
       </>}
       {!post && !error && <div role="status" aria-label="Загрузка публикации" className="mt-6 space-y-3">{[1, 2, 3].map(i => <div key={i} className="skeleton h-5 rounded-full"/>)}</div>}
       {error && <div role="alert" className="mt-6 rounded-2xl border border-line bg-card p-5"><p>Публикация не загрузилась. Попробуй ещё раз.</p><Cta className="mt-4" onClick={retry}>Повторить загрузку</Cta></div>}

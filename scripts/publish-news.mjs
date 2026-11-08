@@ -10,6 +10,8 @@ import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {normalizeEditorial} from '../supabase/functions/_shared/editorial.ts'
 import {assertNoCourseOverlap,normalizedNewsText} from '../supabase/functions/_shared/news-policy.ts'
+import {validateGifImage} from './lib/gif-image.mjs'
+import {isGifCoverUrl} from '../supabase/functions/_shared/cover-media.ts'
 
 const root=fileURLToPath(new URL('../',import.meta.url))
 const expectedProject='dcdepwdxvadhludnubis'
@@ -79,7 +81,7 @@ export async function verifyNewsImage(value,{fetcher=fetchPinnedImage,resolveHos
    const hostname=url.hostname.replace(/^\[|\]$/g,'')
    const addresses=isIP(hostname)?[{address:hostname,family:isIP(hostname)}]:await withSignal(resolveHost(hostname),controller.signal)
    if(!Array.isArray(addresses)||!addresses.length||addresses.some(item=>!publicAddress(item.address)||item.family!==isIP(item.address)))fail('cover_image_private_address')
-   response=await withSignal(fetcher(url.href,{signal:controller.signal,addresses,redirect:'manual',headers:{Range:`bytes=0-${maxImageBytes-1}`,Accept:'image/jpeg,image/png,image/webp','User-Agent':'ELAZ-News-Image-Check/1.0'}}),controller.signal)
+   response=await withSignal(fetcher(url.href,{signal:controller.signal,addresses,redirect:'manual',headers:{Range:`bytes=0-${maxImageBytes-1}`,Accept:'image/jpeg,image/png,image/webp,image/gif','User-Agent':'ELAZ-News-Image-Check/1.0'}}),controller.signal)
    if([301,302,303,307,308].includes(response.status)){
     const location=response.headers.get('location')
     void response.body?.cancel().catch(()=>{})
@@ -91,7 +93,10 @@ export async function verifyNewsImage(value,{fetcher=fetchPinnedImage,resolveHos
   }
   if(![200,206].includes(response.status))fail('cover_image_http_status')
   const mime=response.headers.get('content-type')?.split(';')[0].trim().toLowerCase()
-  if(!['image/jpeg','image/png','image/webp'].includes(mime))fail('cover_image_mime')
+  if(!['image/jpeg','image/png','image/webp','image/gif'].includes(mime))fail('cover_image_mime')
+  // The saved (original) URL must agree with the reader's static/animated mode,
+  // even when the download redirects to an opaque CDN URL.
+  if(isGifCoverUrl(value)!==(mime==='image/gif'))fail('cover_image_gif_url')
   const length=response.headers.get('content-length'),range=response.headers.get('content-range')
   if(length!=null&&(!/^\d+$/.test(length)||Number(length)>maxImageBytes))fail('cover_image_size')
   if(range&&(!/^bytes 0-\d+\/\d+$/.test(range)||Number(range.split('/')[1])>maxImageBytes))fail('cover_image_size')
@@ -108,13 +113,14 @@ export async function verifyNewsImage(value,{fetcher=fetchPinnedImage,resolveHos
     chunks.push(Buffer.from(chunk))
    }
   }finally{void reader.cancel().catch(()=>{});try{reader.releaseLock()}catch{}}
-  if(total<256||length!=null&&Number(length)!==total)fail('cover_image_size')
+  if(total<(mime==='image/gif'?1:256)||length!=null&&Number(length)!==total)fail('cover_image_size')
   if(range){const match=/^bytes 0-(\d+)\/(\d+)$/.exec(range);if(Number(match[1])+1!==total||Number(match[2])!==total)fail('cover_image_range')}
   const bytes=Buffer.concat(chunks,total)
   const jpeg=mime==='image/jpeg'&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255&&bytes.at(-2)===255&&bytes.at(-1)===217
   const png=mime==='image/png'&&bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))&&bytes.subarray(12,16).toString()==='IHDR'&&bytes.subarray(-8).equals(Buffer.from([73,69,78,68,174,66,96,130]))
   const webp=mime==='image/webp'&&bytes.subarray(0,4).toString()==='RIFF'&&bytes.subarray(8,12).toString()==='WEBP'&&['VP8 ','VP8L','VP8X'].includes(bytes.subarray(12,16).toString())&&bytes.readUInt32LE(4)+8===total
-  if(!jpeg&&!png&&!webp)fail('cover_image_signature')
+  const gif=mime==='image/gif'&&validateGifImage(bytes)
+  if(!jpeg&&!png&&!webp&&!gif)fail('cover_image_signature')
   return {mime,bytes:total,sha256:hash(bytes)}
  }catch(error){
   if(controller.signal.aborted)fail('cover_image_timeout')
@@ -362,3 +368,4 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  const code=String(error?.message??'')
  console.error(JSON.stringify({status:'error',reason:/^(course_overlap:|[a-z_]+(?:_dcdepwdxvadhludnubis)?$)/.test(code)?code:'publisher_failed'}));process.exitCode=1
 })
+

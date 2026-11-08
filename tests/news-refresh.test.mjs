@@ -14,3 +14,8 @@ test('refresh can edit text-only fallback and treats not-modified as success',as
 test('refresh stops on unknown network outcome',async()=>{
  let n=0;await assert.rejects(()=>refreshNewsMessage(async()=>{n++;throw Error('network')},-100,42,{id:7,title:'T',body:'B',cover_url:'https://example.org/a.jpg'},{username:'test_bot'}));assert.equal(n,1)
 })
+test('refresh edits an existing GIF as animation without creating a new announcement',async()=>{
+ const calls=[]
+ const result=await refreshNewsMessage(async(method,payload)=>{calls.push({method,payload});return {ok:true}},-100,151,{id:7,title:'Title',body:'Body',cover_url:'https://example.org/new.gif?signature=test'},{username:'test_bot'})
+ assert.equal(result.ok,true);assert.deepEqual(calls.map(x=>x.method),['editMessageMedia']);assert.equal(calls[0].payload.message_id,151);assert.equal(calls[0].payload.media.type,'animation');assert.equal(calls[0].payload.media.media,'https://example.org/new.gif?signature=test')
+})

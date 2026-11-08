@@ -1,3 +1,4 @@
+import { isGifCoverUrl } from '../_shared/cover-media.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { newsTelegramPost } from '../_shared/news.ts'
 import { publishEditorialBatch } from '../_shared/editorial.ts'
@@ -11,7 +12,11 @@ const json = (value: unknown, status = 200) => new Response(JSON.stringify(value
 const equal = (a: string, b: string) => { let diff=a.length^b.length; for(let i=0;i<Math.max(a.length,b.length);i++)diff|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0); return diff===0 }
 async function telegram(method: string, payload: Record<string, unknown>) {
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(15000)})
-  return await response.json()
+  // A timeout/server response cannot prove whether Telegram accepted the send.
+  if(response.status===408||response.status>=500)throw new Error('telegram_unknown_delivery')
+  const result=await response.json()
+  if(!response.ok&&result?.ok===true)throw new Error('telegram_invalid_status')
+  return result
 }
 
 Deno.serve(async req => {
@@ -66,13 +71,15 @@ Deno.serve(async req => {
    const markup={inline_keyboard:[[{text:'Читать полностью',url:post.link}]]}
    try{
     if(lesson.cover_url){
-     result=await telegram('sendPhoto',{chat_id:cfg.chat_id,photo:lesson.cover_url,caption:post.text,parse_mode:'HTML',reply_markup:markup})
-     // A definite 400 means Telegram rejected the photo; no message was sent.
-     if(!result.ok&&result.error_code===400)result=await telegram('sendMessage',{chat_id:cfg.chat_id,text:post.text,parse_mode:'HTML',reply_markup:markup,link_preview_options:{is_disabled:true}})
+     const animated = isGifCoverUrl(lesson.cover_url)
+     result=await telegram(animated ? 'sendAnimation' : 'sendPhoto',{chat_id:cfg.chat_id,[animated ? 'animation' : 'photo']:lesson.cover_url,caption:post.text,parse_mode:'HTML',reply_markup:markup})
+     // A definite 400 means Telegram rejected the media; no message was sent.
+     if(result?.ok===false&&result.error_code===400)result=await telegram('sendMessage',{chat_id:cfg.chat_id,text:post.text,parse_mode:'HTML',reply_markup:markup,link_preview_options:{is_disabled:true}})
     }else result=await telegram('sendMessage',{chat_id:cfg.chat_id,text:post.text,parse_mode:'HTML',reply_markup:markup,link_preview_options:{is_disabled:true}})
-    if(result.ok&&Number.isSafeInteger(result.result?.message_id)){status='sent';messageId=result.result.message_id}
-    else if(result.ok){status='uncertain';error='missing_message_id'}
-    else {error=`telegram_${result.error_code??'rejected'}`;retry=Math.max(60,Number(result.parameters?.retry_after??0)+5)}
+    if(result?.ok===true&&Number.isSafeInteger(result.result?.message_id)&&result.result.message_id>0){status='sent';messageId=result.result.message_id}
+    else if(result?.ok===true){status='uncertain';error='missing_message_id'}
+    else if(result?.ok===false&&[400,401,403,404,409,429].includes(result.error_code)){error=`telegram_${result.error_code}`;retry=Math.max(60,Number(result.parameters?.retry_after??0)+5)}
+    else {status='uncertain';error='invalid_delivery_response'}
    }catch{status='uncertain';error='network_unknown_delivery'}
    const finished=await db.rpc('finish_news_post',{p_chat:cfg.chat_id,p_lesson:lesson.id,p_attempt:attempt_id,p_status:status,p_message:messageId,p_error:error,p_retry:retry})
    if(finished.error||!finished.data)return json({ok:false,sent,reason:'delivery_record_failed'},500)
