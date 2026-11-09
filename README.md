@@ -1,5 +1,7 @@
 # OG CRE8R²
 
+[Надёжное обучение: ожидание запросов, черновики, разбор квиза и клавиатура](docs/fixes/2026-11-09-learning-resilience.md).
+
 
 **[Бесплатный старт с ИИ](https://elaz-ed.vercel.app/?demo#/courses/start)** · [Обновления](https://elaz-ed.vercel.app/#/blog) · [Курсы с практикой](https://elaz-ed.vercel.app/#/courses) · [Книги Academy](docs/ai-academy/README.md)
 

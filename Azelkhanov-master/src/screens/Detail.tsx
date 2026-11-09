@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
@@ -23,6 +23,8 @@ import { demoMode, telegram } from '../platform/client.ts'
 import { Art, Button, Empty, Meter, Modal, PageHeader, QR, SectionTitle, money } from '../components/ui.tsx'
 import type { Data, Entity } from '../platform/contracts.ts'
 import { useBrand } from '../platform/brand-context.ts'
+import { homeworkDraftKey } from '../platform/learning-draft.ts'
+import { useHomeworkDraft } from '../platform/use-homework-draft.ts'
 import { entityTag } from '../platform/entity-tag.ts'
 
 export default function EntityDetail({ id }: { id: string }) {
@@ -30,21 +32,25 @@ export default function EntityDetail({ id }: { id: string }) {
   const { snapshot: s, push, act, celebrate, addCart, message } = usePlatform(),
     [confirmPurchase, setConfirmPurchase] = useState(false),
     [variant, setVariant] = useState(''),
-    [body, setBody] = useState(''),
-    [file, setFile] = useState(''),
     [certificate, setCertificate] = useState(''),
     [uploading, setUploading] = useState(false),
     [brief, setBrief] = useState<Record<string, string>>({}),
+    uploadGeneration = useRef(0),
+    screenGeneration = useRef(0),
     [requestId, setRequestId] = useState(() => crypto.randomUUID())
+  const draft = useHomeworkDraft(homeworkDraftKey(s?.config.id ?? '', String(s?.me.id ?? ''), demoMode(), id))
+  const { body, file, setBody, setFile } = draft
   const e = s?.entities.find((v) => v.id === id)
   useEffect(() => {
+    uploadGeneration.current++
+    screenGeneration.current++
+    setUploading(false)
     setVariant('')
-    setBody('')
-    setFile('')
     setCertificate('')
     setBrief({})
     setRequestId(crypto.randomUUID())
-  }, [id])
+    return () => { uploadGeneration.current++; screenGeneration.current++ }
+  }, [id, s?.me.id, s?.config.id])
   if (!s || !e)
     return (
       <>
@@ -103,6 +109,7 @@ export default function EntityDetail({ id }: { id: string }) {
   }
   const upload = async (f: File) => {
     if (f.size > 5 * 1024 * 1024) return message('Файл должен быть не больше 5 МБ')
+    const generation = ++uploadGeneration.current
     setUploading(true)
     try {
       if (demoMode()) {
@@ -114,20 +121,21 @@ export default function EntityDetail({ id }: { id: string }) {
           contentType: f.type || 'application/octet-stream',
           purpose: 'homework',
         })
-        if (!result) return
+        if (!result || generation !== uploadGeneration.current) return
         const res = await fetch(String(result.uploadUrl ?? result.url), {
           method: 'PUT',
           headers: { 'Content-Type': f.type || 'application/octet-stream' },
           body: f,
         })
         if (!res.ok) throw new Error('Не удалось загрузить файл')
+        if (generation !== uploadGeneration.current) return
         setFile(String(result.fileId))
         message('Файл загружен')
       }
     } catch (error) {
-      message(error instanceof Error ? error.message : 'Ошибка загрузки')
+      if (generation === uploadGeneration.current) message(error instanceof Error ? error.message : 'Ошибка загрузки')
     } finally {
-      setUploading(false)
+      if (generation === uploadGeneration.current) setUploading(false)
     }
   }
   return (
@@ -208,8 +216,9 @@ export default function EntityDetail({ id }: { id: string }) {
               tone={done ? 'soft' : 'dark'}
               disabled={done}
               onClick={async () => {
+                const generation = screenGeneration.current
                 const r = await act('content.complete', { entityId: id })
-                if (r) celebrate('Новая идея — в вашей копилке')
+                if (r && generation === screenGeneration.current) celebrate('Новая идея — в вашей копилке')
               }}
             >
               {done ? (
@@ -340,7 +349,10 @@ export default function EntityDetail({ id }: { id: string }) {
                 tone={done ? 'soft' : 'primary'}
                 onClick={async () => {
                   if (e.data.hasQuiz) push({ type: 'quiz', id })
-                  else if (await act('content.complete', { entityId: id })) celebrate('Ещё один урок позади')
+                  else {
+                    const generation = screenGeneration.current
+                    if (await act('content.complete', { entityId: id }) && generation === screenGeneration.current) celebrate('Ещё один урок позади')
+                  }
                 }}
               >
                 {done ? (
@@ -360,10 +372,12 @@ export default function EntityDetail({ id }: { id: string }) {
                 <p>Поделитесь результатом с наставником. Расскажите, что попробовали и что получилось.</p>
                 <textarea
                   value={body}
+                  maxLength={20000}
                   onChange={(ev) => setBody(ev.target.value)}
                   placeholder="Моя идея и первый результат…"
                   aria-label="Домашнее задание"
                 />
+                {(body || file || draft.status) && <p role="status">{draft.status || 'Черновик восстановлен в этом сеансе'}</p>}
                 <label className="az-file-label">
                   <Upload size={17} />
                   {uploading ? 'Загружаем…' : file || 'Прикрепить работу · до 5 МБ'}
@@ -379,10 +393,10 @@ export default function EntityDetail({ id }: { id: string }) {
                 <Button
                   disabled={body.trim().length < 3 || uploading}
                   onClick={async () => {
+                    const generation = screenGeneration.current
                     if (await act('homework.submit', { lessonId: id, body, file })) {
-                      setBody('')
-                      setFile('')
-                      message('Работа отправлена наставнику')
+                      draft.submitted({ body, file })
+                      if (generation === screenGeneration.current) message('Работа отправлена наставнику')
                     }
                   }}
                 >
@@ -732,3 +746,4 @@ export function Cart() {
     </>
   )
 }
+

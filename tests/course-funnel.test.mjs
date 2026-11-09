@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import vm from 'node:vm'
 import {rolldown} from 'rolldown'
 import {fileURLToPath} from 'node:url'
+import * as learningDrafts from '../src/lib/learning-drafts.ts'
 import {discoveryEvent} from '../src/lib/discovery-events.ts'
 import {ogPracticeCourses, practiceMatches, practiceTopics} from '../src/lib/og-practice.ts'
 
@@ -24,7 +25,7 @@ function setup() {
   useMemo(fn,deps) {const i=frame.index++,old=frame.hooks[i]; if (!old || !same(old.deps,deps)) frame.hooks[i]={deps,value:fn()}; return frame.hooks[i].value},
   useEffect(fn,deps) {const i=frame.index++,old=frame.hooks[i]; if (!old || !same(old.deps,deps)) {frame.hooks[i]={deps,fn,cleanup:old?.cleanup}; frame.effects.push(i)}},
  }
- const jsx=(type,props)=>({type,props:props??{}})
+ const jsx=(type,props,key)=>({type,props:props??{},key})
  const events=[],toasts=[],guarded=[],calls={invoice:0,open:0,boot:0,celebrate:0,lesson:0}
  const course={id:40,title:'Основы ИИ',practice_key:'foundations',price_stars:250,invite_unlock:0,lessons:1,done:0,gradient:'ocean',access:false,request:null}
  const card={id:90,kind:'lesson',course_id:40,title:'Первый урок',category:'',position:1,published:true,free_preview:true,completed:false,minutes:5,quiz:[],body:'Server lesson',gradient:'ocean'}
@@ -42,6 +43,7 @@ function setup() {
   tg:{get canPayStars(){return behavior.canPay},inTelegram:true,haptic:{success(){},tap(){},error(){}},confirmDialog:async()=>true,async openInvoice(){calls.open++;return behavior.status}},
   track:{track:(name,props,lessonId)=>events.push(discoveryEvent(name,props,lessonId))},
   game:{iconFor:()=> '✨',GRADIENTS:{ocean:{css:'blue',ink:'white'}},lessonsWord:()=> 'уроков',plural:()=> 'друзей'},
+  'learning-drafts':learningDrafts,
   links:{appLink:()=>null},sfx:{sfx:{levelUp(){}}},content:{isBlogPost:()=>false},
   'og-practice':{ogPracticeCourses:[{...ogPracticeCourses[0],key:'foundations',title:course.title,lessons:[{...ogPracticeCourses[0].lessons[0],key:'one',title:card.title,minutes:5}]}],practiceMatches,practiceTopics,readPracticeProgress:()=>({done:[]}),subscribePracticeProgress:()=>()=>{},getPracticeResume:()=>null,practicePath:(...parts)=>'/og-practice/'+parts.join('/'),writePracticeProgress(){}},
  }
@@ -63,7 +65,12 @@ function setup() {
  }
  function screen() {const instance=mount(load('screens/Course.tsx').CourseScreen,{id:40});const tree=instance.render();return {...instance,buy:find(tree,node=>node.type==='Cta' && node.props.busy===false).props.onClick}}
  function practice(path) {const root=mount(load('screens/home/OGPractice.tsx').OGPractice,{path,go(){}});const child=root.render();return mount(child.type,child.props)}
- return {events,toasts,guarded,calls,state,behavior,card,course,screen,practice,mount,load}
+ function lessonScreen() {
+  const root=mount(load('screens/Lesson.tsx').LessonScreen,{id:90})
+  let child,childKey,childType
+  return {render(){const element=root.render();if(!child||childKey!==element.key||childType!==element.type){child?.unmount();child=mount(element.type,element.props);childKey=element.key;childType=element.type}return child.render()},unmount(){child?.unmount();root.unmount()}}
+ }
+ return {events,toasts,guarded,calls,state,behavior,card,course,screen,practice,lessonScreen,mount,load}
 }
 function find(tree,predicate) {
  if (!tree || typeof tree!=='object') return
@@ -135,7 +142,18 @@ for(const variant of ['free','private','failed','wrong-course','unpublished','bu
 })
 
 test('legacy lesson screen previews use server bodies and dedupe progress rerenders',async()=>{
- const h=setup(),lesson=h.mount(h.load('screens/Lesson.tsx').LessonScreen,{id:90})
+ const h=setup(),lesson=h.lessonScreen()
  lesson.render();assert.deepEqual(h.events,[]);await settle();lesson.render();lesson.render()
  assert.deepEqual(h.events,[{name:'course_preview',lesson_id:90,props:{source:'course',course_id:40}}]);lesson.unmount()
+})
+
+test('legacy lesson keyed session reloads on account change',async()=>{
+ const h=setup(),lesson=h.lessonScreen()
+ lesson.render();await settle();lesson.render()
+ assert.equal(h.calls.lesson,1)
+ h.state.me={...h.state.me,id:8}
+ lesson.render();await settle();lesson.render()
+ assert.equal(h.calls.lesson,2)
+ assert.equal(h.events.filter(event=>event.name==='course_preview').length,2)
+ lesson.unmount()
 })

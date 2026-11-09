@@ -1,8 +1,9 @@
+import { learningDraftKey, readLearningDraft, writeLearningDraft, clearLearningDraft } from '../lib/learning-drafts'
 import { CoverImage } from '../CoverImage'
 import { Check, ChevronLeft, Copy, Eye, Heart, Send, X } from 'lucide-react'
 import { AnimatePresence, motion, useMotionValue } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { api, ApiError, errorText } from '../lib/api'
+import { api, ApiError, errorText, isDemo } from '../lib/api'
 import { GRADIENTS, iconFor } from '../lib/game'
 import { appLink } from '../lib/links'
 import { sfx } from '../lib/sfx'
@@ -20,7 +21,11 @@ import { Cta, Emoji, Pattern, Tap } from '../ui'
 const clip = (i: Inset, radius: number) => `inset(${i.top}px ${i.right}px ${i.bottom}px ${i.left}px round ${radius}px)`
 const OPEN = { top: 0, right: 0, bottom: 0, left: 0 }
 
-export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
+export function LessonScreen(props: { id: number; from?: Inset }) {
+  const actor = useStore(s => s.me?.id)
+  return <LessonSession key={`${actor}:${props.id}`} {...props}/>
+}
+function LessonSession({ id, from }: { id: number; from?: Inset }) {
   const card = useStore((s) => s.feed.find((c) => c.id === id))
   const feed = useStore((s) => s.feed)
   const courses = useStore((s) => s.courses)
@@ -33,6 +38,9 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
   const [quizResult, setQuizResult] = useState<LessonQuizAttempt | null>(null)
   const [busy, setBusy] = useState(false)
   const [revision,setRevision]=useState(0)
+  const draftKey = learningDraftKey(isDemo ? 'og-demo' : 'og-live', me?.id, id)
+  const restoredScroll = useRef(false)
+  const [draftStatus, setDraftStatus] = useState('')
   const scroller = useRef<HTMLDivElement>(null)
   const quizRef = useRef<HTMLDivElement>(null)
   const read = useMotionValue(0)
@@ -73,8 +81,16 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
     track('course_preview', {course_id: course.id, source: 'course'}, lesson.id)
   }, [id, lesson, course?.id, course?.access, me?.id])
 
+  useEffect(() => {
+    if (!lesson || restoredScroll.current) return
+    restoredScroll.current = true
+    const saved = readLearningDraft(draftKey)
+    if (saved && scroller.current) { scroller.current.scrollTop = Math.max(0, Number(saved.scrollTop) || 0); setDraftStatus('Место в уроке восстановлено') }
+  }, [lesson, draftKey])
+
   const onScroll = () => {
     const el = scroller.current
+    if (el && !completed && restoredScroll.current) setDraftStatus(writeLearningDraft(draftKey, { scrollTop: el.scrollTop }) ? 'Место в уроке сохранено в этом сеансе' : 'Не удалось сохранить место в уроке')
     if (el) read.set(Math.min(1, el.scrollTop / Math.max(1, el.scrollHeight - el.clientHeight)))
   }
 
@@ -85,6 +101,7 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
       const fromXp = me.xp
       const res = await api.complete(id, answers ?? [], quizResult?.attemptId)
       setMe(res.me)
+      clearLearningDraft(draftKey)
       patchCard(id, { completed: true })
       setLesson({ ...lesson, completed: true })
       if (!res.already) setReward({ result: res, fromXp, lessonId: id })
@@ -226,9 +243,10 @@ export function LessonScreen({ id, from }: { id: number; from?: Inset }) {
                 </span>
               </Tap>
 
+              {draftStatus && <p role="status" className="mt-4 text-xs text-mute">{draftStatus}</p>}
               {quiz.length > 0 && (
                 <div ref={quizRef} className="mt-8 scroll-mt-6">
-                  <Quiz lessonId={id} quiz={quiz} practice={completed && !answers} onDone={(attempt) => { setAnswers(attempt.answers); setQuizResult(attempt) }} />
+                  <Quiz key={`${draftKey}`} lessonId={id} topic={lesson.title} onReviewLesson={() => scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })} quiz={quiz} practice={completed && !answers} onDone={(attempt) => { setAnswers(attempt.answers); setQuizResult(attempt) }} />
                 </div>
               )}
               {nextLesson && <div className="mt-8 rounded-[20px] border border-line bg-card p-4"><p className="text-xs font-semibold uppercase tracking-wide text-violet">Следующий урок</p><p className="mt-2 font-semibold">{nextLesson.title}</p><p className="mt-1 text-xs text-mute">{nextLesson.minutes} мин{!canOpenNext ? ' · откроется вместе с курсом' : ''}</p>{canOpenNext && <><p className="mt-2 text-xs leading-relaxed text-mute">Переход не завершает текущий урок: отметь его пройденным отдельно.</p><Tap className="mt-3 min-h-11 text-sm font-semibold text-violet" onClick={() => { pop(); useStore.getState().push({type:'lesson',id:nextLesson.id}) }}>Открыть следующий урок →</Tap></>}</div>}
@@ -285,7 +303,7 @@ export { Video } from '../Video'
 
 // ---------- Квиз: по одному вопросу, серия верных ответов поднимает награду ----------
 
-function Quiz({ lessonId, quiz: initialQuiz, practice, onDone }: { lessonId: number; quiz: QuizQuestion[]; practice: boolean; onDone: (attempt: LessonQuizAttempt) => void }) {
+function Quiz({ lessonId, topic, onReviewLesson, quiz: initialQuiz, practice, onDone }: { lessonId: number; topic: string; onReviewLesson: () => void; quiz: QuizQuestion[]; practice: boolean; onDone: (attempt: LessonQuizAttempt) => void }) {
   const [step, setStep] = useState(0)
   const [attempt, setAttempt] = useState<LessonQuizAttempt | null>(null)
   const [loading, setLoading] = useState(true)
@@ -407,6 +425,7 @@ function Quiz({ lessonId, quiz: initialQuiz, practice, onDone }: { lessonId: num
         </div>
       </div>
 
+      <p role="status" className="mt-3 text-xs text-mute">{submitting ? 'Сохраняем ответ…' : answers.length ? 'Ответы сохранены. При возвращении продолжим эту попытку.' : 'Ответы сохраняются после выбора.'}</p>
       <div className="mt-3.5 flex gap-1.5">
         {quiz.map((_, i) => {
           const a = answers[i]
@@ -425,6 +444,7 @@ function Quiz({ lessonId, quiz: initialQuiz, practice, onDone }: { lessonId: num
             <p className="mt-1 text-[14px] text-mute">
               {attempt.practice || practice ? 'Тренировка без XP — урок уже засчитан.' : score === quiz.length ? `Чисто. Бонус +${points} XP` : score > 0 ? `Бонус +${points} XP` : 'Бывает. XP за урок всё равно твои.'}
             </p>
+            {attempt.done && <section className="mt-5 space-y-3 text-left" aria-label="Разбор квиза"><h3 className="font-semibold">{attempt.feedback.some(item => !item.correct) ? 'Разбор ошибок' : 'Все ответы верны'}</h3><p className="text-sm text-mute">Тема урока: {topic}</p>{attempt.feedback.filter(item => !item.correct).map(item => { const question = quiz[item.index]; return question ? <article key={item.index} className="rounded-xl border border-line p-3"><h4 className="text-sm font-semibold">{question.q}</h4><p className="mt-2 text-sm">Твой ответ: {question.options[item.answer]}</p><p className="mt-1 text-sm">Верный ответ: {question.options[item.correctIndex]}</p><p className="mt-2 text-sm text-mute">{item.explain || 'Пояснение к этому вопросу пока не добавлено. Повтори материал урока.'}</p></article> : null })}<Tap className="min-h-11 text-sm font-semibold text-violet" onClick={onReviewLesson}>Вернуться к материалу урока ↑</Tap></section>}
           </motion.div>
         ) : (
           <motion.div

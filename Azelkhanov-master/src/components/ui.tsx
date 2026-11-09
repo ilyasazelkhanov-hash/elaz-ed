@@ -5,10 +5,12 @@ import {
   lazy,
   Suspense,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useIsPresent } from 'motion/react'
+import { mountModalFocus } from './modal-focus.ts'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -189,38 +191,20 @@ export function QR({ value }: { value: string }) {
 }
 export function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const original = document.activeElement as HTMLElement | null
-    ref.current?.focus()
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-      if (e.key === 'Tab') {
-        const all = ref.current?.querySelectorAll<HTMLElement>('button,input,textarea,select,a[href]')
-        if (!all?.length) return
-        const first = all[0],
-          last = all[all.length - 1]
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault()
-          last.focus()
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault()
-          first.focus()
-        }
-      }
-    }
-    document.addEventListener('keydown', key)
-    return () => {
-      document.removeEventListener('keydown', key)
-      original?.focus()
-    }
-  }, [onClose])
+  const present = useIsPresent()
+  const close = useRef(onClose)
+  useLayoutEffect(() => { close.current = onClose }, [onClose])
+  useLayoutEffect(() => {
+    if (present && ref.current) return mountModalFocus(ref.current, () => close.current())
+  }, [present])
   return createPortal(
     <div className="az-modal-backdrop" onClick={onClose}>
       <motion.div
         ref={ref}
         tabIndex={-1}
         role="dialog"
-        aria-modal="true"
+        aria-modal={present || undefined}
+        inert={!present}
         aria-label={title}
         className="az-modal"
         initial={{ opacity: 0, y: 40, scale: 0.96 }}

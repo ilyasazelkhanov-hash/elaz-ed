@@ -38,7 +38,8 @@
     "release:manifest": "node scripts/release-manifest.mjs",
     "release:smoke": "node --use-env-proxy scripts/release-smoke.mjs",
     "test:all": "node scripts/test-all.mjs",
-    "news:publish": "node --experimental-strip-types scripts/publish-news.mjs"
+    "news:publish": "node --experimental-strip-types scripts/publish-news.mjs",
+    "test:learning-resilience": "node --experimental-strip-types --test tests/platform-learning-resilience.test.mjs tests/platform-modal-focus.test.mjs tests/unit/learning-drafts.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",
@@ -71,4 +72,3 @@
     "node": "24.x"
   }
 }
-

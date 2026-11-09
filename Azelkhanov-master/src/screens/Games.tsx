@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
   ArrowLeft,
@@ -18,137 +18,120 @@ import {
   Zap,
 } from 'lucide-react'
 import { usePlatform } from '../platform/store.ts'
+import { demoMode } from '../platform/client.ts'
+import { getQuizSession, type AnswerFeedback } from '../platform/quiz-session.ts'
 import { Art, Button, Empty, Meter, PageHeader, Scene } from '../components/ui.tsx'
 import type { QuizQuestion } from '../platform/contracts.ts'
 import { useBrand } from '../platform/brand-context.ts'
 import { scratchCoverage, wheelSector, wheelStop } from '../platform/game-geometry.ts'
 
 export function Quiz({ id }: { id: string }) {
-  const { snapshot: s, act, back, celebrate } = usePlatform(),
-    [attemptId, setAttempt] = useState(''),
-    [questions, setQuestions] = useState<QuizQuestion[]>([]),
-    [index, setIndex] = useState(0),
-    [picked, setPicked] = useState<number | null>(null),
-    [correct, setCorrect] = useState<number | null>(null),
-    [explain, setExplain] = useState(''),
-    [score, setScore] = useState(0),
-    [done, setDone] = useState(false),
-    [error, setError] = useState('')
-  useEffect(() => {
-    let active = true
+  const { snapshot: s, api } = usePlatform()
+  // Never reuse attempt/UI state when the app or account changes.
+  if (!api) return null
+  return <QuizSession key={`${s?.config.id}:${s?.me.id}:${id}`} id={id} api={api} />
+}
+function QuizSession({ id, api }: { id: string; api: object }) {
+  const { snapshot: s, act, back, push, celebrate, pendingActions } = usePlatform()
+  const draft = getQuizSession(api, JSON.stringify([s?.config.id, s?.me.id, id]))
+  const { attemptId, questions, index, picked, feedback, score, done, ready, error } = useSyncExternalStore(draft.subscribe, draft.get)
+  const setAttempt = (attemptId: string) => draft.set({ attemptId })
+  const setQuestions = (questions: QuizQuestion[]) => draft.set({ questions })
+  const setIndex = (index: number) => draft.set({ index })
+  const setPicked = (picked: number | null) => draft.set({ picked })
+  const setFeedback = (value: AnswerFeedback[] | ((previous: AnswerFeedback[]) => AnswerFeedback[])) => draft.set({ feedback: typeof value === 'function' ? value(draft.get().feedback) : value })
+  const setScore = (score: number) => draft.set({ score })
+  const setDone = (done: boolean) => draft.set({ done })
+  const setReady = (ready: boolean) => draft.set({ ready })
+  const setError = (error: string) => draft.set({ error })
+  const draftKey = `az-quiz-position:v1:${demoMode() ? 'demo' : 'live'}:${s?.config.id}:${s?.me.id}:${id}`
+  const savePosition = (attempt: string, cursor: number) => {
+    try { sessionStorage.setItem(draftKey, JSON.stringify({ attemptId: attempt, index: cursor })) } catch { /* Answers remain on the server. */ }
+  }
+  const start = () => {
+    if (draft.get().initialized) return
+    draft.set({ initialized: true, error: '' })
     void act('quiz.start', { entityId: id }).then(async (result) => {
-      if (!active) return
-      if (result) {
-        setAttempt(String(result.attemptId))
-        setQuestions(result.questions as unknown as QuizQuestion[])
-        const answers = (result.answers ?? []) as number[]
-        const total = (result.questions as unknown[]).length
-        setIndex(Math.min(answers.length, Math.max(0, total - 1)))
-        setScore(Number(result.score ?? 0))
-        if (answers.length === total && total > 0) {
-          setPicked(answers[total - 1])
-          setDone(true)
-          const feedback = await act('quiz.answer', {
-            attemptId: result.attemptId,
-            index: total - 1,
-            answer: answers[total - 1],
-          })
-          if (active && feedback) {
-            setCorrect(Number(feedback.correctIndex))
-            setExplain(String(feedback.explain ?? ''))
-          }
-        }
-      } else setError('Не удалось начать квиз. Попробуйте ещё раз.')
+      if (usePlatform.getState().api !== api) return
+      if (!result) { setError('Не удалось начать квиз. Попробуйте ещё раз.'); return }
+      const attempt = String(result.attemptId)
+      const list = result.questions as unknown as QuizQuestion[]
+      const answers = (result.answers ?? []) as number[]
+      setAttempt(attempt)
+      setQuestions(list)
+      setScore(Number(result.score ?? 0))
+      // Replay only answers already locked by the server; never ask for future keys.
+      const history: AnswerFeedback[] = []
+      for (let i = 0; i < answers.length; i++) {
+        if (usePlatform.getState().api !== api) return
+        const value = await act('quiz.answer', { attemptId: attempt, index: i, answer: answers[i] })
+        if (usePlatform.getState().api !== api) return
+        if (!value) { setError('Не удалось восстановить ответы. Вернитесь к уроку и попробуйте снова.'); return }
+        history.push({ index: i, answer: Number(value.answer), correctIndex: Number(value.correctIndex), explain: String(value.explain ?? '') })
+      }
+      let cursor = Math.min(answers.length, Math.max(0, list.length - 1))
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(draftKey) ?? 'null')
+        if (saved?.attemptId === attempt && Number.isInteger(saved.index) && saved.index >= 0 && saved.index <= cursor) cursor = saved.index
+      } catch { /* Safe default is the next unanswered question. */ }
+      setFeedback(history)
+      setIndex(cursor)
+      setPicked(history[cursor]?.answer ?? null)
+      setDone(list.length > 0 && answers.length === list.length)
+      setReady(true)
+      savePosition(attempt, cursor)
     })
-    return () => {
-      active = false
-    }
-  }, [id])
-  const e = s?.entities.find((v) => v.id === id),
-    q = questions[index]
+  }
+  useEffect(start, [draft])
+  const e = s?.entities.find((v) => v.id === id), q = questions[index], current = feedback.find(v => v.index === index)
+  const lesson = e?.kind === 'lesson' ? e : s?.entities.find(v => v.kind === 'lesson' && v.id === String(e?.data.lessonId ?? ''))
   const answer = async (option: number) => {
-    if (picked !== null) return
+    if (draft.get().picked !== null || !draft.get().ready) return
     setPicked(option)
     const r = await act('quiz.answer', { attemptId, index, answer: option })
-    if (!r) {
-      setPicked(null)
-      return
-    }
-    setPicked(Number(r.answer ?? option))
-    setCorrect(Number(r.correctIndex))
-    setExplain(String(r.explain ?? ''))
+    if (!r) { setPicked(null); setError('Не удалось сохранить ответ. Повторите отправку или откройте попытку заново.'); return }
+    const value = { index, answer: Number(r.answer ?? option), correctIndex: Number(r.correctIndex), explain: String(r.explain ?? '') }
+    setPicked(value.answer)
+    setFeedback(previous => [...previous.filter(v => v.index !== index), value])
     setScore(Number(r.score))
-    if (r.done) setDone(true)
+    setDone(Boolean(r.done))
+    savePosition(attemptId, index)
   }
   return (
     <>
       <PageHeader title="Минута для нового" subtitle={e?.title} />
       <div className="az-game-page az-quiz-page">
-        {error ? (
-          <Empty title={error} body="Вернитесь к заданию и откройте его снова." />
-        ) : !q ? (
-          <div className="az-loading-small">
-            Готовим хороший вопрос<span>✳</span>
-          </div>
+        {error ? <><Empty title={error} body="Зафиксированные ответы остаются на сервере. При повторном открытии тренировочная попытка может начаться заново." />{ready && <Button tone="soft" onClick={() => setError('')}>Продолжить эту попытку</Button>}<Button onClick={() => { draft.set({ initialized: false, ready: false }); start() }}>Открыть попытку заново</Button></> : !ready || !q ? (
+          <div className="az-loading-small" role="status">{pendingActions > 1 ? 'Ждём завершения предыдущего действия. Квиз откроется автоматически.' : 'Восстанавливаем вопросы и ответы'}<span>✳</span></div>
+        ) : done ? (
+          <section className="az-panel" aria-label="Результат квиза">
+            <h2>Результат: {score} из {questions.length}</h2>
+            <p>Тема: {lesson?.title ?? e?.title ?? 'Пройденный материал'}</p>
+            <h3>{feedback.some(v => v.answer !== v.correctIndex) ? 'Разбор ошибок' : 'Все ответы верны'}</h3>
+            {feedback.filter(v => v.answer !== v.correctIndex).map(v => <div className="az-explanation" key={v.index}>
+              <h3>{questions[v.index]?.question}</h3>
+              <p>Ваш ответ: {questions[v.index]?.options[v.answer]}</p>
+              <p><strong>Верный ответ: {questions[v.index]?.options[v.correctIndex]}</strong></p>
+              <p>{v.explain || 'Автор ещё не добавил объяснение. Вернитесь к материалу и повторите этот вопрос.'}</p>
+            </div>)}
+            {lesson && <Button tone="soft" onClick={() => push({ type: 'entity', id: lesson.id })}>Повторить материал урока<ArrowRight size={17} /></Button>}
+            <Button tone="soft" onClick={() => { draft.set({ initialized: false, ready: false, done: false, attemptId: '', questions: [], feedback: [], score: 0, index: 0, picked: null }); start() }}>Повторить квиз<RotateCcw size={17} /></Button>
+            <Button onClick={() => { celebrate(`Новая идея в копилке · ${score} из ${questions.length}`); back() }}>Забрать результат<Check size={17} /></Button>
+          </section>
         ) : (
           <>
-            <div className="az-game-meta">
-              <span>
-                ВОПРОС {String(index + 1).padStart(2, '0')} / {String(questions.length).padStart(2, '0')}
-              </span>
-              <span>
-                <Zap size={14} /> Знания в копилку
-              </span>
-            </div>
-            <Meter value={index + Number(picked !== null)} max={questions.length} />
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="az-question"
-              >
-                <span className="az-question-symbol">✳</span>
-                <h2>{q.question}</h2>
-                <div className="az-answers">
-                  {q.options.map((option, i) => (
-                    <motion.button
-                      whileTap={{ scale: 0.98 }}
-                      key={option}
-                      disabled={picked !== null}
-                      className={correct === i ? 'is-correct' : picked === i ? 'is-wrong' : ''}
-                      onClick={() => void answer(i)}
-                    >
-                      <span>{String.fromCharCode(65 + i)}</span>
-                      {option}
-                      {correct === i && <Check size={20} />}
-                    </motion.button>
-                  ))}
-                </div>
-                {picked !== null && correct !== null && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="az-explanation">
-                    <strong>{picked === correct ? 'Хорошая интуиция!' : 'Теперь вы знаете чуть больше.'}</strong>
-                    <p>{explain}</p>
-                    <Button
-                      onClick={() => {
-                        if (done) {
-                          celebrate(`Новая идея в копилке · ${score} из ${questions.length}`)
-                          back()
-                        } else {
-                          setIndex(index + 1)
-                          setPicked(null)
-                          setCorrect(null)
-                          setExplain('')
-                        }
-                      }}
-                    >
-                      {done ? 'Забрать результат' : 'Следующий вопрос'}
-                      <ArrowRight size={17} />
-                    </Button>
-                  </motion.div>
-                )}
-              </motion.div>
-            </AnimatePresence>
+            <div className="az-game-meta"><span>ВОПРОС {String(index + 1).padStart(2, '0')} / {String(questions.length).padStart(2, '0')}</span><span><Zap size={14} /> Знания в копилку</span></div>
+            <Meter value={feedback.length} max={questions.length} />
+            {feedback.length > 0 && <p role="status">Ответы сохранены. При переходах внутри приложения квиз продолжится с этого места.</p>}
+            <AnimatePresence mode="wait"><motion.div key={index} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="az-question">
+              <span className="az-question-symbol">✳</span><h2>{q.question}</h2>
+              <div className="az-answers">{q.options.map((option, i) => <motion.button whileTap={{ scale: 0.98 }} key={`${i}:${option}`} disabled={picked !== null} className={current?.correctIndex === i ? 'is-correct' : current && picked === i ? 'is-wrong' : ''} onClick={() => void answer(i)}><span>{String.fromCharCode(65 + i)}</span>{option}{current?.correctIndex === i && <Check size={20} />}</motion.button>)}</div>
+              {picked !== null && !current && <p role="status">{pendingActions > 1 ? 'Ответ в очереди. Сохраним после предыдущего действия.' : 'Сохраняем ответ…'}</p>}
+              {current && <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="az-explanation">
+                <strong>{current.answer === current.correctIndex ? 'Хорошая интуиция!' : 'Теперь вы знаете чуть больше.'}</strong><p>{current.explain}</p>
+                <Button onClick={() => { const next = index + 1; setIndex(next); setPicked(feedback.find(v => v.index === next)?.answer ?? null); savePosition(attemptId, next) }}>Следующий вопрос<ArrowRight size={17} /></Button>
+              </motion.div>}
+            </motion.div></AnimatePresence>
           </>
         )}
       </div>

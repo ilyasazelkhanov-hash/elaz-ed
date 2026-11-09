@@ -1,5 +1,7 @@
 # Azelkhanov Master
 
+[Надёжное обучение: ожидание запросов, черновики, разбор квиза и клавиатура](docs/LEARNING-RESILIENCE-2026-11-09.md).
+
 Самостоятельная мастер-платформа Telegram Mini Apps: React 19, TypeScript, Vite 8, Tailwind 4, Motion, Three.js и отдельный Supabase-проект для каждого заказчика. Бренд, модули, навигация и контент вынесены из компонентов. Демо Club, Team, Academy и Services сохраняет действия локально; производственные операции выполняет сервер.
 
 Начните с [сценариев демонстрации](docs/SCENARIOS.md), [матрицы возможностей](docs/CAPABILITIES.md) и [протокола проверок](docs/VERIFICATION.md). Локальный адрес: `http://127.0.0.1:5180/?demo`.

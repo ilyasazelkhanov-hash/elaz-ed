@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { AppConfig, Data, PlatformApi, Snapshot } from './contracts.ts'
 import { incomingGift } from './gift-links.ts'
+import { createActionQueue } from './action-queue.ts'
 import { createApi, haptic } from './client.ts'
 export interface View {
   type: string
@@ -12,6 +13,7 @@ interface PlatformStore {
   loading: boolean
   error: string
   busy: boolean
+  pendingActions: number
   stack: View[]
   toast: string
   celebration: string
@@ -27,6 +29,10 @@ interface PlatformStore {
   removeCart: (entityId: string, variant: string) => void
   clearCart: () => void
 }
+let session = 0
+let queueApi: PlatformApi | null = null
+let queueSession = 0
+let enqueue = createActionQueue(() => undefined)
 let toastTimer: ReturnType<typeof setTimeout>
 export const usePlatform = create<PlatformStore>((set, get) => ({
   snapshot: null,
@@ -34,15 +40,19 @@ export const usePlatform = create<PlatformStore>((set, get) => ({
   loading: true,
   error: '',
   busy: false,
+  pendingActions: 0,
   stack: [{ type: 'home' }],
   toast: '',
   celebration: '',
   cart: [],
   boot: async (config, base) => {
-    set({ loading: true, error: '' })
+    session++
+    const bootSession = session
+    set({ loading: true, error: '', api: null, snapshot: null, busy: false, pendingActions: 0 })
     try {
       const api = await createApi(config, base)
       const snapshot = await api.bootstrap()
+      if (bootSession !== session) return
       set({
         api,
         snapshot,
@@ -63,28 +73,38 @@ export const usePlatform = create<PlatformStore>((set, get) => ({
         ],
       })
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Не удалось открыть приложение', loading: false })
+      if (bootSession === session) set({ error: e instanceof Error ? e.message : 'Не удалось открыть приложение', loading: false })
     }
   },
-  act: async (action, payload = {}) => {
-    if (get().busy) return
-    set({ busy: true })
-    try {
-      const before = get().snapshot!.me
-      const result = await get().api!.dispatch(action, payload)
-      set({ snapshot: result.snapshot })
-      haptic('success')
-      return {
-        ...result.result,
-        gainedXp: (result.snapshot.me.platformXp ?? result.snapshot.me.xp) - (before.platformXp ?? before.xp),
-        gainedPoints: result.snapshot.me.points - before.points,
-      }
-    } catch (e) {
-      get().message(e instanceof Error ? e.message : 'Не удалось выполнить действие')
-      return undefined
-    } finally {
-      set({ busy: false })
+  act: (action, payload = {}) => {
+    const actionSession = session
+    const api = get().api
+    if (queueApi !== api || queueSession !== actionSession) {
+      queueApi = api
+      queueSession = actionSession
+      enqueue = createActionQueue((pendingActions) => {
+        if (session === actionSession && get().api === api) set({ pendingActions, busy: pendingActions > 0 })
+      })
     }
+    return enqueue(`${actionSession}:${action}:${JSON.stringify(payload)}`, async () => {
+      // A queued action must never run against another account/application after boot.
+      if (!api || actionSession !== session || api !== get().api || !get().snapshot) return undefined
+      try {
+        const before = get().snapshot!.me
+        const result = await api.dispatch(action, payload)
+        if (actionSession !== session || api !== get().api) return undefined
+        set({ snapshot: result.snapshot })
+        haptic('success')
+        return {
+          ...result.result,
+          gainedXp: (result.snapshot.me.platformXp ?? result.snapshot.me.xp) - (before.platformXp ?? before.xp),
+          gainedPoints: result.snapshot.me.points - before.points,
+        }
+      } catch (e) {
+        if (actionSession === session && api === get().api) get().message(e instanceof Error ? e.message : 'Не удалось выполнить действие')
+        return undefined
+      }
+    })
   },
   push: (view) => {
     haptic()
