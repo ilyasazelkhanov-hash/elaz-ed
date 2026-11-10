@@ -9,7 +9,7 @@ export function useStoryPlayback(key: string, duration: number, onComplete: () =
   useEffect(() => {
     if (!enabled) return
     const timer = createStoryPlayback({ duration, onProgress: setProgress, onComplete: () => latest.current(), visibility: document,
-      now: () => performance.now(), request: (callback) => requestAnimationFrame(callback), cancel: cancelAnimationFrame })
+      now: () => performance.now(), request: (callback) => requestAnimationFrame(callback), cancel: (id) => cancelAnimationFrame(id) })
     controller.current = timer
     timer.setPaused(explicitPause.current)
     return () => { timer.dispose(); controller.current = null }

@@ -14,7 +14,7 @@ Base: `d208cf4dd7e994186b90e93af250ab420fc06474` on `main`. Existing learning dr
 ## Validation
 
 - Root `npm run test:all`: 29 stages, including isolated tests, TypeScript, Vite production build and Academy prerender.
-- Standalone `npm test -- --test-concurrency=1`: 115 tests.
+- Standalone `npm test -- --test-concurrency=1`: 116 tests.
 - Standalone `npm run test:server-types` and `npm run build`.
 - Added focused coverage under `npm run test:review-resilience` and the standalone test glob.
 - Tests use local fixtures and isolated PostgreSQL/PGlite state, not production data.
@@ -22,3 +22,5 @@ Base: `d208cf4dd7e994186b90e93af250ab420fc06474` on `main`. Existing learning dr
 Local browser checks could not run: Chromium could not create its sandbox socket and the separate browser could not reach the local preview. This does not constitute desktop/mobile visual or real keyboard/touch verification. Production deployment/CI status is tracked separately from these local checks.
 
 Existing large-chunk build warnings remain. No server or database change, configuration replacement, or generator/sync baseline rewrite is included.
+
+Public-demo follow-up confirmed the three hostile industry-link fallbacks. Browser testing also exposed the native animation-frame receiver requirement: playback hooks now wrap frame cancellation in a callback, with a receiver-sensitive regression test for pause and disposal.

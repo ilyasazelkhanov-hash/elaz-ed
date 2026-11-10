@@ -40,7 +40,7 @@
     "test:all": "node scripts/test-all.mjs",
     "news:publish": "node --experimental-strip-types scripts/publish-news.mjs",
     "test:learning-resilience": "node --experimental-strip-types --test tests/platform-learning-resilience.test.mjs tests/platform-modal-focus.test.mjs tests/unit/learning-drafts.test.mjs",
-    "test:review-resilience": "node --experimental-strip-types --test tests/boot-refresh.test.mjs tests/api-deadlines.test.mjs tests/platform-operations-loading.test.mjs tests/platform-upload-story.test.mjs tests/platform-industry-links.test.mjs"
+    "test:review-resilience": "node --experimental-strip-types --test tests/boot-refresh.test.mjs tests/story-browser-bindings.test.mjs tests/api-deadlines.test.mjs tests/platform-operations-loading.test.mjs tests/platform-upload-story.test.mjs tests/platform-industry-links.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",
