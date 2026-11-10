@@ -57,6 +57,8 @@ type Phase = 'loading' | 'outside' | 'ok' | 'locked' | 'setup' | 'error'
 interface Store {
   phase: Phase
   errorCode: string | null
+  refreshErrorCode: string | null
+  refreshing: boolean
   me: Me | null
   feed: Card[]
   courses: Course[]
@@ -96,6 +98,7 @@ function loadSeen(): number[] {
   }
 }
 
+let bootRequest = 0
 let toastId = 0
 const isDemoProgress = (me: Me) => isDemo ? projectProgress(me, demoPlatformXp()) : me
 
@@ -108,6 +111,8 @@ declare global {
 export const useStore = create<Store>((set, get) => ({
   phase: 'loading',
   errorCode: null,
+  refreshErrorCode: null,
+  refreshing: false,
   me: null,
   feed: [],
   courses: [],
@@ -121,21 +126,38 @@ export const useStore = create<Store>((set, get) => ({
   seen: loadSeen(),
 
   boot: async (force) => {
+    const request = ++bootRequest
+    const background = get().phase === 'ok' && get().me !== null
+    if (background) set({ refreshing: true })
     try {
       const b = await api.boot(force)
+      if (request !== bootRequest) return get().phase
       const meta = { channel: b.channel, bot: b.bot }
       if (b.status === 'ok') {
-        set({ phase: 'ok', me: isDemoProgress(b.me), feed: b.feed, courses: b.courses ?? [], advent: b.advent ?? null, meta, errorCode: null })
+        set({ phase: 'ok', me: isDemoProgress(b.me), feed: b.feed, courses: b.courses ?? [], advent: b.advent ?? null, meta, errorCode: null, refreshErrorCode: null, refreshing: false })
         if (b.new_achievements?.length) get().unlocked(b.new_achievements)
-      } else set({ phase: b.status, meta, stack: [], reward: null })
+      } else set({ phase: b.status, meta, stack: [], reward: null, errorCode: null, refreshErrorCode: null, refreshing: false })
       return b.status
     } catch (e) {
-      set({ phase: 'error', errorCode: e instanceof ApiError ? e.code : 'server' })
+      if (request !== bootRequest) return get().phase
+      const code = e instanceof ApiError ? e.code : 'server'
+      const accessDenied = e instanceof ApiError && (e.status === 401 || e.status === 403)
+      if (background && get().phase === 'ok' && !accessDenied) {
+        // The mutation already succeeded. A failed read must not unmount its result
+        // or invite the user to repeat a payment, completion, or other write.
+        set({ refreshErrorCode: code, refreshing: false })
+      } else {
+        set({ phase: code === 'locked' ? 'locked' : 'error', errorCode: code, refreshErrorCode: null, refreshing: false,
+          ...(accessDenied ? { stack: [], reward: null } : {}) })
+      }
       return 'error'
     }
   },
 
-  setPhase: (phase) => set({ phase }),
+  setPhase: (phase) => {
+    bootRequest++
+    set({ phase, refreshing: false, refreshErrorCode: null })
+  },
   setTab: (tab) => {
     const hash=tab==='home'?'':`#/${tab}`
     window.history.replaceState(null,'',`${location.pathname}${location.search}${hash}`)
@@ -173,7 +195,10 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   guard: (e) => {
-    if (e instanceof ApiError && e.code === 'locked') set({ phase: 'locked', stack: [], reward: null })
+    if (e instanceof ApiError && e.code === 'locked') {
+      bootRequest++
+      set({ phase: 'locked', stack: [], reward: null, refreshing: false, refreshErrorCode: null })
+    }
   },
 }))
 

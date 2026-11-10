@@ -4,13 +4,8 @@ import { demoMode } from '../platform/client.ts'
 import { Button, PageHeader, SectionTitle, Art } from '../components/ui.tsx'
 import { EntityCard, MemberCard } from './Home.tsx'
 import { useBrand } from '../platform/brand-context.ts'
-export const industries = {
-  coffee: ['Кофейня', 'Ваш привычный вкус. Новые поводы зайти.', 'cup'],
-  fashion: ['Fashion', 'Вещи с вашим характером.', 'bag'],
-  construction: ['Строительство', 'От первого замера до согласованного результата.', 'notebook'],
-  company: ['Компания', 'Первые 30 дней в кругу команды.', 'orbit'],
-  expert: ['Эксперт', 'Знания превращаются в практику.', 'lilac'],
-} as const
+import { industries, resolveIndustryKey } from '../platform/industries.ts'
+export { industries } from '../platform/industries.ts'
 export function IndustryPicker() {
   const { push } = usePlatform()
   return (
@@ -50,7 +45,7 @@ export default function Industry({ id }: { id: string }) {
   const [brief, setBrief] = useState({ project: '', goal: '', contact: '', time: '' })
   const [request, setRequest] = useState(crypto.randomUUID())
   if (!s) return null
-  const key = id in industries ? (id as keyof typeof industries) : 'coffee'
+  const key = resolveIndustryKey(id)
   const [title, sub, cover] = industries[key]
   const has = (m: string) => s.config.modules.includes(m as never)
   const entities = s.entities.filter((e) => e.published && has(e.module))

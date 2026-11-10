@@ -32,6 +32,8 @@ interface TelegramWindow {
 }
 export const telegram = () => (window as unknown as TelegramWindow).Telegram?.WebApp
 const errors: Record<string, string> = {
+  unsupported_file_type: 'Формат файла не поддерживается. Выберите JPG, PNG, WebP, PDF или TXT.',
+  invalid_file: 'Проверьте формат и размер файла; имя должно быть не длиннее 200 символов.',
   access_denied: 'Ваш доступ ожидает подтверждения организатором.',
   invalid_brief: 'Заполните обязательные поля заявки и проверьте выбранные варианты.',
   idempotency_conflict: 'Заказ с этим номером уже создан. Проверьте историю заказов.',

@@ -1,3 +1,4 @@
+import { UPLOAD_ACCEPT, UPLOAD_TYPES, validateUpload, uploadResponseError } from '../platform/upload-validation.ts'
 import { useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Gift, Check, ArrowUpRight, Sparkles } from 'lucide-react'
@@ -417,30 +418,32 @@ export function Projects({ manage = false }: { manage?: boolean }) {
                   </label>
                   {!demoMode() && (s.projects ?? []).some((p) => p.id === edit.id) && (
                     <label>
-                      Добавить защищённый файл
+                      Добавить защищённый файл · {UPLOAD_TYPES} · до 5 МБ
                       <input
                         type="file"
                         disabled={m.status === 'approved' || busy}
-                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        accept={UPLOAD_ACCEPT}
                         onChange={async (e) => {
                           const file = e.target.files?.[0]
                           if (!file) return
-                          if (file.size > 5 * 1024 * 1024) return message('Файл должен быть меньше 5 МБ')
+                          e.target.value = ''
+                          const validation = validateUpload(file, 5)
+                          if (validation.error) return message(validation.error)
                           try {
                             const r = await act('file.upload-url', {
                               filename: file.name,
-                              contentType: file.type,
+                              contentType: validation.contentType,
                               purpose: 'project:' + edit.id,
                             })
                             if (!r?.url || !r.fileId) return
                             const response = await fetch(String(r.url), {
                               method: 'PUT',
                               body: file,
-                              headers: { 'Content-Type': file.type },
+                              headers: { 'Content-Type': validation.contentType },
                             })
-                            if (!response.ok) throw new Error('Не удалось загрузить файл')
+                            if (!response.ok) throw new Error(uploadResponseError(response.status))
                             const ref = 'file:' + r.fileId
-                            if (file.type.startsWith('image/')) update({ media: [...m.media, ref] })
+                            if (validation.contentType.startsWith('image/')) update({ media: [...m.media, ref] })
                             else update({ documents: [...m.documents, { title: file.name, url: ref }] })
                             message('Файл загружен. Сохраните проект, чтобы прикрепить его к этапу.')
                           } catch (error) {

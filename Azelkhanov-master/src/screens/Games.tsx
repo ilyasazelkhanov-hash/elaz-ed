@@ -1,3 +1,4 @@
+import { useStoryPlayback } from '../platform/use-story-playback.ts'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
@@ -661,8 +662,7 @@ export function Story({ id }: { id: string }) {
   const brand = useBrand(),
     touch = useRef(0)
   const { snapshot: s, act, back } = usePlatform(),
-    [index, setIndex] = useState(0),
-    [paused, setPaused] = useState(false)
+    [index, setIndex] = useState(0)
   const e = s?.entities.find((v) => v.id === id),
     slides = (e?.data.slides ?? []) as { title: string; body: string; art: string }[]
   const next = () => {
@@ -672,11 +672,7 @@ export function Story({ id }: { id: string }) {
       back()
     }
   }
-  useEffect(() => {
-    if (paused) return
-    const timer = setTimeout(next, 8000)
-    return () => clearTimeout(timer)
-  }, [index, paused])
+  const { progress, paused, setPaused, setHolding } = useStoryPlayback(`${id}:${index}`, 8000, next, slides.length > 0)
   const slide = slides[index]
   if (!slide) return <Empty title="История готовится" body="Загляните чуть позже." />
   return (
@@ -684,30 +680,26 @@ export function Story({ id }: { id: string }) {
       className={`az-story-screen az-story-screen-${index % 3}`}
       onTouchStart={(e) => {
         touch.current = e.touches[0].clientX
-        setPaused(true)
+        setHolding(true)
       }}
+      onTouchCancel={() => setHolding(false)}
       onTouchEnd={(e) => {
         const dx = e.changedTouches[0].clientX - touch.current
         if (dx < -50) next()
         else if (dx > 50) setIndex((i) => Math.max(0, i - 1))
-        setPaused(false)
+        setHolding(false)
       }}
     >
       <div className="az-story-progress">
         {slides.map((_, i) => (
           <span key={i}>
-            <motion.i
-              key={`${i}-${index}`}
-              initial={{ width: i < index ? '100%' : '0%' }}
-              animate={{ width: i <= index ? '100%' : '0%' }}
-              transition={{ duration: i === index && !paused ? 8 : 0, ease: 'linear' }}
-            />
+            <i style={{ width: `${i < index ? 100 : i === index ? progress * 100 : 0}%` }} />
           </span>
         ))}
       </div>
       <div className="az-story-header">
         <span>{brand.name.toUpperCase()} STORIES</span>
-        <button aria-label="Пауза истории" onClick={() => setPaused(!paused)}>
+        <button type="button" aria-label={paused ? "Продолжить историю" : "Приостановить историю"} aria-pressed={paused} onClick={() => setPaused((value) => !value)}>
           {paused ? '▶' : 'Ⅱ'}
         </button>
         <button aria-label="Закрыть историю" onClick={back}>

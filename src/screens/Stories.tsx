@@ -1,5 +1,6 @@
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
-import { AnimatePresence, motion, useMotionValue, useTransform } from 'motion/react'
+import { useStoryPlayback } from '../lib/use-story-playback'
+import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { GRADIENTS, slidesOf } from '../lib/game'
@@ -21,9 +22,6 @@ export function Stories({ startId }: { startId: number }) {
   const [pi, setPi] = useState(0)
   const story = stories[si]
   const slides = useMemo(() => slidesOf(story?.body ?? ''), [story])
-  const progress = useMotionValue(0)
-  const width = useTransform(progress, (p) => `${p * 100}%`)
-  const paused = useRef(false)
   const downAt = useRef(0)
   const rewarded = useRef(new Set<number>())
 
@@ -57,13 +55,16 @@ export function Stories({ startId }: { startId: number }) {
     }
   }, [story, pi, slides.length, si, stories.length, finish, pop])
 
+  const { progress, paused, setPaused, setHolding, restart } = useStoryPlayback(`${si}:${pi}`, SLIDE_MS, next, !!story)
+  const width = `${progress * 100}%`
+
   const prev = () => {
     if (pi > 0) return setPi(pi - 1)
     if (si > 0) {
       setSi(si - 1)
       setPi(0)
     } else {
-      progress.set(0)
+      restart()
     }
   }
 
@@ -72,23 +73,6 @@ export function Stories({ startId }: { startId: number }) {
     useStore.getState().markSeen(story.id)
     track('story_open', undefined, story.id)
   }, [story])
-
-  // Таймер слайда на requestAnimationFrame: умеет вставать на паузу, пока палец на экране.
-  useEffect(() => {
-    progress.set(0)
-    let raf = 0
-    let last = performance.now()
-    let elapsed = 0
-    const tick = (now: number) => {
-      if (!paused.current) elapsed += now - last
-      last = now
-      progress.set(Math.min(1, elapsed / SLIDE_MS))
-      if (elapsed >= SLIDE_MS) return next()
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [si, pi, next, progress])
 
   if (!story) return null
   const g = GRADIENTS[story.gradient] ?? GRADIENTS.aurora
@@ -114,13 +98,14 @@ export function Stories({ startId }: { startId: number }) {
         className="absolute inset-0"
         style={{ touchAction: 'pan-y', WebkitTouchCallout: 'none' }}
         onContextMenu={(e) => e.preventDefault()}
-        onPointerDown={() => {
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId)
           downAt.current = performance.now()
-          paused.current = true
+          setHolding(true)
         }}
-        onPointerCancel={() => (paused.current = false)}
+        onPointerCancel={() => (setHolding(false))}
         onPointerUp={(e) => {
-          paused.current = false
+          setHolding(false)
           if (performance.now() - downAt.current > HOLD_MS) return
           haptic.select()
           const r = e.currentTarget.getBoundingClientRect()
@@ -147,6 +132,9 @@ export function Stories({ startId }: { startId: number }) {
             <p className="truncate text-[14px] font-bold leading-tight">{story.title}</p>
             <p className="text-[12px] font-medium opacity-70">OG CRE8R² · {story.category}</p>
           </div>
+          <button type="button" onClick={() => setPaused((value) => !value)} aria-label={paused ? 'Продолжить историю' : 'Приостановить историю'} aria-pressed={paused} className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-black/15">
+            {paused ? <Play size={18} /> : <Pause size={18} />}
+          </button>
           <Tap onClick={pop} aria-label="Закрыть" className="pointer-events-auto grid h-9 w-9 place-items-center rounded-full bg-black/15">
             <X size={18} />
           </Tap>

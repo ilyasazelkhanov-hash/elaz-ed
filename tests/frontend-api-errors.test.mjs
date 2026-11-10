@@ -18,6 +18,7 @@ async function compile(path, imports = {}) {
 const errorsUrl = await compile('../src/lib/errors.ts')
 const apiUrl = await compile('../src/lib/api.ts', {
   './errors': errorsUrl,
+  './request-deadline.ts': new URL('../src/lib/request-deadline.ts', import.meta.url).href,
   './tg': stub('export const initData = "test-auth", inTelegram = true, platform = "test", startParam = ""'),
   './discovery': new URL('../src/lib/discovery.ts', import.meta.url).href,
 })
@@ -117,24 +118,23 @@ test('temporary failures do not revoke access or clear progress, and boot recove
       let calls = 0
       globalThis.fetch = async () => { calls++; return reply({ error: code }, status) }
       assert.equal(await useStore.getState().boot(), 'error')
-      assert.equal(useStore.getState().phase, 'error')
-      assert.equal(useStore.getState().errorCode, code)
+      assert.equal(useStore.getState().phase, 'ok')
+      assert.equal(useStore.getState().refreshErrorCode, code)
       for (const key of ['me', 'feed', 'courses', 'stack', 'reward']) assert.equal(useStore.getState()[key], initial[key])
-      const screen = ErrorScreen()
       await setImmediate()
-      assert.equal(calls, 1, 'rendering the error must not retry')
-      const retry = screen.props.children.find(child => child?.type === 'button')
-      assert.ok(retry, 'error screen must provide a retry button')
+      assert.equal(calls, 1, 'failed refresh must not retry automatically')
       globalThis.fetch = async () => {
         calls++
         return reply({ status: 'ok', ...initial, channel: {}, bot: {} })
       }
-      retry.props.onClick()
-      assert.equal(useStore.getState().phase, 'loading')
+      const retry = useStore.getState().boot()
+      assert.equal(useStore.getState().phase, 'ok')
+      await retry
       await setImmediate()
       assert.equal(calls, 2)
       assert.equal(useStore.getState().phase, 'ok')
       assert.equal(useStore.getState().errorCode, null)
+      assert.equal(useStore.getState().refreshErrorCode, null)
       assert.deepEqual(useStore.getState().me, initial.me)
       assert.deepEqual(useStore.getState().courses, initial.courses)
     }

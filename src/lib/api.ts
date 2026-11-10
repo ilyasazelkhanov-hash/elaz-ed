@@ -1,3 +1,4 @@
+import { withRequestDeadline, responseJsonOr, RequestTimeoutError } from './request-deadline.ts'
 import { ApiError } from './errors'
 import { initData, inTelegram, platform, startParam } from './tg'
 import { newestPosts } from './discovery'
@@ -11,22 +12,35 @@ export const isDemo = !inTelegram && (import.meta.env.DEV || new URLSearchParams
 export { ApiError }
 
 async function call<T>(route: string, payload: Record<string, unknown> = {}, keepalive = false): Promise<T> {
-  let res: Response
+  let receivedStatus: number | undefined
   try {
-    // text/plain — «простой» запрос: браузер не тратит круг на CORS-preflight.
-    // keepalive — запрос долетает, даже если приложение свернули прямо во время отправки.
-    res = await fetch(`${API_URL}/${route}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-      body: JSON.stringify({ auth: initData, tz: -new Date().getTimezoneOffset(), ...payload }),
-      keepalive,
+    return await withRequestDeadline(async signal => {
+      // text/plain avoids a CORS preflight; keepalive supports background tracking.
+      const res = await fetch(`${API_URL}/${route}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({ auth: initData, tz: -new Date().getTimezoneOffset(), ...payload }),
+        keepalive,
+        signal,
+      })
+      receivedStatus = res.status
+      const data = await responseJsonOr(res, null)
+      const validBody = data !== null && typeof data === 'object' && !Array.isArray(data)
+      if (!res.ok) {
+        const fallback = res.status === 401 ? 'bad_auth' : res.status === 403 ? 'forbidden' : 'server'
+        throw new ApiError(validBody && typeof data.error === 'string' ? data.error : fallback, res.status)
+      }
+      if (!validBody) throw new ApiError('server', 502)
+      return data as T
     })
-  } catch {
-    throw new ApiError('network', 0)
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    // Known denials remain authoritative even when their body cannot be read.
+    if (receivedStatus === 401 || receivedStatus === 403) {
+      throw new ApiError(receivedStatus === 401 ? 'bad_auth' : 'forbidden', receivedStatus)
+    }
+    throw new ApiError(error instanceof RequestTimeoutError ? 'timeout' : 'network', 0)
   }
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(data?.error ?? 'server', res.status)
-  return data as T
 }
 
 /** Old authenticated boot feeds are bounded; only clearly standalone news may enter the selection. */
@@ -161,6 +175,8 @@ export function errorText(e: unknown) {
     case 'complete_first': return 'Сначала отметь, что курс пройден'
     case 'platform_not_ready':
       return 'Клуб обновляется. Попробуй открыть приложение немного позже'
+    case 'timeout':
+      return 'Сервер не ответил вовремя. Обнови данные, чтобы проверить результат действия'
     case 'network':
       return 'Нет связи. Проверь интернет'
     case 'rate_limited':

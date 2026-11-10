@@ -1,3 +1,4 @@
+import { UPLOAD_ACCEPT, UPLOAD_TYPES, validateUpload, uploadResponseError } from '../platform/upload-validation.ts'
 import { useState } from 'react'
 import {
   BarChart3,
@@ -451,7 +452,8 @@ function EntityEditor({
     busy = usePlatform((v) => v.busy),
     act = usePlatform((v) => v.act)
   const uploadContent = async (file: File) => {
-    if (file.size > 10 * 1024 * 1024) return setError('Максимальный размер файла — 10 МБ')
+    const validation = validateUpload(file, 10)
+    if (validation.error) return setError(validation.error)
     setUploading(true)
     setError('')
     try {
@@ -459,14 +461,14 @@ function EntityEditor({
         set((prev) => ({ ...prev, data: { ...prev.data, fileLabel: `Демо-файл: ${file.name}` } }))
         return
       }
-      const result = await act('file.upload-url', { filename: file.name, contentType: file.type, purpose: 'content' })
+      const result = await act('file.upload-url', { filename: file.name, contentType: validation.contentType, purpose: 'content' })
       if (!result) return
       const response = await fetch(String(result.url), {
         method: 'PUT',
-        headers: { 'Content-Type': file.type },
+        headers: { 'Content-Type': validation.contentType },
         body: file,
       })
-      if (!response.ok) throw new Error('Не удалось загрузить файл')
+      if (!response.ok) throw new Error(uploadResponseError(response.status))
       set((prev) => ({ ...prev, data: { ...prev.data, fileId: String(result.fileId), fileLabel: file.name } }))
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Ошибка загрузки')
@@ -543,18 +545,19 @@ function EntityEditor({
         )}
         {e.kind === 'file' && (
           <label>
-            Закрытый материал
+            Закрытый материал · {UPLOAD_TYPES} · до 10 МБ
             <input
               type="file"
               disabled={uploading}
-              accept=".pdf,.txt,.jpg,.jpeg,.png,.webp"
+              accept={UPLOAD_ACCEPT}
               onChange={(ev) => {
                 const file = ev.target.files?.[0]
+                ev.target.value = ''
                 if (file) void uploadContent(file)
               }}
             />
             <small>
-              {uploading ? 'Загружаем…' : String(e.data.fileLabel ?? 'PDF, текст или изображение · до 10 МБ')}
+              {uploading ? 'Загружаем…' : String(e.data.fileLabel ?? `${UPLOAD_TYPES} · до 10 МБ`)}
             </small>
           </label>
         )}

@@ -1,3 +1,4 @@
+import { withRequestDeadline, RequestTimeoutError } from './request-deadline.ts'
 import { isDemo } from './api'
 import { initData } from './tg'
 import { useStore } from '../store'
@@ -16,6 +17,7 @@ const messages: Record<string,string> = {
   already_submitted:'Работа уже ожидает проверки.',artifact_required:'Добавьте текст работы или ссылку на результат.',
   access_required:'Для этого курса требуется отдельный доступ.',course_incomplete:'Сначала выполните обязательные занятия.',
   capstone_required:'Для сертификата требуется успешная защита проекта.',invalid_url:'Используйте открытую HTTPS-ссылку без ключей доступа.',
+  timeout:'Сервер не ответил вовремя. Обновите данные, чтобы проверить результат действия.',
   academy_not_ready:'Учебные материалы пока недоступны. Повторите позже.',network:'Нет связи с сервером. Попробуйте ещё раз.',
   access_forbidden:'Материал пока недоступен. Проверьте публикацию курса и своё зачисление.',
   prerequisites_required:'Сначала завершите подготовительный курс или подтвердите входной уровень.',
@@ -69,9 +71,16 @@ export async function academyRequest<T=any>(action: string, payload: Record<stri
 
 export async function academyPublicRequest(action:'certificate_public'|'portfolio_public',payload:Record<string,unknown>){
   if(isDemo){const me=useStore.getState().me;return(await demoClient())({id:me?.id??1,is_admin:false},action,payload)}
-  const res=await fetch(`${import.meta.env.VITE_API_URL??''}/academy_public`,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({action,payload})})
-  if(!res.ok)throw new Error('Подтверждение недоступно или ссылка отозвана.')
-  return res.json()
+  try {
+    return await withRequestDeadline(async signal => {
+      const res=await fetch(`${import.meta.env.VITE_API_URL??''}/academy_public`,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({action,payload}),signal})
+      if(!res.ok)throw new Error('Подтверждение недоступно или ссылка отозвана.')
+      return await res.json()
+    })
+  } catch (error) {
+    if (error instanceof RequestTimeoutError) throw new Error(messages.timeout)
+    throw error
+  }
 }
 
 // A deliberately small public sample. It never calls the live API or inherits admin rights.

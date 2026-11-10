@@ -16,6 +16,7 @@ async function loadApi() {
   .replaceAll('import.meta.env', '({ VITE_API_URL: "https://api.example", DEV: false })')
  compiled = compiled.replaceAll('from "./errors"', `from "data:text/javascript;base64,${Buffer.from(errors).toString('base64')}"`)
  compiled = compiled.replaceAll('from "./discovery"', `from ${JSON.stringify(new URL('../src/lib/discovery.ts', import.meta.url).href)}`)
+ compiled = compiled.replaceAll('from "./request-deadline.ts"', `from ${JSON.stringify(new URL('../src/lib/request-deadline.ts', import.meta.url).href)}`)
  return (await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`)).api
 }
 

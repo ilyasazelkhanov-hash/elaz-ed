@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Download, RefreshCw } from 'lucide-react'
 import { usePlatform } from '../platform/store.ts'
 import type { Data } from '../platform/contracts.ts'
 import { encodeCsv } from '../platform/csv.ts'
+import { createLatestRequest, type LatestRequestState } from '../platform/latest-request.ts'
 import { Button, Empty } from '../components/ui.tsx'
 
 const status: Record<string, string> = {
@@ -18,20 +19,24 @@ const status: Record<string, string> = {
 }
 export default function Operations({ payments = false }: { payments?: boolean }) {
   const { act, busy, snapshot: s, message } = usePlatform()
-  const [rows, setRows] = useState<Data[]>([]),
-    [loaded, setLoaded] = useState(false),
-    [kind, setKind] = useState('notification')
-  const load = async () => {
+  const [kind, setKind] = useState('notification')
+  const filterKey = payments ? 'payments' : `queue:${kind}`
+  const [state, setState] = useState<LatestRequestState<Data[]>>({ key: '', loading: true, error: '' })
+  const [request] = useState(() => createLatestRequest<Data[]>(setState))
+  // The identity check also hides old rows during the render before the next effect runs.
+  const current = state.key === filterKey
+  const rows = current ? state.value ?? [] : []
+  const loading = !current || state.loading
+  const error = current ? state.error : ''
+  const load = useCallback(() => request.run(filterKey, async () => {
     const result = await act(payments ? 'admin.payments' : 'queue.list', payments ? { limit: 100 } : { kind })
-    if (result) {
-      setRows((result[payments ? 'payments' : 'jobs'] ?? []) as Data[])
-      setLoaded(true)
-    }
-  }
+    return result ? (result[payments ? 'payments' : 'jobs'] ?? []) as Data[] : undefined
+  }), [act, filterKey, kind, payments, request])
   useEffect(() => {
-    setLoaded(false)
+    request.select(filterKey)
     void load()
-  }, [payments, kind])
+    return () => request.invalidate()
+  }, [filterKey, load, request])
   const exportRows = () => {
     const url = URL.createObjectURL(new Blob([encodeCsv(rows)], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
@@ -61,7 +66,12 @@ export default function Operations({ payments = false }: { payments?: boolean })
           Экспорт CSV
         </Button>
       </div>
-      {!loaded ? (
+      {error ? (
+        <div className="az-panel" role="alert">
+          <p>{error}</p>
+          <Button tone="soft" disabled={busy} onClick={() => void load()}>Повторить обновление</Button>
+        </div>
+      ) : loading ? (
         <p role="status">Загружаем операции…</p>
       ) : !rows.length ? (
         <Empty

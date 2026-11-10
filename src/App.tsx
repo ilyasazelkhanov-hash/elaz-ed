@@ -2,6 +2,7 @@ import { BookOpen, House, Newspaper, User } from 'lucide-react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
+import { RefreshNotice } from './RefreshNotice'
 import { blogPostEntry } from './lib/content'
 import { coursesEntry } from './lib/learning-entry'
 import { parseGuideStartParam } from './lib/discovery-events'
@@ -179,12 +180,14 @@ function Shell() {
         {stack.map((o, i) => (
           <FocusLayer key={overlayKey(o, i)} active={i === stack.length - 1 && !reward && !share} label={o.type === 'lesson' ? 'Публикация' : 'Экран приложения'}>
             <OverlayView overlay={o} />
+            {i === stack.length - 1 && !reward && !share && <RefreshNotice />}
           </FocusLayer>
         ))}
       </AnimatePresence>
 
-      <AnimatePresence>{reward && <FocusLayer key="reward" active={!share} label="Награда" className="absolute inset-0 z-50"><RewardModal reward={reward} /></FocusLayer>}</AnimatePresence>
+      <AnimatePresence>{reward && <FocusLayer key="reward" active={!share} label="Награда" className="absolute inset-0 z-50"><RewardModal reward={reward} />{!share && <RefreshNotice />}</FocusLayer>}</AnimatePresence>
 
+      {!stack.length && !reward && !share && <RefreshNotice />}
       <ShareSheet />
     </motion.div>
   )

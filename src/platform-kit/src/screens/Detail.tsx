@@ -1,3 +1,4 @@
+import { UPLOAD_ACCEPT, UPLOAD_TYPES, validateUpload, uploadResponseError } from '../platform/upload-validation.ts'
 import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -108,7 +109,8 @@ export default function EntityDetail({ id }: { id: string }) {
     else message('Оплата открывается внутри Telegram')
   }
   const upload = async (f: File) => {
-    if (f.size > 5 * 1024 * 1024) return message('Файл должен быть не больше 5 МБ')
+    const validation = validateUpload(f, 5)
+    if (validation.error) return message(validation.error)
     const generation = ++uploadGeneration.current
     setUploading(true)
     try {
@@ -118,16 +120,16 @@ export default function EntityDetail({ id }: { id: string }) {
       } else {
         const result = await act('file.upload-url', {
           filename: f.name,
-          contentType: f.type || 'application/octet-stream',
+          contentType: validation.contentType,
           purpose: 'homework',
         })
         if (!result || generation !== uploadGeneration.current) return
         const res = await fetch(String(result.uploadUrl ?? result.url), {
           method: 'PUT',
-          headers: { 'Content-Type': f.type || 'application/octet-stream' },
+          headers: { 'Content-Type': validation.contentType },
           body: f,
         })
-        if (!res.ok) throw new Error('Не удалось загрузить файл')
+        if (!res.ok) throw new Error(uploadResponseError(res.status))
         if (generation !== uploadGeneration.current) return
         setFile(String(result.fileId))
         message('Файл загружен')
@@ -383,13 +385,17 @@ export default function EntityDetail({ id }: { id: string }) {
                   {uploading ? 'Загружаем…' : file || 'Прикрепить работу · до 5 МБ'}
                   <input
                     type="file"
+                    accept={UPLOAD_ACCEPT}
+                    aria-describedby="homework-file-help"
                     disabled={uploading}
                     onChange={(ev) => {
                       const f = ev.target.files?.[0]
+                      ev.target.value = ''
                       if (f) void upload(f)
                     }}
                   />
                 </label>
+                <p id="homework-file-help">{UPLOAD_TYPES} · до 5 МБ. Окончательная проверка выполняется сервером.</p>
                 <Button
                   disabled={body.trim().length < 3 || uploading}
                   onClick={async () => {
