@@ -39,7 +39,7 @@ function setup() {
   },
  }
  const source = { type: 'lesson', id: 90 }, overlay = { type: 'course', id: 40 }
- const state = { courses: [course(40, 'foundations'), course(41, 'text')], stack: [source, overlay], tab: 'home', pop() { state.stack = state.stack.slice(0, -1) }, setTab(tab) { state.tab = tab } }
+ const state = { courses: [course(40, 'foundations'), course(41, 'text')], stack: [source, overlay], tab: 'home', pop() { state.stack = state.stack.slice(0, -1) }, setTab(tab) { state.tab = tab }, navigateTab(tab) { state.tab = tab; state.stack = [] } }
  const requests = [], writes = [], urls = [], listeners = new Map()
  const useStore = selector => selector(state)
  useStore.getState = () => state
@@ -51,6 +51,7 @@ function setup() {
  }
  const modules = {
   react, 'react/jsx-runtime': jsxRuntime, '../store': { useStore },
+  '../lib/app-navigation': { backWithinApp: fallback => fallback() },
   '../lib/og-course-access': { practiceKeyForCourse }, '../lib/learning-entry': { learningPath, learningUrl },
   '../lib/learning-scope': { LearningProvider: 'provider' }, '../ui': { Tap: 'button' },
   './home/OGPractice': { OGPractice: 'practice' }, './home/FreeStart': { FreeStart: 'free-start' },
@@ -140,7 +141,7 @@ for (const id of [7, 99]) test(`retired or missing course ${id} keeps the origin
  assert.doesNotMatch(html(screen), /Не удалось загрузить|Повторить загрузку/)
  assert.equal(h.writes.length, 0)
  button(screen.render(), 'Открыть курсы →').props.onClick()
- assert.deepEqual(h.state.stack, [h.source]); assert.equal(h.state.tab, 'courses')
+ assert.deepEqual(h.state.stack, []); assert.equal(h.state.tab, 'courses')
  screen.unmount()
 })
 
@@ -214,7 +215,7 @@ test('redirect preserves existing OG Back behavior: catalog first, then dismiss 
  let tree = screen.render()
  assert.equal(find(tree, node => node.type === 'practice').props.path, '/og-practice/foundations')
  find(tree, node => node.props?.['aria-label'] === 'Назад').props.onClick()
- tree = screen.render()
+ tree = screen.render({initialPath:h.state.stack[1].path})
  assert.equal(find(tree, node => node.type === 'practice').props.path, '/og-practice')
  assert.equal(h.state.stack.length, 2)
  h.listeners.get('og:courses-back')(); screen.unmount()

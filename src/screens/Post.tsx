@@ -33,11 +33,6 @@ export function PostScreen({ id, post, preview, error, retry, like, share }: { i
     const selected = toggleSavedPost(me.id, id, (selected) => track('blog_save',{source:'post',saved:selected},id))
     useStore.getState().toast(selected ? 'Добавлено в сохранённые' : 'Удалено из сохранённых')
   }
-  useEffect(() => {
-    if (!id) return
-    window.history.replaceState(null, '', `${location.pathname}${location.search}#/blog/${id}`)
-    return () => { if (location.hash === `#/blog/${id}`) { const store = useStore.getState(); store.setTab(store.tab) } }
-  }, [id])
   useEffect(() => { if (post && me) markPostRead(me.id, post.id) }, [post?.id, me?.id])
 
   return <section className="absolute inset-0 z-30 flex flex-col bg-bg" aria-label="Публикация блога">

@@ -55,36 +55,27 @@ export function Profile() {
 
   return (
     <div data-tab-scroll className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 18px)', paddingBottom: 'calc(120px + var(--bottom))' }}>
-      <section className="mb-6 px-5" aria-label="Моя библиотека">
+      <section className="mb-6 px-5" aria-label="Мой профиль">
         <p className="text-xs font-semibold uppercase tracking-wider text-violet">Моя берлога</p>
         <h1 className="mt-2 font-display text-[27px] font-semibold">Профиль</h1>
-        <div className="mt-5 grid grid-cols-2 gap-3">
+        <Tap className="mt-5 flex w-full items-center justify-between rounded-2xl border border-line bg-card p-4 text-left" onClick={()=>push({type:'learning',path:'/og-practice'})}><span><b className="block text-sm">Моё обучение</b><span className="mt-1 block text-xs text-mute">Курсы, доступы и следующий урок</span></span><ChevronRight size={18}/></Tap>
+        <Tap onClick={() => push({type:'club'})} className="mt-3 flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-line bg-card p-4 text-left"><span><b className="block text-sm">Доступ к клубу</b><span className="mt-1 block text-xs text-mute">Подписка на клуб. Курсы приобретаются отдельно.</span></span><ChevronRight size={18} className="shrink-0"/></Tap>
+        <h2 className="mt-5 text-sm font-semibold">Моя библиотека</h2>
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <Tap onClick={() => openBlogLibrary('saved')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Bookmark size={21} className="text-violet"/><span className="mt-3 block text-sm font-semibold">Сохранённые</span><span className="mt-1 block text-sm text-mute">{saved.length ? `Сохранено: ${saved.length}` : 'Полезное под рукой'}</span></Tap>
           <Tap onClick={() => openBlogLibrary('unread')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Newspaper size={21} className="text-violet"/><span className="mt-3 block text-sm font-semibold">Ещё почитать</span><span className="mt-1 block text-sm text-mute">{unread ? `${unread} в подборке` : 'Посмотреть новости'}</span></Tap>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-mute">Сохранённые публикации и темы доступны в этом браузере. {isDemo ? 'В демо прогресс хранится только на этом устройстве.' : 'Прогресс курсов хранится в аккаунте.'}</p>
         {followed.length > 0 && <><h2 className="mb-2 mt-5 text-sm font-semibold text-mute">Мои темы</h2><div className="no-bar flex gap-2 overflow-x-auto">{followed.map(id => {const topic = knowledgeTopics.find(item => item.id === id); return topic ? <Tap key={id} onClick={() => openBlogLibrary('new', id)} className="min-h-11 shrink-0 rounded-full border border-violet/25 bg-violet/10 px-3 text-sm font-medium text-violet">{topic.label}</Tap> : null})}</div></>}
       </section>
-      <div className="px-5">
-        <HoloCard me={me} />
-      </div>
 
-      <Tap className="mx-5 mt-4 flex w-[calc(100%-40px)] items-center justify-between rounded-2xl border border-line bg-card p-4 text-left" onClick={()=>push({type:'learning',path:'/og-practice'})}><span><b className="block text-sm">Моя практика OG</b><span className="mt-1 block text-xs text-mute">Курсы, задания и твой следующий урок</span></span><ChevronRight size={18}/></Tap>
-      <div className="mx-5 mt-4 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2" aria-label="Дополнительные разделы">
-       {[{label:'Рейтинг',icon:Trophy,open:()=>useStore.getState().setTab('top')},{label:'Мой маршрут',icon:Compass,open:()=>push({type:'journey'})},{label:'ИИ-сертификации',icon:Award,open:()=>push({type:'certifications'})},{label:'Демо Академии',icon:BookOpen,open:()=>push({type:'academy',path:'/academy'})}].map(item=><Tap key={item.label} onClick={item.open} className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><item.icon size={20} className="shrink-0 text-violet"/>{item.label}</Tap>)}
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 px-5 min-[360px]:grid-cols-4" aria-label="Статистика профиля">
-        <Stat emoji="⚡" value={me.xp} label="XP" />
-        <Stat emoji="🔥" value={me.streak} label="стрик" />
-        <Stat emoji="👥" value={me.invited} label="приглашено" />
-        <Stat emoji="🏆" value={me.rank} label="место" />
-      </div>
 
+      <Tap onClick={()=>push({type:'certifications'})} className="mx-5 mt-4 flex min-h-14 w-[calc(100%-40px)] items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><Award size={20} className="shrink-0 text-violet"/>ИИ-сертификации<ChevronRight size={18} className="ml-auto shrink-0"/></Tap>
       <h2 className="mb-3 mt-7 px-5 font-display text-[17px] font-semibold">Настройки</h2>
       <LearningGoalCard key={me.id} onOpenLesson={id => push({ type: 'lesson', id })} />
 
       <div className="mx-5 mt-3 rounded-[24px] border border-line bg-card/80 p-4">
-        <div className="flex items-baseline justify-between">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-[15px] font-medium">Тема</p>
           <p className="text-[12.5px] text-mute">{theme === 'auto' ? (inTelegram ? 'Как в Telegram' : 'Как на устройстве') : theme === 'light' ? 'Всегда светлая' : 'Всегда тёмная'}</p>
         </div>
@@ -147,21 +138,23 @@ export function Profile() {
       </div>
 
 
-      <h2 className="mb-3 mt-7 px-5 font-display text-[17px] font-semibold">Ещё в OG CRE8R</h2>
-      <div className="mx-5 mt-4 grid grid-cols-2 gap-2">
-        <Tap onClick={() => push({type:'club'})} className="rounded-[22px] border border-line bg-card/80 p-4 text-left"><p className="font-display text-[14px]">Клуб OG ↗</p><p className="mt-2 text-[12px] text-mute">Доступ и подписка</p></Tap>
-        <Tap onClick={() => push({type:'services'})} className="rounded-[22px] border border-line bg-card/80 p-4 text-left"><p className="font-display text-[14px]">Для бизнеса ↗</p><p className="mt-2 text-[12px] text-mute">Примеры мини-аппок</p></Tap>
-      </div>
-
-      {(isDemo || import.meta.env.VITE_PLATFORM_ENABLED === 'true') && <Tap onClick={() => { const url = new URL(location.href); url.searchParams.set('platform', ''); location.href = url.href }} className="mx-5 mt-6 flex w-[calc(100%-40px)] items-center gap-3 rounded-[24px] border border-line bg-card2 p-5 text-left">
-        <FlaskConical size={24} className="text-violet" />
-        <div className="min-w-0 flex-1"><p className="font-display text-[15px] font-semibold">Клубное пространство</p><p className="mt-1 text-[13px] text-mute">Материалы, встречи и твой профиль</p></div><ChevronRight size={18}/>
-      </Tap>}
-
       <details className="group mt-6">
         <summary className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden">
           <span><span className="block text-sm font-semibold">Уровни и достижения</span><span className="mt-1 block text-xs text-mute">Уровень {lvl.index} · открыто {earned} из {ACHIEVEMENTS.length}</span></span><ChevronRight size={18} className="shrink-0 transition-transform group-open:rotate-90" aria-hidden="true" />
         </summary>
+      <div className="mt-4 px-5">
+        <HoloCard me={me} />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 px-5 min-[360px]:grid-cols-4" aria-label="Статистика профиля">
+        <Stat emoji="⚡" value={me.xp} label="XP" />
+        <Stat emoji="🔥" value={me.streak} label="стрик" />
+        <Stat emoji="👥" value={me.invited} label="приглашено" />
+        <Stat emoji="🏆" value={me.rank} label="место" />
+      </div>
+
+      <div className="mx-5 mt-4 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+        {[{label:'Рейтинг',icon:Trophy,open:()=>useStore.getState().setTab('top')},{label:'Мой маршрут',icon:Compass,open:()=>push({type:'journey'})}].map(item=><Tap key={item.label} onClick={item.open} className="flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><item.icon size={20} className="shrink-0 text-violet"/>{item.label}</Tap>)}
+      </div>
       <h3 className="mb-3 mt-7 px-5 font-display text-[15px] font-semibold">Путь</h3>
       <div className="no-bar flex overflow-x-auto px-5 pb-1">
         {LEVELS.map((l, i) => {
@@ -223,6 +216,17 @@ export function Profile() {
         </span>
       </Tap>
 
+      <details className="group mt-6">
+        <summary className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold">Дополнительно</span><span className="mt-1 block text-xs text-mute">Демо Академии, бизнес и эксперименты</span></span><ChevronRight size={18} className="shrink-0 transition-transform group-open:rotate-90" aria-hidden="true"/></summary>
+        <div className="mx-5 mt-4 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+          <Tap onClick={()=>push({type:'academy',path:'/academy'})} className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><BookOpen size={20} className="shrink-0 text-violet"/>Демо Академии</Tap>
+          <Tap onClick={() => push({type:'services'})} className="rounded-2xl border border-line bg-card p-4 text-left"><b className="block text-sm">Для бизнеса ↗</b><span className="mt-1 block text-xs text-mute">Примеры мини-аппок</span></Tap>
+        </div>
+      {(isDemo || import.meta.env.VITE_PLATFORM_ENABLED === 'true') && <Tap onClick={() => { const url = new URL(location.href); url.searchParams.set('platform', ''); location.href = url.href }} className="mx-5 mt-6 flex w-[calc(100%-40px)] items-center gap-3 rounded-[24px] border border-line bg-card2 p-5 text-left">
+        <FlaskConical size={24} className="text-violet" />
+        <div className="min-w-0 flex-1"><p className="font-display text-[15px] font-semibold">Клубное пространство</p><p className="mt-1 text-[13px] text-mute">Материалы, встречи и твой профиль</p></div><ChevronRight size={18}/>
+      </Tap>}
+
       <Tap onClick={() => push({ type: 'lab' })} className="mx-5 mt-3 flex w-[calc(100%-40px)] items-center gap-3.5 rounded-[24px] border border-line bg-card/80 p-4 text-left">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-violet/15 text-violet">
           <FlaskConical size={20} />
@@ -233,6 +237,7 @@ export function Profile() {
         </span>
         <ChevronRight size={18} className="shrink-0 text-faint" />
       </Tap>
+      </details>
 
 
       <p className="mt-6 text-center text-[12px] text-faint">

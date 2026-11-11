@@ -247,7 +247,7 @@ const Profile = await profileComponent()
 test('profile settings precede optional sections; toggles expose state and levels are collapsed', () => {
   globalThis.__profileFixture = { me: { id: 1, name: 'Очень Длинное Имя Пользователя Без Обрезания', xp: 250, streak: 2, invited: 0, rank: 1, achievements: [], is_admin: false }, feed: [], meta: { channel: {}, bot: {} }, push() {}, toast() {} }
   const html = renderToStaticMarkup(createElement(Profile))
-  assert.ok(html.indexOf('Настройки') < html.indexOf('Ещё в OG CRE8R'))
+  assert.ok(html.indexOf('Настройки') < html.indexOf('Дополнительно'))
   assert.ok(html.indexOf('PROFILE_LEARNING_CARD') < html.indexOf('Уровни и достижения'))
   assert.match(html, /<details class="group mt-6">/)
   assert.match(html, /role="group" aria-label="Тема оформления"/)

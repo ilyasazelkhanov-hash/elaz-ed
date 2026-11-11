@@ -2,7 +2,6 @@ import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
 import { RefreshNotice } from './RefreshNotice'
-import { blogPostEntry } from './lib/content'
 import { coursesEntry } from './lib/learning-entry'
 import { parseGuideStartParam } from './lib/discovery-events'
 import { track } from './lib/track'
@@ -22,9 +21,10 @@ import { ShareSheet } from './screens/ShareSheet'
 import { ErrorScreen, Gate, Outside, Setup, Splash } from './screens/States'
 import { Stories } from './screens/Stories'
 import { Top } from './screens/Top'
-import { useStore, type Overlay, type Tab } from './store'
+import { useStore, type Overlay } from './store'
 import { enableSparks, Toasts } from './ui'
 import { MainNav } from './MainNav'
+import { bindAppNavigation, navigationFromHash } from './lib/app-navigation'
 
 // Админку видит один человек — незачем грузить её всем.
 const AdminScreen = lazy(() => import('./screens/Admin').then((m) => ({ default: m.AdminScreen })))
@@ -121,18 +121,17 @@ function Shell() {
 
   // Прямая ссылка на урок: t.me/бот?start=l12
   useEffect(() => {
-    const freeGuide = parseGuideStartParam(startParam)
-    const academyPath = academyEntry(location.hash, location.pathname, startParam)
-    const coursesPath = coursesEntry(location.hash, location.pathname, startParam)
-    const postId=blogPostEntry(location.hash)
-    const mainTab=/^#\/(blog|profile|top)$/.exec(location.hash)?.[1] as Tab|undefined
-    if(postId){useStore.getState().setTab('blog');useStore.getState().push({type:'lesson',id:postId,post:true})}
-    else if(mainTab)useStore.getState().setTab(mainTab)
+    const freeGuide = parseGuideStartParam(location.hash ? '' : startParam)
+    const academyPath = academyEntry(location.hash, location.hash ? '' : location.pathname, location.hash ? '' : startParam)
+    const coursesPath = coursesEntry(location.hash, location.hash ? '' : location.pathname, location.hash ? '' : startParam)
+    const initialRoute = location.hash ? navigationFromHash(location.hash) : null
+    const postId = initialRoute?.stack.find(overlay => overlay.type === 'lesson')?.id
+    if (initialRoute) useStore.setState(initialRoute)
     else if (coursesPath) {useStore.getState().setTab('courses');if(coursesPath!=='/courses')useStore.getState().push({type:'learning',path:coursesPath})}
     else if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
     else if (freeGuide) {useStore.getState().setTab('courses');useStore.getState().push({type:'learning',path:'/courses/start/'+freeGuide.guideId})}
     track('discovery_open',{source:freeGuide?'telegram_guide':postId?'blog':/(?:^|_)l\d+(?:_|$)/.test(startParam)?'telegram_post':/(?:^|_)c\d+(?:_|$)/.test(startParam)?'telegram_course':'direct'})
-    if (!postId && !mainTab && !coursesPath && !academyPath && !freeGuide) {
+    if (!location.hash && !postId && !coursesPath && !academyPath && !freeGuide) {
       const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
       const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
       if (id) useStore.getState().push({ type: 'lesson', id })
@@ -142,21 +141,7 @@ function Shell() {
       else if (/(?:^|_)advent(?:_|$)/.test(startParam) && useStore.getState().advent) useStore.getState().push({ type: 'advent' })
     }
     preloadMarkdown()
-  }, [])
-
-  // Opening another OG lesson in an already loaded app changes only the hash.
-  // Mounted course windows handle their own navigation; otherwise open one here.
-  useEffect(() => {
-    const openPracticeLink = () => {
-      const path = coursesEntry(location.hash, '', '')
-      if (!path || !/^\/courses\/(?:og-practice|start)(?:\/|$)/.test(path)) return
-      const store = useStore.getState()
-      if (store.stack.some(overlay => overlay.type === 'learning')) return
-      store.setTab('courses')
-      store.push({type: 'learning', path})
-    }
-    window.addEventListener('hashchange', openPracticeLink)
-    return () => window.removeEventListener('hashchange', openPracticeLink)
+    return bindAppNavigation(useStore)
   }, [])
 
   return (

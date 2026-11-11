@@ -1,8 +1,9 @@
 import { ArrowLeft, BookOpen } from 'lucide-react'
-import { lazy,Suspense,useEffect,useRef,useState } from 'react'
+import { lazy,Suspense,useEffect,useRef } from 'react'
 import { LearningProvider } from '../lib/learning-scope'
 import { learningPath,learningUrl } from '../lib/learning-entry'
 import { useStore } from '../store'
+import { backWithinApp } from '../lib/app-navigation'
 import { Tap } from '../ui'
 import { OGPractice } from './home/OGPractice'
 import { FreeStart } from './home/FreeStart'
@@ -24,27 +25,21 @@ export function MainCoursesTab(){
 }
 export function CoursesScreen({path}:{path?:string}){return <LearningProvider demo={false}><CourseWindow initialPath={path}/></LearningProvider>}
 function CourseWindow({initialPath}:{initialPath?:string}){
- const [path,setPath]=useState(()=>learningPath(initialPath||location.hash.slice(1),false)||'/og-practice'),[history,setHistory]=useState<string[]>([])
+ const path=learningPath(initialPath||'/og-practice',false)||'/og-practice'
  const scroller=useRef<HTMLElement>(null)
- const parts=path.split('/').filter(Boolean),area=parts[0],code=decodeURIComponent(parts[1]||'')
+ const parts=path.split('/').filter(Boolean),area=parts[0]
+ let code='';try{code=decodeURIComponent(parts[1]||'')}catch{code=parts[1]||''}
  const permissions=useAcademy('permissions',{},area==='admin')
- const url=(value:string)=>`${location.pathname}${location.search}#${learningUrl(value,false)}`
- function go(next:string){if(next===path)return;setHistory(h=>[...h,path]);setPath(next);window.history.replaceState(null,'',url(next))}
- function close(){const store=useStore.getState();store.pop();store.setTab(store.tab)}
- function back(){
-  if(history.length){const previous=history[history.length-1];setHistory(h=>h.slice(0,-1));setPath(previous);window.history.replaceState(null,'',url(previous));return}
-  if(area==='og-practice'||area==='start'){
-   const parent=area==='start'?(parts[1]?'/start':null):parts[2]?`/og-practice/${parts[1]}`:parts[1]?'/og-practice':null
-   if(parent){setPath(parent);window.history.replaceState(null,'',url(parent))}else close()
-   return
-  }
+ function go(next:string){if(next===path)return;useStore.setState(s=>({stack:s.stack.map((o,i)=>i===s.stack.length-1&&o.type==='learning'?{...o,path:learningUrl(next,false)}:o)}))}
+ function back(){backWithinApp(()=>{
+  const parent=area==='start'?(parts[1]?'/start':null):area==='og-practice'?(parts[2]?`/og-practice/${parts[1]}`:parts[1]?'/og-practice':null):null
   const course=/^(.+)-M\d+-L\d+/.exec(code)?.[1]
-  if((area==='lessons'||area==='assessments'||area==='read')&&course){go(`/courses/${course}`);setHistory([])}else close()
- }
- useEffect(()=>{window.history.replaceState(null,'',url(path))},[])
+  if(parent)go(parent)
+  else if((area==='lessons'||area==='assessments'||area==='read')&&course)go(`/courses/${course}`)
+  else useStore.getState().pop()
+ })}
  useEffect(()=>{const listener=()=>back();window.addEventListener('og:courses-back',listener);return()=>window.removeEventListener('og:courses-back',listener)})
  useEffect(()=>{scroller.current?.scrollTo({top:0});scroller.current?.focus({preventScroll:true})},[path])
- useEffect(()=>{const listener=()=>{if(location.hash.startsWith('#/courses')){setPath(learningPath(location.hash,false)||'/og-practice');setHistory([])}};window.addEventListener('hashchange',listener);return()=>window.removeEventListener('hashchange',listener)},[])
  const title=area==='start'?'Бесплатный старт':area==='og-practice'?'Платные курсы':area==='lessons'||area==='assessments'||area==='read'?'Урок курса':area==='my-learning'||area==='projects'?'Моё обучение':area==='admin'?'Управление курсами':'Курсы'
  return <section className="og-course-screen academy absolute inset-0 z-30 flex flex-col bg-bg" aria-label="Курсы OG CRE8R">
   <header className="flex shrink-0 items-center gap-3 border-b border-line px-5 pb-3" style={{paddingTop:'calc(var(--top) + 12px)'}}><Tap onClick={back} aria-label="Назад" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-card"><ArrowLeft size={21}/></Tap><p className="flex-1 font-display text-base font-semibold">{title}</p>{area!=='og-practice'&&area!=='start'&&<Tap onClick={()=>go('/my-learning')} aria-label="Моё обучение" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-card"><BookOpen size={20}/></Tap>}</header>

@@ -100,11 +100,6 @@ function loadSeen(): number[] {
   }
 }
 
-function replaceTabLocation(tab: Tab) {
-  const hash = tab === 'home' ? '' : `#/${tab}`
-  window.history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)
-}
-
 let bootRequest = 0
 let toastId = 0
 const isDemoProgress = (me: Me) => isDemo ? projectProgress(me, demoPlatformXp()) : me
@@ -165,15 +160,8 @@ export const useStore = create<Store>((set, get) => ({
     bootRequest++
     set({ phase, refreshing: false, refreshErrorCode: null })
   },
-  setTab: (tab) => {
-    replaceTabLocation(tab)
-    set({tab})
-  },
-  navigateTab: (tab) => {
-    // Update the URL first, so closing a post cannot restore its old route.
-    replaceTabLocation(tab)
-    set({ tab, stack: [] })
-  },
+  setTab: (tab) => set({ tab, stack: [] }),
+  navigateTab: (tab) => set({ tab, stack: [] }),
   push: (overlay) => set((s) => ({ stack: [...s.stack, overlay] })),
   pop: () => set((s) => ({ stack: s.stack.slice(0, -1) })),
   setMe: (me) => set({ me: isDemoProgress(me) }),
