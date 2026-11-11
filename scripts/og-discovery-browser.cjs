@@ -28,7 +28,7 @@ const browserPath=process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
    await visit()
    await expect(nav()).toBeVisible()
    assert.deepEqual(await nav().getByRole('button').allTextContents(),['Главная','Новости','Курсы','Профиль'])
-   await expect(page.getByRole('heading',{level:1})).toContainText('Понятно об ИИ')
+   await expect(page.getByRole('heading',{level:1})).toContainText('OG CRE8R')
    const latest=page.getByRole('region',{name:'Последние новости'}),courses=page.getByRole('region',{name:'Курсы',exact:true})
    await expect(latest.locator('.reader-post').first()).toBeVisible()
    assert.ok((await latest.boundingBox()).y<(await courses.boundingBox()).y)
@@ -38,7 +38,7 @@ const browserPath=process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
    await shot('01-home-free-first')
   })
   await step('five-free-guides-copy-and-self-check',async()=>{
-   await page.getByRole('button',{name:'Я начинаю — с чего начать?',exact:true}).click()
+   await page.getByRole('button',{name:'Попробовать ИИ',exact:true}).click()
    await expect(active().getByRole('heading',{level:1})).toContainText('С ИИ можно')
    assert.equal(await active().locator('.free-start-card').count(),5)
    await active().locator('.free-start-card').first().click()

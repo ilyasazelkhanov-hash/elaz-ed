@@ -22,7 +22,7 @@ const out = path.resolve('test-results/app-navigation-ui')
     await check('home-profile-browser-back-forward', async () => {
       await nav().getByRole('button', { name: 'Профиль', exact: true }).click()
       await page.getByRole('heading', { name: 'Профиль', exact: true }).waitFor()
-      await page.goBack(); await page.getByRole('heading', { name: /Понятно об ИИ/ }).waitFor()
+      await page.goBack(); await page.getByRole('heading', { name: /OG CRE8R/ }).waitFor()
       await page.goForward(); await page.getByRole('heading', { name: 'Профиль', exact: true }).waitFor()
     })
     await check('catalogue-course-lesson-back-forward', async () => {
@@ -43,7 +43,7 @@ const out = path.resolve('test-results/app-navigation-ui')
       await hash('#/courses/start/first-request'); await active().getByRole('heading', { name: 'Первый запрос, который помогает', exact: true }).waitFor()
       await page.reload(); await active().getByRole('heading', { name: 'Первый запрос, который помогает', exact: true }).waitFor()
       await hash('#/profile'); await page.getByRole('heading', { name: 'Профиль', exact: true }).waitFor()
-      await hash('#/unknown'); await page.getByRole('heading', { name: /Понятно об ИИ/ }).waitFor()
+      await hash('#/unknown'); await page.getByRole('heading', { name: /OG CRE8R/ }).waitFor()
     })
     await check('profile-keyboard-disclosure-and-320-360-390-layout', async () => {
       await hash('#/profile'); await page.getByRole('heading', { name: 'Профиль', exact: true }).waitFor()

@@ -7,6 +7,7 @@ import { useStore } from '../store'
 import { Avatar, Counter, Emoji, Odometer, Tap } from '../ui'
 import { AdventBanner } from './advent/Banner'
 import { MainCourses } from './home/AcademyCourses'
+import { Companion } from './home/Companion'
 import { openBlogLibrary } from './home/blog-view'
 import { DailyCard, StreakCard } from './home/Daily'
 import { Feed } from './home/Feed'
@@ -24,7 +25,6 @@ export function Home() {
   const me = useStore(s => s.me)!
   const feed = useStore(s => s.feed)
   const setTab = useStore(s => s.setTab)
-  const push = useStore(s => s.push)
   const scroller = useRef<HTMLDivElement>(null)
   const saved = useSavedPosts(me.id)
   const followed = useFollowedTopics(me.id)
@@ -32,17 +32,11 @@ export function Home() {
 
   return <div ref={scroller} data-tab-scroll className="scroll h-full" style={{ paddingBottom: 'calc(110px + var(--bottom))' }}>
     <header className="flex items-center justify-between gap-3 px-5 pb-5" style={{ paddingTop: 'calc(var(--top) + 18px)' }}>
-      <div><p className="font-display text-[17px] font-bold tracking-tight">OG CRE8R<span className="text-violet">²</span></p><p className="mt-1 text-xs text-mute">Твоя берлога знаний об ИИ</p></div>
+      <div><h1 className="font-display text-[17px] font-bold tracking-tight">OG CRE8R<span className="text-violet">²</span></h1><p className="mt-1 text-xs text-mute">Твоя берлога знаний об ИИ</p></div>
       <Tap feedback="soft" onClick={() => setTab('profile')} aria-label="Профиль" className="rounded-full border border-line p-1"><Avatar name={me.name} photo={me.photo} id={me.id} size={38}/></Tap>
     </header>
 
-    <section className="reader-hero mx-5 p-5" aria-label="Об OG CRE8R">
-      <p className="reader-eyebrow flex items-center gap-2 text-violet"><span className="h-1.5 w-1.5 rounded-full bg-violet" aria-hidden="true"/>Читай. Пробуй. Создавай.</p>
-      <h1 className="reader-hero-title mt-4 font-semibold">Понятно об ИИ.<br/><span className="text-violet">Полезно тебе.</span></h1>
-      <p className="mt-4 text-base leading-relaxed text-mute">Бесплатные разборы, инструменты и идеи, которые помогают освоиться с ИИ и применять его каждый день.</p>
-      <Tap onClick={() => push({ type: 'learning', path: '/start' })} className="mt-5 flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl bg-violet px-4 py-3 text-left text-base font-semibold text-on-violet"><span>Я начинаю — с чего начать?</span><ArrowUpRight size={19} className="shrink-0"/></Tap>
-      <p className="mt-3 text-center text-xs text-mute">Бесплатный маршрут для первого шага</p>
-    </section>
+    <Companion key={me.id} userId={me.id}/>
 
     <section className="mt-7 px-5" aria-label="Последние новости">
       <div className="mb-4 flex items-end justify-between gap-2"><div><p className="reader-eyebrow mb-1.5 text-mute">Свежий взгляд</p><h2 className="reader-section-title">Новое в берлоге</h2></div><Tap aria-label="Открыть все новости с выбранными фильтрами" className="flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-violet" onClick={() => setTab('blog')}>Все<ChevronRight size={17}/></Tap></div>
