@@ -43,6 +43,7 @@ export function CoursesAdminScreen() {
       const page = await api.adminPayments({ cursor, query: paymentSearch.current })
       if (request !== paymentRequest.current) return
       setPayments(list => cursor ? [...list, ...page.payments] : page.payments)
+      setUnknownRefunds(ids => new Set([...ids].filter(id => !page.payments.some(payment => payment.id === id))))
       setPaymentCursor(page.next_cursor)
     } catch (e) {
       if (request !== paymentRequest.current) return
@@ -51,6 +52,8 @@ export function CoursesAdminScreen() {
     } finally { if (request === paymentRequest.current) setPaymentLoading(false) }
   }
   const [refunding, setRefunding] = useState<number | null>(null)
+  const refundInFlight = useRef(false)
+  const [unknownRefunds, setUnknownRefunds] = useState<Set<number>>(new Set())
 
   const load = () => {
     void loadPayments()
@@ -67,18 +70,30 @@ export function CoursesAdminScreen() {
   }
 
   const refund = async (p: Payment) => {
-    if (!(await confirmDialog(`Вернуть ${p.stars} ${plural(p.stars, ['звезду', 'звезды', 'звёзд'])} — ${p.name}? Оплаченный доступ к курсу «${p.course}» будет отозван. Независимые права доступа сохранятся.`))) return
-    setRefunding(p.id)
+    if (refundInFlight.current || p.refund_pending || p.refunded || unknownRefunds.has(p.id)) return
+    refundInFlight.current = true
     try {
+      if (!(await confirmDialog(`Вернуть ${p.stars} ${plural(p.stars, ['звезду', 'звезды', 'звёзд'])} — ${p.name}? Оплаченный доступ к курсу «${p.course}» будет отозван. Независимые права доступа сохранятся.`))) return
+      setRefunding(p.id)
       await api.adminRefund(p.id)
       haptic.success()
       toast('Звёзды возвращены, оплаченный доступ отозван')
       setPayments((list) => list.map((x) => (x.id === p.id ? { ...x, refunded: true } : x)))
       void boot()
     } catch (e) {
-      haptic.error()
-      toast(e instanceof ApiError && e.code === 'telegram' ? 'Telegram отклонил возврат. Попробуй позже' : errorText(e))
+      if (e instanceof ApiError && e.code === 'refund_pending') {
+        setPayments(list => list.map(x => x.id === p.id ? { ...x, refund_pending: true } : x))
+        toast(errorText(e))
+      } else if (!(e instanceof ApiError) || ['network', 'timeout'].includes(e.code)) {
+        setUnknownRefunds(ids => new Set([...ids, p.id]))
+        toast('Ответ не получен. Сначала обнови статус покупки, чтобы не отправить возврат повторно')
+      } else {
+        guard(e)
+        haptic.error()
+        toast(e.code === 'telegram' ? 'Telegram отклонил возврат. Обнови статус перед повтором' : errorText(e))
+      }
     } finally {
+      refundInFlight.current = false
       setRefunding(null)
     }
   }
@@ -172,6 +187,7 @@ export function CoursesAdminScreen() {
                 <input aria-label="Поиск покупок" placeholder="Имя, @username, ID или номер платежа" value={paymentQuery} onChange={e => setPaymentQuery(e.target.value)} className={field} />
                 <button type="submit" disabled={paymentLoading}>Найти</button>
               </form>
+              <button onClick={() => void loadPayments()} disabled={paymentLoading || refunding !== null} className="mb-3 text-[13px] font-semibold text-violet disabled:opacity-50">Обновить статусы</button>
               {paymentError && <div role="alert" className="mb-3 text-[14px] text-mute">{paymentError} <button onClick={() => void loadPayments()}>Повторить</button></div>}
               {paymentLoading && <Spinner size={20} />}
               {!paymentLoading && !paymentError && payments.length === 0 && <p className="text-mute">Покупки не найдены</p>}
@@ -190,7 +206,9 @@ export function CoursesAdminScreen() {
                         </span>
                       </p>
                     </div>
-                    {p.refund_pending && !p.refunded ? (
+                    {unknownRefunds.has(p.id) && !p.refunded ? (
+                      <span role="status" className="text-[12px] text-mute">Нужно проверить статус</span>
+                    ) : p.refund_pending && !p.refunded ? (
                       <span className="text-[12px] text-mute">Возврат обрабатывается</span>
                     ) : p.refunded ? (
                       <span className="shrink-0 rounded-full bg-veil/8 px-2.5 py-1 text-[12px] font-semibold text-mute">Возвращено</span>

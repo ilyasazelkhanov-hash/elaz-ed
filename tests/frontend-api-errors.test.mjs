@@ -47,6 +47,20 @@ const guardErrors = [
   ['invalid_json', 400, 'Не получилось отправить запрос. Открой приложение заново'],
   ['request_too_large', 413, 'Слишком много данных в запросе. Сократи текст или уменьши размер изображения'],
 ]
+test('queued refund is preserved as pending and never automatically retried', async () => {
+  const originalFetch = globalThis.fetch
+  let calls = 0
+  try {
+    globalThis.fetch = async () => { calls++; return new Response('{"error":"refund_pending"}', {status:503}) }
+    await assert.rejects(api.adminRefund(1), error => error instanceof ApiError && error.code === 'refund_pending' && /Повторно отправлять его не нужно/.test(errorText(error)))
+    assert.equal(calls, 1)
+    const ui = await readFile(new URL('../src/screens/AdminCourses.tsx', import.meta.url), 'utf8')
+    assert.match(ui, /e\.code === 'refund_pending'/)
+    assert.match(ui, /refund_pending: true/)
+    assert.match(ui, /unknownRefunds\.has\(p\.id\)/)
+    assert.match(ui, /Обновить статусы/)
+  } finally { globalThis.fetch = originalFetch }
+})
 const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: status === 429 ? { 'Retry-After': '60' } : {} })
 const session = () => ({
   phase: 'ok', errorCode: null, me: { id: 1, xp: 50 }, feed: [{ id: 2 }],

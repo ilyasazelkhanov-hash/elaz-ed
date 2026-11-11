@@ -245,6 +245,8 @@ export function errorText(e: unknown) {
       return 'Этот курс открывается за звёзды'
     case 'already_open':
       return 'Курс уже открыт. Обнови приложение'
+    case 'refund_pending':
+      return 'Возврат принят в обработку. Повторно отправлять его не нужно. Обнови статус покупки позже'
     case 'bad_image':
     case 'upload':
       return 'Картинка не загрузилась. Попробуй ещё раз'
