@@ -21,11 +21,11 @@ import { Cta, Emoji, Pattern, Tap } from '../ui'
 const clip = (i: Inset, radius: number) => `inset(${i.top}px ${i.right}px ${i.bottom}px ${i.left}px round ${radius}px)`
 const OPEN = { top: 0, right: 0, bottom: 0, left: 0 }
 
-export function LessonScreen(props: { id: number; from?: Inset }) {
+export function LessonScreen(props: { id: number; from?: Inset; post?: boolean }) {
   const actor = useStore(s => s.me?.id)
   return <LessonSession key={`${actor}:${props.id}`} {...props}/>
 }
-function LessonSession({ id, from }: { id: number; from?: Inset }) {
+function LessonSession({ id, from, post = false }: { id: number; from?: Inset; post?: boolean }) {
   const card = useStore((s) => s.feed.find((c) => c.id === id))
   const feed = useStore((s) => s.feed)
   const courses = useStore((s) => s.courses)
@@ -150,7 +150,7 @@ function LessonSession({ id, from }: { id: number; from?: Inset }) {
     track('share', { kind: 'lesson', channel: 'link' }, id)
   }
 
-  if(isBlogPost(view)) return <PostScreen post={lesson} preview={card} error={!!failed} retry={()=>{setFailed(false);setRevision(v=>v+1)}} like={()=>void toggleLike()} share={share}/>
+  if(isBlogPost(view) || (!view && post)) return <PostScreen id={id} post={lesson} preview={card} error={!!failed} retry={()=>{setFailed(false);setRevision(v=>v+1)}} like={()=>void toggleLike()} share={share}/>
 
   return (
     <motion.div

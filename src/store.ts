@@ -23,7 +23,7 @@ export function insetOf(el: Element): Inset {
 }
 
 export type Overlay =
-  | { type: 'lesson'; id: number; from?: Inset }
+  | { type: 'lesson'; id: number; from?: Inset; post?: boolean }
   | { type: 'stories'; id: number }
   | { type: 'course'; id: number; from?: Inset }
   | { type: 'lab' }
@@ -75,6 +75,8 @@ interface Store {
   boot: (force?: boolean) => Promise<Phase>
   setPhase: (phase: Phase) => void
   setTab: (tab: Tab) => void
+  /** Main navigation exits the reader and any parent overlays in one update. */
+  navigateTab: (tab: Tab) => void
   push: (overlay: Overlay) => void
   pop: () => void
   setMe: (me: Me) => void
@@ -96,6 +98,11 @@ function loadSeen(): number[] {
   } catch {
     return []
   }
+}
+
+function replaceTabLocation(tab: Tab) {
+  const hash = tab === 'home' ? '' : `#/${tab}`
+  window.history.replaceState(null, '', `${location.pathname}${location.search}${hash}`)
 }
 
 let bootRequest = 0
@@ -159,9 +166,13 @@ export const useStore = create<Store>((set, get) => ({
     set({ phase, refreshing: false, refreshErrorCode: null })
   },
   setTab: (tab) => {
-    const hash=tab==='home'?'':`#/${tab}`
-    window.history.replaceState(null,'',`${location.pathname}${location.search}${hash}`)
+    replaceTabLocation(tab)
     set({tab})
+  },
+  navigateTab: (tab) => {
+    // Update the URL first, so closing a post cannot restore its old route.
+    replaceTabLocation(tab)
+    set({ tab, stack: [] })
   },
   push: (overlay) => set((s) => ({ stack: [...s.stack, overlay] })),
   pop: () => set((s) => ({ stack: s.stack.slice(0, -1) })),

@@ -22,7 +22,7 @@ export function PostCard({ card }: { card: Card }) {
   const isSaved = saved.includes(card.id)
   const date = postDate(card.published_at)
   const teaser = postTeaser(card)
-  const open = () => push({ type: 'lesson', id: card.id })
+  const open = () => push({ type: 'lesson', id: card.id, post: true })
   return <article className="reader-post">
     <Tap onClick={open} className="reader-post-open p-[18px]" aria-label={`Читать публикацию: ${card.title}`}>
       <div className="reader-post-meta"><span className="font-semibold text-violet">{card.category || 'ИИ и инструменты'}</span>{date && <time dateTime={card.published_at ?? undefined}>{date}</time>}{card.pinned && <span className="rounded-full bg-violet/10 px-2 py-0.5 text-[11px] text-violet">Выбор автора</span>}</div>

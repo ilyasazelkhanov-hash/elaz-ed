@@ -14,7 +14,7 @@
     "test:profile": "node --experimental-strip-types --test tests/profile-settings.test.mjs",
     "test:frontend-errors": "node --experimental-strip-types --test tests/frontend-api-errors.test.mjs",
     "test:database": "node --experimental-strip-types --test tests/api/quiz-database.test.mjs",
-    "test:experience": "node --experimental-strip-types --test tests/experience.test.mjs tests/content-navigation.test.mjs tests/blog-read.test.mjs",
+    "test:experience": "node --experimental-strip-types --test tests/experience.test.mjs tests/content-navigation.test.mjs tests/blog-read.test.mjs tests/post-navigation.test.mjs",
     "test:og-practice": "node --experimental-strip-types --test tests/og-practice.test.mjs tests/learning-paths.test.mjs tests/reference-expansion.test.mjs tests/course-checkout.test.mjs",
     "test:discovery": "node --experimental-strip-types --test tests/discovery.test.mjs tests/free-start.test.mjs tests/practice-reader.test.mjs tests/og-course-access.test.mjs tests/home-news-filters.test.mjs tests/blog-feed-compat.test.mjs tests/course-pathways.test.mjs",
     "test:course-payment": "node --experimental-strip-types --test tests/course-checkout.test.mjs tests/course-payment-state.test.mjs tests/course-payment-ui.test.mjs",

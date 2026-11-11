@@ -1,3 +1,4 @@
+import { MainNav } from '../MainNav'
 import { CoverImage } from '../CoverImage'
 import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, Heart, Lightbulb, Send } from 'lucide-react'
 import { useEffect } from 'react'
@@ -16,12 +17,11 @@ import { Cta, Tap } from '../ui'
 import './home/free-first.css'
 
 /** Blog reading has no quiz, completion call or XP claim. */
-export function PostScreen({ post, preview, error, retry, like, share }: { post: Lesson | null; preview: Card | undefined; error: boolean; retry: () => void; like: () => void; share: () => void }) {
+export function PostScreen({ id, post, preview, error, retry, like, share }: { id: number; post: Lesson | null; preview: Card | undefined; error: boolean; retry: () => void; like: () => void; share: () => void }) {
   const me = useStore(s => s.me)
   const pop = useStore(s => s.pop)
   const push = useStore(s => s.push)
   const view = post ?? preview
-  const id = post?.id ?? preview?.id
   const saved = useSavedPosts(me?.id ?? 0)
   const isSaved = !!id && saved.includes(id)
   const course = view ? practiceCourseForTopic(topicForPost(view)) : null
@@ -45,7 +45,7 @@ export function PostScreen({ post, preview, error, retry, like, share }: { post:
       <Tap onClick={save} disabled={!view} aria-label={isSaved ? 'Убрать из сохранённых' : 'Сохранить публикацию'} aria-pressed={isSaved} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-card text-violet"><Bookmark size={19} fill={isSaved ? 'currentColor' : 'none'}/></Tap>
       <Tap onClick={share} disabled={!view} aria-label="Поделиться публикацией" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-card"><Send size={19}/></Tap>
     </header>
-    <article className="scroll selectable min-h-0 flex-1 px-5 pt-6" style={{ paddingBottom: 'calc(30px + var(--bottom))' }}>
+    <article className="scroll selectable min-h-0 flex-1 px-5 pb-6 pt-6">
       {view && <>
         <div className="reader-post-meta"><span className="font-semibold text-violet">{view.category || 'ИИ и инструменты'}</span>{date && <time dateTime={view.published_at ?? undefined}>{date}</time>}{view.minutes > 0 && <span>{view.minutes} мин чтения</span>}</div>
         <h1 className="mt-4 font-display text-[25px] font-semibold leading-[1.3] tracking-tight" style={{ overflowWrap: 'anywhere' }}>{view.title}</h1>
@@ -73,5 +73,6 @@ export function PostScreen({ post, preview, error, retry, like, share }: { post:
         </section>}
       </>}
     </article>
+    <MainNav inPost />
   </section>
 }

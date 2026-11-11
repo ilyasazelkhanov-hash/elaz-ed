@@ -1,4 +1,3 @@
-import { BookOpen, House, Newspaper, User } from 'lucide-react'
 import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
@@ -24,7 +23,8 @@ import { ErrorScreen, Gate, Outside, Setup, Splash } from './screens/States'
 import { Stories } from './screens/Stories'
 import { Top } from './screens/Top'
 import { useStore, type Overlay, type Tab } from './store'
-import { enableSparks, Tap, Toasts } from './ui'
+import { enableSparks, Toasts } from './ui'
+import { MainNav } from './MainNav'
 
 // Админку видит один человек — незачем грузить её всем.
 const AdminScreen = lazy(() => import('./screens/Admin').then((m) => ({ default: m.AdminScreen })))
@@ -126,7 +126,7 @@ function Shell() {
     const coursesPath = coursesEntry(location.hash, location.pathname, startParam)
     const postId=blogPostEntry(location.hash)
     const mainTab=/^#\/(blog|profile|top)$/.exec(location.hash)?.[1] as Tab|undefined
-    if(postId){useStore.getState().setTab('blog');useStore.getState().push({type:'lesson',id:postId})}
+    if(postId){useStore.getState().setTab('blog');useStore.getState().push({type:'lesson',id:postId,post:true})}
     else if(mainTab)useStore.getState().setTab(mainTab)
     else if (coursesPath) {useStore.getState().setTab('courses');if(coursesPath!=='/courses')useStore.getState().push({type:'learning',path:coursesPath})}
     else if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
@@ -173,7 +173,7 @@ function Shell() {
       </AnimatePresence>
 
       <div ref={scrim} className="glass top-scrim pointer-events-none absolute inset-x-0 top-0 z-20" />
-      <Nav />
+      <MainNav />
       </div>
 
       <AnimatePresence>
@@ -222,7 +222,7 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
     case 'services': return <Suspense fallback={null}><ServicesScreen/></Suspense>
     case 'certifications': return <Suspense fallback={null}><CertificationsScreen focusId={overlay.focusId}/></Suspense>
     case 'lesson':
-      return <LessonScreen id={overlay.id} from={overlay.from} />
+      return <LessonScreen id={overlay.id} from={overlay.from} post={overlay.post} />
     case 'stories':
       return <Stories startId={overlay.id} />
     case 'course':
@@ -284,34 +284,4 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
         </Suspense>
       )
   }
-}
-
-const TABS: { id: Tab; label: string; icon: typeof House }[] = [
-  { id: 'home', label: 'Главная', icon: House },
-  { id: 'blog', label: 'Новости', icon: Newspaper },
-  { id: 'courses', label: 'Курсы', icon: BookOpen },
-  { id: 'profile', label: 'Профиль', icon: User },
-]
-
-function Nav() {
-  const tab = useStore((s) => s.tab)
-  const setTab = useStore((s) => s.setTab)
-  // Повторное нажатие на открытую вкладку возвращает к началу экрана.
-  const toTop = () => document.querySelector('[data-tab-scroll]')?.scrollTo({ top: 0, behavior: 'smooth' })
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center" style={{ paddingBottom: 'calc(14px + var(--bottom))' }}>
-      <nav aria-label="Основные разделы" className="pointer-events-auto mx-4 flex w-full max-w-[420px] gap-1 rounded-[24px] border border-line bg-float/95 p-1.5 shadow-[var(--shadow-float)] backdrop-blur-xl">
-        {TABS.map(({ id, label, icon: Icon }) => {
-          const active = tab === id || id==='profile'&&tab==='top'
-          return (
-            <Tap key={id} feedback="select" onClick={() => (tab===id ? toTop() : setTab(id))} aria-label={label} aria-current={active?'page':undefined} className={`relative flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 ${active ? 'text-on-violet' : 'text-mute'}`}>
-              {active && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-[18px] bg-violet" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
-              <Icon size={19} strokeWidth={2} className="relative" aria-hidden="true"/>
-              <span className="relative whitespace-nowrap text-[11px] font-semibold">{label}</span>
-            </Tap>
-          )
-        })}
-      </nav>
-    </div>
-  )
 }
