@@ -19,7 +19,7 @@ export async function releaseManifest(base=root) {
     }
     await visit(directory)
   }
-  for(const name of ['package-lock.json','scripts/release-contract.mjs','scripts/release-smoke.mjs','scripts/release-manifest.mjs','scripts/verify-recovery.mjs'])sources.push({path:name,sha256:digest(await readFile(path.join(base,name)))})
+  for(const name of ['package-lock.json','scripts/release-contract.mjs','scripts/release-smoke.mjs','scripts/release-manifest.mjs','scripts/verify-recovery.mjs','scripts/frontend-release.mjs','scripts/build.mjs'])sources.push({path:name,sha256:digest(await readFile(path.join(base,name)))})
   const frontend=[]
   try {
     for(const name of ['index.html',...(await readdir(path.join(base,'dist/assets'))).filter(name=>/\.(js|css)$/.test(name)).map(name=>`assets/${name}`)])frontend.push({path:`dist/${name}`,sha256:digest(await readFile(path.join(base,'dist',name)))})
