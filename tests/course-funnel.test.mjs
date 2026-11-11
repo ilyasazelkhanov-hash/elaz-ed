@@ -227,3 +227,44 @@ test('failed reading completion leaves progress unchanged and allows an explicit
  await finish();assert.equal(h.calls.complete,2);assert.equal(h.card.completed,true)
  lesson.unmount()
 })
+
+test('owner-tagged practice results hide old content even without the parent remount', async () => {
+ const h=setup(), root=h.mount(h.load('screens/home/OGPractice.tsx').OGPractice,{path:'/og-practice/foundations/one',go(){}})
+ const element=root.render(), child=h.mount(element.type,element.props)
+ child.render();await settle();assert.equal(child.render().props.userId,'live:7')
+ h.state.me={...h.state.me,id:8}
+ const loading=child.render()
+ assert.ok(JSON.stringify(loading).includes('Открываем урок'))
+ assert.ok(!JSON.stringify(loading).includes('Server lesson'))
+ assert.ok(!find(loading,node=>node.type==='Tap' && node.props.disabled===false))
+ await settle();assert.equal(child.render().props.userId,'live:8')
+ child.unmount();root.unmount()
+})
+
+for (const outcome of ['success','failure']) test(`completion ${outcome} after leaving the lesson cannot mutate or refresh the new screen`, async () => {
+ const h=setup();let resolve,reject
+ h.behavior.completion=new Promise((yes,no)=>{resolve=yes;reject=no})
+ const lesson=h.practice('/og-practice/foundations/one');lesson.render();await settle()
+ const finish=find(lesson.render(),node=>node.type==='Tap' && node.props.disabled===false).props.onClick
+ const pending=finish();lesson.unmount()
+ if(outcome==='success')resolve({me:{id:7,xp:10},already:false});else reject(new Error('late failure'))
+ await pending
+ assert.equal(h.calls.setMe,0);assert.equal(h.calls.patch,0);assert.equal(h.calls.boot,0)
+ assert.deepEqual(h.toasts,[]);assert.deepEqual(h.guarded,[])
+})
+
+test('a replaced server lesson mapping cannot be overwritten by an old completion', async () => {
+ const h=setup();let resolve
+ h.behavior.completion=new Promise(done=>{resolve=done})
+ const lesson=h.practice('/og-practice/foundations/one');lesson.render();await settle()
+ const finish=find(lesson.render(),node=>node.type==='Tap' && node.props.disabled===false).props.onClick
+ const pending=finish()
+ h.course.practice_lessons[0]={...h.course.practice_lessons[0],id:91}
+ h.behavior.lesson={...h.card,id:91,body:'Replacement lesson'}
+ assert.ok(JSON.stringify(lesson.render()).includes('Открываем урок'));await settle()
+ assert.equal(lesson.render().props.lesson.body,'Replacement lesson')
+ resolve({me:{id:7,xp:10},already:false});await pending
+ assert.equal(lesson.render().props.lesson.body,'Replacement lesson')
+ assert.equal(h.calls.setMe,0);assert.equal(h.calls.patch,0);assert.equal(h.calls.boot,0)
+ lesson.unmount()
+})

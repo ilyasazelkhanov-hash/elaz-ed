@@ -20,9 +20,13 @@ Passed:
 
 - `npm run test:og-practice` (30 tests).
 - `npm run test:discovery` (33 tests, including rendering all five free guides).
-- `node --experimental-strip-types --test tests/course-funnel.test.mjs` (22 tests: account remounts, late response isolation, double taps, honest labels, existing checkout flow).
+- `node --experimental-strip-types --test tests/course-funnel.test.mjs` (26 tests: account remounts, late response isolation, double taps, honest labels, existing checkout flow).
 - `tsc --noEmit` and `npm run build` (the existing chunk-size warning remains).
 
 The focused browser regression is `scripts/learning-audit-browser.mjs`; point `OG_LEARNING_URL` to local Vite, set `PLAYWRIGHT_MODULE` to an installed Playwright package and optionally `PLAYWRIGHT_CHROMIUM_EXECUTABLE`. It blocks all non-local requests and uses synthetic demo data only. Browser execution was **blocked before launch** by Chromium `socket() EPERM` in this execution environment, including an approved escalation. Therefore no browser layout, screenshots, physical Telegram client or production verification is claimed.
 
 The parent integration task owns the final aggregate test run and release decision. Nothing was pushed or deployed from this branch.
+
+## Follow-up review hardening
+
+Lesson results now also carry the owning account/mode and course id, so stale content is hidden before effect cleanup even without the parent remount. Completion handlers use a per-lesson session token: leaving the screen, changing access or replacing a lesson mapping invalidates pending UI work. Late success or failure cannot replace the new lesson, update account state, show a toast or start another boot. Four additional regressions exercise these cases.

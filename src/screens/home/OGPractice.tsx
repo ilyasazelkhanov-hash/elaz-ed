@@ -97,24 +97,31 @@ function PracticeProgram({course, go}: {course: PracticeCourse; go: Route}) {
 function SecurePracticeLesson({course, lesson, go}: {course: PracticeCourse; lesson: PracticeCourse['lessons'][number]; go: Route}) {
  const liveCourses = useStore(state => state.courses), feed = useStore(state => state.feed), me = useStore(state => state.me)
  const live = resolvePracticeCourse(course, liveCourses), remote = resolvePracticeLesson(live, lesson, feed), allowed = canOpenPracticeLesson(live, remote)
- const [result, setResult] = useState<{id: number; lesson: Lesson | null; error?: string} | null>(null), [retry, setRetry] = useState(0)
+ const [result, setResult] = useState<{id: number; courseId: number; owner: string | null; lesson: Lesson | null; error?: string} | null>(null), [retry, setRetry] = useState(0)
  const [busy, setBusy] = useState(false), finishing = useRef(false)
  const account = me?.id, scope = useMemo(() => ({userId: account, mode: isDemo ? 'demo' as const : 'live' as const}), [account, isDemo])
+ const owner = practiceProgressStorageKey(scope), session = useRef<{active: boolean} | null>(null)
  const previewed = useRef<string | null>(null)
  const id = remote?.id, courseId = live?.id
  useEffect(() => {
+  const token = {active: true}; session.current = token; finishing.current = false; setBusy(false)
+  return () => {token.active = false}
+ }, [id, courseId, owner, allowed])
+ useEffect(() => {
   if (!allowed || !id || !courseId) return
   let active = true
-  setResult({id, lesson: null})
+  setResult({id, courseId, owner, lesson: null})
   api.lesson(id).then(value => {
    if (!active || useStore.getState().me?.id !== account) return
-   if (value.id !== id || value.course_id !== courseId || value.kind !== 'lesson' || !value.published) {setResult({id, lesson: null, error: 'not_found'}); return}
-   setResult({id, lesson: value})
+   if (value.id !== id || value.course_id !== courseId || value.kind !== 'lesson' || !value.published) {setResult({id, courseId, owner, lesson: null, error: 'not_found'}); return}
+   setResult({id, courseId, owner, lesson: value})
    const progress = readPracticeProgress(scope); writePracticeProgress(scope, {...progress, lastLesson: lesson.key})
-  }).catch(error => {if (active && useStore.getState().me?.id === account) {useStore.getState().guard(error); setResult({id, lesson: null, error: error instanceof ApiError ? error.code : 'network'})}})
+  }).catch(error => {if (active && useStore.getState().me?.id === account) {useStore.getState().guard(error); setResult({id, courseId, owner, lesson: null, error: error instanceof ApiError ? error.code : 'network'})}})
   return () => {active = false}
- }, [id, courseId, allowed, retry, lesson.key, account, scope])
- const loaded = result?.id === id ? result?.lesson : null, error = result?.id === id ? result?.error : null
+ }, [id, courseId, allowed, retry, lesson.key, account, scope, owner])
+ // Owner tags make render safety independent of the parent's keyed remount and effect timing.
+ const currentResult = result?.id === id && result?.courseId === courseId && result?.owner === owner ? result : null
+ const loaded = currentResult?.lesson ?? null, error = currentResult?.error
  useEffect(() => {
   if (!me?.id || !courseId || !loaded || !loaded.free_preview || live?.access || loaded.course_id !== courseId) return
   const key = `${me.id}:${courseId}:${loaded.id}`
@@ -127,17 +134,19 @@ function SecurePracticeLesson({course, lesson, go}: {course: PracticeCourse; les
  if (!loaded) return <section className="rounded-[25px] border border-line bg-card p-5" aria-busy={!error}><Tap onClick={back} className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-violet"><ArrowLeft size={17}/>К программе</Tap><h1 className="mt-3 font-display text-xl font-semibold">{lesson.title}</h1><p role="status" className="mt-3 text-sm text-mute">{error ? 'Не удалось загрузить урок. Проверь соединение и попробуй ещё раз.' : 'Открываем урок…'}</p>{error && <Tap onClick={() => setRetry(value => value + 1)} className="mt-4 min-h-11 font-semibold text-violet">Повторить загрузку</Tap>}</section>
  const index = course.lessons.findIndex(item => item.key === lesson.key), previous = course.lessons[index - 1], next = course.lessons[index + 1]
  const finish = async () => {
-  if (finishing.current || loaded.completed || useStore.getState().me?.id !== account) return
+  const token = session.current
+  const current = () => !!token?.active && session.current === token && useStore.getState().me?.id === account
+  if (!current() || finishing.current || loaded.completed) return
   finishing.current = true; setBusy(true)
   try {
    const store = useStore.getState(), response = await api.complete(loaded.id, [])
-   if (useStore.getState().me?.id !== account) return
-   store.setMe(response.me); store.patchCard(loaded.id, {completed: true}); setResult({id: loaded.id, lesson: {...loaded, completed: true}})
+   if (!current()) return
+   store.setMe(response.me); store.patchCard(loaded.id, {completed: true}); setResult({id: loaded.id, courseId: loaded.course_id!, owner, lesson: {...loaded, completed: true}})
    const progress = readPracticeProgress(scope); writePracticeProgress(scope, {lastLesson: lesson.key, done: [...progress.done, lesson.key]})
    if (!response.already) store.toast('Ознакомление отмечено' + (response.gained ? ` · +${response.gained} XP за участие` : ''))
    await store.boot()
-  } catch (error) {if (useStore.getState().me?.id === account) {useStore.getState().guard(error); useStore.getState().toast(errorText(error))}}
-  finally {finishing.current = false; setBusy(false)}
+  } catch (error) {if (current()) {useStore.getState().guard(error); useStore.getState().toast(errorText(error))}}
+  finally {if (current()) {finishing.current = false; setBusy(false)}}
  }
  return <PracticeReader course={course} lesson={{key: lesson.key, title: loaded.title, minutes: loaded.minutes, subtitle: loaded.subtitle, body: loaded.body}} index={index} total={course.lessons.length} userId={account === undefined ? undefined : `${scope.mode}:${account}`} onBack={back} onPrevious={previous ? () => go(practicePath(course.key, previous.key)) : undefined} onNext={next ? () => go(practicePath(course.key, next.key)) : undefined}>
   <div className="mt-5 rounded-[22px] border border-line bg-card p-4"><p className="text-sm font-semibold">{loaded.quiz.length ? 'Проверка понимания' : loaded.completed ? 'Ознакомление отмечено' : 'Отметить ознакомление'}</p><p className="mt-2 text-xs leading-relaxed text-mute">{loaded.quiz.length ? 'Квиз проверяет ответы по уроку. Он не проверяет твою практическую работу или итоговый проект.' : 'Это твоя отметка о знакомстве с материалом, без проверки работы. Сохрани свой результат отдельно и сверь его с критериями практики.'} {isDemo ? 'Демо: отметка относится только к этому режиму.' : 'Отметка сохраняется в аккаунте.'}</p>{loaded.quiz.length > 0 ? <Tap onClick={() => useStore.getState().push({type: 'lesson', id: loaded.id})} className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet px-3 text-sm font-semibold text-on-violet">{loaded.completed ? 'Повторить проверку' : 'Проверить понимание'}<ArrowRight size={17}/></Tap> : <Tap onClick={finish} disabled={busy || loaded.completed} className={'mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-semibold ' + (loaded.completed ? 'border-mint/30 bg-mint/10 text-success' : 'border-violet bg-violet text-on-violet')}>{loaded.completed ? <><Check size={17}/>Ознакомление отмечено</> : busy ? 'Сохраняем…' : <>Я ознакомился<Check size={17}/></>}</Tap>}</div>
