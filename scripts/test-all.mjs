@@ -40,5 +40,6 @@ await run('build-content',['scripts/academy-content.mjs'])
 await run('build-types',['node_modules/typescript/bin/tsc','--noEmit'])
 await run('build-vite',['node_modules/vite/bin/vite.js','build'])
 await run('build-prerender',['scripts/academy-prerender.mjs'])
+await run('build-release-identity',['scripts/frontend-release.mjs'])
 await writeFile(path.join(root,'test-results','audit-validation.json'),JSON.stringify({out,versions:check.versions,results},null,2))
 process.exitCode=results.some(r=>r.status!==0)?1:0

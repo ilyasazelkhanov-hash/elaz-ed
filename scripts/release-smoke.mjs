@@ -42,7 +42,8 @@ export async function discoverApi(appUrl, fetcher = fetch) {
   return {apiUrl:[...found][0],assets:assets.sort()}
 }
 
-export async function smoke({apiUrl,appUrl,auth,fetcher=fetch}) {
+export async function smoke({apiUrl,appUrl,auth,expectedCommit,fetcher=fetch}) {
+  if (expectedCommit && !/^[a-f0-9]{40}$/i.test(expectedCommit)) throw Error('Expected commit must be a full Git SHA')
   const discovery = appUrl ? await discoverApi(appUrl,fetcher) : null
   const api = publicApiUrl(apiUrl || discovery?.apiUrl || '')
   if (discovery && api !== discovery.apiUrl) throw Error('Configured API differs from deployed frontend')
@@ -53,6 +54,18 @@ export async function smoke({apiUrl,appUrl,auth,fetcher=fetch}) {
       return {status:response.status,data}
     } catch { return {status:0,data:null} }
   }
+  let frontendRelease = null
+  if (appUrl) {
+    try {
+      const result = await fetcher(new URL('/release.json', appUrl).href, {signal:AbortSignal.timeout(15000),redirect:'error',cache:'no-store'})
+      const data = await result.json()
+      if (result.ok && data?.schema === 1 && /^[a-f0-9]{40}$/i.test(data.commit) && /^[a-f0-9]{64}$/i.test(data.build_sha256) && Number.isInteger(data.file_count) && data.file_count > 0) {
+        frontendRelease = {commit:data.commit,dirty:data.dirty===true,build_sha256:data.build_sha256,file_count:data.file_count}
+      }
+    } catch {}
+    checks.push({name:'frontend_release_identity',pass:!!frontendRelease && !frontendRelease.dirty})
+    if (expectedCommit) checks.push({name:'frontend_expected_commit',pass:frontendRelease?.commit === expectedCommit.toLowerCase()})
+  } else if (expectedCommit) throw Error('Expected frontend commit requires an app URL')
   const health = await request('health')
   const contract = checkRelease(health.data)
   checks.push({name:'health',status:health.status,pass:health.status===200&&contract.healthy})
@@ -78,12 +91,12 @@ export async function smoke({apiUrl,appUrl,auth,fetcher=fetch}) {
     } while(cursor && pages<3)
     checks.push({name:'signed_newest_feed',pass,pages,posts:seen.size})
   }
-  return {checked_at:new Date().toISOString(),app_url:appUrl||null,api_url:api,frontend_assets:discovery?.assets||[],signed_feed:auth?'checked':'not_supplied',checks,pass:checks.every(check=>check.pass)}
+  return {checked_at:new Date().toISOString(),app_url:appUrl||null,api_url:api,frontend_assets:discovery?.assets||[],frontend_release:frontendRelease,signed_feed:auth?'checked':'not_supplied',checks,pass:checks.every(check=>check.pass)}
 }
 
 if (process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href) {
   try {
-    const report=await smoke({apiUrl:process.env.RELEASE_API_URL,appUrl:process.env.RELEASE_APP_URL||'https://elaz-ed.vercel.app',auth:process.env.RELEASE_INIT_DATA})
+    const report=await smoke({apiUrl:process.env.RELEASE_API_URL,appUrl:process.env.RELEASE_APP_URL||'https://elaz-ed.vercel.app',auth:process.env.RELEASE_INIT_DATA,expectedCommit:process.env.RELEASE_EXPECTED_COMMIT})
     await mkdir('test-results',{recursive:true})
     await writeFile('test-results/release-smoke.json',JSON.stringify(report,null,2)+'\n')
     console.log(JSON.stringify(report,null,2))

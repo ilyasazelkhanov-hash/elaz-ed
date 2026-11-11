@@ -3,6 +3,10 @@ import assert from 'node:assert/strict'
 import {RELEASE,checkRelease,publicApiUrl} from '../scripts/release-contract.mjs'
 import {chunkUrls,discoverApi,smoke} from '../scripts/release-smoke.mjs'
 import {reconcileRecovery,recoveryFixture} from '../scripts/verify-recovery.mjs'
+import {frontendRelease} from '../scripts/frontend-release.mjs'
+import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises'
+import {tmpdir} from 'node:os'
+import path from 'node:path'
 
 test('public capability contract fails closed for old API, missing receipt or partial deployment',()=>{
   assert.ok(Object.values(checkRelease({ok:true,db:true,release:RELEASE})).every(Boolean))
@@ -55,4 +59,42 @@ test('equal corrupted snapshots cannot pass and reports reveal no rows',()=>{
   assert.ok(reconcileRecovery(fixture,fixture).failures.includes('source_required_import_receipt'))
   const report=JSON.stringify(reconcileRecovery(fixture,fixture))
   assert.equal(report.includes('synthetic-charge'),false)
+})
+
+test('frontend identity hashes built artifacts and exposes only a validated commit',async()=>{
+  const base=await mkdtemp(path.join(tmpdir(),'og-release-identity-'))
+  try {
+    await mkdir(path.join(base,'dist/assets'),{recursive:true})
+    await writeFile(path.join(base,'dist/index.html'),'<script src="/assets/app.js"></script>')
+    await writeFile(path.join(base,'dist/assets/app.js'),'console.log("build")')
+    const commit='a'.repeat(40),first=await frontendRelease(base,{VERCEL_GIT_COMMIT_SHA:commit,UNRELATED_SECRET:'never publish'})
+    assert.equal(first.commit,commit)
+    assert.equal(first.file_count,2)
+    assert.equal(JSON.stringify(first).includes('never publish'),false)
+    await writeFile(path.join(base,'dist/release.json'),JSON.stringify(first))
+    const second=await frontendRelease(base,{VERCEL_GIT_COMMIT_SHA:commit})
+    assert.equal(second.build_sha256,first.build_sha256)
+    await writeFile(path.join(base,'dist/assets/app.js'),'console.log("changed")')
+    assert.notEqual((await frontendRelease(base,{})).build_sha256,first.build_sha256)
+    assert.equal((await frontendRelease(base,{VERCEL_GIT_COMMIT_SHA:'untrusted value'})).commit,null)
+  } finally {await rm(base,{recursive:true,force:true})}
+})
+
+test('smoke verifies the exact published commit and fails on missing or dirty identity',async()=>{
+  const commit='a'.repeat(40)
+  let identity={schema:1,commit,dirty:false,build_sha256:'b'.repeat(64),file_count:2}
+  const fetcher=async(url,init)=>{
+    if(String(url)===app+'release.json')return response(identity)
+    if(String(url).endsWith('/health'))return response({ok:true,db:true,release:RELEASE})
+    if(init?.body)return new Response('{"error":"no_auth"}',{status:401})
+    return deployed(url)
+  }
+  assert.equal((await smoke({appUrl:app,expectedCommit:commit,fetcher})).pass,true)
+  assert.equal((await smoke({appUrl:app,expectedCommit:'c'.repeat(40),fetcher})).pass,false)
+  identity={...identity,dirty:true}
+  assert.equal((await smoke({appUrl:app,fetcher})).pass,false)
+  identity={}
+  assert.equal((await smoke({appUrl:app,fetcher})).pass,false)
+  await assert.rejects(smoke({apiUrl:api,expectedCommit:commit,fetcher}),/requires an app URL/)
+  await assert.rejects(smoke({appUrl:app,expectedCommit:'main',fetcher}),/full Git SHA/)
 })
