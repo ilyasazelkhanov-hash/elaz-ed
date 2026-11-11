@@ -8,6 +8,7 @@ type NavigationStore = {
 }
 type Browser = Pick<Window, 'history' | 'location' | 'addEventListener' | 'removeEventListener'>
 const stateKey = '__ogNavigation'
+const session = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
 let sequence = 0
 let activeBack: (() => boolean) | undefined
 let activeReplace: ((action: () => void) => void) | undefined
@@ -47,8 +48,8 @@ export function backWithinApp(fallback: () => void) {
 
 /** One writer owns browser history; screens only update navigation state. */
 export function bindAppNavigation(store: NavigationStore, browser: Browser = window) {
-  type Entry = { id: number; previous?: number; state: NavigationSnapshot; url: string }
-  const entries = new Map<number, Entry>()
+  type Entry = { id: string; previous?: string; state: NavigationSnapshot; url: string }
+  const entries = new Map<string, Entry>()
   let current: Entry | undefined
   let restoring = false
   let replacing = false
@@ -64,7 +65,7 @@ export function bindAppNavigation(store: NavigationStore, browser: Browser = win
   const locationUrl = () => `${browser.location.pathname}${browser.location.search}${browser.location.hash}`
   const write = (state: NavigationSnapshot, replace = false) => {
     if (!replace && current && equal(current.state, state) && current.url === locationUrl()) return
-    const entry = { id: ++sequence, previous: replace ? current?.previous : current?.id, state: snapshot(state), url: url(state) }
+    const entry = { id: `${session}:${++sequence}`, previous: replace ? current?.previous : current?.id, state: snapshot(state), url: url(state) }
     entries.set(entry.id, entry)
     current = entry
     // Store just an opaque ID. Reload restores a public route, not stale private overlays.
