@@ -5,6 +5,7 @@ import { Button, PageHeader, SectionTitle, Art } from '../components/ui.tsx'
 import { EntityCard, MemberCard } from './Home.tsx'
 import { useBrand } from '../platform/brand-context.ts'
 import { industries, resolveIndustryKey } from '../platform/industries.ts'
+import { companyJourney, expertGoals, fittingAppointments } from '../platform/industry-scenarios.ts'
 export { industries } from '../platform/industries.ts'
 export function IndustryPicker() {
   const { push } = usePlatform()
@@ -55,9 +56,10 @@ export default function Industry({ id }: { id: string }) {
   const estimatePrice=finish||rates[0]?.price||0
   const events = entities.filter((e) => ['event', 'slot'].includes(e.kind))
   const lessons = entities.filter((e) => e.kind === 'lesson')
-  const content = entities.filter(
-    (e) => ['article', 'video', 'file'].includes(e.kind) && (key !== 'company' || e.data.industry === 'company'),
-  )
+  const fittings = fittingAppointments(entities)
+  const onboarding = companyJourney(s)
+  const selectedGoal = expertGoals.find((goal) => goal.id === s.journey?.entityId)
+  const practiceQuiz = lessons.find((lesson) => lesson.data.hasQuiz === true && lesson.data.locked !== true)
   const courses = entities.filter((e) => e.kind === 'course')
   const activeMembership = (s.membership ?? []).some(
     (m) => m.status === 'active' && Date.parse(m.expiresAt) > Date.now(),
@@ -176,10 +178,14 @@ export default function Industry({ id }: { id: string }) {
             {!activeMembership && (
               <p>Ранний доступ к клубной подборке откроется с действующей подпиской.</p>
             )}
-            <SectionTitle title="Примерка со стилистом" />
-            {events.map((e) => (
-              <EntityCard key={e.id} entity={e} />
-            ))}
+            <section aria-label="Примерка со стилистом">
+              <SectionTitle title="Примерка со стилистом" />
+              {fittings.length ? fittings.map((e) => (
+                <EntityCard key={e.id} entity={e} />
+              )) : (
+                <p>Слоты примерки пока не опубликованы. Общие встречи клуба не являются записью к стилисту.</p>
+              )}
+            </section>
             {courses
               .filter((e) => e.data.subscription)
               .map((e) => (
@@ -257,22 +263,26 @@ export default function Industry({ id }: { id: string }) {
           <>
             <SectionTitle title="Маршрут первых 30 дней" />
             <p>
-              Дни 1–7: знакомство. Дни 8–14: рабочие привычки. Дни 15–30: самостоятельная практика. Отметки появляются
-              только после выполненных действий.
+              Здесь один общий маршрут: знакомство, рабочие привычки и самостоятельная практика.
+              Это не индивидуальное назначение по должности. Отметки появляются только после выполненных действий.
             </p>
-            {has('progress') && (
+            <p role="status">Пройдено шагов: {onboarding.completed} из {onboarding.steps.length}</p>
+            {!onboarding.steps.length && <p>Материалы адаптации пока не опубликованы.</p>}
+            {onboarding.steps.length > 0 && !onboarding.next && <p>Все опубликованные шаги пройдены.</p>}
+            {has('progress') && onboarding.next && (
               <Button
                 tone="soft"
                 disabled={busy}
                 onClick={async () => {
-                  if (content[0] && (await act('journey.choose', { entityId: content[0].id })))
-                    message('Маршрут адаптации выбран')
+                  const origin = usePlatform.getState().stack.at(-1)
+                  if (!onboarding.started && !(await act('journey.choose', { entityId: onboarding.steps[0].id }))) return
+                  if (usePlatform.getState().stack.at(-1) === origin) push({ type: 'entity', id: onboarding.next!.id })
                 }}
               >
-                Выбрать маршрут адаптации
+                {onboarding.started ? 'Продолжить адаптацию' : 'Начать адаптацию'}
               </Button>
             )}
-            {content.slice(0, 3).map((e, i) => (
+            {onboarding.steps.map((e, i) => (
               <section className="az-exp-panel" key={e.id}>
                 <span className="az-eyebrow">{['ДНИ 1–7', 'ДНИ 8–14', 'ДНИ 15–30'][i]}</span>
                 <EntityCard entity={e} />
@@ -299,31 +309,39 @@ export default function Industry({ id }: { id: string }) {
         {key === 'expert' && (
           <>
             <SectionTitle title="Найдите свой следующий шаг" />
-            {entities
-              .filter((e) => e.data.hasQuiz === true || e.data.game === 'quiz')
-              .slice(0, 1)
-              .map((e) => (
-                <Button key={e.id} onClick={() => push({ type: 'quiz', id: e.id })}>
-                  Пройти диагностику
+            <p>Выберите интересующую цель. Это сохранённый интерес, а не диагностика уровня или автоматический подбор программы.</p>
+            {practiceQuiz && (
+              <section className="az-exp-panel">
+                <h3>Учебный квиз</h3>
+                <p>Вопросы к уроку «{practiceQuiz.title}» помогают повторить материал. Ответы не меняют вашу цель и список курсов.</p>
+                <Button onClick={() => push({ type: 'quiz', id: practiceQuiz.id })}>
+                  Открыть учебный квиз
                 </Button>
-              ))}
+              </section>
+            )}
             {has('progress') && (
               <div className="az-exp-grid">
-                {[
-                  ['goal:content', 'Создавать контент'],
-                  ['goal:tools', 'Освоить инструменты'],
-                  ['goal:services', 'Развивать услуги'],
-                ].map(([entityId, label]) => (
+                {expertGoals.map((goal) => (
                   <Button
-                    tone={s.journey?.entityId === entityId ? 'primary' : 'soft'}
+                    tone={selectedGoal?.id === goal.id ? 'primary' : 'soft'}
+                    aria-pressed={selectedGoal?.id === goal.id}
                     disabled={busy}
-                    key={entityId}
-                    onClick={() => void act('journey.choose', { entityId })}
+                    key={goal.id}
+                    onClick={async () => {
+                      if (await act('journey.choose', { entityId: goal.id })) message('Цель сохранена')
+                    }}
                   >
-                    {label}
+                    {goal.title}
                   </Button>
                 ))}
               </div>
+            )}
+            {has('progress') && selectedGoal && (
+              <section className="az-exp-panel" aria-label="Выбранная цель" role="status">
+                <h3>Ваша цель: {selectedGoal.title}</h3>
+                <p>{selectedGoal.nextStep}</p>
+                <p>Это общий совет по выбранной цели. Каталог ниже одинаков для всех целей.</p>
+              </section>
             )}
             <SectionTitle title="Обучение и клуб" />
             {courses.map((e) => (
