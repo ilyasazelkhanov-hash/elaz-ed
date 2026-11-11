@@ -33,7 +33,7 @@ async function feedPresentation() {
  for (const [path, names] of Object.entries(mocks)) compiled = compiled.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.', '\\.')}["'];?`, 'g'), `const { ${names} } = globalThis.__homeNewsHarness;`)
  compiled = compiled.replace(/import ["']\.\/free-first\.css["'];?/g, '')
  for (const name of ['react', 'react/jsx-runtime', 'lucide-react']) compiled = compiled.replaceAll(`from "${name}"`, `from ${JSON.stringify(import.meta.resolve(name))}`)
- for (const name of ['content', 'discovery', 'knowledge']) compiled = compiled.replaceAll(`from "../../lib/${name}"`, `from ${JSON.stringify(new URL(`../src/lib/${name}.ts`, import.meta.url).href)}`)
+ for (const name of ['content', 'discovery', 'knowledge', 'news-categories']) compiled = compiled.replaceAll(`from "../../lib/${name}"`, `from ${JSON.stringify(new URL(`../src/lib/${name}.ts`, import.meta.url).href)}`)
  const state = { view: { ...defaults }, posts: null, more: true, legacy: false, busy: false, error: '', read: [], saved: [], requests: [], clicks: [], actions: [], loadCalls: [] }
  const store = { me: { id: 1 }, push() {}, setTab(tab) { state.actions.push(tab) } }
  const useStore = selector => selector(store)
@@ -125,3 +125,27 @@ test('home news keeps error, loading and empty states distinct without losing ca
  html = render([]); assert.match(html, /Сохранённая загруженная новость/); assert.doesNotMatch(html, /reader-empty|role="alert"/)
 })
 
+
+
+test('home and archive collapse only known duplicate categories and retain legacy selections across pages', async () => {
+ const { state, render } = await feedPresentation()
+ const posts = [card(101, { category: 'Видео' }), card(102, { category: 'Видео и монтаж' }), card(103, { category: 'Видео и контент' }), card(104, { category: 'Будущая рубрика' })]
+ state.posts = posts; state.more = false
+ state.view = { ...defaults, category: 'Видео' }
+ let html = render(posts)
+ assert.equal(state.clicks.filter(button => button.children === 'Видео и контент').length, 1)
+ assert.ok(state.clicks.some(button => button.children === 'Видео и контент' && button['aria-pressed'] === true))
+ assert.ok(!state.clicks.some(button => button.children === 'Видео' || button.children === 'Видео и монтаж'))
+ assert.ok(state.clicks.some(button => button.children === 'Будущая рубрика'))
+ assert.equal((html.match(/<article /g) || []).length, 3)
+ state.posts = [posts[3]]
+ html = render(posts)
+ assert.ok(state.clicks.some(button => button.children === 'Видео и контент' && button['aria-pressed'] === true))
+ assert.match(html, /По запросу пока пусто/)
+ state.clicks.find(button => button.children === 'Будущая рубрика').onClick()
+ html = render(posts)
+ assert.equal(state.view.category, 'Будущая рубрика')
+ assert.equal((html.match(/<article /g) || []).length, 1)
+ state.clicks.find(button => button['aria-label'] === 'Сбросить фильтры публикаций').onClick()
+ assert.deepEqual(state.view, defaults)
+})

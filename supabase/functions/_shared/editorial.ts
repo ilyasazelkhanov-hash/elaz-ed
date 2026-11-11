@@ -5,6 +5,9 @@ export interface EditorialMetadata {
  review_due?: string
  reviewer?: string
  correction_note?: string
+ /** Explicit editor-confirmed obsolescence, never inferred from review_due. */
+ outdated_note?: string
+ outdated_source_url?: string
  audience?: string
  outcome?: string
  access_note?: string
@@ -13,7 +16,7 @@ export interface EditorialMetadata {
  sources?: EditorialSource[]
 }
 
-const editorialLimits = { reviewer: 80, correction_note: 1000, audience: 240, outcome: 300, access_note: 400, example: 1500 } as const
+const editorialLimits = { reviewer: 80, correction_note: 1000, outdated_note: 1000, audience: 240, outcome: 300, access_note: 400, example: 1500 } as const
 const dateIsValid = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
 const utcToday = () => new Date().toISOString().slice(0, 10)
 
@@ -63,6 +66,12 @@ export function normalizeEditorial(value: unknown, options: { requireUpdateRevie
   }
   if(sources.length)result.sources=sources
  }
+ const outdatedSource=text(input.outdated_source_url,2048,'Подтверждение устаревания')
+ if(outdatedSource){
+  try { const url=new URL(outdatedSource); if(!['https:','http:'].includes(url.protocol)||!url.hostname||url.username||url.password)throw new Error() } catch {throw new Error('Подтверждение устаревания: нужна ссылка http(s) без логина и пароля')}
+  result.outdated_source_url=outdatedSource
+ }
+ if(!!result.outdated_note!==!!result.outdated_source_url)throw new Error('Для отметки устаревания укажи причину и ссылку на подтверждение')
  if(options.requireUpdateReview&&result.kind==='update'){
   if(!result.sources?.length)throw new Error('Для публикации обновления нужен первоисточник')
   if(!result.checked_on)throw new Error('Укажи дату выполненной проверки обновления')

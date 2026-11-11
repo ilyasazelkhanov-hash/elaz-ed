@@ -19,6 +19,14 @@ The JSON object contains `title` (8–240 characters), `subtitle` (8–500), `bo
 
 `editorial` must contain `kind: "update"`, `checked_on`, `review_due`, `reviewer`, and `sources: [{"title": "Official announcement", "url": "https://official.example/blog/announcement"}]`. Event dates must be within the preceding seven calendar days, never future dates. The check must have happened today or yesterday, after the event date; the next review must not be overdue. Dates use `Asia/Qyzylorda`. URL shape validation does not prove source authority.
 
+## Reader presentation and source authority
+
+- `editorial.sources` is the one reader-facing list titled «Первоисточники». Include only original announcements, documentation or research from their authors. A news report, aggregator or repost is not promoted into a primary source. URL validation cannot decide authority: open and verify each original source before authoring.
+- Do not add a separate «Источники анонса», «Источники» or «Первоисточники» appendix in `body`. The complete primary URL required above may remain as an inline citation for older API compatibility. The news reader hides standalone bibliography entries in legacy source appendices without modifying their stored Markdown or copying secondary links into the primary list. Ordinary inline citations, prose and code examples remain.
+- Editorial type, reviewer and the next review date stay available to editors. Passing `review_due` is a task to check the article, **not** proof it is obsolete. Readers see no «Обновление инструмента» card or date-based warning.
+- A confirmed obsolete article can carry both `editorial.outdated_note` (what specifically stopped being true) and `editorial.outdated_source_url` (the original confirmation). Fill both only after a real check, and clear both when the article is current again. These fields require deployment of the updated shared normalizer in the `api` Edge Function to round-trip through the editor; no database migration is required.
+- Every article ends with course recommendations matched to its title/subtitle and the current server catalog. Absent, ambiguous or empty courses are omitted. If no relevant course is available, the reader says so instead of inventing a match. Course text describes the existing curriculum, not an unverified promise that it covers the newly announced feature.
+
 ## Guards and outcomes
 
 - Every article must validate and pass the course guard before any insertion. Duplicate articles within the requested batch reject the whole batch. An invalid or course-derived entry cannot result in partial publication.

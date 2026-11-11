@@ -36,7 +36,7 @@ const { PostScreen } = await import(await compile('../src/screens/Post.tsx', {
   '../lib/blog-read': moduleUrl('export const markPostRead=()=>{}'),
   '../lib/blog-library': moduleUrl('export const useSavedPosts=()=>[];export const toggleSavedPost=()=>true'),
   '../lib/track': moduleUrl('export const track=()=>{}'),
-  ...Object.fromEntries(['knowledge', 'og-practice', 'content'].map(name => [`../lib/${name}`, new URL(`../src/lib/${name}.ts`, import.meta.url).href])),
+  ...Object.fromEntries(['knowledge', 'og-practice', 'content', 'news-reader', 'og-course-access'].map(name => [`../lib/${name}`, new URL(`../src/lib/${name}.ts`, import.meta.url).href])),
 }))
 const labels = ['Главная', 'Новости', 'Курсы', 'Профиль']
 const ids = ['home', 'blog', 'courses', 'profile']
@@ -137,4 +137,23 @@ test('explicit article links and archive cards retain the reader while metadata 
   assert.match(app, /inert=\{stack\.length > 0 \|\| !!reward \|\| !!share\}/)
   assert.match(app, /active=\{i === stack\.length - 1 && !reward && !share\}/)
   assert.match(focus, /inert=\{!enabled\}/)
+})
+
+
+test('reader ends with real relevant courses or an honest empty state, with working navigation', () => {
+ reset()
+ useStore.setState({ courses: [] })
+ let html = renderPost({ post: { ...post, title: 'Codex: агенты проверяют pull request' } })
+ assert.match(html, /Курсы по теме/)
+ assert.match(html, /пока нет подходящего курса/)
+ assert.doesNotMatch(html, /Программа и условия доступа/)
+ useStore.setState({ courses: [{ id: 51, practice_key: 'coding', title: 'Курс разработки', lessons: 6, access: true, price_stars: 0 }] })
+ html = renderPost({ post: { ...post, title: 'Codex: агенты проверяют pull request' } })
+ assert.match(html, /Курс разработки/)
+ assert.match(html, /Доступ открыт/)
+ assert.doesNotMatch(html, /пока нет подходящего курса/)
+ assert.ok(html.indexOf('Курсы по теме') > html.indexOf('Вернуться к публикациям'))
+ const link = state.clicks.find(button => button.className?.includes('min-h-16'))
+ link.onClick()
+ assert.deepEqual(useStore.getState().stack.at(-1), { type: 'learning', path: '/og-practice/coding' })
 })

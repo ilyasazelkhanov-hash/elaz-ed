@@ -1,6 +1,7 @@
 import type { Card } from './types'
 import { isNewsPost } from './content.ts'
 import { topicForPost } from './knowledge.ts'
+import { matchesNewsCategory, newsCategory } from './news-categories.ts'
 
 export type NewsFilters = { query: string; category: string; topic: string; filter: 'new' | 'unread' | 'saved' }
 
@@ -8,11 +9,11 @@ export type NewsFilters = { query: string; category: string; topic: string; filt
 export function filterNewsPosts<T extends Card>(cards: T[], selection: NewsFilters, readIds: number[], savedIds: number[], now = Date.now()): T[] {
  const read = new Set(readIds), saved = new Set(savedIds), query = selection.query.trim().toLocaleLowerCase('ru')
  return newestPosts(cards, now).filter(post =>
-  (selection.category === 'Все' || post.category === selection.category) &&
+  matchesNewsCategory(post.category, selection.category) &&
   (selection.topic === 'all' || topicForPost(post) === selection.topic) &&
   (selection.filter !== 'unread' || !read.has(post.id)) &&
   (selection.filter !== 'saved' || saved.has(post.id)) &&
-  `${post.title} ${post.subtitle} ${post.category}`.toLocaleLowerCase('ru').includes(query)
+  `${post.title} ${post.subtitle} ${post.category} ${newsCategory(post.category)}`.toLocaleLowerCase('ru').includes(query)
  )
 }
 

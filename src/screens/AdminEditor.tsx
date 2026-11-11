@@ -4,7 +4,8 @@ import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText } from '../lib/api'
 import { GRADIENT_NAMES, GRADIENTS, readMinutes, slidesOf } from '../lib/game'
-import { editorialReviewLabel, normalizeEditorial } from '../lib/editorial'
+import { editorialReviewLabel, normalizeEditorial, outdatedNoticeMatches } from '../lib/editorial'
+import { newsCategories } from '../lib/news-categories'
 import { confirmDialog, haptic } from '../lib/tg'
 import type { AdminCourse, EditorialMetadata, GradientName, Kind, Lesson, LessonDraft, QuizQuestion } from '../lib/types'
 import { useStore } from '../store'
@@ -59,7 +60,10 @@ const TOOLS: { label: string; wrap: [string, string] }[] = [
 export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Kind }) {
   const { pop, push, toast, guard, boot } = useStore.getState()
   const feed = useStore((s) => s.feed)
-  const categories = useMemo(() => [...new Set(feed.filter((c) => c.kind === 'lesson' && (lesson?.course_id?c.course_id!=null:c.course_id==null)).map((c) => c.category))], [feed,lesson?.course_id])
+  const categories = useMemo(() => {
+    const labels = feed.filter((c) => c.kind === 'lesson' && (lesson?.course_id ? c.course_id != null : c.course_id == null)).map((c) => c.category)
+    return lesson?.course_id ? [...new Set(labels)] : newsCategories(labels)
+  }, [feed, lesson?.course_id])
   const [d, setD] = useState<LessonDraft>(() => (lesson ? { ...lesson } : blank(kind)))
   const [autoMinutes, setAutoMinutes] = useState(!lesson)
   const [courses, setCourses] = useState<AdminCourse[]>([])
@@ -107,6 +111,14 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
       const editorial = normalizeEditorial(d.editorial, { requireUpdateReview: post && (publish ?? d.published) })
       const draft = { ...d, editorial, quiz, published: publish ?? d.published, minutes: autoMinutes ? readMinutes(d.body) : d.minutes }
       const saved = await api.adminSave(draft)
+      if (!outdatedNoticeMatches(editorial, saved.editorial)) {
+        // Preserve the unsaved notice and the confirmed article id; do not create a duplicate on retry.
+        setD({ ...saved, editorial })
+        haptic.error()
+        toast('Текст сохранён, но отметка устаревания не сохранилась. Нужна актуальная версия сервера.')
+        void boot()
+        return null
+      }
       setD({ ...saved })
       haptic.success()
       toast(saved.published ? 'Сохранено и опубликовано' : 'Черновик сохранён', saved.published ? '🚀' : '📝')
@@ -410,8 +422,14 @@ function EditorialFields({ value, onChange }: { value?: EditorialMetadata | null
       <label className="mt-4 block text-sm font-semibold text-mute">Пример и его разбор<textarea value={value.example ?? ''} onChange={e => update('example', e.target.value)} rows={3} maxLength={1500} placeholder="Исходные данные, наблюдаемый результат и почему он подходит или не подходит" className={`${field} mt-2 resize-y`}/></label>
       <label className="mt-4 block text-sm font-semibold text-mute">Критерии результата, по одному в строке<textarea value={(value.criteria ?? []).join('\n')} onChange={e => update('criteria', e.target.value.split('\n'))} rows={3} placeholder="До пяти конкретных проверок" className={`${field} mt-2 resize-y`}/></label>
       <h3 className="mt-5 text-sm font-semibold text-mute">Первоисточники · до 5</h3>
+      <p className="mt-2 text-xs leading-relaxed text-mute">Только оригинальное объявление, документация или исследование автора. Пересказы СМИ не становятся первоисточниками. В новости этот список показывается один раз в конце, отдельный список в тексте не нужен.</p>
       {(value.sources ?? []).map((source, index) => <fieldset key={index} className="mt-3 min-w-0 space-y-2 rounded-2xl border border-line p-3"><legend className="px-1 text-xs text-mute">Источник {index + 1}</legend><input aria-label={`Название источника ${index + 1}`} value={source.title} onChange={e => update('sources', value.sources!.map((item, i) => i === index ? { ...item, title: e.target.value } : item))} maxLength={120} placeholder="Официальная документация или объявление автора" className={field}/><input aria-label={`Ссылка источника ${index + 1}`} type="url" inputMode="url" value={source.url} onChange={e => update('sources', value.sources!.map((item, i) => i === index ? { ...item, url: e.target.value } : item))} maxLength={2048} placeholder="https://" className={field}/><Tap onClick={() => update('sources', value.sources!.filter((_, i) => i !== index))} className="min-h-11 px-2 text-sm text-mute">Убрать источник</Tap></fieldset>)}
       {(value.sources?.length ?? 0) < 5 && <Tap onClick={() => update('sources', [...value.sources ?? [], { title: '', url: '' }])} className="mt-3 min-h-11 w-full rounded-2xl border border-line px-3 text-sm font-semibold text-violet">Добавить первоисточник</Tap>}
+      <fieldset className="mt-5 space-y-3 rounded-2xl border border-line p-3"><legend className="px-1 text-sm font-semibold">Подтверждённое устаревание</legend>
+        <p className="text-xs leading-relaxed text-mute">Заполняй оба поля только после проверки: что именно больше не действует и где это подтверждено автором инструмента. Срок следующей проверки сам по себе не показывает предупреждение читателю. Для снятия отметки очисти оба поля.</p>
+        <label className="block text-sm font-semibold text-mute">Что устарело<textarea value={value.outdated_note ?? ''} onChange={e => update('outdated_note', e.target.value)} rows={3} maxLength={1000} className={`${field} mt-2 resize-y`}/></label>
+        <label className="block text-sm font-semibold text-mute">Первоисточник, подтверждающий изменение<input type="url" inputMode="url" value={value.outdated_source_url ?? ''} onChange={e => update('outdated_source_url', e.target.value)} maxLength={2048} placeholder="https://" className={`${field} mt-2`}/></label>
+      </fieldset>
       <label className="mt-4 block text-sm font-semibold text-mute">Что исправлено<textarea value={value.correction_note ?? ''} onChange={e => update('correction_note', e.target.value)} rows={3} maxLength={1000} placeholder="Например: исправлена формула и пояснён расчёт. Эта заметка видна читателю." className={`${field} mt-2 resize-y`}/></label>
       <p className="mt-3 text-xs leading-relaxed text-mute">Изменение статьи само по себе не отправляет новый анонс в канал.</p>
     </>}

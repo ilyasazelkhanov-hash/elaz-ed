@@ -1404,7 +1404,7 @@ test('editorial metadata survives author save and rejects incomplete published u
  const incomplete=await call('admin_save',{lesson:{title:'News',published:true,editorial:{kind:'update'}}},ADMIN)
  assert.equal(incomplete.status,400)
  assert.equal(incomplete.body.error,'editorial_invalid')
- const editorial={kind:'update',checked_on:'2026-11-01',review_due:'2026-12-01',reviewer:'Author',sources:[{title:'Official',url:'https://example.org/docs'}]}
+ const editorial={kind:'update',checked_on:'2026-11-01',review_due:'2026-12-01',reviewer:'Author',sources:[{title:'Official',url:'https://example.org/docs'}],outdated_note:'This API version was retired',outdated_source_url:'https://example.org/deprecations'}
  const saved=await call('admin_save',{lesson:{title:'News',published:true,editorial}},ADMIN)
  assert.equal(saved.status,200)
  assert.deepEqual(saved.body.editorial,editorial)

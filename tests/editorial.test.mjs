@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises'
 import { transformWithOxc } from 'vite'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { outdatedNoticeMatches } from '../src/lib/editorial.ts'
 import { beginnerGuides } from '../src/lib/beginner-content.ts'
 
 const today = '2026-11-07'
@@ -68,20 +69,29 @@ test('reader renders supported dates and safe sources; absent data never implies
   compiled = compiled.replace(/from ["']react\/jsx-runtime["']/g, `from ${JSON.stringify(import.meta.resolve('react/jsx-runtime'))}`)
     .replace(/from ["']\.\/lib\/editorial["']/g, `from ${JSON.stringify(new URL('../src/lib/editorial.ts', import.meta.url).href)}`)
   const { EditorialMetadata } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`)
-  const render = (metadata, section = 'summary') => renderToStaticMarkup(createElement(EditorialMetadata, { metadata, section, today }))
+  const render = (metadata, section = 'summary', news = true) => renderToStaticMarkup(createElement(EditorialMetadata, { metadata, section, today, news }))
   assert.equal(render(undefined), '')
-  const evergreen = render({ kind: 'evergreen', audience: 'Новичку', access_note: 'Можно выполнить вручную' })
+  const evergreen = render({ kind: 'evergreen', audience: 'Новичку', access_note: 'Можно выполнить вручную' }, 'summary', false)
   assert.match(evergreen, /Новичку|Можно выполнить вручную/)
   assert.doesNotMatch(evergreen, /Проверено|Проверил/)
   const summary = render(update)
-  assert.match(summary, /2026-11-07/)
-  assert.match(summary, /Автор/)
+  assert.equal(summary, '')
+  assert.match(render(update, 'summary', false), /Обновление инструмента/)
   const footer = render({ ...update, correction_note: 'Исправлен расчёт' }, 'sources')
   assert.match(footer, /https:\/\/example.org\/docs/)
   assert.match(footer, /noopener noreferrer/)
   assert.match(footer, /Исправлен расчёт/)
   assert.equal(render({ ...update, sources: [{ title: 'Небезопасно', url: 'javascript:alert(1)' }] }, 'sources'), '')
-  assert.match(render({ ...update, checked_on: '2026-10-01', review_due: today }), /Условия могли измениться/)
+  assert.equal(render({ ...update, checked_on: '2026-10-01', review_due: today }), '')
+  const outdated = render({ ...update, outdated_note: 'Эта версия API отключена.', outdated_source_url: 'https://example.org/deprecations' })
+  assert.match(outdated, /Материал устарел/)
+  assert.match(outdated, /Эта версия API отключена/)
+  assert.match(outdated, /https:\/\/example.org\/deprecations/)
+  assert.doesNotMatch(outdated, /Обновление инструмента|Следующая проверка/)
+  const legacy = renderToStaticMarkup(createElement(EditorialMetadata, { metadata: null, section: 'sources', news: true, today }))
+  assert.match(legacy, /Первоисточники пока не указаны/)
+  const newsGuide = renderToStaticMarkup(createElement(EditorialMetadata, { metadata: { kind: 'evergreen', audience: 'Для всех' }, news: true, today }))
+  assert.equal(newsGuide, '')
 })
 
 test('beginner metadata preserves authored examples and criteria without inventing external verification', () => {
@@ -96,4 +106,27 @@ test('beginner metadata preserves authored examples and criteria without inventi
     assert.ok(metadata.access_note.length > 50)
   }
   assert.match(beginnerGuides.find(guide => guide.id === 'image-brief').editorial.access_note, /вручную бесплатно.*бесплатный доступ к ним не обещается/)
+})
+
+test('explicit obsolescence requires a reason and a safe original confirmation URL, not an expired date', () => {
+ const outdated = { ...update, outdated_note: 'Эта версия отключена.', outdated_source_url: 'https://example.org/deprecations' }
+ assert.deepEqual(normalizeEditorial(outdated, { today }), outdated)
+ for (const value of [
+  { ...update, outdated_note: 'Старая версия' },
+  { ...update, outdated_source_url: 'https://example.org/deprecations' },
+  { ...outdated, outdated_source_url: 'javascript:alert(1)' },
+  { ...outdated, outdated_source_url: 'https://user:secret@example.org/deprecations' },
+  { ...outdated, outdated_note: 'x'.repeat(1001) },
+ ]) assert.throws(() => normalizeEditorial(value, { today }))
+ assert.deepEqual(normalizeEditorial({ ...update, outdated_note: '', outdated_source_url: '' }, { today }), update)
+})
+
+
+test('older API dropping the notice is not mistaken for a successful notice save or clear', () => {
+ const notice = { outdated_note: 'Версия отключена.', outdated_source_url: 'https://example.org/deprecations' }
+ assert.equal(outdatedNoticeMatches(notice, { ...notice }), true)
+ assert.equal(outdatedNoticeMatches(notice, {}), false)
+ assert.equal(outdatedNoticeMatches(notice, { ...notice, outdated_note: 'Другой текст' }), false)
+ assert.equal(outdatedNoticeMatches({}, notice), false)
+ assert.equal(outdatedNoticeMatches({}, null), true)
 })
