@@ -10,6 +10,7 @@ test('course purchase intent, duplicate refund queue and independent access grou
  for(const f of ['001_init.sql','006_courses_stars_freezes.sql','007_refunds_webhook_url.sql','009_advent.sql','010_advent_catchup_rewards.sql','011_advent_prize_modes.sql','20261028090000_core_atomic_operations.sql']) await db.exec((await readFile(new URL('../supabase/migrations/'+f,import.meta.url),'utf8')).replace('create extension if not exists pgcrypto with schema extensions;',''))
  const migration = await readFile(new URL('../supabase/migrations/20261030030734_payment_purchase_intents.sql',import.meta.url),'utf8').catch(()=> '')
  if(migration) await db.exec(migration)
+ await db.exec(await readFile(new URL('../supabase/migrations/20261111231000_payment_reliability.sql',import.meta.url),'utf8'))
  const rpc=async(name,args)=>(await db.query(`select ${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) value`,args)).rows[0].value
  await db.exec(`insert into users(id) values(1),(2),(3);insert into courses(title,published,price_stars) values('Course',true,100);`)
  await t.test('reuses intent and stored invoice, and atomically reserves checkout query',async()=>{
@@ -65,7 +66,7 @@ test('course purchase intent, duplicate refund queue and independent access grou
  })
  await t.test('anonymous clients cannot invoke payment mutations or read intents',async()=>{
   await db.exec('set role anon')
-  for(const [name,args] of [['grant_course_access',[3,1,'admin']],['course_purchase_intent',[3,1]],['course_purchase_link',[3,'x','x']],['check_course_checkout',[3,'x',100,'q']],['apply_course_purchase',[3,'x',100,'x']],['claim_payment_refunds',[1]],['finish_payment_refund',['x','00000000-0000-0000-0000-000000000000',true,null]]])await assert.rejects(rpc(name,args),/permission denied/)
+  for(const [name,args] of [['queue_payment_refund',[1]],['claim_payment_refund',['first']],['grant_course_access',[3,1,'admin']],['course_purchase_intent',[3,1]],['course_purchase_link',[3,'x','x']],['check_course_checkout',[3,'x',100,'q']],['apply_course_purchase',[3,'x',100,'x']],['claim_payment_refunds',[1]],['finish_payment_refund',['x','00000000-0000-0000-0000-000000000000',true,null]]])await assert.rejects(rpc(name,args),/permission denied/)
   for(const table of ['course_purchase_intents','payment_refund_jobs'])await assert.rejects(db.query('select * from '+table),/permission denied/)
   await db.exec('reset role')
  })

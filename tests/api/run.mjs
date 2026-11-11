@@ -242,7 +242,7 @@ test('курс без цены не продаётся', async () => {
 
 test('за уже открытый курс счёт не выставляется', async () => {
   await everyoneBoots()
-  state.tables.course_access.push({ user_id: BUYER, course_id: 1, source: 'admin' })
+  state.tables.course_access.push({ user_id: BUYER, course_id: 1, source: 'admin', manual_source: 'admin' })
   assert.deepEqual(await call('course_invoice', { id: 1 }, BUYER), { status: 400, body: { error: 'already_open' } })
 })
 
@@ -350,7 +350,8 @@ test('если Telegram отказал в возврате, доступ ост�
   await everyoneBoots()
   await hook(paidUpdate(BUYER, 1, 'ch-1'))
   replies.refundStarPayment = { ok: false, description: 'Bad Request: CHARGE_NOT_FOUND' }
-  assert.deepEqual(await call('admin_refund', { id: state.tables.payments[0].id }, ADMIN), { status: 502, body: { error: 'telegram' } })
+  assert.deepEqual(await call('admin_refund', { id: state.tables.payments[0].id }, ADMIN), { status: 503, body: { error: 'refund_pending' } })
+  assert.equal(state.tables.payments[0].refund_pending, true)
   assert.equal(access(BUYER, 1).length, 1)
   assert.equal(state.tables.payments[0].refunded_at, null)
 })
@@ -365,7 +366,7 @@ test('возврат, пришедший от Telegram, закрывает до�
 
 test('возврат не отнимает доступ, выданный автором вручную', async () => {
   await everyoneBoots()
-  state.tables.course_access.push({ user_id: BUYER, course_id: 1, source: 'admin' })
+  state.tables.course_access.push({ user_id: BUYER, course_id: 1, source: 'admin', manual_source: 'admin' })
   state.tables.payments.push({ id: 1, user_id: BUYER, course_id: 1, stars: 500, charge_id: 'ch-1', refunded_at: null })
   await call('admin_refund', { id: 1 }, ADMIN)
   assert.deepEqual(access(BUYER, 1).map((a) => a.source), ['admin'])
@@ -380,15 +381,21 @@ test('повторное уведомление об оплате после в�
   assert.equal(state.tables.payments.length, 1)
 })
 
-test('сбой закрытия доступа после возврата исправляется повторной попыткой', async () => {
+test('сбой записи после возврата исправляется durable worker без повторного запроса администратора', async () => {
   await everyoneBoots()
   await hook(paidUpdate(BUYER, 1, 'ch-1'))
   const id = state.tables.payments[0].id
   replies.refundStarPayment = () => sent('refundStarPayment').length > 1 ? { ok: false, description: 'Bad Request: ALREADY_REFUNDED' } : { ok: true }
   state.failNext = { table: 'course_access', op: 'delete' }
-  assert.equal((await call('admin_refund', { id }, ADMIN)).status, 500)
+  assert.equal((await call('admin_refund', { id }, ADMIN)).status, 503)
   assert.equal(access(BUYER, 1).length, 1)
-  assert.equal((await call('admin_refund', { id }, ADMIN)).status, 200)
+  assert.equal(state.tables.payment_refund_jobs.length, 1)
+  assert.equal(state.tables.payment_refund_jobs[0].completed_at, undefined)
+  state.tables.payment_refund_jobs[0].lease_until = new Date(Date.now() - 1).toISOString()
+  const { processRefundJobs } = await import('../../supabase/functions/api/payments.ts')
+  const { createClient } = await import('./fake-supabase.mjs')
+  const done = await processRefundJobs(createClient(), async (method, payload) => (await fetch('https://fake/' + method, { body: JSON.stringify(payload) })).json())
+  assert.equal(done.completed, 1)
   assert.equal(access(BUYER, 1).length, 0)
   assert.equal(sent('refundStarPayment').length, 2)
 })
@@ -402,6 +409,37 @@ test('сбой записи возврата вызывает повторную
   assert.equal(await hook(update), 200)
   assert.equal(access(BUYER, 1).length, 0)
   assert.ok(state.tables.payments[0].refunded_at)
+})
+
+test('manual refund never contacts Telegram if durable enqueue fails', async () => {
+  await everyoneBoots()
+  await hook(paidUpdate(BUYER, 1, 'enqueue-failure'))
+  state.failNext = { rpc: 'queue_payment_refund' }
+  assert.equal((await call('admin_refund', { id: state.tables.payments[0].id }, ADMIN)).status, 500)
+  assert.equal(sent('refundStarPayment').length, 0)
+  assert.equal(access(BUYER, 1).length, 1)
+})
+
+test('pre-checkout retries unsuccessful Telegram acknowledgements and DB failures', async () => {
+  await everyoneBoots()
+  const update = { pre_checkout_query: { id: 'ack-failure', from: { id: BUYER }, currency: 'XTR', invoice_payload: `course:1:${BUYER}`, total_amount: 500 } }
+  replies.answerPreCheckoutQuery = { ok: false, error_code: 500, description: 'temporary' }
+  assert.equal(await hook(update), 500)
+  replies.answerPreCheckoutQuery = { ok: true, result: true }
+  assert.equal(await hook(update), 200)
+  state.failNext = { rpc: 'check_course_checkout' }
+  assert.equal(await hook(update), 500)
+})
+
+test('Advent save and theme reject failed persistence', async () => {
+  await everyoneBoots()
+  state.tables.settings.push({ key: 'advent', value: { enabled: true, title: 'Before' } })
+  for (const [route, body] of [['admin_advent_save', { settings: { enabled: false } }], ['admin_advent_theme', { theme: 'halloween' }]]) {
+    state.failNext = { table: 'settings', op: 'upsert' }
+    const result = await call(route, body, ADMIN)
+    assert.equal(result.status, 500, route)
+    assert.equal(state.tables.settings.find(s => s.key === 'advent').value.enabled, true)
+  }
 })
 
 // ---------- Заявки и ручной доступ ----------

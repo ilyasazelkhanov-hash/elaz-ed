@@ -7,6 +7,7 @@ import { newsTelegramPost } from '../_shared/news.ts'
 import { rewardNotifications } from '../_shared/rewardNotifications.ts'
 import { handleCertifications, CertificationError } from './certifications.ts'
 import { processRefundJobs } from './payments.ts'
+import { telegramRequest, withDeadline, CHECKOUT_TIMEOUT_MS } from './telegram.ts'
 import { cleanDiscoveryEvent, isDiscoveryEvent } from './discovery-events.ts'
 import { normalizeEditorial } from '../_shared/editorial.ts'
 import { assertNoCourseOverlap } from '../_shared/news-policy.ts'
@@ -102,18 +103,7 @@ async function verifyInitData(initData: unknown): Promise<TgUser> {
 }
 
 async function tg(method: string, payload: Record<string, unknown> = {}, signal?: AbortSignal) {
-  try {
-    const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      ...(signal ? { signal } : {}),
-    })
-    // deno-lint-ignore no-explicit-any
-    return (await r.json()) as { ok: boolean; result?: any; description?: string; error_code?: number }
-  } catch {
-    return { ok: false, description: 'network' }
-  }
+  return await telegramRequest(BOT_TOKEN, method, payload, signal)
 }
 
 async function webhookSecret() {
@@ -143,9 +133,10 @@ function escapeHtml(s: string) {
 type Settings = Record<string, any>
 let settingsCache: { at: number; data: Settings } | null = null
 
-async function getSettings(fresh = false): Promise<Settings> {
+async function getSettings(fresh = false, signal?: AbortSignal): Promise<Settings> {
   if (!fresh && settingsCache && Date.now() - settingsCache.at < 15_000) return settingsCache.data
-  const { data, error } = await db.from('settings').select('key,value')
+  const query = db.from('settings').select('key,value')
+  const { data, error } = await (signal ? query.abortSignal(signal) : query)
   if (error) throw new HttpError(500, 'db')
   const s: Settings = {}
   for (const r of data ?? []) s[r.key] = r.value
@@ -154,8 +145,9 @@ async function getSettings(fresh = false): Promise<Settings> {
 }
 
 async function setSetting(key: string, value: unknown) {
-  await db.from('settings').upsert({ key, value, updated_at: new Date().toISOString() })
+  const { error } = await db.from('settings').upsert({ key, value, updated_at: new Date().toISOString() })
   settingsCache = null
+  if (error) throw new HttpError(500, 'db')
 }
 
 // ---------- Пользователь ----------
@@ -444,12 +436,12 @@ async function decideRequest(courseId: number, userId: number, approve: boolean)
 }
 
 // Возврат звёзд: помечаем оплату и закрываем доступ, выданный за неё. Повторный вызов ничего не меняет.
-async function markRefunded(chargeId: string) {
+async function markRefunded(chargeId: string, notifyCompleted = false) {
   const { data: p, error } = await db.rpc('apply_star_refund', { p_charge: chargeId })
   if (error || !p) throw new HttpError(500, 'db')
   // Билет за возвращённые звёзды отзываем, если он ещё не потрачен.
   await db.from('advent_tickets').update({ revoked_at: new Date().toISOString() }).eq('ref', `stars:${chargeId}`).is('used_at', null).is('revoked_at', null)
-  if (!p.new_refund || !p.user_id) return
+  if ((!p.new_refund && !notifyCompleted) || !p.user_id) return
   await logEvent(p.user_id, 'refund', null, { course: p.course_id, stars: p.stars })
   if (!p.course_id) {
     await tg('sendMessage', { chat_id: p.user_id, text: 'Звёзды за билет календаря возвращены. Если билет не был потрачен, он отменён.' })
@@ -1080,20 +1072,27 @@ async function adminPayments(body: Row) {
   return data
 }
 
-// Возврат звёзд делает сам Telegram по номеру оплаты; после этого закрываем доступ.
+// Persist the refund intent before any Telegram call. The cron worker can recover
+// after a successful remote refund even if this request crashes before DB commit.
 async function adminRefund(body: Row) {
   await member(body, true)
-  const { data: p } = await db.from('payments').select('id,user_id,charge_id,refunded_at').eq('id', Number(body.id)).maybeSingle()
-  if (!p) throw new HttpError(404, 'not_found')
-  if (p.refunded_at) {
-    await markRefunded(p.charge_id)
-    return { ok: true }
+  if (!Number.isSafeInteger(body.id) || body.id <= 0) throw new HttpError(400, 'bad_id')
+  const queued = await db.rpc('queue_payment_refund', { p_payment: body.id })
+  if (queued.error) {
+    if (queued.error.message?.includes('payment_not_found')) throw new HttpError(404, 'not_found')
+    if (queued.error.message?.includes('user_not_found')) throw new HttpError(404, 'user_not_found')
+    throw new HttpError(500, 'db')
   }
-  if (!p.user_id) throw new HttpError(404, 'user_not_found')
-  const r = await tg('refundStarPayment', { user_id: p.user_id, telegram_payment_charge_id: p.charge_id })
-  // Telegram уже вернул эти звёзды раньше — остаётся только отметить это у себя.
-  if (!r.ok && !/ALREADY_REFUNDED/i.test(r.description ?? '')) throw new HttpError(502, 'telegram')
-  await markRefunded(p.charge_id)
+  if (!queued.data) throw new HttpError(500, 'db')
+  if (queued.data.refunded) return { ok: true }
+  let completed = 0
+  try {
+    const result = await processRefundJobs(db, tg, queued.data.charge_id, charge => markRefunded(charge, true))
+    completed = result.completed
+  } catch (error) { console.error('manual refund pending', error) }
+  // Another worker owns the lease or a failed attempt is in backoff. Never show
+  // completed success until the payment's refund is actually committed.
+  if (!completed) throw new HttpError(503, 'refund_pending')
   return { ok: true }
 }
 
@@ -1296,6 +1295,40 @@ async function webhook(req: Request) {
     const env = {...Object.fromEntries(names.map(name=>[name,Deno.env.get(name)||''])),APP_URL:appUrl,BOT_TOKEN,SUPABASE_URL,ADMIN_TELEGRAM_IDS:Deno.env.get('ADMIN_TELEGRAM_IDS')||'',WEBHOOK_SECRET:await webhookSecret()}
     return await createHandler({env,gateway:createGateway(SUPABASE_URL,serviceKey())})(new Request(`${SUPABASE_URL}/functions/v1/az-master-api/v1/webhook`,{method:'POST',headers:{'Content-Type':'application/json','x-telegram-bot-api-secret-token':env.WEBHOOK_SECRET},body:JSON.stringify(update)}))
   }
+  // Telegram allows ten seconds. Settings, DB reservation and acknowledgement
+  // share a shorter deadline; a failed acknowledgement must not be HTTP 200.
+  if (update.pre_checkout_query) {
+    try {
+      await withDeadline(async signal => {
+        const pcq = update.pre_checkout_query
+        const s = await getSettings(false, signal)
+        let ok = false
+        let reason = 'Курс сейчас недоступен или уже открыт. Звёзды не списаны.'
+        if (pcq.currency === 'XTR' && /^(?:course:|purchase:)/.test(pcq.invoice_payload ?? '')) {
+          const checked = await db.rpc('check_course_checkout', { p_user: pcq.from?.id, p_payload: pcq.invoice_payload, p_stars: pcq.total_amount, p_query: pcq.id }).abortSignal(signal)
+          if (checked.error) throw new HttpError(500, 'db')
+          ok = checked.data === true
+        }
+        // Билет календаря: цена из настроек, календарь должен быть открыт.
+        const t = /^catchup:(\d+):\d+$/.exec(pcq.invoice_payload ?? '')
+        if (t && pcq.currency === 'XTR' && Number(t[1]) === pcq.from?.id) {
+          const cfg = adventCfg(s)
+          ok = !!cfg && cfg.catchup.methods.includes('stars') && cfg.catchup.stars === pcq.total_amount && !adventClosed(cfg, adventToday(cfg))
+          reason = 'Календарь сейчас не продаёт билеты. Звёзды не списаны.'
+        }
+        const answered = await tg('answerPreCheckoutQuery', {
+          pre_checkout_query_id: pcq.id,
+          ok,
+          ...(ok ? {} : { error_message: reason }),
+        }, signal)
+        if (!answered.ok) throw new HttpError(502, 'telegram')
+      }, CHECKOUT_TIMEOUT_MS)
+      return json({ ok: true })
+    } catch (error) {
+      console.error('pre_checkout', error)
+      return json({ ok: false }, 500)
+    }
+  }
   // Оплату нельзя потерять: если базу не удалось обновить, отвечаем ошибкой — Telegram пришлёт уведомление ещё раз.
   let retry = false
   try {
@@ -1330,30 +1363,6 @@ async function webhook(req: Request) {
       await handleNews(msg.chat.id, s)
     }
 
-    // Telegram ждёт ответа на проверку перед оплатой не дольше 10 секунд.
-    const pcq = update.pre_checkout_query
-    if (pcq) {
-      let ok = false
-      let reason = 'Курс сейчас недоступен или уже открыт. Звёзды не списаны.'
-      if (pcq.currency === 'XTR' && /^(?:course:|purchase:)/.test(pcq.invoice_payload ?? '')) {
-        const checked = await db.rpc('check_course_checkout', { p_user: pcq.from?.id, p_payload: pcq.invoice_payload, p_stars: pcq.total_amount, p_query: pcq.id })
-        if (checked.error) throw new HttpError(500, 'db')
-        ok = checked.data === true
-      }
-      // Билет календаря: цена из настроек, календарь должен быть открыт.
-      const t = /^catchup:(\d+):\d+$/.exec(pcq.invoice_payload ?? '')
-      if (t && pcq.currency === 'XTR' && Number(t[1]) === pcq.from?.id) {
-        const cfg = adventCfg(s)
-        ok = !!cfg && cfg.catchup.methods.includes('stars') && cfg.catchup.stars === pcq.total_amount && !adventClosed(cfg, adventToday(cfg))
-        reason = 'Календарь сейчас не продаёт билеты. Звёзды не списаны.'
-      }
-      await tg('answerPreCheckoutQuery', {
-        pre_checkout_query_id: pcq.id,
-        ok,
-        ...(ok ? {} : { error_message: reason }),
-      })
-    }
-
     const paid = msg?.successful_payment
     if (paid && /^(?:course:|purchase:)/.test(paid.invoice_payload ?? '')) {
       const userId = msg.from?.id
@@ -1370,7 +1379,7 @@ async function webhook(req: Request) {
         if (course) await notifyOpened(userId, course, s)
       }
       if (payment?.refund_pending) {
-        try { await processRefundJobs(db, tg) } catch (error) { console.error('refund worker', error) }
+        try { await processRefundJobs(db, tg, undefined, charge => markRefunded(charge, true)) } catch (error) { console.error('refund worker', error) }
       }
     }
 
@@ -2536,7 +2545,7 @@ Deno.serve(async (req) => {
     if (route === 'payment_refunds' && req.method === 'POST') {
       const s = await getSettings()
       if (!s.cron_key || !safeEqual(req.headers.get('x-cron-key') ?? '', String(s.cron_key))) return json({ ok: false }, 401)
-      return json(await processRefundJobs(db, tg))
+      return json(await processRefundJobs(db, tg, undefined, charge => markRefunded(charge, true)))
     }
     if (route === 'advent_push' && req.method === 'POST') return await adventPush(req)
     if (route === 'learning_reminders' && req.method === 'POST') return await learningReminders(req)

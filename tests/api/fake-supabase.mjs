@@ -59,6 +59,7 @@ class Query {
     this.opts = {}
     this.mode = null
   }
+  abortSignal() { return this }
   select(cols = '*', opts = {}) {
     this.cols = cols
     if (this.op === 'select') this.opts = opts
@@ -242,19 +243,22 @@ function grant(user, rewardId) {
   if (r.stock != null && codes.filter((c) => c.reward_id === rewardId).length >= r.stock) return null
   codeSeq++
   const code = `T${String(codeSeq).padStart(3, '0')}-ABCD`.slice(0, 4) + '-' + String(codeSeq).padStart(4, 'A')
-  codes.push({ code, user_id: user, reward_id: rewardId, status: 'issued' })
+  codes.push({ code, user_id: user, reward_id: rewardId, status: 'issued', granted_course_id: r.kind==='course' ? Number(r.payload?.course_id) || null : null })
   if (r.kind === 'lesson' && r.payload?.lesson_id) table('lesson_access').push({ user_id: user, lesson_id: Number(r.payload.lesson_id), source: 'advent' })
-  if (r.kind === 'course' && r.payload?.course_id && !table('course_access').some((a) => a.user_id === user && a.course_id === Number(r.payload.course_id))) {
-    table('course_access').push({ user_id: user, course_id: Number(r.payload.course_id), source: 'advent' })
+  if (r.kind === 'course' && r.payload?.course_id) {
+    const prior = table('course_access').find(a => a.user_id === user && a.course_id === Number(r.payload.course_id))
+    if (prior) prior.manual_source ??= 'advent'
+    else table('course_access').push({ user_id: user, course_id: Number(r.payload.course_id), source: 'advent', manual_source: 'advent' })
   }
   return code
 }
 
 export function createClient() {
-  return {
+  const client = {
     from: (name) => new Query(name),
     // Функции базы здесь не проверяются: их логика живёт в миграциях.
-    rpc: async (name, args) => {
+    _rpc: async (name, args) => {
+      if (state.failNext?.rpc === name) { state.failNext = null; return { data: null, error: { message: 'injected' } } }
       if (name === 'az_rate_limit') {
         if (state.failNext?.table === 'az_rate_limits' && state.failNext.op === 'rpc') { state.failNext = null; return { data: null, error: { message: 'injected' } } }
         const limits = table('az_rate_limits'), now = Date.now()
@@ -319,7 +323,8 @@ export function createClient() {
       }
       if(name==='grant_course_access'){
         const prior=table('course_access').find(a=>a.user_id===args.p_user&&a.course_id===args.p_course)
-        if(prior){prior.manual_source=args.p_source;return {data:null,error:null}}
+        if (!['admin','invites','advent'].includes(args.p_source)) return {data:null,error:{message:'invalid_source'}}
+        if(prior){prior.manual_source=prior.manual_source==='admin'?'admin':args.p_source==='advent'?(prior.manual_source??'advent'):args.p_source;return {data:null,error:null}}
         return await new Query('course_access').upsert({user_id:args.p_user,course_id:args.p_course,source:args.p_source,manual_source:args.p_source},{ignoreDuplicates:true})
       }
       if(name==='course_purchase_intent'){
@@ -350,12 +355,25 @@ export function createClient() {
         const result=await createClient().rpc('apply_star_payment',{...args,p_course:cid})
         if(result.data)result.data.course_id=cid;return result
       }
-      if(name==='claim_payment_refunds')return {data:table('payment_refund_jobs').filter(j=>!j.completed_at&&!j.lease_token).map(j=>Object.assign(j,{lease_token:crypto.randomUUID()})),error:null}
+      if(name==='queue_payment_refund'){
+        const p=table('payments').find(p=>p.id===args.p_payment)
+        if(!p)return {data:null,error:{message:'payment_not_found'}}
+        if(p.refunded_at)return {data:{charge_id:p.charge_id,refunded:true},error:null}
+        if(!p.user_id)return {data:null,error:{message:'user_not_found'}}
+        if(!table('payment_refund_jobs').some(j=>j.charge_id===p.charge_id))table('payment_refund_jobs').push({charge_id:p.charge_id,user_id:p.user_id,reason:'manual',attempts:0})
+        p.refund_pending=true
+        return {data:{charge_id:p.charge_id,refunded:false},error:null}
+      }
+      if(name==='claim_payment_refunds'||name==='claim_payment_refund'){
+        const now=Date.now()
+        return {data:table('payment_refund_jobs').filter(j=>!j.completed_at&&(!j.next_attempt_at||Date.parse(j.next_attempt_at)<=now)&&(!j.lease_until||Date.parse(j.lease_until)<now)&&(name==='claim_payment_refunds'||j.charge_id===args.p_charge))
+          .slice(0,name==='claim_payment_refund'?1:Math.min(Math.max(args.p_limit,1),50)).map(j=>({...Object.assign(j,{lease_token:crypto.randomUUID(),lease_until:new Date(now+120000).toISOString(),attempts:(j.attempts??0)+1})})),error:null}
+      }
       if(name==='finish_payment_refund'){
-        const j=table('payment_refund_jobs').find(j=>j.charge_id===args.p_charge&&j.lease_token===args.p_lease)
+        const j=table('payment_refund_jobs').find(j=>j.charge_id===args.p_charge&&j.lease_token===args.p_lease&&!j.completed_at)
         if(!j)return {data:false,error:null}
-        if(args.p_ok){await createClient().rpc('apply_star_refund',{p_charge:args.p_charge});j.completed_at=new Date().toISOString()}
-        else j.lease_token=null
+        if(args.p_ok){const result=await createClient().rpc('apply_star_refund',{p_charge:args.p_charge});if(result.error)return result}
+        else Object.assign(j,{lease_until:null,last_error:args.p_error,next_attempt_at:new Date(Date.now()+Math.min(3600,30*2**Math.min(j.attempts-1,7))*1000).toISOString()})
         return {data:true,error:null}
       }
       if(name==='decide_course_request'){
@@ -488,10 +506,10 @@ export function createClient() {
           const { p_user: user, p_course: course, p_stars: stars, p_charge: charge } = args
           const prior = table('payments').find((p) => p.charge_id === charge)
           if (prior && (prior.user_id !== user || prior.course_id !== course || prior.stars !== stars)) throw { code: 'P0001' }
-          if (prior?.refunded_at) return { data: { duplicate: true, refunded: true }, error: null }
+          if (prior) return { data: { duplicate: true, refunded: !!prior.refunded_at, refund_pending: !!prior.refund_pending }, error: null }
           const extra=!prior&&table('course_access').some(a=>a.user_id===user&&a.course_id===course)
           if (!prior) await run(new Query('payments').insert({ user_id: user, course_id: course, stars, charge_id: charge, refund_pending:extra }))
-          if(extra){table('payment_refund_jobs').push({charge_id:charge,user_id:user});return {data:{duplicate:false,refunded:false,refund_pending:true},error:null}}
+          if(extra){table('payment_refund_jobs').push({charge_id:charge,user_id:user,reason:'duplicate',attempts:0});return {data:{duplicate:false,refunded:false,refund_pending:true},error:null}}
           await run(new Query('course_access').upsert({ user_id: user, course_id: course, source: 'stars' }, { ignoreDuplicates: true }))
           return { data: { duplicate: !!prior, refunded: false }, error: null }
         }
@@ -499,11 +517,13 @@ export function createClient() {
         if (!p) throw { code: 'P0002' }
         const fresh = !p.refunded_at
         await run(new Query('payments').update({ refunded_at: p.refunded_at ?? new Date().toISOString(),refund_pending:false }).eq('charge_id', args.p_charge))
-        if (!table('payments').some((x) => x.user_id === p.user_id && x.course_id === p.course_id && !x.refunded_at&&!x.refund_pending)) {
+        if (!table('payments').some((x) => x.user_id === p.user_id && x.course_id === p.course_id && !x.refunded_at&&(!x.refund_pending||table('payment_refund_jobs').some(j=>j.charge_id===x.charge_id&&j.reason==='manual')))) {
           const a=table('course_access').find(a=>a.user_id===p.user_id&&a.course_id===p.course_id)
           if(a?.manual_source)a.source=a.manual_source
-          else await run(new Query('course_access').delete().eq('user_id', p.user_id).eq('course_id', p.course_id).eq('source', 'stars'))
+          else await run(new Query('course_access').delete().eq('user_id', p.user_id).eq('course_id', p.course_id).is('manual_source', null))
         }
+        for(const j of table('payment_refund_jobs').filter(j=>j.charge_id===args.p_charge))Object.assign(j,{completed_at:j.completed_at??new Date().toISOString(),lease_until:null})
+        for(const ticket of table('advent_tickets').filter(t=>t.ref==='stars:'+args.p_charge&&!t.used_at))ticket.revoked_at??=new Date().toISOString()
         return { data: { ...p, new_refund: fresh,access_retained:table('course_access').some(a=>a.user_id===p.user_id&&a.course_id===p.course_id) }, error: null }
       } catch (error) {
         state.tables = before
@@ -519,4 +539,10 @@ export function createClient() {
       }),
     },
   }
+  client.rpc = (name, args) => {
+    const pending = client._rpc(name, args)
+    pending.abortSignal = () => pending
+    return pending
+  }
+  return client
 }
