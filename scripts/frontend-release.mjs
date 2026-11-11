@@ -8,8 +8,20 @@ const root = fileURLToPath(new URL('../', import.meta.url))
 const digest = value => createHash('sha256').update(value).digest('hex')
 const commitPattern = /^[a-f0-9]{40}$/i
 
+export function frontendSourceIdentity(base = root, env = process.env) {
+  let commit = null, dirty = null
+  const supplied = env.VERCEL_GIT_COMMIT_SHA || env.GITHUB_SHA
+  if (commitPattern.test(supplied || '')) commit = supplied.toLowerCase()
+  try {
+    const head = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}).trim()
+    if (!commit && commitPattern.test(head)) commit = head.toLowerCase()
+    dirty = !!execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], {cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}).trim()
+  } catch {}
+  return {commit, dirty}
+}
+
 // This public file contains build identity only, never environment variables or user data.
-export async function frontendRelease(base = root, env = process.env) {
+export async function frontendRelease(base = root, env = process.env, identity = frontendSourceIdentity(base, env)) {
   const files = []
   const visit = async relative => {
     for (const entry of (await readdir(path.join(base, 'dist', relative), {withFileTypes: true})).sort((a, b) => a.name.localeCompare(b.name))) {
@@ -19,15 +31,7 @@ export async function frontendRelease(base = root, env = process.env) {
     }
   }
   await visit('')
-  let commit = null, dirty = null
-  const supplied = env.VERCEL_GIT_COMMIT_SHA || env.GITHUB_SHA
-  if (commitPattern.test(supplied || '')) commit = supplied.toLowerCase()
-  try {
-    const head = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}).trim()
-    if (!commit && commitPattern.test(head)) commit = head.toLowerCase()
-    dirty = !!execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], {cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}).trim()
-  } catch {}
-  return {schema: 1, commit, dirty, built_at: new Date().toISOString(), build_sha256: digest(JSON.stringify(files)), file_count: files.length}
+  return {schema: 1, ...identity, built_at: new Date().toISOString(), build_sha256: digest(JSON.stringify(files)), file_count: files.length}
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

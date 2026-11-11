@@ -8,7 +8,7 @@ Pushing to `main` may trigger the connected Vercel frontend deployment. It does 
 
 ## Public frontend identity
 
-Every production build now writes `/release.json` after assets and prerendered pages are complete. It contains only a validated full commit SHA, tracked-worktree status when available, build time, aggregate SHA-256 of built files, and file count. It does not contain environment values, credentials, user data, or payment records. Vercel's `VERCEL_GIT_COMMIT_SHA` is used when available, followed by `GITHUB_SHA`, then local Git HEAD. A build outside Git without either source deliberately reports an unknown commit.
+Every production build now writes `/release.json` after assets and prerendered pages are complete. It contains only a validated full commit SHA, source-checkout status before content generation when available, build time, aggregate SHA-256 of built files, and file count. It does not contain environment values, credentials, user data, or payment records. Vercel's `VERCEL_GIT_COMMIT_SHA` is used when available, followed by `GITHUB_SHA`, then local Git HEAD. A build outside Git without either source deliberately reports an unknown commit.
 
 `RELEASE_EXPECTED_COMMIT=<full SHA> npm run release:smoke` checks the public frontend identity as well as the existing API capability/content contract and unauthenticated denials. Missing identity, a mismatched commit, a dirty published build, or an old API produces a failed result. API-only checks cannot prove frontend deployment identity. The public aggregate fingerprint identifies one build; it is not a signature or evidence that database backups exist.
 

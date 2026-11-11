@@ -8,7 +8,7 @@
     "prebuild": "node scripts/materialize-news-assets.mjs",
     "news:assets": "node scripts/materialize-news-assets.mjs",
     "test:news-assets": "node --test tests/news-assets.test.mjs",
-    "build": "npm run academy:content && tsc --noEmit && vite build && node scripts/academy-prerender.mjs && node scripts/frontend-release.mjs",
+    "build": "node scripts/build.mjs",
     "test:api": "node --experimental-transform-types --no-warnings tests/api/run.mjs",
     "test:api-guards": "node --experimental-transform-types --no-warnings --test tests/api/request-guards.test.mjs tests/api/rate-limit-database.test.mjs",
     "test:profile": "node --experimental-strip-types --test tests/profile-settings.test.mjs",
