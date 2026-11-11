@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
-import { openCourseAccess } from '../src/lib/course-checkout.ts'
+import { openCourseAccess, checkCourseAccess } from '../src/lib/course-checkout.ts'
 
 // Offline: every Telegram, API and UI effect is a recorded fake.
 function fakes(overrides = {}) {
@@ -40,7 +40,9 @@ test('a student buying a priced course gets a Stars invoice, not the hidden lega
 test('OGPractice purchase buttons no longer push the admin-only course overlay', async () => {
   const source = await readFile(new URL('../src/screens/home/OGPractice.tsx', import.meta.url), 'utf8')
   assert.doesNotMatch(source, /push\(\{\s*type:\s*'course'/)
-  assert.match(source, /openCourseAccess\(course,/)
+  assert.match(source, /CoursePaymentAction course=\{live\}/)
+  const action = await readFile(new URL('../src/screens/home/CoursePayment.tsx', import.meta.url), 'utf8')
+  assert.match(action, /openCourseAccess\(live,/)
 })
 
 test('cancelled, failed and pending invoices report their status and never claim access', async () => {
@@ -104,4 +106,53 @@ test('an open course and a second tap during checkout do nothing', async () => {
   release()
   await first
   assert.deepEqual(log.invoices, [])
+})
+
+
+test('pending and paid-without-access survive refresh errors and do not create a second invoice', async () => {
+  for (const status of ['pending', 'waiting', 'unknown']) {
+    let current = status
+    const { deps, log } = fakes({ paymentStatus: () => current, onPaymentStatus: value => { current = value }, hasAccess: () => false })
+    assert.equal(await openCourseAccess(paid, deps), status)
+    assert.deepEqual(log.invoices, [])
+    assert.equal(current, status)
+    deps.refresh = async () => { throw new Error('offline') }
+    assert.equal(await checkCourseAccess(paid.id, deps), 'error')
+    assert.equal(current, status)
+    assert.deepEqual(log.invoices, [])
+    deps.refresh = async () => {}
+    deps.hasAccess = () => true
+    assert.equal(await checkCourseAccess(paid.id, deps), 'opened')
+    assert.equal(current, null)
+    assert.equal(log.celebrated, 0) // a read confirms access, not how it was granted
+  }
+})
+
+test('paid callback followed by refresh failure remains waiting and never reports failed payment', async () => {
+  const states = []
+  const { deps, log } = fakes({ refresh: async () => { throw Error('offline') }, onPaymentStatus: state => states.push(state) })
+  assert.equal(await openCourseAccess(paid, deps), 'waiting')
+  assert.deepEqual(states, ['opening', 'waiting'])
+  assert.deepEqual(log.events.map(event => event.status).filter(Boolean), ['paid'])
+  assert.equal(log.celebrated, 0)
+})
+
+test('lost invoice callback is uncertain, never a failed checkout or an authorization grant', async () => {
+  const states = []
+  const { deps, log } = fakes({ openInvoice: async () => { throw Error('lost callback') }, onPaymentStatus: state => states.push(state) })
+  assert.equal(await openCourseAccess(paid, deps), 'unknown')
+  assert.deepEqual(states, ['opening', 'unknown'])
+  assert.equal(log.events.filter(event => event.name === 'checkout_result').length, 0)
+  assert.equal(log.celebrated, 0)
+})
+
+test('repeated access checks coalesce with the ongoing flow and never write', async () => {
+  let resolve
+  const { deps, log } = fakes({ refresh: () => new Promise(done => {resolve = done}) })
+  const first = checkCourseAccess(paid.id, deps)
+  assert.equal(await checkCourseAccess(paid.id, deps), 'busy')
+  assert.equal(await openCourseAccess(paid, deps), 'busy')
+  resolve(); await first
+  assert.deepEqual(log.invoices, [])
+  assert.deepEqual(log.requests, [])
 })

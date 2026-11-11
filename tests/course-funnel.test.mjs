@@ -8,7 +8,7 @@ import {discoveryEvent} from '../src/lib/discovery-events.ts'
 import {ogPracticeCourses, practiceMatches, practiceTopics} from '../src/lib/og-practice.ts'
 
 const compiledScreens={}
-for(const file of ['screens/Course.tsx','screens/home/OGPractice.tsx','screens/Lesson.tsx','lib/og-course-access.ts']){
+for(const file of ['screens/Course.tsx','screens/home/OGPractice.tsx','screens/home/CoursePayment.tsx','screens/Lesson.tsx','lib/og-course-access.ts','lib/course-checkout.ts','lib/course-payment-state.ts']){
  const bundle=await rolldown({input:fileURLToPath(new URL('../src/'+file,import.meta.url)),external:(_id,parent)=>!!parent,transform:{jsx:{runtime:'automatic'}}})
  try{compiledScreens[file]=(await bundle.generate({format:'cjs'})).output[0].code}finally{await bundle.close()}
 }
@@ -24,14 +24,18 @@ function setup() {
   useState(initial) {const target=frame,i=target.index++; if (!(i in target.hooks)) target.hooks[i]=typeof initial==='function'?initial():initial; return [target.hooks[i], value=>{target.hooks[i]=typeof value==='function'?value(target.hooks[i]):value}]},
   useMemo(fn,deps) {const i=frame.index++,old=frame.hooks[i]; if (!old || !same(old.deps,deps)) frame.hooks[i]={deps,value:fn()}; return frame.hooks[i].value},
   useEffect(fn,deps) {const i=frame.index++,old=frame.hooks[i]; if (!old || !same(old.deps,deps)) {frame.hooks[i]={deps,fn,cleanup:old?.cleanup}; frame.effects.push(i)}},
+  useSyncExternalStore(_subscribe,snapshot) {return snapshot()},
  }
  const jsx=(type,props,key)=>({type,props:props??{},key})
  const events=[],toasts=[],guarded=[],calls={invoice:0,open:0,boot:0,celebrate:0,lesson:0}
  const course={id:40,title:'Основы ИИ',practice_key:'foundations',price_stars:250,invite_unlock:0,lessons:1,done:0,gradient:'ocean',access:false,request:null}
  const card={id:90,kind:'lesson',course_id:40,title:'Первый урок',category:'',position:1,published:true,free_preview:true,completed:false,minutes:5,quiz:[],body:'Server lesson',gradient:'ocean'}
  course.practice_lessons=[{...card,key:'one'}]
- const state={courses:[course],feed:[card],me:{id:7,invited:0,xp:0},pop(){},push(){},toast(value){toasts.push(value)},guard(error){guarded.push(error)},async boot(){calls.boot++}}
- const useStore=selector=>selector(state);useStore.getState=()=>state
+ const state={phase:'ok',courses:[course],feed:[card],me:{id:7,invited:0,xp:0},pop(){},push(){},toast(value){toasts.push(value)},guard(error){guarded.push(error)},async boot(){calls.boot++;return 'ok'}}
+ const useStore=selector=>selector(state);useStore.getState=()=>state;useStore.subscribe=()=>()=>{}
+ const window=new EventTarget(),document=new EventTarget(),storage=new Map()
+ window.localStorage={getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)}
+ document.visibilityState='visible'
  const behavior={invoice:'invoice-link',status:'cancelled',lesson:card,canPay:true,demo:false}
  const api={async courseInvoice(){calls.invoice++; if (behavior.invoice instanceof Error) throw behavior.invoice; return behavior.invoice},async lesson(){calls.lesson++; if (behavior.lesson instanceof Error) throw behavior.lesson; return behavior.lesson}}
  const inert=new Proxy({}, {get:(_,key)=>String(key)})
@@ -54,9 +58,12 @@ function setup() {
   const module={exports:{}}
   vm.runInNewContext(compiled,{exports:module.exports,module,require(specifier){
    if (specifier==='../Course') return load('screens/Course.tsx')
+   if (specifier==='./CoursePayment') return load('screens/home/CoursePayment.tsx')
+   if (specifier.endsWith('/course-checkout')) return load('lib/course-checkout.ts')
+   if (/\/course-payment-state(?:\.ts)?$/.test(specifier)) return load('lib/course-payment-state.ts')
    if (specifier.endsWith('/og-course-access')) return load('lib/og-course-access.ts')
    return modules[specifier]??modules[specifier.split('/').at(-1)]??inert
-  },setTimeout:fn=>queueMicrotask(fn),Map,Set,console},{filename:file})
+  },setTimeout:fn=>queueMicrotask(fn),clearTimeout(){},window,document,Map,Set,console},{filename:file})
   cache[file]=module.exports;return module.exports
  }
  function mount(fn,props={}) {

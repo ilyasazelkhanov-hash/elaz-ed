@@ -358,6 +358,7 @@ export default function Home({ brand }: { brand: BrandConfig }) {
             </div>
             <div className="az-event-info">
               <h3>{events[0].title}</h3>
+              <p>{entityTag(events[0], s.config)}</p>
               <p>
                 <CalendarDays size={13} />
                 {String(events[0].data.location)}

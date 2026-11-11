@@ -22,6 +22,7 @@ import type { Data, Entity, EntityKind, Json, ModuleId, Role } from '../platform
 import { Art, Button, Empty, Modal, PageHeader, SectionTitle, money } from '../components/ui.tsx'
 import Operations from './Operations.tsx'
 import { demoMode } from '../platform/client.ts'
+import { formatMeetingDateTime, meetingTimeZoneLabel, toLocalInput } from '../platform/meeting-time.ts'
 
 const roles: Role[] = [
   'owner',
@@ -425,12 +426,6 @@ function Entities() {
     </>
   )
 }
-function toLocalInput(value: unknown) {
-  const date = new Date(String(value ?? ''))
-  return Number.isNaN(date.getTime())
-    ? ''
-    : new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
-}
 function EntityEditor({
   entity,
   onClose,
@@ -498,8 +493,8 @@ function EntityEditor({
     <Modal title={entity.title ? 'Редактировать материал' : 'Создать материал'} onClose={onClose}>
       <div className="az-editor">
         <p className="az-admin-hint">
-          Время в редакторе: {Intl.DateTimeFormat().resolvedOptions().timeZone}. Участники увидят время своего
-          пространства.
+          Часовой пояс редактора (устройство): {Intl.DateTimeFormat().resolvedOptions().timeZone}.
+          Часовой пояс приложения: {s.config.timezone}.
         </p>
         <label>
           Тип материала
@@ -789,13 +784,18 @@ function EntityEditor({
         {['event', 'slot'].includes(e.kind) && (
           <>
             <label>
-              Дата и время встречи
+              Дата и время встречи · {meetingTimeZoneLabel(e.data.startsAt, Intl.DateTimeFormat().resolvedOptions().timeZone)}
               <input
                 type="datetime-local"
+                aria-describedby="meeting-time-preview"
                 value={toLocalInput(e.data.startsAt)}
                 onChange={(ev) => data('startsAt', ev.target.value ? new Date(ev.target.value).toISOString() : '')}
               />
             </label>
+            <p id="meeting-time-preview" className="az-admin-hint" aria-live="polite">
+              Участники увидят: {formatMeetingDateTime(e.data.startsAt, s.config)}.
+              {!e.data.startsAt && ` Часовой пояс: ${s.config.timezone}.`}
+            </p>
             <label>
               Место
               <input value={String(e.data.location ?? '')} onChange={(ev) => data('location', ev.target.value)} />

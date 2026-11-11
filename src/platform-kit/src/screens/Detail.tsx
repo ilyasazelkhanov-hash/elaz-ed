@@ -27,6 +27,7 @@ import { useBrand } from '../platform/brand-context.ts'
 import { homeworkDraftKey } from '../platform/learning-draft.ts'
 import { useHomeworkDraft } from '../platform/use-homework-draft.ts'
 import { entityTag } from '../platform/entity-tag.ts'
+import { formatMeetingDateTime } from '../platform/meeting-time.ts'
 
 export default function EntityDetail({ id }: { id: string }) {
   const brand = useBrand()
@@ -587,11 +588,7 @@ export default function EntityDetail({ id }: { id: string }) {
               <div className="az-event-facts">
                 <p>
                   <CalendarDays size={20} />
-                  {new Date(String(e.data.startsAt)).toLocaleString('ru', {
-                    dateStyle: 'long',
-                    timeStyle: 'short',
-                    timeZone: s.config.timezone,
-                  })}
+                  {formatMeetingDateTime(e.data.startsAt, s.config)}
                 </p>
                 <p>
                   <MapPin size={20} />
