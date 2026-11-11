@@ -24,13 +24,17 @@ test('progress and achievement writes are atomic and recover historical missing 
   assert.deepEqual((await rpc('complete_lesson_awarded',[1,1,0,0,50,0])).new_achievements,[])
  })
  await t.test('daily failure rolls back claim and retry repairs historical award',async()=>{
-  await db.exec("update users set streak=2,last_claim=current_date-1;create trigger reject_award before update on users for each row execute function fail_award();")
-  await assert.rejects(rpc('claim_daily_awarded',[1,new Date().toISOString().slice(0,10)]),/award_failure/)
+  // Use the same explicit day on both sides. DB current_date and JS UTC may
+  // disagree around midnight; that must not turn the expected third claim into a replay.
+  const today='2026-11-11'
+  await db.query('update users set streak=2,last_claim=$1::date-1',[today])
+  await db.exec('create trigger reject_award before update on users for each row execute function fail_award();')
+  await assert.rejects(rpc('claim_daily_awarded',[1,today]),/award_failure/)
   assert.equal((await db.query('select streak from users where id=1')).rows[0].streak,2)
   await db.exec('drop trigger reject_award on users;')
-  const first=await rpc('claim_daily_awarded',[1,new Date().toISOString().slice(0,10)]);assert.ok(first.gained>0);assert.ok(first.new_achievements.includes('streak3'))
+  const first=await rpc('claim_daily_awarded',[1,today]);assert.ok(first.gained>0);assert.ok(first.new_achievements.includes('streak3'))
   await db.exec("update users set achievements='{}';")
-  const replay=await rpc('claim_daily_awarded',[1,new Date().toISOString().slice(0,10)]);assert.equal(replay.gained,0);assert.ok(replay.new_achievements.includes('streak3'))
+  const replay=await rpc('claim_daily_awarded',[1,today]);assert.equal(replay.gained,0);assert.ok(replay.new_achievements.includes('streak3'))
  })
  await t.test('new RPCs closed to public roles',async()=>{
   for(const role of ['anon','authenticated'])assert.equal((await db.query("select has_function_privilege($1,'public.complete_lesson_awarded(bigint,bigint,integer,integer,integer,integer)','execute') allowed",[role])).rows[0].allowed,false)
