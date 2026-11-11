@@ -58,7 +58,7 @@ const out = path.resolve('test-results/home-companion-ui')
       const action = region().getByRole('button', { name: 'Открыть адвент', exact: true })
       // The demo may have no active campaign on this date; domain tests cover all date states.
       if (await action.count()) {
-        await action.click(); await page.waitForFunction(() => location.hash.includes('advent'))
+        await action.click(); await active().getByRole('button', { name: /^Дверь \d+$/ }).first().waitFor()
         await page.goBack(); await region().waitFor()
       } else console.log('INFO No current available advent in the demo; calendar action not exercised')
     })
