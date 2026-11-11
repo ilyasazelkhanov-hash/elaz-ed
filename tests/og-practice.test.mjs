@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
-import {ogPracticeCourses,readPracticeProgress,getPracticeResume,practicePath,practiceMatches,practiceTopics,practiceSections} from '../src/lib/og-practice.ts'
+import {ogPracticeCourses,readPracticeProgress,writePracticeProgress,practiceProgressStorageKey,practiceProjectLesson,getPracticeResume,practicePath,practiceMatches,practiceTopics,practiceSections} from '../src/lib/og-practice.ts'
 
 test('OG directory describes every lesson without eagerly loading the books',async()=>{
  const books=JSON.parse(await readFile(new URL('../content/ai-practice-2026-10-25/paths.json',import.meta.url),'utf8'))
@@ -10,11 +10,65 @@ test('OG directory describes every lesson without eagerly loading the books',asy
  assert.ok(JSON.stringify(ogPracticeCourses).length<20000)
 })
 
-test('progress tolerates corrupt storage, removes duplicate and unknown lesson IDs',()=>{
- const storage={getItem:key=>key==='og-practice-done-v1'?'["block-1","block-1","removed",null]':'removed'}
- assert.deepEqual(readPracticeProgress(storage),{done:['block-1'],lastLesson:null})
- assert.deepEqual(readPracticeProgress({getItem:()=>{throw Error('denied')}}),{done:[],lastLesson:null})
- assert.deepEqual(readPracticeProgress({getItem:()=>'{invalid'}),{done:[],lastLesson:null})
+const scopedStorage = () => {const data = new Map(); return {data, getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value)}}
+const scope = (userId = 42, mode = 'live') => ({userId, mode})
+
+test('resume is isolated by account and mode, without adopting unowned legacy storage', () => {
+ const storage = scopedStorage(), progress = {done: ['block-1'], lastLesson: 'foundations-context'}
+ storage.setItem('og-practice-done-v1', JSON.stringify(['block-1']))
+ storage.setItem('og-practice-last-v1', 'block-1')
+ assert.deepEqual(readPracticeProgress(scope(), storage), {done: [], lastLesson: null})
+ assert.equal(writePracticeProgress(scope(), progress, storage), true)
+ assert.deepEqual(readPracticeProgress(scope(), storage), {...progress, done: []})
+ assert.deepEqual(readPracticeProgress(scope(43), storage), {done: [], lastLesson: null})
+ assert.deepEqual(readPracticeProgress(scope(42, 'demo'), storage), {done: [], lastLesson: null})
+ assert.equal(writePracticeProgress(scope(42, 'demo'), progress, storage), true)
+ assert.deepEqual(readPracticeProgress(scope(42, 'demo'), storage), progress)
+ for (const userId of [undefined, 0, '']) {
+  const anonymous = {userId, mode: 'live'}
+  assert.equal(practiceProgressStorageKey(anonymous), null)
+  assert.equal(writePracticeProgress(anonymous, progress, storage), false)
+ }
+ assert.notEqual(practiceProgressStorageKey(scope('a:b')), practiceProgressStorageKey(scope('a%3Ab')))
+})
+
+test('progress validates version, owner, course, and lesson; corrupt or denied storage is safe', () => {
+ const storage = scopedStorage(), demo = scope(42, 'demo'), key = practiceProgressStorageKey(demo)
+ writePracticeProgress(demo, {done: ['block-1', 'block-1', 'removed'], lastLesson: 'block-1'}, storage)
+ const record = JSON.parse(storage.getItem(key))
+ assert.equal(record.courseKey, 'foundations'); assert.ok(Number.isFinite(record.updatedAt))
+ assert.deepEqual(readPracticeProgress(demo, storage), {done: ['block-1'], lastLesson: 'block-1'})
+ for (const patch of [{version: 1}, {catalogVersion: 'stale'}, {userId: '43'}, {mode: 'live'}, {updatedAt: 'bad'}]) {
+  storage.setItem(key, JSON.stringify({...record, ...patch}))
+  assert.deepEqual(readPracticeProgress(demo, storage), {done: [], lastLesson: null})
+ }
+ for (const patch of [{lastLesson: 'removed'}, {courseKey: 'text'}]) {
+  storage.setItem(key, JSON.stringify({...record, ...patch}))
+  assert.equal(readPracticeProgress(demo, storage).lastLesson, null)
+ }
+ for (const value of ['{invalid', 'null', '42', '[]']) assert.deepEqual(readPracticeProgress(demo, {getItem: () => value}), {done: [], lastLesson: null})
+ assert.deepEqual(readPracticeProgress(demo, {getItem: () => {throw Error('denied')}}), {done: [], lastLesson: null})
+ assert.equal(writePracticeProgress(demo, {done: [], lastLesson: null}, {setItem: () => {throw Error('quota')}}), false)
+})
+
+test('resume skips revoked or missing lessons and uses reconciled server completion', () => {
+ const [first, second] = ogPracticeCourses
+ const local = {done: [], lastLesson: first.lessons[0].key}
+ const completed = [first.lessons[0].key, second.lessons[0].key]
+ const result = getPracticeResume({...local, done: completed}, course => course.key === second.key)
+ assert.equal(result.course.key, second.key)
+ assert.equal(result.lesson.key, second.lessons[1].key)
+ assert.equal(getPracticeResume(local, () => false), null)
+ assert.equal(getPracticeResume({...local, done: first.lessons.map(l => l.key)}), null)
+})
+
+test('project links resolve explicit capstones even when extra lessons follow them', () => {
+ for (const course of ogPracticeCourses) assert.ok(course.lessons.includes(practiceProjectLesson(course)))
+ const text = ogPracticeCourses.find(course => course.key === 'text'), automation = ogPracticeCourses.find(course => course.key === 'automation')
+ assert.equal(practiceProjectLesson(text).key, 'text-project')
+ assert.equal(practiceProjectLesson(automation).key, 'automation-project')
+ assert.notEqual(practiceProjectLesson(text), text.lessons.at(-1))
+ assert.notEqual(practiceProjectLesson(automation), automation.lessons.at(-1))
 })
 
 test('resume follows the viewed lesson, advances completed lessons, and never restarts a finished course',()=>{

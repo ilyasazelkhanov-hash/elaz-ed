@@ -5,6 +5,7 @@ import { guideEvent, parseGuideStartParam, type DiscoverySource } from '../../li
 import { track } from '../../lib/track'
 import { copyText, startParam } from '../../lib/tg'
 import { useStore } from '../../store'
+import { isDemo } from '../../lib/api'
 import { Tap } from '../../ui'
 import './free-start.css'
 
@@ -14,9 +15,14 @@ let pendingNavigation: {id:string;source:DiscoverySource} | null = null
 function readAttempts(key:string): string[] {
  try {const value:unknown=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?[...new Set(value.filter((id):id is string=>typeof id==='string'&&beginnerGuides.some(guide=>guide.id===id)))]:[]}catch{return []}
 }
-export function FreeStart({path,go}:{path:string;go:(path:string)=>void}) {
- const user = useStore(state=>state.me?.id ?? 0), guideId = path.split('/').filter(Boolean)[1]
- const storageKey = 'og:free-start:' + user
+type FreeStartProps = {path:string;go:(path:string)=>void}
+export function FreeStart(props:FreeStartProps) {
+ const user = useStore(state=>state.me?.id ?? 0)
+ return <FreeStartSession key={`${isDemo ? 'demo' : 'live'}:${user}`} {...props} user={user}/>
+}
+function FreeStartSession({path,go,user}:FreeStartProps & {user:number}) {
+ const guideId = path.split('/').filter(Boolean)[1]
+ const storageKey = `og:free-start:v2:${isDemo ? 'demo' : 'live'}:${user}`
  const [done,setDone] = useState<string[]>(()=>readAttempts(storageKey))
  const [copied,setCopied] = useState<string | null>(null), guide = beginnerGuides.find(item=>item.id===guideId)
  const [feedback,setFeedback] = useState<Record<string,boolean>>({})
@@ -38,7 +44,7 @@ export function FreeStart({path,go}:{path:string;go:(path:string)=>void}) {
  },[guide,source,user])
  useEffect(()=>()=>{if(copyTimer.current!==undefined)clearTimeout(copyTimer.current)},[])
  const openGuide = (id:string,source:DiscoverySource) => {pendingNavigation={id,source};navigation.current=pendingNavigation;go('/start/'+id)}
- const blog = () => {const store=useStore.getState();store.pop();store.setTab('blog')}
+ const blog = () => useStore.getState().navigateTab('blog')
  const mark = (id:string) => {const current=doneRef.current,selected=!current.includes(id),next=selected?[...current,id]:current.filter(value=>value!==id);doneRef.current=next;setDone(next);try{localStorage.setItem(storageKey,JSON.stringify(next))}catch{}if(selected)emit('try',id)}
  const respond = (id:string,useful:boolean) => {if(feedbackRef.current[id]===useful)return;const next={...feedbackRef.current,[id]:useful};feedbackRef.current=next;setFeedback(next);emit('feedback',id,useful)}
  if(guideId&&!guide)return <section className="free-start"><h1>Такого разбора нет</h1><p>Выбери тему в бесплатном старте.</p><Tap className="free-start-link" onClick={()=>go('/start')}><ArrowLeft size={17}/>К началу</Tap></section>
@@ -48,11 +54,13 @@ export function FreeStart({path,go}:{path:string;go:(path:string)=>void}) {
   <h1>{guide.title}</h1><p className="free-start-intro">{guide.intro}</p>
   <p className="free-start-time"><Clock3 size={15}/>{guide.minutes} минут · можно попробовать сразу</p>
   <div className="free-start-result"><Sparkles size={20}/><p>{guide.result}</p></div>
+  <p className="free-start-note" role="note">{guide.editorial.access_note}</p>
   <ol className="free-start-steps">{guide.steps.map((step,i)=><li key={step.title}><span aria-hidden="true">{i+1}</span><div><h2>{step.title}</h2><p>{step.text}</p></div></li>)}</ol>
   <section className="free-start-prompt"><div><h2>Попробуй этот запрос</h2><Tap aria-label="Скопировать учебный запрос" onClick={async()=>{if(await copyText(guide.prompt)){emit('copy',guide.id);setCopied(guide.id);if(copyTimer.current!==undefined)clearTimeout(copyTimer.current);copyTimer.current=setTimeout(()=>setCopied(null),1800)}else useStore.getState().toast('Не удалось скопировать. Выдели запрос и скопируй его вручную.')}}>{copied===guide.id?<Check size={18}/>:<Copy size={18}/>}<span>{copied===guide.id?'Скопировано':'Копировать'}</span></Tap></div><pre>{guide.prompt}</pre></section>
+  <section className="free-start-task" aria-label="Где выполнить задание"><h2>Теперь попробуй сам</h2><p>Скопируй запрос выше и вставь его в привычный ИИ-сервис. Замени поля в квадратных скобках своей задачей; используй вымышленные или обезличенные данные.</p><a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" className="free-start-link">Открыть ChatGPT в новой вкладке<ArrowRight size={17}/></a><p>Затем вернись сюда и проверь ответ по трём критериям ниже. Если нужная функция недоступна, сделай черновик или эскиз вручную: покупать подписку для этого разбора не требуется.</p></section>
   <section className="free-start-example"><h2>На примере</h2><p>{guide.example}</p></section>
   <section><h2>Как проверить себя</h2><ul className="free-start-checks">{guide.checks.map(check=><li key={check}><Check size={17}/><span>{check}</span></li>)}</ul></section>
-  <section className="free-start-task"><h2>Твой маленький результат</h2><p>{guide.task}</p><Tap onClick={()=>mark(guide.id)} aria-pressed={done.includes(guide.id)} className={done.includes(guide.id)?'is-done':''}><CheckCheck size={18}/>{done.includes(guide.id)?'Попробовал · отменить отметку':'Я попробовал'}</Tap><small>Самоотчёт о попытке: отметка хранится в этом браузере. Это не проверка результата, без оценки и XP.</small></section>
+  <section className="free-start-task"><h2>Твой маленький результат</h2><p>{guide.task}</p><Tap onClick={()=>mark(guide.id)} aria-pressed={done.includes(guide.id)} className={done.includes(guide.id)?'is-done':''}><CheckCheck size={18}/>{done.includes(guide.id)?'Попробовал · отменить отметку':'Я попробовал'}</Tap><small>Самоотчёт о попытке: отметка хранится в этом браузере отдельно для твоего аккаунта и {isDemo ? 'демо' : 'основного режима'}. Это не проверка результата, без оценки и XP.</small></section>
   <section className="free-start-task" aria-label="Обратная связь о разборе"><h2>Удалось применить?</h2><p>Ответь, если уже попробовал. Отметка попытки и полезность учитываются отдельно.</p><div className="flex flex-wrap gap-3">{([true,false] as const).map(useful=><Tap key={String(useful)} onClick={()=>respond(guide.id,useful)} aria-pressed={feedback[guide.id]===useful} className={feedback[guide.id]===useful?'is-done':''}>{useful?'Да, пригодилось':'Пока нет'}</Tap>)}</div>{feedback[guide.id]!==undefined&&<small role="status">Спасибо за обратную связь.</small>}</section>
   {next?<Tap className="free-start-next" onClick={()=>openGuide(next.id,'guide_next')}><span><small>Следующий бесплатный шаг</small>{next.title}</span><ArrowRight size={19}/></Tap>:<Tap className="free-start-next" onClick={blog}><span><small>Следующий бесплатный шаг</small>Открыть новости</span><ArrowRight size={19}/></Tap>}
   <p className="free-start-note">Эти разборы бесплатны. Доступные функции выбранного ИИ-сервиса зависят от его условий и твоего аккаунта.</p>

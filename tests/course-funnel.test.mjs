@@ -5,7 +5,7 @@ import {rolldown} from 'rolldown'
 import {fileURLToPath} from 'node:url'
 import * as learningDrafts from '../src/lib/learning-drafts.ts'
 import {discoveryEvent} from '../src/lib/discovery-events.ts'
-import {ogPracticeCourses, practiceMatches, practiceTopics} from '../src/lib/og-practice.ts'
+import {ogPracticeCourses, practiceMatches, practiceTopics, practiceProgressStorageKey, practiceProjectLesson} from '../src/lib/og-practice.ts'
 
 const compiledScreens={}
 for(const file of ['screens/Course.tsx','screens/home/OGPractice.tsx','screens/home/CoursePayment.tsx','screens/Lesson.tsx','lib/og-course-access.ts','lib/course-checkout.ts','lib/course-payment-state.ts']){
@@ -27,17 +27,17 @@ function setup() {
   useSyncExternalStore(_subscribe,snapshot) {return snapshot()},
  }
  const jsx=(type,props,key)=>({type,props:props??{},key})
- const events=[],toasts=[],guarded=[],calls={invoice:0,open:0,boot:0,celebrate:0,lesson:0}
+ const events=[],toasts=[],guarded=[],calls={invoice:0,open:0,boot:0,celebrate:0,lesson:0,complete:0,reward:0,patch:0,setMe:0}
  const course={id:40,title:'Основы ИИ',practice_key:'foundations',price_stars:250,invite_unlock:0,lessons:1,done:0,gradient:'ocean',access:false,request:null}
  const card={id:90,kind:'lesson',course_id:40,title:'Первый урок',category:'',position:1,published:true,free_preview:true,completed:false,minutes:5,quiz:[],body:'Server lesson',gradient:'ocean'}
  course.practice_lessons=[{...card,key:'one'}]
- const state={phase:'ok',courses:[course],feed:[card],me:{id:7,invited:0,xp:0},pop(){},push(){},toast(value){toasts.push(value)},guard(error){guarded.push(error)},async boot(){calls.boot++;return 'ok'}}
+ const state={phase:'ok',courses:[course],feed:[card],me:{id:7,invited:0,xp:0},pop(){},push(){},toast(value){toasts.push(value)},guard(error){guarded.push(error)},async boot(){calls.boot++;return 'ok'},setMe(me){calls.setMe++;state.me=me},patchCard(_id,patch){calls.patch++;Object.assign(card,patch);Object.assign(course.practice_lessons[0],patch)},setReward(){calls.reward++}}
  const useStore=selector=>selector(state);useStore.getState=()=>state;useStore.subscribe=()=>()=>{}
  const window=new EventTarget(),document=new EventTarget(),storage=new Map()
  window.localStorage={getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)}
  document.visibilityState='visible'
- const behavior={invoice:'invoice-link',status:'cancelled',lesson:card,canPay:true,demo:false}
- const api={async courseInvoice(){calls.invoice++; if (behavior.invoice instanceof Error) throw behavior.invoice; return behavior.invoice},async lesson(){calls.lesson++; if (behavior.lesson instanceof Error) throw behavior.lesson; return behavior.lesson}}
+ const behavior={invoice:'invoice-link',status:'cancelled',lesson:card,completion:null,canPay:true,demo:false}
+ const api={async complete(){calls.complete++;if(behavior.completion instanceof Error)throw behavior.completion;return behavior.completion ?? {me:{...state.me,xp:10},already:false}},async courseInvoice(){calls.invoice++; if (behavior.invoice instanceof Error) throw behavior.invoice; return behavior.invoice},async lesson(){calls.lesson++; if (behavior.lesson instanceof Error) throw behavior.lesson; return behavior.lesson}}
  const inert=new Proxy({}, {get:(_,key)=>String(key)})
  const ui={...inert,Tap:'Tap',Cta:'Cta',Emoji:'Emoji',Pattern:'Pattern',Bar:'Bar',celebrate(){calls.celebrate++}}
  const modules={
@@ -49,7 +49,7 @@ function setup() {
   game:{iconFor:()=> '✨',GRADIENTS:{ocean:{css:'blue',ink:'white'}},lessonsWord:()=> 'уроков',plural:()=> 'друзей'},
   'learning-drafts':learningDrafts,
   links:{appLink:()=>null},sfx:{sfx:{levelUp(){}}},content:{isBlogPost:()=>false},
-  'og-practice':{ogPracticeCourses:[{...ogPracticeCourses[0],key:'foundations',title:course.title,lessons:[{...ogPracticeCourses[0].lessons[0],key:'one',title:card.title,minutes:5}]}],practiceMatches,practiceTopics,readPracticeProgress:()=>({done:[]}),subscribePracticeProgress:()=>()=>{},getPracticeResume:()=>null,practicePath:(...parts)=>'/og-practice/'+parts.join('/'),writePracticeProgress(){}},
+  'og-practice':{ogPracticeCourses:[{...ogPracticeCourses[0],key:'foundations',title:course.title,lessons:[{...ogPracticeCourses[0].lessons[0],key:'one',title:card.title,minutes:5}]}],practiceMatches,practiceTopics,practiceProgressStorageKey,practiceProjectLesson,readPracticeProgress:()=>({done:[]}),subscribePracticeProgress:()=>()=>{},getPracticeResume:()=>null,practicePath:(...parts)=>'/og-practice/'+parts.join('/'),writePracticeProgress(){}},
  }
  const cache={}
  function load(file) {
@@ -71,7 +71,11 @@ function setup() {
   return {render(){frame=target;target.index=0;const tree=fn(props);for(const i of target.effects.splice(0)){const hook=target.hooks[i];hook.cleanup?.();hook.cleanup=hook.fn()}return tree},unmount(){for(const hook of target.hooks)hook?.cleanup?.()}}
  }
  function screen() {const instance=mount(load('screens/Course.tsx').CourseScreen,{id:40});const tree=instance.render();return {...instance,buy:find(tree,node=>node.type==='Cta' && node.props.busy===false).props.onClick}}
- function practice(path) {const root=mount(load('screens/home/OGPractice.tsx').OGPractice,{path,go(){}});const child=root.render();return mount(child.type,child.props)}
+ function practice(path) {
+  const root=mount(load('screens/home/OGPractice.tsx').OGPractice,{path,go(){}})
+  let child,childKey,childType
+  return {render(){const element=root.render();if(!child||childKey!==element.key||childType!==element.type){child?.unmount();child=mount(element.type,element.props);childKey=element.key;childType=element.type}return child.render()},unmount(){child?.unmount();root.unmount()}}
+ }
  function lessonScreen() {
   const root=mount(load('screens/Lesson.tsx').LessonScreen,{id:90})
   let child,childKey,childType
@@ -162,5 +166,64 @@ test('legacy lesson keyed session reloads on account change',async()=>{
  lesson.render();await settle();lesson.render()
  assert.equal(h.calls.lesson,2)
  assert.equal(h.events.filter(event=>event.name==='course_preview').length,2)
+ lesson.unmount()
+})
+
+
+test('ordinary OG completion is explicitly reading, not a verified project, and double taps coalesce', async () => {
+ const h=setup(), lesson=h.practice('/og-practice/foundations/one')
+ lesson.render(); await settle(); const tree=lesson.render(), text=JSON.stringify(tree)
+ assert.ok(text.includes('Отметить ознакомление'))
+ assert.ok(text.includes('без проверки работы'))
+ assert.ok(!text.includes('Готово на практике?'))
+ assert.equal(tree.props.userId,'live:7')
+ const finish=find(tree,node=>node.type==='Tap' && node.props.disabled===false).props.onClick
+ await Promise.all([finish(),finish()])
+ assert.equal(h.calls.complete,1);assert.equal(h.calls.reward,0);assert.equal(h.calls.patch,1)
+ assert.ok(h.toasts.some(text=>text.includes('Ознакомление отмечено')))
+ assert.ok(JSON.stringify(lesson.render()).includes('Ознакомление отмечено'))
+ lesson.unmount()
+})
+
+test('a quiz remains a separate check and does not call the reading-completion endpoint', async () => {
+ const h=setup(); h.card.quiz=[{question:'Почему?',options:['A','B']}]
+ const lesson=h.practice('/og-practice/foundations/one');lesson.render();await settle()
+ const text=JSON.stringify(lesson.render())
+ assert.ok(text.includes('Проверка понимания'));assert.ok(text.includes('не проверяет твою практическую работу'))
+ assert.ok(!text.includes('Я ознакомился'));assert.equal(h.calls.complete,0)
+ lesson.unmount()
+})
+
+test('practice reader remounts for another account before exposing the previous lesson body', async () => {
+ const h=setup(), lesson=h.practice('/og-practice/foundations/one')
+ lesson.render();await settle();assert.equal(lesson.render().props.userId,'live:7')
+ h.state.me={...h.state.me,id:8}
+ const loading=lesson.render()
+ assert.ok(JSON.stringify(loading).includes('Открываем урок'))
+ assert.ok(!JSON.stringify(loading).includes('Server lesson'))
+ await settle();assert.equal(lesson.render().props.userId,'live:8');assert.equal(h.calls.lesson,2)
+ lesson.unmount()
+})
+
+test('late completion from a previous account cannot replace the current account or award progress', async () => {
+ const h=setup();let resolve
+ h.behavior.completion=new Promise(done=>{resolve=done})
+ const lesson=h.practice('/og-practice/foundations/one');lesson.render();await settle()
+ const tree=lesson.render(), finish=find(tree,node=>node.type==='Tap' && node.props.disabled===false).props.onClick
+ const completing=finish();h.state.me={...h.state.me,id:8}
+ resolve({me:{id:7,xp:10},already:false});await completing
+ assert.equal(h.state.me.id,8);assert.equal(h.calls.setMe,0);assert.equal(h.calls.patch,0);assert.equal(h.calls.reward,0);assert.equal(h.calls.boot,0)
+ lesson.unmount()
+})
+
+
+test('failed reading completion leaves progress unchanged and allows an explicit retry', async () => {
+ const h=setup();h.behavior.completion=new Error('offline')
+ const lesson=h.practice('/og-practice/foundations/one');lesson.render();await settle()
+ let tree=lesson.render(),finish=find(tree,node=>node.type==='Tap' && node.props.disabled===false).props.onClick
+ await finish();assert.equal(h.calls.patch,0);assert.equal(h.calls.setMe,0);assert.equal(h.calls.reward,0)
+ assert.ok(h.toasts.includes('offline'));assert.equal(h.card.completed,false)
+ h.behavior.completion=null;tree=lesson.render();finish=find(tree,node=>node.type==='Tap' && node.props.disabled===false).props.onClick
+ await finish();assert.equal(h.calls.complete,2);assert.equal(h.card.completed,true)
  lesson.unmount()
 })
