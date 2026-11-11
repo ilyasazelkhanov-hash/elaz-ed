@@ -2,6 +2,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises'
 import {pathToFileURL,fileURLToPath} from 'node:url'
 import path from 'node:path'
 import {createHash} from 'node:crypto'
+import {loadLessonExamples,assertLessonExamplesCurrent} from './academy-enrich-lessons.mjs'
 import {writeCourseMaterials} from './course-materials.mjs'
 import {academyDemoSample} from './academy-demo-sample.mjs'
 import {publicAcademyCatalog} from './academy-public.mjs'
@@ -103,6 +104,7 @@ export async function loadAuthoredPacks(){
   assert(typeof code==='string'&&/^[A-Z]+-\d{3}$/.test(code),'Invalid authored course code')
   const pack=JSON.parse(await readFile(path.join(root,`content/ai-academy/authored/${code}.json`),'utf8'))
   assert(pack.course_code===code,'Authored course identity mismatch')
+  assertLessonExamplesCurrent(pack,await loadLessonExamples(code))
   return pack
  }))
 }

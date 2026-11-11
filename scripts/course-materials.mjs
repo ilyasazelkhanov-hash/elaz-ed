@@ -8,7 +8,7 @@ function block(value){
  const out={type:value.type}
  for(const key of ['text','body','title','language','url','label'])if(typeof value[key]==='string')out[key]=value[key]
  if(Array.isArray(value.items))out.items=strings(value.items)
- if(['beginner','module_example','starter_resources'].includes(value.learning_role))out.learning_role=value.learning_role
+ if(['beginner','module_example','starter_resources','lesson_practice'].includes(value.learning_role))out.learning_role=value.learning_role
  if(value.study&&typeof value.study==='object')out.study={...Object.fromEntries(studyFields.filter(key=>typeof value.study[key]==='string').map(key=>[key,value.study[key]])),steps:strings(value.study.steps)}
  return out
 }
