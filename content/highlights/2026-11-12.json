@@ -1,0 +1,121 @@
+{
+  "checked_on": "2026-11-12",
+  "publication_status": "prepared_not_published",
+  "items": [
+    {
+      "key": "carbon-intro-202611",
+      "kind": "story",
+      "title": "Carbon дешевле",
+      "subtitle": "Вводная цена API до 30 ноября",
+      "body": "# Carbon: вводная цена\n\nДо 30 ноября 2026 Google объявила $2 за 1 млн входных и $10 за 1 млн выходных токенов Carbon API. После вводного периода: $4 и $20.\n\nЭто тариф API, не скидка на подписку Google AI Ultra.\n\n---\n\n# Не покупай «на всякий случай»\n\nВозьми одну трудную задачу, поставь лимит расходов и сравни стоимость законченного результата. Длинный ответ и повторные запросы тоже расходуют токены.\n\nКазахстан есть в списке регионов Gemini API. Нужны подходящий аккаунт, платный API и доступный биллинг; активацию в конкретном аккаунте мы не проверяли.\n\n---\n\n# Условия у Google\n\n[Анонс и срок цены](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-carbon-now-available/)\n\n[Регионы доступа](https://ai.google.dev/gemini-api/docs/available-regions)\n\nПроверено 12 ноября. Точный час завершения акции в анонсе не указан. Перед оплатой проверь текущую цену.",
+      "category": "Выгода",
+      "emoji": "💎",
+      "gradient": "ocean",
+      "minutes": 1,
+      "xp": 0,
+      "pinned": false,
+      "published": true,
+      "news_eligible": false,
+      "course_id": null,
+      "cover_url": null,
+      "editorial": {
+        "kind": "update",
+        "checked_on": "2026-11-12",
+        "review_due": "2026-11-19",
+        "reviewer": "OG CRE8R",
+        "sources": [
+          {
+            "title": "Анонс Google",
+            "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-carbon-now-available/"
+          },
+          {
+            "title": "Регионы API",
+            "url": "https://ai.google.dev/gemini-api/docs/available-regions"
+          }
+        ]
+      }
+    },
+    {
+      "key": "copilot-student-202611",
+      "kind": "story",
+      "title": "Copilot студентам",
+      "subtitle": "Бесплатный доступ после подтверждения статуса",
+      "body": "# Уже учишься? Проверь льготу\n\nПодтверждённые студенты GitHub Education могут бесплатно активировать Copilot Student. Это образовательная льгота, не промокод для всех.\n\n---\n\n# Где включить\n\nОткрой [GitHub Education Benefits](https://github.com/settings/education/benefits), подтверди статус и отдельно активируй Copilot.\n\nДоступ может появиться через несколько дней. Если видишь только платную покупку, не оплачивай её ради льготы.\n\n---\n\n# Что учитывать\n\nGitHub перепроверяет право на льготу ежемесячно. Одобрение зависит от аккаунта и проверки учебного статуса; для конкретного вуза Казахстана его не подтверждали.\n\n[Официальные условия](https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-students)\n\nПроверено 12 ноября. Дата окончания программы не объявлена.",
+      "category": "Выгода",
+      "emoji": "🎓",
+      "gradient": "mint",
+      "minutes": 1,
+      "xp": 0,
+      "pinned": false,
+      "published": true,
+      "news_eligible": false,
+      "course_id": null,
+      "cover_url": null,
+      "editorial": {
+        "kind": "update",
+        "checked_on": "2026-11-12",
+        "review_due": "2026-11-19",
+        "reviewer": "OG CRE8R",
+        "sources": [
+          {
+            "title": "GitHub Docs",
+            "url": "https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/enable-copilot/set-up-for-students"
+          }
+        ]
+      }
+    },
+    {
+      "key": "notion-education-202611",
+      "kind": "story",
+      "title": "Notion для учёбы",
+      "subtitle": "Бесплатный Education Plan с условиями",
+      "body": "# Собери учебную базу\n\nУ Notion есть бесплатный Education Plan для студентов и преподавателей. Можно собрать конспекты, дедлайны и базу промптов в одном пространстве.\n\nНе путай эту льготу с бесплатным безлимитным Notion AI.\n\n---\n\n# Кому доступно\n\nНужна основная почта учебного заведения из WHED, один участник workspace и ежегодная проверка почты. Гости - отдельно. Активируется в web или desktop.\n\nКаждая учебная почта получает льготу один раз для одного пространства.\n\n---\n\n# Перед переходом\n\nПереход с Education на платный Plus/Business/Enterprise прекращает право этого workspace на Education. Сначала прочитай условия.\n\n[Условия Notion](https://www.notion.com/help/notion-for-education)\n\nПроверено 12 ноября. Конкретный вуз/аккаунт в Казахстане не проверяли. Дедлайн программы не указан.",
+      "category": "Выгода",
+      "emoji": "📒",
+      "gradient": "candy",
+      "minutes": 1,
+      "xp": 0,
+      "pinned": false,
+      "published": true,
+      "news_eligible": false,
+      "course_id": null,
+      "cover_url": null,
+      "editorial": {
+        "kind": "update",
+        "checked_on": "2026-11-12",
+        "review_due": "2026-11-19",
+        "reviewer": "OG CRE8R",
+        "sources": [
+          {
+            "title": "Notion Help",
+            "url": "https://www.notion.com/help/notion-for-education"
+          }
+        ]
+      }
+    },
+    {
+      "key": "practice-source-check",
+      "kind": "story",
+      "title": "Промпт-проверка",
+      "subtitle": "Пять минут, чтобы заметить выдумки ИИ",
+      "body": "# Не верь уверенной формулировке\n\nВозьми один ответ ИИ с числами или ссылками. Попроси отделить проверяемые факты от предположений.\n\n---\n\n# Забери промпт\n\n```text\nРазбей ответ на проверяемые утверждения. Для каждого укажи источник, дату и точную цитату. Если источник не открыт или не найден, напиши «не проверено». Не придумывай ссылки.\n```\n\n---\n\n# Проверка за тобой\n\nОткрой две ссылки сам. Совпадает ли число? Есть ли цитата на странице? Относится ли источник к нужной стране и периоду?\n\nРезультат практики: две проверенные строки и список того, чему пока нельзя доверять. Это редакционная практика, не гарантия точности модели.",
+      "category": "Практика",
+      "emoji": "🔎",
+      "gradient": "lime",
+      "minutes": 1,
+      "xp": 0,
+      "pinned": false,
+      "published": true,
+      "news_eligible": false,
+      "course_id": null,
+      "cover_url": null,
+      "editorial": {
+        "kind": "evergreen",
+        "checked_on": "2026-11-12",
+        "review_due": "2027-02-12",
+        "reviewer": "OG CRE8R",
+        "sources": []
+      }
+    }
+  ]
+}

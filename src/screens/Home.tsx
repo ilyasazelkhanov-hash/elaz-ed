@@ -1,3 +1,4 @@
+import { activeStories } from '../lib/highlights'
 import { AnimatePresence } from 'motion/react'
 import { ArrowRight, ArrowUpRight, Bookmark, ChevronRight, Compass, Sparkles, WandSparkles } from 'lucide-react'
 import { useMemo, useRef } from 'react'
@@ -28,7 +29,7 @@ export function Home() {
   const scroller = useRef<HTMLDivElement>(null)
   const saved = useSavedPosts(me.id)
   const followed = useFollowedTopics(me.id)
-  const stories = useMemo(() => feed.filter(c => c.kind === 'story' && c.published), [feed])
+  const stories = useMemo(() => activeStories(feed), [feed])
 
   return <div ref={scroller} data-tab-scroll className="scroll h-full" style={{ paddingBottom: 'calc(110px + var(--bottom))' }}>
     <header className="flex items-center justify-between gap-3 px-5 pb-5" style={{ paddingTop: 'calc(var(--top) + 18px)' }}>

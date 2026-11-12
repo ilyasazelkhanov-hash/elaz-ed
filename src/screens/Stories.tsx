@@ -1,3 +1,4 @@
+import { activeStories, storySlideDuration } from '../lib/highlights'
 import { useStoryPlayback } from '../lib/use-story-playback'
 import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -11,14 +12,13 @@ import { Markdown } from '../Markdown'
 import { useStore } from '../store'
 import { Emoji, Pattern, Tap } from '../ui'
 
-const SLIDE_MS = 6000
 const HOLD_MS = 190
 
 export function Stories({ startId }: { startId: number }) {
   // Список фиксируем на момент открытия, чтобы отметки «пройдено» не тасовали сторис под пальцем.
-  const stories = useMemo(() => useStore.getState().feed.filter((c) => c.kind === 'story'), [])
+  const stories = useMemo(() => activeStories(useStore.getState().feed), [])
   const pop = useStore((s) => s.pop)
-  const [si, setSi] = useState(() => Math.max(0, stories.findIndex((s) => s.id === startId)))
+  const [si, setSi] = useState(() => stories.findIndex((s) => s.id === startId))
   const [pi, setPi] = useState(0)
   const story = stories[si]
   const slides = useMemo(() => slidesOf(story?.body ?? ''), [story])
@@ -55,7 +55,7 @@ export function Stories({ startId }: { startId: number }) {
     }
   }, [story, pi, slides.length, si, stories.length, finish, pop])
 
-  const { progress, paused, setPaused, setHolding, restart } = useStoryPlayback(`${si}:${pi}`, SLIDE_MS, next, !!story)
+  const { progress, paused, setPaused, setHolding, restart } = useStoryPlayback(`${si}:${pi}`, storySlideDuration(slides[pi] ?? ''), next, !!story)
   const width = `${progress * 100}%`
 
   const prev = () => {
@@ -74,7 +74,7 @@ export function Stories({ startId }: { startId: number }) {
     track('story_open', undefined, story.id)
   }, [story])
 
-  if (!story) return null
+  if (!story) return <section className="absolute inset-0 z-40 grid place-content-center gap-4 bg-bg p-6 text-center" aria-label="История недоступна"><h2 className="text-xl font-semibold">Эта история больше не доступна</h2><p className="text-mute">Условия могли измениться. Вернись к актуальной подборке.</p><Tap onClick={pop} className="min-h-11 rounded-xl bg-violet px-4 text-white">Закрыть</Tap></section>
   const g = GRADIENTS[story.gradient] ?? GRADIENTS.aurora
 
   return (
@@ -135,22 +135,23 @@ export function Stories({ startId }: { startId: number }) {
           <button type="button" onClick={() => setPaused((value) => !value)} aria-label={paused ? 'Продолжить историю' : 'Приостановить историю'} aria-pressed={paused} className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-black/15">
             {paused ? <Play size={18} /> : <Pause size={18} />}
           </button>
-          <Tap onClick={pop} aria-label="Закрыть" className="pointer-events-auto grid h-9 w-9 place-items-center rounded-full bg-black/15">
+          <Tap onClick={pop} aria-label="Закрыть" className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-black/15">
             <X size={18} />
           </Tap>
         </div>
 
-        <div className="flex flex-1 flex-col justify-center">
+        <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto py-4" onPointerDown={() => setHolding(true)} onPointerUp={() => setHolding(false)} onPointerCancel={() => setHolding(false)} onFocusCapture={() => setHolding(true)} onBlurCapture={() => setHolding(false)}>
           <AnimatePresence mode="wait">
             <motion.div
               key={`${si}-${pi}`}
+              className="my-auto"
               initial={{ opacity: 0, y: 22, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="floaty mb-6 w-fit">
-                <Emoji char={story.emoji} size={pi === 0 ? 104 : 68} animated />
+              <div className="mb-4 w-fit">
+                <Emoji char={story.emoji} size={pi === 0 ? 68 : 48} animated />
               </div>
               <Markdown text={slides[pi] ?? ''} className="prose-ed prose-story" />
             </motion.div>

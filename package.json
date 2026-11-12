@@ -50,7 +50,8 @@
     "academy:labs": "node scripts/academy-freshness-labs.mjs",
     "test:course-freshness": "node --test tests/course-freshness.test.mjs content/ai-academy/projects/mcp-authorization-lab/policy.test.mjs content/ai-academy/projects/voice-confirmation-lab/confirmation.test.mjs",
     "test:editorial-motion": "node --experimental-strip-types --test tests/editorial-motion.test.mjs",
-    "test:home-hierarchy": "node --experimental-strip-types --test tests/home-hierarchy.test.mjs"
+    "test:home-hierarchy": "node --experimental-strip-types --test tests/home-hierarchy.test.mjs",
+    "test:highlights": "node --experimental-strip-types --test tests/highlights-reading.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",

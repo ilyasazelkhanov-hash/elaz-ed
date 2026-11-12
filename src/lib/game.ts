@@ -144,4 +144,4 @@ export const slidesOf = (body: string | null) =>
     .map((s) => s.trim())
     .filter(Boolean)
 
-export const readMinutes = (text: string) => Math.max(1, Math.round(text.trim().split(/\s+/).length / 170))
+export { readingMinutes as readMinutes } from '../../supabase/functions/_shared/reading-time.ts'

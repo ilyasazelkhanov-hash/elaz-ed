@@ -8,6 +8,7 @@ import {isIP} from 'node:net'
 import {Readable} from 'node:stream'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
+import {readingMinutes} from '../supabase/functions/_shared/reading-time.ts'
 import {normalizeEditorial} from '../supabase/functions/_shared/editorial.ts'
 import {assertNoCourseOverlap,normalizedNewsText} from '../supabase/functions/_shared/news-policy.ts'
 import {validateGifImage} from './lib/gif-image.mjs'
@@ -154,6 +155,9 @@ export function validateNewsPayload(value,{now=new Date()}={}) {
  }
  const result={title:text('title',8,240),subtitle:text('subtitle',8,500),body:text('body',100,50000),category:text('category',2,80),minutes:value.minutes,event_on:value.event_on}
  if(!Number.isInteger(result.minutes)||result.minutes<1||result.minutes>30)fail('payload_minutes')
+ // Do not pad every article to the same duration; estimate from the actual text.
+ result.minutes=readingMinutes(result.body)
+ if(result.minutes>30)fail('payload_reading_time_exceeds_30')
  if(normalizedNewsText(result.body).split(' ').length<80)fail('payload_body_words')
  const today=calendarDate(now)
  if(!validDate(result.event_on)||dayDiff(today,result.event_on)<0||dayDiff(today,result.event_on)>7)fail('event_date_future_or_stale')
