@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { discoveryRate, discoveryTimestamp, coursePaymentTotals } from '../src/lib/discovery-analytics.ts'
 
 test('rates distinguish no denominator from measured zero and use the supplied mature cohort', () => {
- assert.equal(discoveryRate(0, 0), '—')
+ assert.equal(discoveryRate(0, 0), '-')
  assert.equal(discoveryRate(0, 3), '0%')
  assert.equal(discoveryRate(1, 3), '33%')
  assert.equal(discoveryRate(2, 4), '50%')
