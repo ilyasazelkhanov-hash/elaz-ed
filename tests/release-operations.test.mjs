@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {RELEASE,checkRelease,publicApiUrl} from '../scripts/release-contract.mjs'
 import {chunkUrls,discoverApi,smoke} from '../scripts/release-smoke.mjs'
 import {reconcileRecovery,recoveryFixture} from '../scripts/verify-recovery.mjs'
-import {frontendRelease,frontendSourceIdentity} from '../scripts/frontend-release.mjs'
+import {frontendRelease,frontendSourceIdentity,frontendSourceDiagnostics} from '../scripts/frontend-release.mjs'
 import {mkdtemp,mkdir,readFile,writeFile,rm} from 'node:fs/promises'
 import {execFileSync} from 'node:child_process'
 import {tmpdir} from 'node:os'
@@ -145,5 +145,53 @@ test('generated outputs are fingerprinted after capturing the clean source check
     assert.equal(release.commit,commit)
     assert.equal(release.file_count,1)
     assert.match(release.build_sha256,/^[a-f0-9]{64}$/)
+  } finally {await rm(base,{recursive:true,force:true})}
+})
+
+
+test('source diagnostics expose only tracked relative paths and validated commit metadata',async()=>{
+  const base=await mkdtemp(path.join(tmpdir(),'og-diagnostics-'))
+  const git=(...args)=>execFileSync('git',args,{cwd:base,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim()
+  try {
+    git('init','--quiet')
+    await writeFile(path.join(base,'source.txt'),'private source content')
+    git('add','source.txt')
+    git('-c','user.name=Test','-c','user.email=test@example.invalid','commit','--quiet','-m','Fixture')
+    const head=git('rev-parse','HEAD')
+    const env={VERCEL_GIT_COMMIT_SHA:'not-a-sha-secret',PRIVATE_TOKEN:'never-log-this'}
+    assert.deepEqual(frontendSourceDiagnostics(base,env),{head,declared_commit:null,tracked_changes:[],truncated:false,available:true})
+    git('mv','source.txt','renamed.txt')
+    await writeFile(path.join(base,'untracked-secret'),'secret')
+    const result=frontendSourceDiagnostics(base,{...env,VERCEL_GIT_COMMIT_SHA:'a'.repeat(40)})
+    assert.deepEqual(result.tracked_changes,[{status:'R ',path:'renamed.txt',from:'source.txt'}])
+    assert.equal(result.declared_commit,'a'.repeat(40))
+    const serialized=JSON.stringify(result)
+    for(const forbidden of [base,'private source content','untracked-secret','never-log-this','not-a-sha-secret']) assert.ok(!serialized.includes(forbidden))
+    assert.equal(frontendSourceIdentity(base,env).dirty,true)
+    await mkdir(path.join(base,'dist'))
+    await writeFile(path.join(base,'dist/index.html'),'build')
+    assert.equal('tracked_changes' in await frontendRelease(base,env),false)
+  } finally {await rm(base,{recursive:true,force:true})}
+})
+
+test('diagnostics fail closed without leaking Git errors outside a repository',async()=>{
+  const base=await mkdtemp(path.join(tmpdir(),'og-no-git-'))
+  try {assert.deepEqual(frontendSourceDiagnostics(base,{}),{head:null,declared_commit:null,tracked_changes:[],truncated:false,available:false})}
+  finally {await rm(base,{recursive:true,force:true})}
+})
+
+test('diagnostics bound large change lists and serialize to a single log line',async()=>{
+  const base=await mkdtemp(path.join(tmpdir(),'og-diagnostics-bound-'))
+  const git=(...args)=>execFileSync('git',args,{cwd:base,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim()
+  try {
+    git('init','--quiet')
+    for(let i=0;i<101;i++) await writeFile(path.join(base,`file-${i}.txt`),'original')
+    git('add','.')
+    git('-c','user.name=Test','-c','user.email=test@example.invalid','commit','--quiet','-m','Fixture')
+    for(let i=0;i<101;i++) await writeFile(path.join(base,`file-${i}.txt`),'changed')
+    const result=frontendSourceDiagnostics(base,{})
+    assert.equal(result.tracked_changes.length,100)
+    assert.equal(result.truncated,true)
+    assert.ok(!JSON.stringify(result).includes('\n'))
   } finally {await rm(base,{recursive:true,force:true})}
 })

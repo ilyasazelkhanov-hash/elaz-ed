@@ -20,6 +20,29 @@ export function frontendSourceIdentity(base = root, env = process.env) {
   return {commit, dirty}
 }
 
+// Build-log-only diagnostics: never attach this object to the public release manifest.
+// Only Git metadata is inspected. JSON encoding prevents filenames injecting log lines.
+export function frontendSourceDiagnostics(base = root, env = process.env) {
+  const supplied = env.VERCEL_GIT_COMMIT_SHA || env.GITHUB_SHA
+  const result = {head: null, declared_commit: commitPattern.test(supplied || '') ? supplied.toLowerCase() : null, tracked_changes: [], truncated: false, available: false}
+  const git = args => execFileSync('git', args, {cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']})
+  try {
+    const head = git(['rev-parse', 'HEAD']).trim()
+    result.head = commitPattern.test(head) ? head.toLowerCase() : null
+    const entries = git(['status', '--porcelain=v1', '-z', '--untracked-files=no']).split('\0')
+    for (let i = 0; i < entries.length; i++) {
+      if (!entries[i]) continue
+      const status = entries[i].slice(0, 2)
+      const change = {status, path: entries[i].slice(3)}
+      if (/[RC]/.test(status)) change.from = entries[++i] || ''
+      if (result.tracked_changes.length < 100) result.tracked_changes.push(change)
+      else result.truncated = true
+    }
+    result.available = true
+  } catch {} // Do not print subprocess errors, absolute paths or environment values.
+  return result
+}
+
 // This public file contains build identity only, never environment variables or user data.
 export async function frontendRelease(base = root, env = process.env, identity = frontendSourceIdentity(base, env)) {
   const files = []

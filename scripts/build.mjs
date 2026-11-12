@@ -1,12 +1,13 @@
 import {spawnSync} from 'node:child_process'
 import {writeFile} from 'node:fs/promises'
 import {fileURLToPath} from 'node:url'
-import {frontendSourceIdentity, frontendRelease} from './frontend-release.mjs'
+import {frontendSourceIdentity, frontendSourceDiagnostics, frontendRelease} from './frontend-release.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 // Capture the source checkout before generators refresh derived books/materials.
 // Their output is covered by the final build fingerprint, not mistaken for edits.
 const identity = frontendSourceIdentity(root)
+console.log(`Frontend source diagnostics: ${JSON.stringify(frontendSourceDiagnostics(root))}`)
 for (const args of [
   ['scripts/academy-content.mjs'],
   ['node_modules/typescript/bin/tsc', '--noEmit'],
