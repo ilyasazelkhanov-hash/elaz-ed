@@ -20,6 +20,7 @@ import { useFollowedTopics, useSavedPosts } from '../lib/blog-library'
 import { updateSummary } from '../lib/discovery'
 import { knowledgeTopics } from '../lib/knowledge'
 import { openBlogLibrary } from './home/blog-view'
+import { SavedPracticeShelf } from './profile/SavedPracticeShelf'
 import { LearningGoalCard } from './profile/LearningGoalCard'
 import { usePrefersReducedMotion } from '../lib/visibility'
 
@@ -69,6 +70,7 @@ export function Profile() {
           <Tap onClick={() => openBlogLibrary('unread')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Newspaper size={21} className="text-violet"/><span className="mt-3 block text-sm font-semibold">Ещё почитать</span><span className="mt-1 block text-sm text-mute">{unread ? `${unread} в подборке` : 'Посмотреть новости'}</span></Tap>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-mute">Сохранённые публикации и темы доступны в этом браузере. {isDemo ? 'В демо прогресс хранится только на этом устройстве.' : 'Прогресс курсов хранится в аккаунте.'}</p>
+        <SavedPracticeShelf key={`${isDemo ? 'demo' : 'live'}:${me.id}`} scope={me.id ? `${isDemo ? 'demo' : 'live'}:${me.id}` : undefined}/>
         {followed.length > 0 && <><h2 className="mb-2 mt-5 text-sm font-semibold text-mute">Мои темы</h2><div className="no-bar flex gap-2 overflow-x-auto">{followed.map(id => {const topic = knowledgeTopics.find(item => item.id === id); return topic ? <Tap key={id} onClick={() => openBlogLibrary('new', id)} className="min-h-11 shrink-0 rounded-full border border-violet/25 bg-violet/10 px-3 text-sm font-medium text-violet">{topic.label}</Tap> : null})}</div></>}
       </section>
 

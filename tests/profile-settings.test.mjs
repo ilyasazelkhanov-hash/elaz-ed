@@ -236,6 +236,7 @@ async function profileComponent() {
     '../lib/discovery': dataUrl('export const updateSummary = () => ({unread: globalThis.__profileUnread ?? 2})'),
     '../lib/knowledge': dataUrl('export const knowledgeTopics = []'),
     './home/blog-view': dataUrl('export const openBlogLibrary = () => {}'),
+    './profile/SavedPracticeShelf': dataUrl(`import { createElement } from ${JSON.stringify(import.meta.resolve('react'))}; export const SavedPracticeShelf = ({scope}) => createElement("section", {"data-practice-scope":scope}, "LOCAL_PRACTICE_SHELF")`),
     './profile/LearningGoalCard': dataUrl(`import { createElement } from ${JSON.stringify(import.meta.resolve('react'))}; export const LearningGoalCard = () => createElement("section", null, "PROFILE_LEARNING_CARD")`),
     '../lib/visibility': dataUrl('export const usePrefersReducedMotion = () => globalThis.__profileReducedMotion ?? true'),
   }
@@ -253,6 +254,8 @@ test('profile settings precede optional sections; toggles expose state and level
   assert.match(html, /role="group" aria-label="Тема оформления"/)
   assert.equal((html.match(/aria-pressed="true"/g) || []).length, 2)
   assert.match(html, /Поделиться карточкой/)
+  assert.match(html, /data-practice-scope="live:1"/)
+  assert.match(html, /LOCAL_PRACTICE_SHELF/)
   assert.doesNotMatch(html, /Поделиться в сторис|>Админка</)
   assert.match(html, /Очень Длинное Имя Пользователя Без Обрезания/)
   assert.equal(globalThis.__profileTilt, false)
