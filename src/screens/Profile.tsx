@@ -58,27 +58,32 @@ export function Profile() {
   return (
     <div data-tab-scroll className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 18px)', paddingBottom: 'calc(120px + var(--bottom))' }}>
       <section className="mb-6 px-5" aria-label="Мой профиль">
-        <p className="text-xs font-semibold uppercase tracking-wider text-violet">Моя берлога</p>
-        <h1 className="mt-2 font-display text-[27px] font-semibold">Профиль</h1>
+        <header className="flex items-center justify-between gap-3"><h1 className="font-display text-[27px] font-semibold">Профиль</h1>{me.is_admin && <Tap aria-label="Открыть админку" onClick={() => push({ type: 'admin' })} className="flex min-h-11 items-center gap-2 rounded-xl border border-line px-3 text-sm font-semibold"><Settings2 size={16} aria-hidden="true"/>Админка</Tap>}</header>
         <section className="mt-5" aria-label="Моя карточка участника">
           <HoloCard me={me} />
         </section>
-        <Tap className="mt-5 flex w-full items-center justify-between rounded-2xl border border-line bg-card p-4 text-left" onClick={()=>push({type:'learning',path:'/og-practice'})}><span><b className="block text-sm">Моё обучение</b><span className="mt-1 block text-xs text-mute">Курсы, доступы и следующий урок</span></span><ChevronRight size={18}/></Tap>
-        <Tap onClick={() => push({type:'club'})} className="mt-3 flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-line bg-card p-4 text-left"><span><b className="block text-sm">Доступ к клубу</b><span className="mt-1 block text-xs text-mute">Подписка на клуб. Курсы приобретаются отдельно.</span></span><ChevronRight size={18} className="shrink-0"/></Tap>
+        <nav className="mt-5 grid grid-cols-2 gap-2" aria-label="Мои разделы">
+          <Tap className="flex min-h-20 min-w-0 flex-col items-start justify-center gap-2 rounded-2xl bg-violet p-4 text-left text-on-violet" onClick={() => push({type:'learning',path:'/og-practice'})}><BookOpen size={20} aria-hidden="true"/><span className="text-sm font-semibold">Моё обучение</span></Tap>
+          <Tap onClick={() => push({type:'certifications'})} className="flex min-h-20 min-w-0 flex-col items-start justify-center gap-2 rounded-2xl border border-line bg-card p-4 text-left"><Award size={20} className="text-violet" aria-hidden="true"/><span className="text-sm font-semibold">ИИ-сертификации</span></Tap>
+        </nav>
+        <SavedPracticeShelf key={`${isDemo ? 'demo' : 'live'}:${me.id}`} scope={me.id ? `${isDemo ? 'demo' : 'live'}:${me.id}` : undefined}/>
         <h2 className="mt-5 text-sm font-semibold">Моя библиотека</h2>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <Tap onClick={() => openBlogLibrary('saved')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Bookmark size={21} className="text-violet"/><span className="mt-3 block text-sm font-semibold">Сохранённые</span><span className="mt-1 block text-sm text-mute">{saved.length ? `Сохранено: ${saved.length}` : 'Полезное под рукой'}</span></Tap>
           <Tap onClick={() => openBlogLibrary('unread')} className="min-w-0 rounded-[22px] border border-line bg-card p-4 text-left"><Newspaper size={21} className="text-violet"/><span className="mt-3 block text-sm font-semibold">Ещё почитать</span><span className="mt-1 block text-sm text-mute">{unread ? `${unread} в подборке` : 'Посмотреть новости'}</span></Tap>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-mute">Сохранённые публикации и темы доступны в этом браузере. {isDemo ? 'В демо прогресс хранится только на этом устройстве.' : 'Прогресс курсов хранится в аккаунте.'}</p>
-        <SavedPracticeShelf key={`${isDemo ? 'demo' : 'live'}:${me.id}`} scope={me.id ? `${isDemo ? 'demo' : 'live'}:${me.id}` : undefined}/>
+
         {followed.length > 0 && <><h2 className="mb-2 mt-5 text-sm font-semibold text-mute">Мои темы</h2><div className="no-bar flex gap-2 overflow-x-auto">{followed.map(id => {const topic = knowledgeTopics.find(item => item.id === id); return topic ? <Tap key={id} onClick={() => openBlogLibrary('new', id)} className="min-h-11 shrink-0 rounded-full border border-violet/25 bg-violet/10 px-3 text-sm font-medium text-violet">{topic.label}</Tap> : null})}</div></>}
       </section>
 
 
-      <Tap onClick={()=>push({type:'certifications'})} className="mx-5 mt-4 flex min-h-14 w-[calc(100%-40px)] items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><Award size={20} className="shrink-0 text-violet"/>ИИ-сертификации<ChevronRight size={18} className="ml-auto shrink-0"/></Tap>
-      <h2 className="mb-3 mt-7 px-5 font-display text-[17px] font-semibold">Настройки</h2>
-      <LearningGoalCard key={me.id} onOpenLesson={id => push({ type: 'lesson', id })} />
+      <details className="group mt-4" aria-label="Цель и напоминания">
+        <summary tabIndex={0} className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold">Цель недели и напоминания</span><span className="mt-1 block text-xs text-mute">Настроить свой ритм обучения</span></span><ChevronRight size={18} className="shrink-0 group-open:rotate-90" aria-hidden="true"/></summary>
+        <LearningGoalCard key={me.id} onOpenLesson={id => push({ type: 'lesson', id })} />
+      </details>
+      <details className="group mt-3" aria-label="Настройки приложения">
+        <summary tabIndex={0} className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold">Настройки приложения</span><span className="mt-1 block text-xs text-mute">Тема, звук, GIF и ярлык</span></span><ChevronRight size={18} className="shrink-0 group-open:rotate-90" aria-hidden="true"/></summary>
       <GifPreference />
 
       <div className="mx-5 mt-3 rounded-[24px] border border-line bg-card/80 p-4">
@@ -127,9 +132,6 @@ export function Profile() {
             if (result === 'hint-browser') toast('Открой меню браузера и выбери «Установить» или «На экран Домой»')
           }}
         />
-        <Item icon={<AtSign size={19} />} label={`Instagram ${INSTAGRAM.handle}`} onClick={() => openLink(INSTAGRAM.url)} />
-        {meta.channel.invite && <Item icon={<Megaphone size={19} />} label="Канал OG CRE8R" onClick={() => openLink(meta.channel.invite!)} />}
-        {me.is_admin && <Item icon={<Settings2 size={19} />} label="Админка" onClick={() => push({ type: 'admin' })} />}
         {isDemo && (
           <Item
             icon={<RotateCcw size={19} />}
@@ -143,10 +145,20 @@ export function Profile() {
           />
         )}
       </div>
+      </details>
+      <details className="group mt-3" aria-label="Клуб и контакты">
+        <summary tabIndex={0} className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold">Клуб и контакты</span><span className="mt-1 block text-xs text-mute">Подписка, канал и автор</span></span><ChevronRight size={18} className="shrink-0 group-open:rotate-90" aria-hidden="true"/></summary>
+        <div className="mx-5 mt-2 overflow-hidden rounded-2xl border border-line bg-card">
+          <Item icon={<BookOpen size={19}/>} label="Доступ к клубу" onClick={() => push({type:'club'})}/>
+          <p className="px-4 py-2 text-xs text-mute">Курсы приобретаются отдельно от подписки на клуб.</p>
+        <Item icon={<AtSign size={19} />} label={`Instagram ${INSTAGRAM.handle}`} onClick={() => openLink(INSTAGRAM.url)} />
+        {meta.channel.invite && <Item icon={<Megaphone size={19} />} label="Канал OG CRE8R" onClick={() => openLink(meta.channel.invite!)} />}
+        </div>
+      </details>
 
 
       <details className="group mt-6">
-        <summary className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden">
+        <summary tabIndex={0} className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden">
           <span><span className="block text-sm font-semibold">Уровни и достижения</span><span className="mt-1 block text-xs text-mute">Уровень {lvl.index} · открыто {earned} из {ACHIEVEMENTS.length}</span></span><ChevronRight size={18} className="shrink-0 transition-transform group-open:rotate-90" aria-hidden="true" />
         </summary>
       <div className="mt-4 grid grid-cols-2 gap-2 px-5 min-[360px]:grid-cols-4" aria-label="Статистика профиля">
@@ -221,7 +233,7 @@ export function Profile() {
       </Tap>
 
       <details className="group mt-6">
-        <summary className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold">Дополнительно</span><span className="mt-1 block text-xs text-mute">Демо Академии, бизнес и эксперименты</span></span><ChevronRight size={18} className="shrink-0 transition-transform group-open:rotate-90" aria-hidden="true"/></summary>
+        <summary tabIndex={0} className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden"><span><span className="block text-sm font-semibold">Дополнительно</span><span className="mt-1 block text-xs text-mute">Демо Академии, бизнес и эксперименты</span></span><ChevronRight size={18} className="shrink-0 transition-transform group-open:rotate-90" aria-hidden="true"/></summary>
         <div className="mx-5 mt-4 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
           <Tap onClick={()=>push({type:'academy',path:'/academy'})} className="flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><BookOpen size={20} className="shrink-0 text-violet"/>Демо Академии</Tap>
           <Tap onClick={() => push({type:'services'})} className="rounded-2xl border border-line bg-card p-4 text-left"><b className="block text-sm">Для бизнеса ↗</b><span className="mt-1 block text-xs text-mute">Примеры мини-аппок</span></Tap>
@@ -299,7 +311,7 @@ function HoloCard({ me }: { me: Me }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 22 }}
         style={{ rotateX: reduceMotion ? 0 : rotateX, rotateY: reduceMotion ? 0 : rotateY, transformStyle: 'preserve-3d', background: 'linear-gradient(140deg, #241c4d 0%, #17142b 45%, #2b1638 100%)' }}
-        className="relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/15 p-5 shadow-[0_28px_60px_-24px_rgb(140_110_255/0.7)]"
+        className="relative min-h-[180px] overflow-hidden rounded-[28px] border border-white/15 p-5 shadow-[0_28px_60px_-24px_rgb(140_110_255/0.7)]"
       >
         <motion.div
           aria-hidden="true"
@@ -313,7 +325,7 @@ function HoloCard({ me }: { me: Me }) {
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.16]" style={{ backgroundImage: 'radial-gradient(rgb(255 255 255 / 0.9) 1px, transparent 1.4px)', backgroundSize: '13px 13px' }} />
         <motion.div aria-hidden="true" className="pointer-events-none absolute inset-0 mix-blend-overlay" style={{ background: glare }} />
 
-        <div className="relative flex min-h-[178px] flex-col text-white" style={{ transform: 'translateZ(28px)' }}>
+        <div className="relative flex min-h-[138px] flex-col text-white" style={{ transform: 'translateZ(28px)' }}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-display text-[15px] font-bold tracking-tight">
               OG <span className="rounded-md bg-white px-1.5 py-0.5 text-[#1a1436]">CRE8R²</span>
@@ -321,7 +333,7 @@ function HoloCard({ me }: { me: Me }) {
             <p className="font-mono text-[10.5px] uppercase tracking-[0.2em] text-white/60">member</p>
           </div>
 
-          <div className="mt-7 flex items-center gap-3.5">
+          <div className="mt-4 flex items-center gap-3.5">
             <div className="shrink-0 rounded-full p-[2.5px]" style={{ background: 'var(--aurora)' }}>
               <Avatar name={me.name} photo={me.photo} id={me.id} size={54} />
             </div>
@@ -341,7 +353,7 @@ function HoloCard({ me }: { me: Me }) {
           </div>
         </div>
       </motion.div>
-      <Tap whileTap={reduceMotion ? undefined : { scale: 0.96 }} onClick={() => useStore.setState({ share: levelCard(me) })} className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-line bg-card/80 px-3 py-3 text-[14px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet">
+      <Tap whileTap={reduceMotion ? undefined : { scale: 0.96 }} onClick={() => useStore.setState({ share: levelCard(me) })} className="mt-1 flex min-h-11 items-center gap-2 rounded-xl px-1 text-[13px] font-semibold text-mute focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet">
         <Share2 size={17} className="shrink-0" aria-hidden="true" /> Поделиться карточкой
       </Tap>
     </div>

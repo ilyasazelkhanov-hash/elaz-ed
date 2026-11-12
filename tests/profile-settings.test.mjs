@@ -296,7 +296,7 @@ test('card preserves reduced motion and sharing uses the latest account data wit
     assert.equal(globalThis.__profileTilt, !reducedMotion)
     const share = globalThis.__profileButtons.find(button => button.className.includes('focus-visible:outline-offset-4'))
     assert.ok(share)
-    assert.ok(share.className.includes('min-h-12'), 'touch target may grow with wrapped text')
+    assert.ok(share.className.includes('min-h-11'), 'touch target may grow with wrapped text')
     assert.deepEqual(share.whileTap, reducedMotion ? undefined : { scale: 0.96 })
     for (let click = 0; click < 2; click++) {
       share.onClick()
@@ -590,4 +590,27 @@ test('a later successful save cannot erase a prior transport-uncertainty warning
   const html = render(settings.getSnapshot())
   assert.match(html, /Предыдущая запись могла дойти до сервера позже/)
   delete globalThis.__profileSettings; delete globalThis.__profileControllerDeps
+})
+
+
+test('profile puts useful destinations and saved work before collapsed preferences without losing access', () => {
+  const pushes=[]
+  globalThis.__profileFixture = { me: { id: 1, name: 'Участник', xp: 250, streak: 0, invited: 0, rank: 1, achievements: [], is_admin: true }, feed: [], meta: { channel: {invite:'https://t.me/OGCRE8R'}, bot: {} }, push(value) {pushes.push(value)}, toast() {} }
+  globalThis.__profileButtons=[]
+  const html=renderToStaticMarkup(createElement(Profile))
+  assert.match(html,/aria-label="Мои разделы"/)
+  assert.ok(html.indexOf('Моё обучение') < html.indexOf('Настройки приложения'))
+  assert.ok(html.indexOf('Моя библиотека') < html.indexOf('Настройки приложения'))
+  for (const title of ['Цель и напоминания', 'Настройки приложения', 'Клуб и контакты']) {
+    assert.match(html,new RegExp('<details[^>]+aria-label="'+title+'"'))
+  }
+  assert.doesNotMatch(html, /<details[^>]+open/)
+  assert.match(html, /<summary tabindex="0"/)
+  const header=html.slice(html.indexOf('<header'),html.indexOf('</header>'))
+  assert.match(header,/Админка/)
+  const admin=globalThis.__profileButtons.find(button=>button['aria-label']==='Открыть админку')
+  assert.ok(admin);admin.onClick();assert.deepEqual(pushes,[{type:'admin'}])
+  globalThis.__profileFixture.me.is_admin=false
+  assert.doesNotMatch(renderToStaticMarkup(createElement(Profile)), /Админка/)
+  delete globalThis.__profileFixture;delete globalThis.__profileButtons;delete globalThis.__profileTilt
 })
