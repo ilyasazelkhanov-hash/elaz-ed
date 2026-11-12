@@ -52,7 +52,7 @@ test('reader exposes primary sections and an explicit menu for other sections', 
  const {practiceSections} = await import('../src/lib/og-practice.ts')
  globalThis.__readerHarness = {
   GuideJourney:({children})=>children,
-  ogLessonInteraction:()=>undefined,
+  ogLessonInteraction:async()=>undefined,
   PracticeArtifact:()=>null,
   practiceSections, practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck,
   Markdown: ({text}) => createElement('div', null, text),

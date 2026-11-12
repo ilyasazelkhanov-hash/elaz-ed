@@ -84,3 +84,20 @@ answer evidence and task-specific feedback, not generic quizzes derived from
 headings. Academy retains its existing server assessment engine. The blocker to
 claiming full coverage is actual authoring/review of all remaining lesson data,
 not an absent UI component.
+
+### Compatibility guard revision (base 676d956)
+
+The two OG flows are conditional candidates, NOT confirmed live coverage.
+They activate only when SHA-256 of the exact authorized lesson body matches
+the reviewed source fixture (UTF-8, no normalization). Missing/empty/mismatched
+bodies, absent Web Crypto and digest errors use the ordinary Reader. Pending
+verification also uses ordinary Reader; stale async results cannot enable a
+flow for a changed body. This does not grant access: no paid payload or
+authorization request is imported or fetched by the interaction package.
+Original explanation remains visible even for a matched flow.
+
+Tests cover exact match, whitespace/content mismatch, empty/missing/locked body,
+unknown key, preserved work intent/scoped scrolling, and source-visible fallback
+structure. The OG test command is registered for scripts/test-all.mjs discovery.
+Live database hashes and browser behavior remain unverified, so effective live
+interactive coverage may be zero of these two lessons until matching is checked.

@@ -57,4 +57,16 @@ export const ogLessonInteractions:Record<string,OGLessonInteraction>={
   ]
  }
 }
-export function ogLessonInteraction(course:string,lesson:string){return ogLessonInteractions[course+'/'+lesson]}
+
+// Exact UTF-8 SHA-256 of reviewed source bodies. Deliberately no whitespace normalization.
+// This guard checks compatibility, NOT authorization: Reader still receives gated bodies.
+export const reviewedLessonHashes:Record<string,string>={"foundations/block-1": "4b3c5aa9ac6b296644917221b2eb0f625fc97b6735ad05bbe34f73bc944ba452", "foundations/foundations-context": "b36aaeba2044100fa3ecff2218b8040496535a2a2d38c518b5fc4bd396ebf11a"}
+export async function ogLessonInteraction(course:string,lesson:string,body?:string):Promise<OGLessonInteraction|undefined>{
+ const key=course+'/'+lesson, expected=reviewedLessonHashes[key]
+ if(!expected||!body||!globalThis.crypto?.subtle)return undefined
+ try{
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(body))
+  const actual=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')
+  return actual===expected ? ogLessonInteractions[key] : undefined
+ }catch{return undefined}
+}
