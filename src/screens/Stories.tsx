@@ -1,7 +1,7 @@
 import { activeStories, storySlideDuration } from '../lib/highlights'
 import { useStoryPlayback } from '../lib/use-story-playback'
 import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useDragControls } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { GRADIENTS, slidesOf } from '../lib/game'
@@ -22,6 +22,8 @@ export function Stories({ startId }: { startId: number }) {
   const [pi, setPi] = useState(0)
   const story = stories[si]
   const slides = useMemo(() => slidesOf(story?.body ?? ''), [story])
+  const dragControls = useDragControls()
+  const contentRef = useRef<HTMLDivElement>(null)
   const downAt = useRef(0)
   const rewarded = useRef(new Set<number>())
 
@@ -74,6 +76,10 @@ export function Stories({ startId }: { startId: number }) {
     track('story_open', undefined, story.id)
   }, [story])
 
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = 0
+  }, [si, pi])
+
   if (!story) return <section className="absolute inset-0 z-40 grid place-content-center gap-4 bg-bg p-6 text-center" aria-label="История недоступна"><h2 className="text-xl font-semibold">Эта история больше не доступна</h2><p className="text-mute">Условия могли измениться. Вернись к актуальной подборке.</p><Tap onClick={pop} className="min-h-11 rounded-xl bg-violet px-4 text-white">Закрыть</Tap></section>
   const g = GRADIENTS[story.gradient] ?? GRADIENTS.aurora
 
@@ -86,6 +92,8 @@ export function Stories({ startId }: { startId: number }) {
       exit={{ opacity: 0, scale: 0.9, y: 80 }}
       transition={{ type: 'spring', stiffness: 320, damping: 32 }}
       drag="y"
+      dragControls={dragControls}
+      dragListener={false}
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={{ top: 0, bottom: 0.5 }}
       onDragEnd={(_, info) => {
@@ -100,6 +108,7 @@ export function Stories({ startId }: { startId: number }) {
         onContextMenu={(e) => e.preventDefault()}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
+          dragControls.start(e)
           downAt.current = performance.now()
           setHolding(true)
         }}
@@ -140,7 +149,7 @@ export function Stories({ startId }: { startId: number }) {
           </Tap>
         </div>
 
-        <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto py-4" onPointerDown={() => setHolding(true)} onPointerUp={() => setHolding(false)} onPointerCancel={() => setHolding(false)} onFocusCapture={() => setHolding(true)} onBlurCapture={() => setHolding(false)}>
+        <div ref={contentRef} className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto py-4" style={{ touchAction: 'pan-y' }} onPointerDown={(event) => { event.stopPropagation(); setHolding(true) }} onPointerUp={() => setHolding(false)} onPointerCancel={() => setHolding(false)} onPointerLeave={() => setHolding(false)} onFocusCapture={() => setHolding(true)} onBlurCapture={() => setHolding(false)}>
           <AnimatePresence mode="wait">
             <motion.div
               key={`${si}-${pi}`}
