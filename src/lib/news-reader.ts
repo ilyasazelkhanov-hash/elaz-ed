@@ -1,3 +1,4 @@
+export { readingMinutes } from '../../supabase/functions/_shared/reading-time.ts'
 import { ogPracticeCourses, type PracticeCourse } from './og-practice.ts'
 import { resolvePracticeCourse } from './og-course-access.ts'
 import type { Card, Course } from './types'

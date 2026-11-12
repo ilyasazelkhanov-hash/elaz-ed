@@ -5,10 +5,9 @@ import { useEffect } from 'react'
 import type { Card, Lesson } from '../lib/types'
 import { markPostRead } from '../lib/blog-read'
 import { toggleSavedPost, useSavedPosts } from '../lib/blog-library'
-import { newsArticleBody, newsCourseRecommendations } from '../lib/news-reader'
+import { newsArticleBody, newsCourseRecommendations, readingMinutes } from '../lib/news-reader'
 import { practiceOffer } from '../lib/og-course-access'
 import { practicePath } from '../lib/og-practice'
-import { readMinutes } from '../lib/game'
 import { postDate } from '../lib/content'
 import { track } from '../lib/track'
 import { useStore } from '../store'
@@ -29,7 +28,7 @@ export function PostScreen({ id, post, preview, error, retry, like, share }: { i
   const courses = useStore(s => s.courses)
   const recommendations = post ? newsCourseRecommendations(post, courses) : []
   const date = postDate(view?.published_at)
-  const minutes = post ? readMinutes(newsArticleBody(post.body)) : view?.minutes ?? 0
+  const minutes = post ? readingMinutes(newsArticleBody(post.body)) : view?.minutes ?? 0
   const save = () => {
     if (!me || !id) return
     const selected = toggleSavedPost(me.id, id, (selected) => track('blog_save',{source:'post',saved:selected},id))
