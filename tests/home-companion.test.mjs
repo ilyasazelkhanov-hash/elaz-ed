@@ -88,19 +88,49 @@ test('single compact layout exposes separate real action, pet and settings; anim
  code=code.replace(/import \{ DotsCharacter \} from ["']\.\/dots\/DotsCharacter["'];?/g,'const { DotsCharacter } = globalThis.__companionHarness;')
  code=code.replace(/import \{ useDotsInteractions \} from ["']\.\/dots\/useInteractions["'];?/g,'const { useDotsInteractions } = globalThis.__companionHarness;')
  for(const name of ['react','react-dom','react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
- let reduced=false
- globalThis.__companionHarness={...companion,useDotsInteractions:()=>({preferences:{voice:false,lantern:false},voiceState:'idle',motionStatus:'off',moment:'',readAloud(){}}),DotsCharacter:()=>null,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>parseCompanionSession(null),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
- useStore:selector=>selector({feed:[card(8)],advent,me:{daily_claimed:false},courses:[],stack:[],reward:null,share:null,push(){}})}
+ let reduced=false, paused=false, voice=false
+ let state={feed:[card(8)],advent,me:{daily_claimed:false},courses:[],stack:[],reward:null,share:null,push(){}}
+ globalThis.__companionHarness={...companion,useDotsInteractions:()=>({preferences:{voice,lantern:false},voiceState:'idle',motionStatus:'off',moment:'',readAloud(){}}),DotsCharacter:()=>null,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>({...parseCompanionSession(null),paused}),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
+ useStore:selector=>selector(state)}
  try{
   const {Companion}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
   let html=renderToStaticMarkup(createElement(Companion,{userId:1}))
   assert.match(html,/Луна: погладить и показать другую идею/);assert.match(html,/Настроить Dots/);assert.match(html,/К отметке дня/)
   assert.match(html,/role="status" aria-live="polite" aria-atomic="true"><\/span>/);assert.doesNotMatch(html,/data-collapsed|aria-expanded|Показать подсказку/)
+  assert.match(html,/data-color="mint"/);assert.match(html,/class="og-dots-cloud" aria-hidden="true"/)
+  assert.match(html,/preserveAspectRatio="none" focusable="false"/);assert.match(html,/class="og-dots-copy"/)
+  assert.match(html,/<span class="og-dots-action"><span>К отметке дня<\/span>/)
+  assert.equal((html.match(/<button/g)||[]).length,3)
+  const pair=renderToStaticMarkup(createElement('div',null,createElement(Companion,{userId:1}),createElement(Companion,{userId:2})))
+  const gradients=[...pair.matchAll(/<linearGradient id="([^"]+)"/g)].map(match=>match[1])
+  assert.equal(gradients.length,2);assert.equal(new Set(gradients).size,2)
+  for(const id of gradients)assert.ok(pair.includes(`fill="url(#${id})"`))
   reduced=true;html=renderToStaticMarkup(createElement(Companion,{userId:1}));assert.match(html,/data-moving="false"/)
+  reduced=false;paused=true;html=renderToStaticMarkup(createElement(Companion,{userId:1}));assert.match(html,/data-moving="false"/)
+  paused=false;state={...state,stack:[{type:'companion-settings'}]};html=renderToStaticMarkup(createElement(Companion,{userId:1}));assert.match(html,/data-moving="false"/)
+  const title='Длинный заголовок про ИИ и его возможности '.repeat(9)+'ОченьДлинноеСловоБезПробелов'.repeat(8)
+  state={...state,stack:[],me:null,advent:null,feed:[card(8,{title})]};voice=true
+  html=renderToStaticMarkup(createElement(Companion,{userId:1}))
+  assert.ok(html.includes(`<span class="og-dots-detail">${title}</span>`));assert.match(html,/Прочитать реплику/)
+  assert.equal((html.match(/<button/g)||[]).length,4);assert.match(html,/Читать статью/)
  }finally{delete globalThis.__companionHarness}
  assert.match(source,/current\.autoChanges \+ 1/);assert.match(source,/window\.clearTimeout/);assert.match(source,/moving && !hovered && !focused/)
  assert.match(source,/!covered/);assert.match(source,/data-reacting=\{moving && reaction/);assert.match(source,/pointerType !== 'mouse'/);assert.match(source,/previousClaim.current === false && me\?\.daily_claimed === true/)
  assert.doesNotMatch(source,/fetch\(|api\.daily|api\.advent|dangerouslySetInnerHTML/)
  const css=await readFile(new URL('../src/screens/home/companion.css',import.meta.url),'utf8')
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);assert.match(css,/min-width: 44px; min-height: 44px/);assert.doesNotMatch(css,/text-overflow: ellipsis|white-space: nowrap|line-clamp/)
+})
+
+test('thought-cloud separates moving art from stable copy and expands naturally on small screens',async()=>{
+ const css=await readFile(new URL('../src/screens/home/companion.css',import.meta.url),'utf8')
+ const speech=css.match(/\.og-dots-speech \{([^}]+)\}/)?.[1]??''
+ assert.match(speech,/position: relative/);assert.match(speech,/width: 100%/);assert.match(speech,/overflow-wrap: anywhere/)
+ assert.doesNotMatch(speech,/(?:^|[; ])(?:height|max-height|overflow|transform|animation):/)
+ assert.match(css,/\.og-dots-cloud \{[^}]*pointer-events: none/)
+ assert.match(css,/data-moving='true'\] \.og-dots-cloud-surface/)
+ assert.match(css,/@keyframes og-dots-copy-in \{ from \{ opacity: \.55; \} to \{ opacity: 1; \} \}/)
+ assert.match(css,/@media \(max-width: 359px\)/);assert.match(css,/\.og-dots-conversation \{ display: contents; \}/)
+ assert.match(css,/\.og-dots-speech \{ grid-column: 1 \/ -1; grid-row: 2/)
+ assert.match(css,/\.og-dots-action > span:first-child \{ min-width: 0; overflow-wrap: anywhere;/)
+ assert.match(css,/\.og-dots-heading \{[^}]*min-width: 0/)
 })
