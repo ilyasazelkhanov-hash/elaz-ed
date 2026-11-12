@@ -44,13 +44,14 @@ test('reader exposes primary sections and an explicit menu for other sections', 
  const {renderToStaticMarkup} = await import('react-dom/server')
  const file = new URL('../src/screens/home/PracticeReader.tsx', import.meta.url)
  let code = (await transformWithOxc(await readFile(file, 'utf8'), file.pathname, {lang:'tsx', jsx:{runtime:'automatic'}})).code
- for (const [path, names] of Object.entries({'../../Markdown':'Markdown', '../../lib/og-practice':'practiceSections', '../../lib/practice-reader':'practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck', '../../ui':'Tap'})) {
+ for (const [path, names] of Object.entries({'./PracticeArtifact':'PracticeArtifact','../../Markdown':'Markdown', '../../lib/og-practice':'practiceSections', '../../lib/practice-reader':'practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck', '../../ui':'Tap'})) {
   code = code.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.', '\\.')}["'];?`, 'g'), `const { ${names} } = globalThis.__readerHarness;`)
  }
  code = code.replace(/import ["']\.\/practice\.css["'];?/g, '')
  for (const name of ['react', 'react/jsx-runtime', 'lucide-react']) code = code.replaceAll(`from "${name}"`, `from ${JSON.stringify(import.meta.resolve(name))}`)
  const {practiceSections} = await import('../src/lib/og-practice.ts')
  globalThis.__readerHarness = {
+  PracticeArtifact:()=>null,
   practiceSections, practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck,
   Markdown: ({text}) => createElement('div', null, text),
   Tap: ({children, ...props}) => createElement('button', props, children),
