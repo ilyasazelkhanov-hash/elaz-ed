@@ -1,0 +1,29 @@
+/* Bounded, finite motion. No global cursor replacement and no perpetual loop. */
+.learning-scene { position:relative; isolation:isolate; margin-top:16px; height:70px; overflow:hidden; border-radius:18px; background:color-mix(in srgb,var(--color-card) 72%,transparent); border:1px solid var(--color-line); }
+.learning-scene-track { position:absolute; inset:9px 12px auto; display:flex; align-items:center; gap:8px; font-size:11px; font-weight:650; color:var(--color-mute); }
+.learning-scene-track span { padding:5px 8px; border-radius:9px; background:var(--color-bg); }
+.learning-scene-track i { flex:1; min-width:6px; height:1px; background:var(--color-line); }
+.learning-scene-cursors { position:absolute; inset:0; pointer-events:none; }
+.learning-scene-cursor { position:absolute; top:34px; display:flex; align-items:flex-start; --cursor-color:var(--color-violet); color:var(--cursor-color); }
+.learning-scene-cursor svg { width:17px; height:21px; flex:none; }
+.learning-scene-cursor b { margin-top:9px; padding:2px 6px; border-radius:0 7px 7px; background:var(--cursor-color); color:var(--color-on-violet,#fff); font-size:10px; line-height:1.4; font-weight:600; }
+.learning-scene-cursor-author { left:13%; }
+.learning-scene-cursor-review { left:51%; --cursor-color:var(--color-success,#237965); }
+.learning-scene-result { position:absolute; right:16px; top:39px; width:21px; height:21px; display:grid; place-items:center; border-radius:50%; background:color-mix(in srgb,var(--color-mint) 18%,var(--color-card)); color:var(--color-success); font-size:14px; }
+.learning-scene[data-scene='play'] .learning-scene-cursor-author { animation:learning-author 4.6s cubic-bezier(.22,.68,.22,1) both; }
+.learning-scene[data-scene='play'] .learning-scene-cursor-review { animation:learning-review 4.6s cubic-bezier(.22,.68,.22,1) both; }
+.learning-scene[data-scene='play'] .learning-scene-result { animation:learning-result 4.6s ease both; }
+.learning-scene[data-paused='true'] * { animation-play-state:paused!important; }
+@keyframes learning-author { 0%,8%{transform:translate(-12px,11px) rotate(-8deg);opacity:0} 22%{opacity:1;transform:translate(0,0)} 38%{transform:translate(20px,-5px) rotate(3deg)} 55%,100%{transform:translate(0,0);opacity:1} }
+@keyframes learning-review { 0%,27%{transform:translate(12px,9px);opacity:0} 42%{transform:translate(0,0);opacity:1} 65%{transform:translate(-15px,-5px) rotate(-5deg)} 82%,100%{transform:translate(0,0);opacity:1} }
+@keyframes learning-result { 0%,65%{transform:scale(.7);opacity:.3} 80%{transform:scale(1.18);opacity:1} 100%{transform:scale(1);opacity:1} }
+.editorial-card { transition:border-color 180ms ease,box-shadow 180ms ease,transform 240ms cubic-bezier(.2,.7,.2,1); }
+.editorial-card[data-reveal='enter'] { animation:editorial-enter 420ms cubic-bezier(.2,.7,.2,1); }
+.editorial-card:focus-within { border-color:var(--color-violet); }
+@keyframes editorial-enter { from{opacity:.65;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+ .editorial-card:hover { transform:translateY(-3px); border-color:color-mix(in srgb,var(--color-violet) 40%,var(--color-line)); box-shadow:0 12px 28px -18px color-mix(in srgb,var(--color-violet) 45%,transparent); }
+}
+@media(prefers-reduced-motion:reduce) {
+ .learning-scene *, .editorial-card { animation:none!important; transition:none!important; transform:none!important; }
+}

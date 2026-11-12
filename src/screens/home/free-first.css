@@ -17,3 +17,16 @@
 .reader-break { border-top: 1px solid var(--color-line); }
 @media (min-width: 480px) { .reader-topics { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 340px) { .reader-filter-tabs button { font-size: 12px; } }
+
+/* Editorial micro-interactions: keyboard and touch keep the same stable targets. */
+.reader-post { transition:border-color 180ms ease,box-shadow 180ms ease,transform 220ms cubic-bezier(.2,.7,.2,1); }
+.reader-post:focus-within { border-color:var(--color-violet); }
+.reader-filter-tabs button { transition:background-color 180ms ease,color 180ms ease; }
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+ .reader-post:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--color-violet) 35%,var(--color-line)); box-shadow:0 10px 24px -18px color-mix(in srgb,var(--color-violet) 45%,transparent); }
+ .reader-post-bottom button:first-child svg { transition:transform 180ms ease; }
+ .reader-post-bottom button:first-child:hover svg { transform:translate(2px,-2px); }
+}
+@media (prefers-reduced-motion:reduce) {
+ .reader-post,.reader-filter-tabs button,.reader-post-bottom button svg { transition:none!important; transform:none!important; }
+}

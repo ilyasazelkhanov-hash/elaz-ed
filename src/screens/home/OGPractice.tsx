@@ -10,6 +10,7 @@ import {useCourseViewTelemetry} from '../Course'
 import {Tap} from '../../ui'
 import {CoursePaymentAction, useCoursePaymentRecovery} from './CoursePayment'
 import {PracticeArtwork} from './PracticeArtwork'
+import {EditorialCards, LearningScene} from './LearningMotion'
 import {PracticeReader} from './PracticeReader'
 import {CoursePathway} from '../courses/CoursePathway'
 
@@ -43,6 +44,7 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
    <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] text-violet"><Sparkles size={15}/>OG CRE8R² · Курсы с практикой</p>
    <h1 className="mt-3 max-w-[15ch] font-display text-[29px] font-semibold leading-[1.16]">От интереса к ИИ — к своему проекту</h1>
    <p className="mt-3 text-sm leading-relaxed text-mute">Выбери навык и пройди понятный маршрут: объяснение, пример, практика и готовая работа.</p>
+   <LearningScene/>
    <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold"><span className="rounded-full border border-line bg-card/80 px-3 py-2">5 платных программ</span><span className="rounded-full border border-line bg-card/80 px-3 py-2">33 урока с практикой</span><span className="rounded-full border border-line bg-card/80 px-3 py-2">В своём темпе</span></div>
   </div>
   <Tap onClick={() => go('/start')} className="mt-4 flex min-h-20 w-full items-center gap-3 rounded-[22px] border border-mint/25 bg-mint/8 p-4 text-left"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-mint/15 text-success"><BookOpen size={20}/></span><span className="min-w-0 flex-1"><b className="block text-sm">Впервые с ИИ? Начни бесплатно</b><span className="mt-1 block text-xs leading-relaxed text-mute">Короткий старт: первый запрос, проверка ответа и выбор задачи.</span></span><ArrowRight size={17} className="shrink-0 text-success"/></Tap>
@@ -53,15 +55,15 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
   <label className="mt-5 flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-card pl-4 pr-1"><Search size={17} className="shrink-0 text-mute"/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Найти курс, инструмент или урок" aria-label="Найти учебную тему" className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none"/>{query && <Tap aria-label="Очистить поиск" onClick={() => setQuery('')} className="grid h-11 w-11 shrink-0 place-items-center text-mute"><X size={17}/></Tap>}</label>
   <div className="no-bar my-4 flex gap-2 overflow-x-auto pb-1" aria-label="Темы обучения">{practiceTopics.map(item => <Tap key={item} aria-pressed={filter === item} onClick={() => setFilter(item)} className={chip(filter === item)}>{item}</Tap>)}</div>
   <p role="status" className="mb-3 text-xs text-mute">{query || filter !== 'Все' ? 'Найдено курсов: ' + courses.length : 'Выбери результат, который хочешь получить'}</p>
-  <div className="grid gap-4">{courses.map(item => {
+  <EditorialCards revision={courses.map(item => item.key).join(',')}>{courses.map(item => {
    const live = resolvePracticeCourse(item, liveCourses), offer = practiceOffer(live), duration = item.lessons.reduce((sum, current) => sum + current.minutes, 0)
    const count = item.lessons.filter(current => resolvePracticeLesson(live, current, feed)?.completed).length
    const matching = query.trim() ? item.lessons.find(current => current.title.toLocaleLowerCase('ru').includes(query.trim().toLocaleLowerCase('ru'))) : null
-   return <article key={item.key} className="overflow-hidden rounded-[25px] border border-line bg-card" data-og-course={item.key}>
+   return <article key={item.key} className="editorial-card overflow-hidden rounded-[25px] border border-line bg-card" data-editorial-card data-og-course={item.key}>
     <Tap onClick={() => go(practicePath(item.key))} className="block w-full text-left" aria-label={`Программа курса: ${item.title}`}><PracticeArtwork courseKey={item.key} compact/><span className="block p-4 pb-2"><span className="flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-wider"><span className="text-violet">Платный курс</span><span className={live?.access ? 'text-success' : 'text-mute'}>{offer.label}</span></span><b className="mt-2 block font-display text-[18px] font-semibold leading-snug">{item.title}</b><span className="mt-2 block text-sm leading-relaxed text-mute">{item.goal}</span><span className="mt-3 block rounded-xl bg-bg/70 p-3 text-xs leading-relaxed"><b className="font-semibold text-violet">На выходе: </b>{item.project}</span><span className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-mute"><span>{item.lessons.length} уроков</span><span>{minutes(duration)}</span><span>{live?.access && count ? `${count} отмечено` : 'Практика и проект'}</span></span>{matching && <span className="mt-2 block text-xs leading-relaxed text-violet">В программе: {matching.title}</span>}</span></Tap>
     <div className="flex items-center gap-3 px-4 pb-4 pt-2"><Tap onClick={() => go(practicePath(item.key))} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-violet px-3 text-sm font-semibold text-on-violet">Смотреть программу<ArrowRight size={16}/></Tap></div>{live && !live.access && <CoursePaymentAction course={live} compact/>}
    </article>
-  })}{!courses.length && <div className="rounded-2xl border border-dashed border-line p-5 text-center"><p className="text-sm text-mute">По этому запросу курсов нет.</p><Tap onClick={() => {setFilter('Все'); setQuery('')}} className="mt-3 min-h-11 text-sm font-semibold text-violet">Сбросить поиск и фильтры</Tap></div>}</div>
+  })}{!courses.length && <div className="rounded-2xl border border-dashed border-line p-5 text-center"><p className="text-sm text-mute">По этому запросу курсов нет.</p><Tap onClick={() => {setFilter('Все'); setQuery('')}} className="mt-3 min-h-11 text-sm font-semibold text-violet">Сбросить поиск и фильтры</Tap></div>}</EditorialCards>
   <div className="mt-5 flex items-start gap-3 rounded-2xl border border-line p-4"><ShieldCheck size={19} className="mt-0.5 shrink-0 text-violet"/><p className="text-xs leading-relaxed text-mute">Каждый курс открывается отдельно. Перед покупкой посмотри программу и бесплатный пробный урок. Оплата — звёздами Telegram; доступ и прогресс сохраняются в аккаунте.</p></div>
  </section>
 }
