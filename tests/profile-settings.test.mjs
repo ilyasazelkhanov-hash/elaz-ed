@@ -220,7 +220,7 @@ async function profileComponent() {
   const imports = {
     '../lib/api': dataUrl('export const isDemo = false'),
     '../lib/links': dataUrl('export const appLink = () => null'),
-    '../lib/shareCard': dataUrl('export const achievementCard = () => null, levelCard = () => null'),
+    '../lib/shareCard': dataUrl('export const achievementCard = () => null, levelCard = me => ({kind: "level", name: me.name, xp: me.xp, id: me.id})'),
     '../lib/track': dataUrl('export const track = () => {}'),
     '../lib/game': new URL('../src/lib/game.ts', import.meta.url).href,
     '../lib/sfx': dataUrl('export const sfx = { enabled: true, setEnabled() {} }'),
@@ -228,8 +228,8 @@ async function profileComponent() {
     '../lib/tg': dataUrl('export const haptic = {tap() {}}, inTelegram = true, openLink = () => {}, confirmDialog = async () => false, shareLink = () => {}'),
     '../lib/theme': dataUrl('export const getMode = () => "auto", setMode = () => {}'),
     '../lib/tilt': dataUrl(`import { useMotionValue } from ${JSON.stringify(import.meta.resolve('motion/react'))}; export function useTilt(active) { globalThis.__profileTilt = active; return {x: useMotionValue(0), y: useMotionValue(0), onPointerMove() {}, onPointerLeave() {}} }`),
-    '../store': dataUrl('export const useStore = selector => selector(globalThis.__profileFixture); useStore.getState = () => globalThis.__profileFixture; useStore.setState = () => {}'),
-    '../ui': dataUrl(`import { createElement } from ${JSON.stringify(import.meta.resolve('react'))}; export const Avatar = () => null, Pattern = () => null, Counter = ({value, ...props}) => createElement("span", props, value), Emoji = ({char}) => createElement("span", null, char); export const Tap = ({feedback, initial, animate, transition, children, ...props}) => createElement("button", props, children)`),
+    '../store': dataUrl('export const useStore = selector => selector(globalThis.__profileFixture); useStore.getState = () => globalThis.__profileFixture; useStore.setState = value => { globalThis.__profileShare = value.share }'),
+    '../ui': dataUrl(`import { createElement } from ${JSON.stringify(import.meta.resolve('react'))}; export const Avatar = () => null, Pattern = () => null, Counter = ({value, ...props}) => createElement("span", props, value), Emoji = ({char}) => createElement("span", null, char); export const Tap = ({feedback, initial, animate, transition, whileTap, children, ...props}) => { globalThis.__profileButtons?.push({...props, whileTap}); return createElement("button", props, children) }`),
     '../FocusLayer': dataUrl('export const FocusLayer = "section"'),
     '../lib/blog-read': dataUrl('export const useReadPosts = () => []'),
     '../lib/blog-library': dataUrl('export const useFollowedTopics = () => [], useSavedPosts = () => []'),
@@ -237,7 +237,7 @@ async function profileComponent() {
     '../lib/knowledge': dataUrl('export const knowledgeTopics = []'),
     './home/blog-view': dataUrl('export const openBlogLibrary = () => {}'),
     './profile/LearningGoalCard': dataUrl(`import { createElement } from ${JSON.stringify(import.meta.resolve('react'))}; export const LearningGoalCard = () => createElement("section", null, "PROFILE_LEARNING_CARD")`),
-    '../lib/visibility': dataUrl('export const usePrefersReducedMotion = () => true'),
+    '../lib/visibility': dataUrl('export const usePrefersReducedMotion = () => globalThis.__profileReducedMotion ?? true'),
   }
   code = code.replace(/from (["'])([^"']+)\1/g, (_, quote, name) => `from ${JSON.stringify(imports[name] ?? import.meta.resolve(name))}`)
   return (await import(dataUrl(code))).Profile
@@ -259,6 +259,58 @@ test('profile settings precede optional sections; toggles expose state and level
   globalThis.__profileFixture.me.is_admin = true
   assert.match(renderToStaticMarkup(createElement(Profile)), />Админка</)
   delete globalThis.__profileFixture; delete globalThis.__profileTilt
+})
+
+test('the holographic card is visible once at the top, outside both collapsed sections', () => {
+  globalThis.__profileFixture = { me: { id: 123456, name: 'Ильяс Азелханов', xp: 1250, streak: 2, invited: 0, rank: 1, achievements: [], is_admin: false }, feed: [], meta: { channel: {}, bot: {} }, push() {}, toast() {} }
+  const html = renderToStaticMarkup(createElement(Profile))
+  const card = html.match(/<section class="mt-5" aria-label="Моя карточка участника">([\s\S]*?)<\/section>/)?.[1]
+  assert.ok(card, 'the personal card needs an accessible, always-visible section')
+  assert.equal((html.match(/Моя карточка участника/g) || []).length, 1)
+  assert.equal((html.match(/Поделиться карточкой/g) || []).length, 1)
+  assert.ok(html.indexOf('Моя карточка участника') < html.indexOf('Моё обучение'))
+  assert.ok(html.indexOf('Моя карточка участника') < html.indexOf('<details'))
+  for (const details of html.matchAll(/<details\b[^>]*>([\s\S]*?)<\/details>/g)) {
+    assert.doesNotMatch(details[0], /<details[^>]*\sopen/)
+    assert.doesNotMatch(details[1], /Моя карточка участника|Поделиться карточкой/)
+  }
+  assert.match(card, /Ильяс Азелханов/)
+  assert.match(card, /123456/)
+  assert.match(card, /1250.*XP/)
+  assert.match(card, /уровень/)
+  assert.match(card, /break-words/)
+  assert.equal((card.match(/aria-hidden="true" class="pointer-events-none/g) || []).length, 3, 'foil and sparkles remain decorative')
+  delete globalThis.__profileFixture; delete globalThis.__profileTilt
+})
+
+test('card preserves reduced motion and sharing uses the latest account data without sending', () => {
+  globalThis.__profileFixture = { me: { id: 1, name: 'Первый участник', xp: 250, streak: 0, invited: 0, rank: 1, achievements: [], is_admin: false }, feed: [], meta: { channel: {}, bot: {} }, push() {}, toast() {} }
+  for (const reducedMotion of [true, false]) {
+    globalThis.__profileReducedMotion = reducedMotion
+    globalThis.__profileButtons = []
+    renderToStaticMarkup(createElement(Profile))
+    assert.equal(globalThis.__profileTilt, !reducedMotion)
+    const share = globalThis.__profileButtons.find(button => button.className.includes('focus-visible:outline-offset-4'))
+    assert.ok(share)
+    assert.ok(share.className.includes('min-h-12'), 'touch target may grow with wrapped text')
+    assert.deepEqual(share.whileTap, reducedMotion ? undefined : { scale: 0.96 })
+    for (let click = 0; click < 2; click++) {
+      share.onClick()
+      assert.deepEqual(globalThis.__profileShare, { kind: 'level', id: 1, name: 'Первый участник', xp: 250 })
+    }
+  }
+  globalThis.__profileFixture.me = { ...globalThis.__profileFixture.me, id: 987654, name: 'Другое очень длинное имя участника', xp: 9200 }
+  globalThis.__profileButtons = []
+  const html = renderToStaticMarkup(createElement(Profile))
+  const card = html.match(/aria-label="Моя карточка участника">([\s\S]*?)<\/section>/)?.[1]
+  assert.match(card, /Другое очень длинное имя участника/)
+  assert.match(card, /987654/)
+  assert.match(card, /9200.*XP/)
+  assert.doesNotMatch(card, /Первый участник/)
+  globalThis.__profileButtons.find(button => button.className.includes('focus-visible:outline-offset-4')).onClick()
+  assert.deepEqual(globalThis.__profileShare, { kind: 'level', id: 987654, name: 'Другое очень длинное имя участника', xp: 9200 })
+  delete globalThis.__profileFixture; delete globalThis.__profileTilt; delete globalThis.__profileButtons
+  delete globalThis.__profileShare; delete globalThis.__profileReducedMotion
 })
 
 

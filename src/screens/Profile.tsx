@@ -58,6 +58,9 @@ export function Profile() {
       <section className="mb-6 px-5" aria-label="Мой профиль">
         <p className="text-xs font-semibold uppercase tracking-wider text-violet">Моя берлога</p>
         <h1 className="mt-2 font-display text-[27px] font-semibold">Профиль</h1>
+        <section className="mt-5" aria-label="Моя карточка участника">
+          <HoloCard me={me} />
+        </section>
         <Tap className="mt-5 flex w-full items-center justify-between rounded-2xl border border-line bg-card p-4 text-left" onClick={()=>push({type:'learning',path:'/og-practice'})}><span><b className="block text-sm">Моё обучение</b><span className="mt-1 block text-xs text-mute">Курсы, доступы и следующий урок</span></span><ChevronRight size={18}/></Tap>
         <Tap onClick={() => push({type:'club'})} className="mt-3 flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-line bg-card p-4 text-left"><span><b className="block text-sm">Доступ к клубу</b><span className="mt-1 block text-xs text-mute">Подписка на клуб. Курсы приобретаются отдельно.</span></span><ChevronRight size={18} className="shrink-0"/></Tap>
         <h2 className="mt-5 text-sm font-semibold">Моя библиотека</h2>
@@ -142,9 +145,6 @@ export function Profile() {
         <summary className="mx-5 flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 [&::-webkit-details-marker]:hidden">
           <span><span className="block text-sm font-semibold">Уровни и достижения</span><span className="mt-1 block text-xs text-mute">Уровень {lvl.index} · открыто {earned} из {ACHIEVEMENTS.length}</span></span><ChevronRight size={18} className="shrink-0 transition-transform group-open:rotate-90" aria-hidden="true" />
         </summary>
-      <div className="mt-4 px-5">
-        <HoloCard me={me} />
-      </div>
       <div className="mt-4 grid grid-cols-2 gap-2 px-5 min-[360px]:grid-cols-4" aria-label="Статистика профиля">
         <Stat emoji="⚡" value={me.xp} label="XP" />
         <Stat emoji="🔥" value={me.streak} label="стрик" />
@@ -298,18 +298,19 @@ function HoloCard({ me }: { me: Me }) {
         className="relative min-h-[220px] overflow-hidden rounded-[28px] border border-white/15 p-5 shadow-[0_28px_60px_-24px_rgb(140_110_255/0.7)]"
       >
         <motion.div
-          className="absolute inset-0 opacity-45 mix-blend-color-dodge"
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-45 mix-blend-color-dodge"
           style={{
             backgroundImage: 'repeating-linear-gradient(115deg, #ff7ac6 0%, #a58bff 10%, #7bebc0 20%, #86cfff 30%, #ffcf6b 40%, #ff7ac6 50%)',
             backgroundSize: '300% 300%',
             backgroundPosition: foilPos,
           }}
         />
-        <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: 'radial-gradient(rgb(255 255 255 / 0.9) 1px, transparent 1.4px)', backgroundSize: '13px 13px' }} />
-        <motion.div className="absolute inset-0 mix-blend-overlay" style={{ background: glare }} />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.16]" style={{ backgroundImage: 'radial-gradient(rgb(255 255 255 / 0.9) 1px, transparent 1.4px)', backgroundSize: '13px 13px' }} />
+        <motion.div aria-hidden="true" className="pointer-events-none absolute inset-0 mix-blend-overlay" style={{ background: glare }} />
 
         <div className="relative flex min-h-[178px] flex-col text-white" style={{ transform: 'translateZ(28px)' }}>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-display text-[15px] font-bold tracking-tight">
               OG <span className="rounded-md bg-white px-1.5 py-0.5 text-[#1a1436]">CRE8R²</span>
             </p>
@@ -328,16 +329,16 @@ function HoloCard({ me }: { me: Me }) {
             </div>
           </div>
 
-          <div className="mt-4 flex items-end justify-between">
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-2">
             <p className="font-mono text-[11px] tracking-[0.18em] text-white/55">№ {String(me.id).slice(-6).padStart(6, '0')}</p>
             <p className="font-display text-[13px] font-semibold">
-              <Counter value={me.xp} /> XP
+              {reduceMotion ? me.xp : <Counter value={me.xp} />} XP
             </p>
           </div>
         </div>
       </motion.div>
-      <Tap onClick={() => useStore.setState({ share: levelCard(me) })} className="mt-3 flex h-[48px] w-full items-center justify-center gap-2 rounded-[18px] border border-line bg-card/80 text-[14px] font-semibold">
-        <Share2 size={17} /> Поделиться карточкой
+      <Tap whileTap={reduceMotion ? undefined : { scale: 0.96 }} onClick={() => useStore.setState({ share: levelCard(me) })} className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-line bg-card/80 px-3 py-3 text-[14px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet">
+        <Share2 size={17} className="shrink-0" aria-hidden="true" /> Поделиться карточкой
       </Tap>
     </div>
   )
