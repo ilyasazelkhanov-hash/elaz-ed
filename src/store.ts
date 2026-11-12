@@ -27,6 +27,7 @@ export type Overlay =
   | { type: 'stories'; id: number }
   | { type: 'course'; id: number; from?: Inset }
   | { type: 'lab' }
+  | { type: 'companion-settings' }
   | { type: 'journey' | 'club' | 'services' }
   | { type: 'academy' | 'learning'; path?: string }
   | { type: 'admin' }

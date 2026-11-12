@@ -13,6 +13,7 @@ import { FocusLayer } from './FocusLayer'
 import { CourseScreen } from './screens/Course'
 import { LegacyCourse } from './screens/LegacyCourse'
 import { Home } from './screens/Home'
+import { CompanionSettings } from './screens/home/Companion'
 import { Blog } from './screens/Blog'
 import { LessonScreen } from './screens/Lesson'
 import { Profile } from './screens/Profile'
@@ -163,7 +164,7 @@ function Shell() {
 
       <AnimatePresence>
         {stack.map((o, i) => (
-          <FocusLayer key={overlayKey(o, i)} active={i === stack.length - 1 && !reward && !share} label={o.type === 'lesson' ? 'Публикация' : 'Экран приложения'}>
+          <FocusLayer key={overlayKey(o, i)} active={i === stack.length - 1 && !reward && !share} label={o.type === 'companion-settings' ? 'Настроить своего Dots' : o.type === 'lesson' ? 'Публикация' : 'Экран приложения'} onClose={o.type === 'companion-settings' ? pop : undefined}>
             <OverlayView overlay={o} />
             {i === stack.length - 1 && !reward && !share && <RefreshNotice />}
           </FocusLayer>
@@ -200,6 +201,7 @@ function overlayKey(o: Overlay, i: number) {
 function OverlayView({ overlay }: { overlay: Overlay }) {
   const isAdmin=useStore(s=>s.me?.is_admin)
   switch (overlay.type) {
+    case 'companion-settings': return <CompanionSettings/>
     case 'learning': return <Suspense fallback={null}><CoursesScreen path={overlay.path}/></Suspense>
     case 'academy': return <Suspense fallback={null}><AcademyScreen path={overlay.path}/></Suspense>
     case 'journey': return <Suspense fallback={null}><JourneyScreen/></Suspense>

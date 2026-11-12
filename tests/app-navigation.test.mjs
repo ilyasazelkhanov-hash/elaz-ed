@@ -116,14 +116,27 @@ test('history state contains no editor data; fresh binding restores only explici
   assert.deepEqual(navigationFromHash('#/blog/9007199254740993'),{tab:'home',stack:[]})
 })
 
-test('zoom is enabled, news precedes rewards, and profile groups optional destinations', async () => {
+test('zoom is enabled, daily rituals follow Dots, and profile groups optional destinations', async () => {
   const html=await readFile(new URL('../index.html',import.meta.url),'utf8')
   assert.doesNotMatch(html,/maximum-scale|user-scalable/); assert.match(html,/viewport-fit=cover/)
   const home=await readFile(new URL('../src/screens/Home.tsx',import.meta.url),'utf8')
-  assert.ok(home.indexOf('aria-label="Последние новости"')<home.indexOf('aria-label="Бонус дня и стрик"'))
+  assert.ok(home.indexOf('<Companion')<home.indexOf('aria-label="Бонус дня и стрик"') && home.indexOf('aria-label="Бонус дня и стрик"')<home.indexOf('<AdventBanner') && home.indexOf('<AdventBanner')<home.indexOf('aria-label="Последние новости"'))
   const profile=await readFile(new URL('../src/screens/Profile.tsx',import.meta.url),'utf8')
   assert.ok(profile.indexOf('Моё обучение')<profile.indexOf('Настройки'))
   assert.ok(profile.indexOf('Настройки')<profile.indexOf('<HoloCard'))
   assert.ok(profile.indexOf('<details')<profile.indexOf('label:\'Рейтинг\''))
   assert.ok(profile.lastIndexOf('<details')<profile.indexOf('onClick={()=>push({type:\'academy\''))
+})
+
+test('Dots settings use one real navigation entry, Back/Forward, close and no personal data in history', async () => {
+ const h=harness();h.push({type:'companion-settings'})
+ assert.equal(h.records.length,2);assert.equal(h.browser.location.hash,'')
+ assert.doesNotMatch(JSON.stringify(h.browser.history.state),/name|draft|color|accessory/)
+ h.browser.history.back();await tick();assert.deepEqual(h.value.stack,[]);assert.equal(h.value.tab,'home')
+ h.browser.history.go(1);await tick();assert.deepEqual(h.value.stack,[{type:'companion-settings'}])
+ h.pop();await tick();assert.deepEqual(h.value.stack,[])
+ h.close()
+ const app=await readFile(new URL('../src/App.tsx',import.meta.url),'utf8')
+ assert.match(app,/case 'companion-settings': return <CompanionSettings\/>/)
+ assert.match(app,/onClose=\{o.type === 'companion-settings' \? pop : undefined\}/)
 })
