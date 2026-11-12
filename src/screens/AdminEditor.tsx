@@ -153,7 +153,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
   }
 
   const remove = async () => {
-    if (!d.id || !(await confirmDialog(`Удалить «${d.title}»? ${post?'Публикация исчезнет из блога.':story?'Сторис исчезнет из подборки.':'Прогресс подписчиков по нему тоже пропадёт.'}`))) return
+    if (!d.id || !(await confirmDialog(`Удалить «${d.title}»? Это необратимо. Связанные результаты и записи могут быть удалены. Лучше снять материал с публикации, если нужно только скрыть его.`))) return
     setBusy('delete')
     try {
       await api.adminDelete(d.id)
@@ -177,18 +177,12 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(130px + var(--bottom))' }}>
         <Header
           title={story ? (d.id?'Редактирование сторис':'Новая сторис') : post ? (d.id?'Редактирование публикации':'Новая публикация') : 'Архивный урок'}
-          right={
-            d.id ? (
-              <Tap onClick={remove} aria-label="Удалить" className="grid h-10 w-10 place-items-center rounded-full border border-line bg-card text-rose">
-                {busy === 'delete' ? <Spinner size={18} /> : <Trash2 size={18} />}
-              </Tap>
-            ) : undefined
-          }
+          right={<span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${d.published?'bg-mint/15 text-mint':'bg-amber/15 text-amber'}`}>{d.published?'Опубликовано':'Черновик'}</span>}
         />
 
         <div className="px-5">
           <p className="mt-4 text-sm leading-relaxed text-mute">{story?'Настройки сторис: слайды, оформление и награда за просмотр.':post?'Настройки блога: текст статьи, обложка, категория и продвижение.':'Материал старого курса. Актуальные программы и задания редактируются в разделе «Материалы курсов».'}</p>
-          <div className="mt-5 flex items-center gap-3.5">
+          <details className="mt-4 rounded-2xl border border-line p-3"><summary tabIndex={0} className="min-h-11 cursor-pointer py-2 text-sm font-semibold">Оформление и цвет</summary><div className="mt-3 flex items-center gap-3.5">
             <EmojiTile emoji={d.emoji || '✨'} gradient={d.gradient} size={68} radius={22} />
             <div className="min-w-0 flex-1">
               <input value={d.emoji} onChange={(e) => set('emoji', e.target.value)} placeholder="Эмодзи" maxLength={8} className={`${field} mb-2 py-2.5`} />
@@ -200,16 +194,18 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             </div>
           </div>
 
+          </details>
+
           <Label>Заголовок</Label>
-          <input value={d.title} onChange={(e) => set('title', e.target.value)} placeholder={story ? 'Вышло обновление' : 'Как собрать бота за вечер'} maxLength={120} className={field} />
+          <input aria-label="Заголовок" value={d.title} onChange={(e) => set('title', e.target.value)} placeholder={story ? 'Вышло обновление' : 'Как собрать бота за вечер'} maxLength={120} className={field} />
 
           {!story && (
             <>
               <Label>Подзаголовок</Label>
-              <input value={d.subtitle} onChange={(e) => set('subtitle', e.target.value)} placeholder={post?'Одна строка: о чём публикация':'Одна строка: о чём урок'} maxLength={200} className={field} />
+              <input aria-label="Подзаголовок" value={d.subtitle} onChange={(e) => set('subtitle', e.target.value)} placeholder={post?'Одна строка: о чём публикация':'Одна строка: о чём урок'} maxLength={200} className={field} />
 
               <Label>Категория</Label>
-              <input value={d.category} onChange={(e) => set('category', e.target.value)} placeholder="Блог" maxLength={30} className={field} />
+              <input aria-label="Категория" value={d.category} onChange={(e) => set('category', e.target.value)} placeholder="Блог" maxLength={30} className={field} />
               <div className="no-bar mt-2 flex gap-1.5 overflow-x-auto">
                 {[...new Set([...categories, 'Блог', 'Туториалы', 'Промпты', 'Разборы'])].map((c) => (
                   <Tap key={c} feedback="select" onClick={() => set('category', c)} className={`h-8 shrink-0 rounded-full border px-3 text-[12.5px] font-semibold ${d.category === c ? 'border-violet/60 bg-violet/15 text-ink' : 'border-line text-mute'}`}>
@@ -229,6 +225,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             ))}
           </div>
           <textarea
+            aria-label={story ? 'Слайды' : 'Текст материала'}
             ref={area}
             value={d.body}
             onChange={(e) => set('body', e.target.value)}
@@ -237,25 +234,26 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             className={`${field} resize-y font-mono text-[14.5px] leading-relaxed`}
           />
 
-          {post && <EditorialFields value={d.editorial} onChange={value => set('editorial', value)}/>}
+          {post && <details className="mt-5 rounded-2xl border border-line p-3"><summary tabIndex={0} className="min-h-11 cursor-pointer py-2 text-sm font-semibold">Первоисточники и проверка<span className="mt-1 block font-normal text-mute">{editorialReviewLabel(d.editorial)}</span></summary><EditorialFields value={d.editorial} onChange={value => set('editorial', value)}/></details>}
 
           {!story && (
-            <>
+            <details className="mt-5 rounded-2xl border border-line p-3"><summary tabIndex={0} className="min-h-11 cursor-pointer py-2 text-sm font-semibold">Обложка и медиа{d.cover_url ? ' · добавлены' : ''}</summary>
               <Label hint="YouTube, Rutube, VK или mp4">Видео</Label>
               <input value={d.video_url ?? ''} onChange={(e) => set('video_url', e.target.value || null)} placeholder="https://" inputMode="url" className={field} />
 
               <Label hint="HTTPS-ссылка: JPEG, PNG, WebP или GIF">Обложка</Label>
               <input value={d.cover_url ?? ''} onChange={(e) => set('cover_url', e.target.value || null)} placeholder="https://" inputMode="url" className={field} />
               {d.cover_url && /^https:\/\//i.test(d.cover_url) && <CoverImage src={d.cover_url} className="mt-3 max-h-64 w-full rounded-2xl object-cover"/>}
-              <p className="mt-2 text-xs leading-relaxed text-mute">Для GIF используй прямую ссылку с .gif на заранее проверенный файл. Автопубликация принимает до 2 МБ. Редактор сохраняет ссылку без проверки содержимого; при уменьшении движения доступна кнопка воспроизведения.</p>
+              <p className="mt-2 text-xs leading-relaxed text-mute">Для GIF используй прямую ссылку с .gif на заранее проверенный файл. Автопубликация принимает до 2 МБ. Редактор сохраняет ссылку без проверки содержимого; движение управляется настройкой GIF в профиле и системной настройкой уменьшения движения.</p>
 
               {!post&&<>
               <Label hint="если пусто - копируется весь урок">Текст для «Скопировать для нейронки»</Label>
               <textarea value={d.copy_text ?? ''} onChange={(e) => set('copy_text', e.target.value || null)} placeholder="Готовый промпт" rows={3} className={`${field} resize-y font-mono text-[14.5px]`} />
               </>}
-            </>
+            </details>
           )}
 
+          <details className="mt-5 rounded-2xl border border-line p-3"><summary tabIndex={0} className="min-h-11 cursor-pointer py-2 text-sm font-semibold">Дополнительные настройки</summary>
           <div className="mt-5 grid grid-cols-2 gap-2">
             {!post&&<div>
               <p className="mb-2 text-[13px] font-semibold text-mute">XP за {story ? 'просмотр' : 'урок'}</p>
@@ -362,17 +360,20 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             </>
           )}
 
+          </details>
+
           {d.id && d.published && !d.course_id && d.kind === 'lesson' && (
             <Tap onClick={announce} disabled={!!busy} className="mt-5 flex h-[52px] w-full items-center justify-center gap-2 rounded-[18px] border border-line bg-card2 text-[14.5px] font-semibold">
               {busy === 'announce' ? <Spinner size={18} /> : <Megaphone size={18} />} Анонсировать в канале
             </Tap>
           )}
+          {d.id && <details className="mt-6 rounded-2xl border border-rose/30 p-3"><summary tabIndex={0} className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-rose">Удаление материала</summary><p className="mt-2 text-sm leading-relaxed text-mute">Удаление необратимо: могут быть удалены связанные результаты и записи. Чтобы скрыть материал от читателей и сохранить данные, сними его с публикации.</p><Tap onClick={remove} disabled={!!busy} className="mt-3 min-h-12 w-full rounded-xl border border-rose/40 px-3 text-sm font-semibold text-rose">{busy==='delete'?<Spinner size={18}/>:<><Trash2 size={16} className="mr-2 inline"/>Удалить навсегда</>}</Tap></details>}
         </div>
       </div>
 
       <div className="absolute inset-x-0 bottom-0 flex gap-2 px-4 pt-8" style={{ paddingBottom: 'calc(14px + var(--bottom))', background: 'linear-gradient(to top, var(--color-bg) 65%, transparent)' }}>
-        <Tap onClick={preview} disabled={!!busy} aria-label="Сохранить и посмотреть" className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-[20px] border border-line bg-card2">
-          <Eye size={20} />
+        <Tap onClick={preview} disabled={!!busy} aria-label="Сохранить и посмотреть" className="flex h-[54px] min-w-0 flex-col items-center justify-center rounded-[20px] border border-line bg-card2 px-3 text-[10px] leading-tight">
+          <Eye size={18} /><span className="mt-1">Сохранить<br/>и смотреть</span>
         </Tap>
         {d.published ? (
           <>

@@ -54,7 +54,8 @@
     "test:highlights": "node --experimental-strip-types --test tests/highlights-reading.test.mjs tests/story-interaction.test.mjs",
     "test:plain-dashes": "node --experimental-strip-types --test tests/plain-dashes.test.mjs",
     "test:practice-artifact": "node --experimental-strip-types --test tests/practice-artifact.test.mjs tests/saved-practice.test.mjs",
-    "test:learner-accessibility": "node --test tests/learner-accessibility.test.mjs"
+    "test:learner-accessibility": "node --test tests/learner-accessibility.test.mjs",
+    "test:admin-usability": "node --experimental-strip-types --test tests/admin-usability.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",

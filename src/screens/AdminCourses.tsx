@@ -27,6 +27,8 @@ export function CoursesAdminScreen() {
   const { guard, toast, boot } = useStore.getState()
   const [courses, setCourses] = useState<AdminCourse[] | null>(null)
   const [requests, setRequests] = useState<AccessRequest[]>([])
+  const [section, setSection] = useState<'requests'|'courses'|'payments'>('requests')
+  const [loadError, setLoadError] = useState('')
   const [deciding, setDeciding] = useState<string | null>(null)
   const [payments, setPayments] = useState<Payment[]>([])
   const [paymentQuery, setPaymentQuery] = useState('')
@@ -56,6 +58,7 @@ export function CoursesAdminScreen() {
   const [unknownRefunds, setUnknownRefunds] = useState<Set<number>>(new Set())
 
   const load = () => {
+    setLoadError('')
     void loadPayments()
     return api
       .adminCourses()
@@ -65,6 +68,7 @@ export function CoursesAdminScreen() {
       })
       .catch((e) => {
         guard(e)
+        setLoadError(errorText(e))
         toast(errorText(e))
       })
   }
@@ -125,10 +129,14 @@ export function CoursesAdminScreen() {
   return (
     <motion.div {...sheet} className="absolute inset-0 z-[31] bg-bg">
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(40px + var(--bottom))' }}>
-        <Header title="Курсы" />
+        <Header title="Архив и доступы" />
 
         <div className="px-5">
-          {requests.length > 0 && (
+          <nav aria-label="Управление архивными курсами" className="mt-4 grid grid-cols-3 gap-1">{([['requests','Заявки'],['courses','Курсы'],['payments','Покупки']] as const).map(([value,label])=><Tap key={value} aria-pressed={section===value} onClick={()=>setSection(value)} className={`min-h-12 rounded-xl border px-2 text-sm ${section===value?'border-violet bg-violet/10 font-semibold':'border-line text-mute'}`}>{label}{value==='requests'&&requests.length>0?` · ${requests.length}`:''}</Tap>)}</nav>
+          {loadError&&<div role="alert" className="mt-4 rounded-2xl border border-line p-3 text-sm"><p>Не удалось загрузить курсы и заявки. {loadError}</p><Tap onClick={()=>void load()} className="min-h-11 font-semibold text-violet">Повторить загрузку</Tap></div>}
+          {section==='requests'&&!loadError&&!courses&&<p role="status" className="py-6 text-sm text-mute">Загружаем заявки…</p>}
+          {section==='requests'&&!loadError&&courses&&requests.length===0&&<p role="status" className="py-6 text-sm text-mute">Новых заявок нет.</p>}
+          {section==='requests'&&requests.length > 0 && (
             <>
               <h2 className="mb-3 mt-6 font-display text-[15px] font-semibold">Заявки</h2>
               <div className="space-y-2">
@@ -156,6 +164,7 @@ export function CoursesAdminScreen() {
             </>
           )}
 
+          {section==='courses'&&<>
           <Cta className="mt-6 w-full" onClick={() => push({ type: 'course-editor', course: null })}>
             <Plus size={18} /> Новый курс
           </Cta>
@@ -180,14 +189,15 @@ export function CoursesAdminScreen() {
             {courses?.length === 0 && <p className="py-8 text-center text-[14px] text-mute">Курсов пока нет. Создай первый и добавь в него уроки в редакторе урока.</p>}
           </div>
 
-          {(
+          </>}
+          {section==='payments'&&(
             <>
               <h2 className="mb-3 mt-7 font-display text-[15px] font-semibold">Покупки</h2>
-              <form onSubmit={e => { e.preventDefault(); paymentSearch.current = paymentQuery; void loadPayments() }} className="mb-3 flex gap-2">
-                <input aria-label="Поиск покупок" placeholder="Имя, @username, ID или номер платежа" value={paymentQuery} onChange={e => setPaymentQuery(e.target.value)} className={field} />
-                <button type="submit" disabled={paymentLoading}>Найти</button>
+              <form onSubmit={e => { e.preventDefault(); paymentSearch.current = paymentQuery; void loadPayments() }} className="mb-3 flex flex-wrap gap-2">
+                <input aria-label="Поиск покупок" placeholder="Имя, @username, ID или номер платежа" value={paymentQuery} onChange={e => setPaymentQuery(e.target.value)} className={`${field} min-w-0 flex-1 basis-48`} />
+                <button type="submit" disabled={paymentLoading} className="min-h-12 rounded-xl border border-line px-4 font-semibold">Найти</button>
               </form>
-              <button onClick={() => void loadPayments()} disabled={paymentLoading || refunding !== null} className="mb-3 text-[13px] font-semibold text-violet disabled:opacity-50">Обновить статусы</button>
+              <button onClick={() => void loadPayments()} disabled={paymentLoading || refunding !== null} className="mb-3 min-h-11 px-2 text-[13px] font-semibold text-violet disabled:opacity-50">Обновить статусы</button>
               {paymentError && <div role="alert" className="mb-3 text-[14px] text-mute">{paymentError} <button onClick={() => void loadPayments()}>Повторить</button></div>}
               {paymentLoading && <Spinner size={20} />}
               {!paymentLoading && !paymentError && payments.length === 0 && <p className="text-mute">Покупки не найдены</p>}
