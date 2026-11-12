@@ -19,6 +19,23 @@ test('free start has five standalone usable exercises, without copying a paid co
  assert.ok(beginnerGlossary.every(([term,definition])=>term.length>3&&definition.length>30))
 })
 
+test('targeted worked examples teach correction without pretending to grade the learner',()=>{
+ const examples=beginnerGuides.filter(guide=>guide.workedExample)
+ assert.deepEqual(examples.map(guide=>guide.id),['first-request','check-answer'])
+ for(const guide of examples){
+  const example=guide.workedExample
+  for(const field of ['question','weak','issue','improved','explanation'])assert.ok(example[field].length>30,`${guide.id}:${field}`)
+  assert.equal(example.hints.length,3)
+  assert.ok(example.hints.every(hint=>hint.length>60))
+  assert.doesNotMatch(JSON.stringify(example),/[—–]/)
+  assert.notEqual(example.improved,guide.prompt,'worked comparison is not another copy of the prompt')
+ }
+ const check=examples.find(guide=>guide.id==='check-answer').workedExample
+ assert.match(check.improved,/12 \/ 200 × 100 = 6%/)
+ assert.match(check.improved,/нельзя определить окупаемость/)
+ assert.match(examples[0].workedExample.explanation,/не гарантирует/)
+})
+
 const rgb=hex=>hex.replace('#','').match(/../g).map(value=>parseInt(value,16)/255)
 const luminance=hex=>rgb(hex).map(value=>value<=.04045?value/12.92:((value+.055)/1.055)**2.4).reduce((sum,value,index)=>sum+value*[.2126,.7152,.0722][index],0)
 const contrast=(a,b)=>{const values=[luminance(a),luminance(b)].sort((a,b)=>b-a);return(values[0]+.05)/(values[1]+.05)}
@@ -54,6 +71,18 @@ test('free guides expose tool access conditions before practice and a safe concr
    assert.match(html,/покупать подписку для этого разбора не требуется/)
    assert.match(html,/вымышленные или обезличенные данные/)
    assert.match(html,/Это не проверка результата, без оценки и XP/)
+   if(guide.workedExample){
+    assert.match(html,/Найди слабое место/)
+    assert.match(html,/<details><summary>Посмотреть разбор и улучшенный вариант<\/summary>/)
+    assert.match(html,/<details><summary>Если застрял на своей задаче<\/summary>/)
+    assert.ok(!html.includes('<details open'))
+    assert.ok(html.includes(guide.workedExample.improved))
+    assert.match(html,/не оценка твоей работы/)
+    assert.ok(!html.includes(guide.example),'old prose example is replaced, not duplicated')
+   }else{
+    assert.ok(html.includes(guide.example))
+    assert.ok(!html.includes('Найди слабое место'))
+   }
   }
  }finally{delete globalThis.__freeStartHarness}
  const source=await readFile(file,'utf8')
