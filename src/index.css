@@ -702,6 +702,24 @@
 .prose-story p {
   opacity: 0.86;
 }
+/* Story gradients have their own ink; theme violet is not a safe link color here. */
+.prose-story a {
+  color: #181126;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 0.08em 0.24em;
+  border-radius: 0.22em;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.16em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.prose-story a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
 
 /* Снег в шапке адвента. */
 

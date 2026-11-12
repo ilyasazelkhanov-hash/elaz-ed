@@ -38,3 +38,31 @@ test('curated highlights contain verified offers, not fabricated universal disco
  assert.equal(activeStories(payload.items,today).length,4)
  assert.equal(activeStories(payload.items,new Date('2026-11-19T00:00:00Z')).length,1)
 })
+
+
+test('story links retain contrast across all gradients and wrap with visible keyboard focus',async()=>{
+ const {readFile}=await import('node:fs/promises')
+ const {GRADIENTS}=await import('../src/lib/game.ts')
+ const css=await readFile(new URL('../src/index.css',import.meta.url),'utf8')
+ const rule=css.match(/\.prose-story a \{([^}]+)\}/)?.[1]??''
+ const hex=rule.match(/color:\s*(#[0-9a-f]{6})/i)?.[1]
+ const surface=rule.match(/background:\s*rgba\(([^)]+)\)/)?.[1].split(',').map(Number)
+ assert.ok(hex&&surface?.length===4,'story links need an explicit independent ink and surface')
+ assert.match(rule,/overflow-wrap: anywhere/);assert.match(rule,/box-decoration-break: clone/)
+ assert.match(rule,/text-decoration: underline/);assert.match(css,/\.prose-story a:focus-visible \{[^}]*outline: 2px solid currentColor/)
+ const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16))
+ const blend=(top,bottom,alpha)=>top.map((v,i)=>v*alpha+bottom[i]*(1-alpha))
+ const luminance=rgb=>rgb.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0)
+ const contrast=(a,b)=>{const [lo,hi]=[luminance(a),luminance(b)].sort((a,b)=>a-b);return(hi+.05)/(lo+.05)}
+ const opacity=Number(css.match(/\.prose-story p \{[^}]*opacity:\s*([\d.]+)/)?.[1]??1)
+ const ink=rgb(hex)
+ for(const [name,gradient] of Object.entries(GRADIENTS)){
+  for(let i=1;i<gradient.stops.length;i++)for(let step=0;step<=100;step++){
+   const background=blend(rgb(gradient.stops[i][0]),rgb(gradient.stops[i-1][0]),step/100)
+   const surfacePixel=blend(surface.slice(0,3),background,surface[3])
+   const renderedSurface=blend(surfacePixel,background,opacity)
+   const renderedInk=blend(ink,background,opacity)
+   assert.ok(contrast(renderedInk,renderedSurface)>=7,`${name} step ${step} must remain AAA even inside the faded story paragraph`)
+  }
+ }
+})
