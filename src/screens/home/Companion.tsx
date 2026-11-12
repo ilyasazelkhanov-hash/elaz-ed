@@ -125,21 +125,19 @@ export function Companion({ userId }: { userId: number }) {
       </button>
       <div className="og-dots-conversation">
         <div className="og-dots-heading"><span className="og-dots-name">{look.name} <span>твой спутник</span></span><span className="og-dots-heading-actions">{interactions.preferences.voice && <button type="button" className="og-dots-settings" onClick={() => interactions.readAloud(`${interactions.moment || cue.line} ${cue.detail}`)} aria-label={spoken ? 'Остановить чтение' : 'Прочитать реплику'} aria-pressed={spoken}>{spoken ? <Square size={15} aria-hidden="true"/> : <Volume2 size={17} aria-hidden="true"/>}</button>}<button type="button" className="og-dots-settings" onClick={() => push({ type: 'companion-settings' })} aria-label="Настроить Dots" title="Имя, образ и анимации"><SlidersHorizontal size={17} aria-hidden="true"/></button></span></div>
-      <button type="button" className="og-dots-speech" onClick={navigate} aria-label={`${cue.action}: ${cue.detail}`}>
+      <button type="button" className="og-dots-speech" onClick={navigate} aria-label={`${interactions.moment || cue.line} ${cue.detail} ${cue.action}.`}>
         {/* The cloud moves around the copy, never through it. All artwork is non-interactive. */}
         <span className="og-dots-cloud" aria-hidden="true">
           <svg className="og-dots-cloud-surface" viewBox="0 0 360 180" preserveAspectRatio="none" focusable="false">
             <defs><linearGradient id={cloudId} x1="0" y1="0" x2="1" y2="1"><stop className="og-dots-cloud-tint"/><stop offset=".58" className="og-dots-cloud-paper"/><stop offset="1" className="og-dots-cloud-warm"/></linearGradient></defs>
-            <path fill={`url(#${cloudId})`} vectorEffect="non-scaling-stroke" d="M32 20C47 6 72 3 96 9C119 0 146 3 165 9C193 2 224 3 246 12C274 5 304 15 314 31C337 32 351 49 347 68C360 85 356 108 344 122C351 144 332 162 306 160C286 176 257 178 234 170C209 180 181 177 159 172C134 179 106 178 86 171C61 179 37 169 32 153C12 151 3 132 11 115C0 95 5 74 16 62C8 43 16 28 32 20Z"/>
+            <path fill={`url(#${cloudId})`} vectorEffect="non-scaling-stroke" d="M41 8C116 3 236 4 299 9C330 11 348 25 351 51C354 77 350 115 346 141C343 161 326 172 299 173C219 177 139 171 63 173C37 174 20 163 17 143L14 111C13 100 10 94 3 90C14 89 20 85 21 75L22 42C23 22 28 10 41 8Z"/>
           </svg>
-          <span className="og-dots-cloud-tail"><i/><i/><i/></span>
-          <span key={`${cue.id}:${reactionId}`} className="og-dots-cloud-glint">✦</span>
         </span>
         <span key={cue.id} className="og-dots-copy">
           <span className="og-dots-line">{interactions.moment || cue.line}</span>
           <span className="og-dots-detail">{cue.detail}</span>
         </span>
-        <span className="og-dots-action"><span>{cue.action}</span><span className="og-dots-action-icon"><ArrowUpRight size={14} aria-hidden="true"/></span></span>
+        <span className="og-dots-action"><span>{cue.action}</span><ArrowUpRight size={14} aria-hidden="true"/></span>
       </button>
       </div>
       {/* Only user-requested changes are spoken; automatic copy changes stay quiet. */}

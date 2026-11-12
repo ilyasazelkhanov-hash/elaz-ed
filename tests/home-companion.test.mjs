@@ -88,15 +88,16 @@ test('single compact layout exposes separate real action, pet and settings; anim
  code=code.replace(/import \{ DotsCharacter \} from ["']\.\/dots\/DotsCharacter["'];?/g,'const { DotsCharacter } = globalThis.__companionHarness;')
  code=code.replace(/import \{ useDotsInteractions \} from ["']\.\/dots\/useInteractions["'];?/g,'const { useDotsInteractions } = globalThis.__companionHarness;')
  for(const name of ['react','react-dom','react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
- let reduced=false, paused=false, voice=false
+ let reduced=false, paused=false, voice=false, moment=''
  let state={feed:[card(8)],advent,me:{daily_claimed:false},courses:[],stack:[],reward:null,share:null,push(){}}
- globalThis.__companionHarness={...companion,useDotsInteractions:()=>({preferences:{voice,lantern:false},voiceState:'idle',motionStatus:'off',moment:'',readAloud(){}}),DotsCharacter:()=>null,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>({...parseCompanionSession(null),paused}),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
+ globalThis.__companionHarness={...companion,useDotsInteractions:()=>({preferences:{voice,lantern:false},voiceState:'idle',motionStatus:'off',moment,readAloud(){}}),DotsCharacter:()=>null,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>({...parseCompanionSession(null),paused}),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
  useStore:selector=>selector(state)}
  try{
   const {Companion}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
   let html=renderToStaticMarkup(createElement(Companion,{userId:1}))
   assert.match(html,/Луна: погладить и показать другую идею/);assert.match(html,/Настроить Dots/);assert.match(html,/К отметке дня/)
   assert.match(html,/role="status" aria-live="polite" aria-atomic="true"><\/span>/);assert.doesNotMatch(html,/data-collapsed|aria-expanded|Показать подсказку/)
+  assert.match(html,/aria-label="Привет! Начнём с маленькой победы\? Твоя отметка за день прямо подо мной\. К отметке дня\."/);
   assert.match(html,/data-color="mint"/);assert.match(html,/class="og-dots-cloud" aria-hidden="true"/)
   assert.match(html,/preserveAspectRatio="none" focusable="false"/);assert.match(html,/class="og-dots-copy"/)
   assert.match(html,/<span class="og-dots-action"><span>К отметке дня<\/span>/)
@@ -105,6 +106,7 @@ test('single compact layout exposes separate real action, pet and settings; anim
   const gradients=[...pair.matchAll(/<linearGradient id="([^"]+)"/g)].map(match=>match[1])
   assert.equal(gradients.length,2);assert.equal(new Set(gradients).size,2)
   for(const id of gradients)assert.ok(pair.includes(`fill="url(#${id})"`))
+  moment='Я рядом. Продолжим?';html=renderToStaticMarkup(createElement(Companion,{userId:1}));assert.match(html,/aria-label="Я рядом\. Продолжим\? Твоя отметка за день прямо подо мной\. К отметке дня\."/);moment='';
   reduced=true;html=renderToStaticMarkup(createElement(Companion,{userId:1}));assert.match(html,/data-moving="false"/)
   reduced=false;paused=true;html=renderToStaticMarkup(createElement(Companion,{userId:1}));assert.match(html,/data-moving="false"/)
   paused=false;state={...state,stack:[{type:'companion-settings'}]};html=renderToStaticMarkup(createElement(Companion,{userId:1}));assert.match(html,/data-moving="false"/)
@@ -121,7 +123,7 @@ test('single compact layout exposes separate real action, pet and settings; anim
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);assert.match(css,/min-width: 44px; min-height: 44px/);assert.doesNotMatch(css,/text-overflow: ellipsis|white-space: nowrap|line-clamp/)
 })
 
-test('thought-cloud separates moving art from stable copy and expands naturally on small screens',async()=>{
+test('compact thought surface keeps full wrapping without stacked ornaments or a second mobile row',async()=>{
  const css=await readFile(new URL('../src/screens/home/companion.css',import.meta.url),'utf8')
  const speech=css.match(/\.og-dots-speech \{([^}]+)\}/)?.[1]??''
  assert.match(speech,/position: relative/);assert.match(speech,/width: 100%/);assert.match(speech,/overflow-wrap: anywhere/)
@@ -129,8 +131,10 @@ test('thought-cloud separates moving art from stable copy and expands naturally 
  assert.match(css,/\.og-dots-cloud \{[^}]*pointer-events: none/)
  assert.match(css,/data-moving='true'\] \.og-dots-cloud-surface/)
  assert.match(css,/@keyframes og-dots-copy-in \{ from \{ opacity: \.55; \} to \{ opacity: 1; \} \}/)
- assert.match(css,/@media \(max-width: 359px\)/);assert.match(css,/\.og-dots-conversation \{ display: contents; \}/)
- assert.match(css,/\.og-dots-speech \{ grid-column: 1 \/ -1; grid-row: 2/)
- assert.match(css,/\.og-dots-action > span:first-child \{ min-width: 0; overflow-wrap: anywhere;/)
- assert.match(css,/\.og-dots-heading \{[^}]*min-width: 0/)
+ assert.match(css,/@media \(max-width: 359px\)/);assert.match(css,/grid-template-columns: 64px minmax\(0, 1fr\)/)
+ assert.doesNotMatch(css,/display: contents|grid-row: 2|og-dots-cloud-tail|og-dots-cloud-glint|og-dots-action-icon/)
+ assert.match(css,/\.og-dots-action > span \{ min-width: 0; overflow-wrap: anywhere;/)
+ assert.match(css,/\.og-dots-heading \{[^}]*min-width: 0[^}]*min-height: 44px/)
+ assert.match(css,/\.og-dots-settings \{[^}]*margin-block: 0;/)
+ assert.match(css,/\.og-dots-name \{[^}]*color: var\(--color-violet\)/)
 })

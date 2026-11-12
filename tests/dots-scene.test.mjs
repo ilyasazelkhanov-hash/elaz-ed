@@ -113,7 +113,7 @@ test('SSR provides a real local poster and decorative canvas for every look, ind
 test('speech still has full wrapping and scene has reduced-motion and static fallbacks',async()=>{
  const css=await readFile(new URL('../src/screens/home/companion.css',import.meta.url),'utf8')
  assert.doesNotMatch(css,/text-overflow:\s*ellipsis|white-space:\s*nowrap|line-clamp|max-height:\s*\d+px/)
- assert.match(css,/white-space: normal/);assert.match(css,/overflow-wrap: anywhere/);assert.match(css,/og-dots-cloud-tail/);assert.match(css,/og-dots-cloud-breathe/);assert.doesNotMatch(css,/clip-path|rotate\(45deg\)/)
+ assert.match(css,/white-space: normal/);assert.match(css,/overflow-wrap: anywhere/);assert.match(css,/og-dots-cloud-surface/);assert.match(css,/og-dots-cloud-breathe/);assert.doesNotMatch(css,/clip-path|rotate\(45deg\)/)
  assert.match(css,/grid-template-columns: 76px minmax\(0, 1fr\)/)
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);assert.match(css,/transform: none !important/)
  assert.doesNotMatch(css,/og-dots-raster-enter|og-dots-props|og-dots-plush-breathe/)
