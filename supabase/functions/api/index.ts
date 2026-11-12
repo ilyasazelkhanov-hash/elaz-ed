@@ -1009,6 +1009,7 @@ async function adminCourses(body: Row) {
     db.from('course_access').select('course_id'),
     db.from('access_requests').select('user_id,course_id,created_at,users(first_name,username)').eq('status', 'pending').order('created_at'),
   ])
+  if ([courses, access, requests].some((result) => result.error)) throw new HttpError(500, 'db')
   const students = new Map<number, number>()
   for (const a of access.data ?? []) students.set(a.course_id, (students.get(a.course_id) ?? 0) + 1)
   return {
@@ -1125,7 +1126,8 @@ async function adminAnalytics(body: Row) {
   await member(body, true)
   const { data, error } = await db.rpc('analytics_summary', { p_days: 14, p_tz: clampTz(body.tz) })
   if (error) throw new HttpError(500, 'db')
-  const { data: pays } = await db.from('payments').select('stars').is('refunded_at', null)
+  const { data: pays, error: paymentError } = await db.from('payments').select('stars').is('refunded_at', null)
+  if (paymentError) throw new HttpError(500, 'db')
   const stars = { total: (pays ?? []).reduce((n, p) => n + p.stars, 0), count: (pays ?? []).length }
   const discovery=await db.rpc('discovery_summary')
   if(discovery.error) console.error('discovery_summary unavailable',discovery.error.code ?? 'db')

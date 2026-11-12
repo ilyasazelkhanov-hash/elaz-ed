@@ -1472,6 +1472,27 @@ test('published standalone news cannot copy a course body while archived referen
  assert.equal(archived.body.news_eligible,false)
 })
 
+// Admin financial/access summaries must distinguish an outage from an empty dataset.
+test('admin financial summary fails instead of reporting zero revenue on database failure', async () => {
+  await everyoneBoots()
+  state.failNext = { table: 'payments', op: 'select' }
+  assert.deepEqual(await call('admin_analytics', {}, ADMIN), { status: 500, body: { error: 'db' } })
+  assert.equal(sent('refundStarPayment').length, 0)
+})
+
+test('admin financial summary keeps successful empty and nonempty results', async () => {
+  await everyoneBoots()
+  assert.deepEqual((await call('admin_analytics', {}, ADMIN)).body.stars, { total: 0, count: 0 })
+  state.tables.payments.push({id:1,stars:100,refunded_at:null},{id:2,stars:50,refunded_at:null},{id:3,stars:700,refunded_at:'2026-11-01'})
+  assert.deepEqual((await call('admin_analytics', {}, ADMIN)).body.stars, { total: 150, count: 2 })
+})
+
+for (const table of ['courses', 'course_access', 'access_requests']) test(`admin courses does not invent empty access data when ${table} fails`, async () => {
+  await everyoneBoots()
+  state.failNext = { table, op: 'select' }
+  assert.deepEqual(await call('admin_courses', {}, ADMIN), { status: 500, body: { error: 'db' } })
+})
+
 let failed = 0
 for (const { name, fn } of tests) {
   seed()
