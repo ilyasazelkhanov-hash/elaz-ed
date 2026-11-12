@@ -98,3 +98,15 @@ test('Modal close callback updates do not tear down its focus scope', () => {
   assert.match(source, /useLayoutEffect\(\(\) => \{ close.current = onClose \}, \[onClose\]\)/)
   assert.match(source, /mountModalFocus\(ref.current, \(\) => close.current\(\)\)[\s\S]*?\}, \[present\]\)/)
 })
+test('native summary without explicit tabindex participates in modal focus order', () => {
+  const { doc, root, first, last, key } = setup()
+  const summary = new Element(doc)
+  root.children = [first, summary, last]
+  root.querySelectorAll = selector => selector.split(',').map(value => value.trim()).includes('summary') ? root.children : [first, last]
+  const cleanup = mountModalFocus(root, () => {})
+  summary.focus()
+  assert.equal(key('Tab').prevented, false)
+  assert.equal(doc.activeElement, summary)
+  assert.equal(key('Tab', true).prevented, false)
+  cleanup()
+})

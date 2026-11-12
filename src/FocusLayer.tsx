@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion, useIsPresent } from 'motion/react'
 
-const controls = 'button, a[href], input, select, textarea, [tabindex], [contenteditable="true"], video[controls]'
+const controls = 'button, a[href], input, select, textarea, summary, [tabindex], [contenteditable="true"], audio[controls], video[controls]'
 
 /** One focus scope for the top screen, including loading and exiting screens. */
 export function FocusLayer({ active, label, children, onClose, className = 'absolute inset-0 z-30' }: {
@@ -30,8 +30,11 @@ export function FocusLayer({ active, label, children, onClose, className = 'abso
   useLayoutEffect(() => {
     const root = node.current
     if (!root || !enabled) return
-    const available = () => [...root.querySelectorAll<HTMLElement>(controls)].filter(el =>
-      el.tabIndex >= 0 && !el.matches(':disabled') && !el.closest('[inert]') && el.getClientRects().length > 0)
+    const available = () => [...root.querySelectorAll<HTMLElement>(controls)].filter(el => {
+      const visibility = el.ownerDocument?.defaultView?.getComputedStyle(el).visibility
+      return el.tabIndex >= 0 && !el.matches(':disabled') && !el.closest('[hidden], [inert], [aria-hidden="true"]') &&
+        visibility !== 'hidden' && visibility !== 'collapse' && el.getClientRects().length > 0
+    })
     const focus = () => (available()[0] ?? root).focus({ preventScroll: true })
     if (!root.contains(document.activeElement)) focus()
     const keydown = (event: KeyboardEvent) => {

@@ -1,4 +1,4 @@
-const controls = 'button, a[href], input, select, textarea, [tabindex], [contenteditable="true"], audio[controls], video[controls]'
+const controls = 'button, a[href], input, select, textarea, summary, [tabindex], [contenteditable="true"], audio[controls], video[controls]'
 const scopes: HTMLElement[] = []
 
 function available(element: HTMLElement) {
