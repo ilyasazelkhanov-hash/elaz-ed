@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises'
 import {transformWithOxc} from 'vite'
 import {createElement} from 'react'
 import {renderToStaticMarkup} from 'react-dom/server'
+import {activeStories} from '../src/lib/highlights.ts'
 
 let nonce=0
 async function load(file, mocks){
@@ -18,13 +19,14 @@ async function load(file, mocks){
 const button=({children,feedback,onClick,...props})=>createElement('button',props,children)
 
 test('home places one server XP target beside avatar and daily state replaces itself, without redundant greetings',async()=>{
- const state={me:{id:1,name:'Ильяс',xp:1234,streak:0,daily_claimed:false},feed:[],setTab(){}}
+ const story={id:1,kind:'story',published:true,course_id:null,category:'Практика'}
+ const state={me:{id:1,name:'Ильяс',xp:1234,streak:0,daily_claimed:false},feed:[story,{...story,id:2,published:false},{...story,id:3,course_id:4}],setTab(){}}
  let saved=[]
  const {Home}=await load('screens/Home.tsx',{
-  useStore:selector=>selector(state),useSavedPosts:()=>saved,useFollowedTopics:()=>[],knowledgeTopics:[],
+  activeStories,useStore:selector=>selector(state),useSavedPosts:()=>saved,useFollowedTopics:()=>[],knowledgeTopics:[],
   Avatar:()=>createElement('span',{'data-avatar':true}),Odometer:({value})=>value,Tap:button,
   Companion:()=>createElement('span',{'data-companion':true}),DailyCard:()=>createElement('span',null,'REWARD_AVAILABLE'),StreakCard:()=>createElement('span',null,'REWARD_CLAIMED'),
-  AdventBanner:()=>null,MainCourses:()=>null,Feed:()=>null,StoryBubble:()=>null,openBlogLibrary(){},
+  AdventBanner:()=>null,MainCourses:()=>null,Feed:()=>null,StoryBubble:({card})=>createElement('span',{'data-story-id':card.id}),openBlogLibrary(){},
  })
  let html=renderToStaticMarkup(createElement(Home))
  assert.equal((html.match(/id="xp-pill"/g)||[]).length,1)
@@ -35,6 +37,7 @@ test('home places one server XP target beside avatar and daily state replaces it
  assert.match(html,/<details[^>]+aria-label="Темы публикаций"/)
  assert.doesNotMatch(html,/<details[^>]+open/)
  assert.match(html,/id="daily-check-in" tabindex="-1"/)
+ assert.match(html,/data-story-id="1"/);assert.doesNotMatch(html,/data-story-id="[23]"/)
  state.me.daily_claimed=true;state.me.xp=1244;saved=[3]
  html=renderToStaticMarkup(createElement(Home))
  assert.match(html,/REWARD_CLAIMED/);assert.doesNotMatch(html,/REWARD_AVAILABLE/)
