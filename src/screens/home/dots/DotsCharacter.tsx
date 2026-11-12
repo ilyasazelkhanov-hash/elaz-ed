@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { useDocumentVisible, useElementVisible, usePrefersReducedMotion } from '../../../lib/visibility'
 import type { CompanionPreferences } from '../../../lib/home-companion'
-import { currentAtlasEvent, dotsArt, framePosition } from './raster'
+import { currentAtlasEvent, dotsArt, framePosition, posterCell } from './raster'
 import { createPuppetRig, startPuppetLoop, stepPuppetRig } from './puppet-motion'
 import { createPuppetPainter, PUPPET_ASSETS, tintPuppetPixels } from './puppet-renderer'
 
 type Driver = { tick(dt: number): void; still(): void; resume(): void; dispose(): void }
-/** A continuous articulated plush. The original remains underneath if Canvas2D/images fail. */
+/** A continuously deforming abstract plush. The limbless original remains if Canvas2D/images fail. */
 export function DotsCharacter({ look, mood, active, motion, reaction = 0, lantern = false, gaze }: {
   look: CompanionPreferences; mood: string; active: boolean; motion: boolean; reaction?: number; lantern?: boolean; gaze?: RefObject<{ x: number; y: number }>
 }) {
@@ -63,6 +63,7 @@ export function DotsCharacter({ look, mood, active, motion, reaction = 0, lanter
           for (let i = 0; i < 35; i++) stepPuppetRig(staticRig, .04, { reaction: current.reaction, mood: current.mood })
           staticRig.pose.bodyX = staticRig.pose.bodyY = staticRig.pose.bodyRotation = 0
           staticRig.pose.bodyScaleX = staticRig.pose.bodyScaleY = 1
+          staticRig.pose.ripple = staticRig.pose.coreTwist = 0
           painter.paint(staticRig.pose, current.look, current.lantern)
         },
         resume() { rig.reaction = latest.current.reaction; rig.reactionAge = 2 },
@@ -87,9 +88,9 @@ export function DotsCharacter({ look, mood, active, motion, reaction = 0, lanter
   }, [moving, ready, failDriver])
   useEffect(() => { if (ready && !moving) { try { driver.current?.still() } catch { failDriver() } } }, [ready, moving, look.shape, look.accessory, lantern, mood, failDriver])
   useEffect(() => setFailedPoster(false), [look.shape])
-  return <span ref={host} className="og-dots-character" data-renderer={ready ? 'puppet-2d' : 'poster'} data-ready={ready} data-active={activeNow} data-motion={moving} data-mood={mood} data-color={look.color} data-shape={look.shape} data-accessory={look.accessory} aria-hidden="true">
+  return <span ref={host} className="og-dots-character" data-renderer={ready ? 'abstract-2d' : 'poster'} data-ready={ready} data-active={activeNow} data-motion={moving} data-mood={mood} data-color={look.color} data-shape={look.shape} data-accessory={look.accessory} aria-hidden="true">
     <span className="og-dots-puppet-stage">
-      {!ready && (failedPoster ? <span className="og-dots-image-unavailable">✦</span> : <span className="og-dots-static-fallback"><img key={look.shape} src={posterSource} alt="" width="1536" height="1024" draggable={false} decoding="async" loading="lazy" style={framePosition(0)} onError={event => { if (currentAtlasEvent(posterSource, currentPoster.current, event.currentTarget.getAttribute('src'))) setFailedPoster(true) }}/></span>)}
+      {!ready && (failedPoster ? <span className="og-dots-image-unavailable">✦</span> : <span className="og-dots-static-fallback"><img key={look.shape} src={posterSource} alt="" width="1536" height="1024" draggable={false} decoding="async" loading="lazy" style={framePosition(posterCell(look.shape))} onError={event => { if (currentAtlasEvent(posterSource, currentPoster.current, event.currentTarget.getAttribute('src'))) setFailedPoster(true) }}/></span>)}
       <canvas ref={canvas} className="og-dots-puppet-canvas" width="224" height="269" data-visible={ready}/>
     </span>
   </span>

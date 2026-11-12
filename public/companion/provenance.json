@@ -71,7 +71,26 @@
         "eye",
         "eye"
       ]
+    },
+    {
+      "file": "abstract-forms-v3.webp",
+      "bytes": 295444,
+      "sha256": "5b00c67ce9b7c79cae9e6f40c596cb132728963f4deb890a302ae03e55760d70",
+      "width": 1536,
+      "height": 1024,
+      "columns": 3,
+      "rows": 2,
+      "parts": [
+        "faceless abstract cloud",
+        "faceless soft pebble",
+        "faceless organic drop",
+        "static cloud with face",
+        "static pebble with face",
+        "static drop with face"
+      ],
+      "generation_note": "Original image_gen artwork; no hands, arms, legs or feet. Upper row is continuous mesh texture, lower row only load/error poster. No branded OpenAI assets used."
     }
   ],
-  "v2_note": "Original generated rig parts, not animation frames. V1 is retained only as a static load/error fallback."
+  "v2_note": "Historical rig parts. V2 fur and V1 pose atlases are retained for history, not referenced by the active renderer or fallback.",
+  "v3_note": "Limbless abstract forms in the live Canvas2D mesh and every fallback. Reuses V2 accessory/eye parts, not V2 anatomy. No animation frame swaps."
 }

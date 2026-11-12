@@ -1,16 +1,21 @@
 /* A pocket character, not a hero. The complete speech bubble determines its own height. */
-.og-companion { position: relative; display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 9px; align-items: start; }
+.og-companion { position: relative; display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 9px; align-items: start; }
 .og-companion button, .og-dots-editor button { min-width: 44px; min-height: 44px; cursor: pointer; border-radius: 14px; }
 .og-companion button:focus-visible, .og-dots-editor button:focus-visible, .og-dots-editor input:focus-visible { outline: 2px solid var(--color-violet); outline-offset: 3px; }
-.og-dots-pet { display: grid; place-items: center; width: 104px; height: 128px; touch-action: manipulation; margin-top: 4px; background: transparent; }
+.og-dots-pet { display: grid; place-items: center; width: 92px; height: 112px; touch-action: manipulation; margin-top: 4px; background: transparent; }
 .og-dots-character { display: block; width: 100%; height: 100%; position: relative; pointer-events: none; contain: layout style; }
 .og-dots-conversation { min-width: 0; padding-top: 2px; }
 .og-dots-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 36px; }
 .og-dots-name { display: block; min-width: 0; color: var(--color-violet); font-size: 12px; font-weight: 750; line-height: 1.4; overflow-wrap: anywhere; }
 .og-dots-name > span { color: var(--color-mute); font-weight: 400; margin-left: 5px; font-size: 10px; }
 .og-dots-settings { flex: 0 0 44px; display: grid; place-items: center; color: var(--color-mute); margin-block: -4px; }
-.og-dots-speech { position: relative; display: block; width: 100%; text-align: left; padding: 12px 14px; color: var(--color-ink); border: 1px solid color-mix(in srgb, var(--color-violet) 21%, var(--color-line)); border-radius: 8px 21px 21px 21px !important; background: var(--color-card); box-shadow: 0 5px 18px rgb(34 17 62 / .04); overflow-wrap: anywhere; }
-.og-dots-speech::before { content: ''; position: absolute; width: 10px; height: 10px; top: 14px; left: -6px; background: var(--color-card); border-left: 1px solid color-mix(in srgb, var(--color-violet) 21%, var(--color-line)); border-bottom: 1px solid color-mix(in srgb, var(--color-violet) 21%, var(--color-line)); transform: rotate(45deg); border-radius: 0 0 0 3px; }
+.og-dots-speech { position: relative; isolation: isolate; display: block; width: 100%; text-align: left; padding: 14px 16px; color: var(--color-ink); border: 1px solid color-mix(in srgb, var(--color-violet) 13%, var(--color-line)); border-radius: 27px 33px 25px 15px / 24px 29px 25px 20px !important; background: linear-gradient(140deg, color-mix(in srgb, var(--color-violet) 4%, var(--color-card)), var(--color-card) 70%); box-shadow: 0 7px 24px rgb(65 34 104 / .035); overflow-wrap: anywhere; }
+/* A soft thought-cloud connection. Decoration can move, real copy never warps or clips. */
+.og-dots-speech::before { content: ''; position: absolute; width: 10px; height: 9px; top: 21px; left: -6px; background: var(--color-card); border-radius: 58% 42% 63% 37%; box-shadow: -10px 12px 0 -3px color-mix(in srgb, var(--color-violet) 16%, var(--color-card)); pointer-events: none; }
+.og-dots-speech::after { content: ''; position: absolute; inset: -3px -2px -2px; border: 1px solid color-mix(in srgb, var(--color-violet) 7%, transparent); border-radius: 29px 35px 28px 19px / 29px 26px 29px 18px; pointer-events: none; }
+.og-companion[data-moving='true'] .og-dots-speech::after { animation: og-dots-cloud-contour 8s ease-in-out infinite; }
+.og-companion[data-tone='advent'] .og-dots-speech { background: linear-gradient(140deg, color-mix(in srgb, #eac27d 10%, var(--color-card)), var(--color-card) 70%); }
+@keyframes og-dots-cloud-contour { 0%, 100% { border-radius: 29px 35px 28px 19px / 29px 26px 29px 18px; opacity: .7; } 50% { border-radius: 35px 28px 22px 27px / 24px 34px 24px 24px; opacity: 1; } }
 .og-dots-line { display: block; font-size: 14px; font-weight: 650; line-height: 1.35; text-wrap: pretty; }
 .og-dots-detail { display: block; white-space: normal; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; margin-top: 6px; color: var(--color-mute); }
 .og-dots-action { display: flex; align-items: center; gap: 4px; margin-top: 8px; color: var(--color-violet); font-size: 12px; line-height: 1.4; font-weight: 650; }
@@ -65,7 +70,7 @@
 
 
 
-/* A layered game puppet: native Canvas2D works when WebGL is disabled. */
+/* A continuous abstract volume: native Canvas2D works when WebGL is disabled. */
 .og-dots-puppet-stage { position: absolute; inset: 0; display: grid; place-items: center; }
 .og-dots-puppet-canvas { display: block; width: 106%; max-width: none; height: auto; aspect-ratio: 5 / 6; opacity: 0; }
 .og-dots-puppet-canvas[data-visible='true'] { opacity: 1; }

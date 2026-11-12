@@ -11,12 +11,14 @@ test('pose is continuous numeric rig, stable object and finite with extreme inpu
  assert.equal('frame' in pose,false)
  assert.ok(rig.elapsed<=.1)
 })
-test('tap has anticipation, independent wave, hop then settles without queue',()=>{
+test('tap compresses core then drives continuous edge wave and settles, without limbs or hop',()=>{
  const rig=createPuppetRig(),samples=[]
- for(let i=0;i<65;i++) samples.push({...stepPuppetRig(rig,.025,{reaction:1})})
- assert.ok(samples.some(p=>p.bodyY>.05));assert.ok(samples.some(p=>p.bodyY< -2))
- assert.ok(samples.some(p=>p.armRight>1.1 && p.armLeft<0))
- assert.ok(Math.abs(samples.at(-1).bodyY)<.1)
+ for(let i=0;i<80;i++) samples.push({...stepPuppetRig(rig,.025,{reaction:1})})
+ assert.ok(samples.some(p=>p.bodyScaleX<.99&&p.bodyScaleY<.99))
+ assert.ok(samples.some(p=>p.ripple>1.5));assert.ok(samples.some(p=>Math.abs(p.coreTwist)>.025))
+ assert.ok(samples.every(p=>Math.abs(p.bodyY)<1.1&&p.ripple<=2))
+ assert.ok(samples.at(-1).ripple<.4)
+ for(const field of ['armLeft','armRight','footLeft','footRight','frame'])assert.equal(field in rig.pose,false)
  assert.equal(rig.reactionAge>1.3,true)
 })
 test('priority protects important action, consumes rejected event, and same-priority tap restarts',()=>{
@@ -58,12 +60,48 @@ test('unchanged reaction cannot retrigger; automatic blink stays continuous and 
  assert.ok(maxDelta<.8)
 })
 
-test('30FPS blink nearly closes; idle forearms remain independently restrained',()=>{
+test('30FPS blink nearly closes; idle flow stays continuous and root restrained',()=>{
  const rig=createPuppetRig();let minimum=1
  for(let i=0;i<360;i++){
   const p=stepPuppetRig(rig,1/30)
   minimum=Math.min(minimum,p.eyeLeft)
-  assert.ok(Math.abs(p.armLeft)<.13 && Math.abs(p.armRight)<.13)
+  assert.ok(Math.abs(p.bodyY)<1.1);assert.equal(p.flowPhase,rig.elapsed);assert.ok(p.ripple<=.58)
  }
  assert.ok(minimum<.1)
+})
+
+test('long repeated reactions retain finite bounded flow, including pathological dt',()=>{
+ const rig=createPuppetRig();let phase=0
+ for(let i=0;i<10000;i++){
+  const p=stepPuppetRig(rig,i%50===0?1e12:1/30,{reaction:Math.floor(i/4),gaze:{x:1,y:-1},mood:'happy'})
+  assert.ok(Object.values(p).every(Number.isFinite));assert.ok(p.flowPhase>=phase);phase=p.flowPhase
+  assert.ok(p.ripple>=0&&p.ripple<=2&&Math.abs(p.bodyY)<1.1)
+ }
+})
+
+test('autonomous 60-second life is deterministic, irregular, expressive and multidirectional',()=>{
+ const rig=createPuppetRig(),copy=createPuppetRig(),starts=[];let prev=-10,maxSmile=0,minX=0,maxX=0,minY=0,maxY=0,doubles=0
+ for(let i=0;i<1800;i++){
+  const p=stepPuppetRig(rig,1/30);assert.deepEqual(p,stepPuppetRig(copy,1/30))
+  if(rig.idle.blinkStart!==prev){prev=rig.idle.blinkStart;starts.push(prev);if(rig.idle.double)doubles++}
+  maxSmile=Math.max(maxSmile,p.smile);minX=Math.min(minX,p.gazeX);maxX=Math.max(maxX,p.gazeX);minY=Math.min(minY,p.gazeY);maxY=Math.max(maxY,p.gazeY)
+  assert.ok(Math.abs(p.bodyY)<1.1&&p.ripple<.59)
+ }
+ const gaps=starts.slice(1).map((t,i)=>Math.round((t-starts[i])*10))
+ assert.ok(new Set(gaps).size>3);assert.ok(doubles>0&&doubles<starts.length/2)
+ assert.ok(maxSmile>.6&&minX<-.2&&maxX>.2&&minY<-.1&&maxY>.1)
+})
+test('intentional gaze and real mood take priority over idle expression',()=>{
+ const rig=createPuppetRig()
+ for(let i=0;i<600;i++)stepPuppetRig(rig,1/30,{mood:'surprised',gaze:{x:1,y:-1}})
+ assert.ok(rig.pose.gazeX>.99&&rig.pose.gazeY<-.99);assert.ok(rig.pose.open>.87);assert.ok(rig.pose.smile<.11)
+})
+
+test('news and advent curiosity retains autonomous expression without changing its intentional open-mouth cue',()=>{
+ const rig=createPuppetRig();let minSmile=1,maxSmile=0
+ for(let i=0;i<900;i++){
+  const p=stepPuppetRig(rig,1/30,{mood:'curious'})
+  if(i>30){minSmile=Math.min(minSmile,p.smile);maxSmile=Math.max(maxSmile,p.smile);assert.ok(Math.abs(p.open-.12)<.005)}
+ }
+ assert.ok(maxSmile-minSmile>.2)
 })

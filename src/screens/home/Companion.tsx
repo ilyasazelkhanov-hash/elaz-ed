@@ -119,9 +119,7 @@ export function Companion({ userId }: { userId: number }) {
           const box = event.currentTarget.getBoundingClientRect()
           gaze.current.x = Math.max(-1, Math.min(1, (event.clientX - box.x) / box.width * 2 - 1))
           gaze.current.y = Math.max(-1, Math.min(1, (event.clientY - box.y) / box.height * 2 - 1))
-          event.currentTarget.style.setProperty('--dots-look-x', `${gaze.current.x * 8}deg`)
-          event.currentTarget.style.setProperty('--dots-look-y', `${-gaze.current.y * 5}deg`)
-        }} onPointerLeave={event => { gaze.current.x = 0; gaze.current.y = 0; event.currentTarget.style.setProperty('--dots-look-x', '0deg'); event.currentTarget.style.setProperty('--dots-look-y', '0deg') }}>
+        }} onPointerLeave={() => { gaze.current.x = 0; gaze.current.y = 0 }}>
         <DotsCharacter look={look} mood={mood} active={visible && documentVisible && !covered} motion={!reduce && !session.paused} reaction={reactionId} gaze={gaze} lantern={interactions.preferences.lantern}/>
       </button>
       <div className="og-dots-conversation">
@@ -191,7 +189,7 @@ function CompanionSettingsForm({ userId }: { userId: number }) {
             <button type="button" onClick={motionStatus === 'active' ? () => stopCompanionMotion(userId) : enableMotion} disabled={reduce || session.paused || motionStatus === 'requesting'}>{motionStatus === 'active' ? 'Отключить движение' : motionStatus === 'requesting' ? 'Ждём разрешение…' : 'Разрешить движение на главной'}</button>
             <small>{reduce ? 'Устройство просит меньше движения. Датчики не включаются.' : session.paused ? 'Сначала включи живые анимации выше.' : motionStatus === 'denied' ? 'Доступ не разрешён. Касания остаются доступны.' : motionStatus === 'unsupported' ? 'Датчики недоступны в этом браузере. Используй касания.' : motionStatus === 'suspended' ? 'Движение приостановлено. Можно включить снова по кнопке.' : 'Откроется главная. Сначала сохрани изменения имени и образа. Браузер или Telegram могут запросить доступ к датчикам.'}</small>
           </div>
-          <label className="og-dots-motion"><span>Светлячок в сцене<small>Декоративный фонарик. Яркость экрана не считывается; камера и фонарь телефона не включаются.</small></span><input type="checkbox" checked={device.lantern} onChange={event => changeDevice({ lantern: event.target.checked })}/></label>
+          <label className="og-dots-motion"><span>Мягкий свет<small>Декоративное свечение вокруг Dots. Яркость экрана не считывается; камера и фонарь телефона не включаются.</small></span><input type="checkbox" checked={device.lantern} onChange={event => changeDevice({ lantern: event.target.checked })}/></label>
           <label className="og-dots-motion"><span>Голос только по кнопке<small>{voiceAvailable ? 'Браузер может использовать сетевой голос. Звук и беззвучный режим телефона определить нельзя. Текст остаётся всегда.' : 'Озвучивание недоступно в этом браузере. Все реплики есть текстом.'}</small></span><input type="checkbox" disabled={!voiceAvailable} checked={device.voice} onChange={event => changeDevice({ voice: event.target.checked })}/></label>
           <p className="og-dots-privacy">Эти переключатели действуют сразу. Никаких микрофона, камеры или автоматической озвучки.</p>
         </details>
