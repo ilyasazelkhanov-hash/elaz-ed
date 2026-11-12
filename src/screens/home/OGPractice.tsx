@@ -50,15 +50,16 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
    <div className="pb-2">
   <label className="mt-2 flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-card pl-4 pr-1"><Search size={17} className="shrink-0 text-mute"/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Найти курс, инструмент или урок" aria-label="Найти учебную тему" className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none"/>{query && <Tap aria-label="Очистить поиск" onClick={() => setQuery('')} className="grid h-11 w-11 shrink-0 place-items-center text-mute"><X size={17}/></Tap>}</label>
   <div className="no-bar my-4 flex gap-2 overflow-x-auto pb-1" aria-label="Темы обучения">{practiceTopics.map(item => <Tap key={item} aria-pressed={filter === item} onClick={() => setFilter(item)} className={chip(filter === item)}>{item}</Tap>)}</div>
+    <Tap onClick={() => go('/start')} className="flex min-h-11 items-center gap-1 text-sm font-semibold text-violet">Начать бесплатно<ArrowRight size={14}/></Tap>
     <details className="border-t border-line">
      <summary tabIndex={0} className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-violet">Помочь с маршрутом</summary>
      <CoursePathway key={learningScope(user, isDemo)} scope={learningScope(user, isDemo)} mode="practice" go={go}/>
     </details>
    </div>
   </details>
-  <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+  <div className={query || filter !== 'Все' ? "mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1" : "sr-only"}>
    <p role="status" className="min-w-0 break-words text-xs text-mute">{query || filter !== 'Все' ? `Найдено: ${courses.length}${filter !== 'Все' ? ' · ' + filter : ''}${query ? ' · «' + query + '»' : ''}` : `${courses.length} программ`}</p>
-   {query || filter !== 'Все' ? <Tap onClick={() => {setFilter('Все'); setQuery('')}} className="min-h-11 text-xs font-semibold text-violet">Сбросить фильтры</Tap> : <Tap onClick={() => go('/start')} className="flex min-h-11 items-center gap-1 text-xs font-semibold text-violet">Начать бесплатно<ArrowRight size={14}/></Tap>}
+   {query || filter !== 'Все' ? <Tap onClick={() => {setFilter('Все'); setQuery('')}} className="min-h-11 text-xs font-semibold text-violet">Сбросить фильтры</Tap> : null}
   </div>
   <EditorialCards revision={courses.map(item => item.key).join(',')}>{courses.map(item => {
    const live = resolvePracticeCourse(item, liveCourses), offer = practiceOffer(live), duration = item.lessons.reduce((sum, current) => sum + current.minutes, 0)

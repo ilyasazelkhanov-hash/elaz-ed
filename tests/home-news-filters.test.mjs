@@ -177,3 +177,9 @@ test('news tab is content first with collapsed controls even for an active saved
  state.clicks.find(button=>button['aria-label']==='Сбросить выбранные фильтры').onClick()
  assert.deepEqual(state.view, defaults)
 })
+
+test('news tab keeps its heading available to assistive technology without repeating tab chrome', async () => {
+ const source = await readFile(new URL('../src/screens/Blog.tsx', import.meta.url), 'utf8')
+ assert.match(source, /<h1 className="sr-only">Новости<\/h1>/)
+ assert.doesNotMatch(source, /<header/)
+})
