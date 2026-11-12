@@ -61,3 +61,26 @@ Unit: все 5 guide покрыты; ответы, edge cases, формат чи
 - https://support.coursiv.io/en/support/solutions/articles/73000622400-how-does-coursiv-work-
 - https://brilliant.org/about/
 - https://blog.duolingo.com/
+
+## Package 2: two OG lessons (v1, local candidate)
+
+Inspected the 33 source lessons in paths.json by course and content shape; closely
+read foundations/block-1 and foundations/foundations-context. These two now have
+three short authored concepts and three formative checks each in the authorized
+PracticeReader. Correct answers unlock the next training step; incorrect choices
+explain the actual error and allow retry. Final step links to the existing real
+assignment and PracticeArtifact. Full original lesson, resources and own-answer
+self-check remain available through existing tabs. No paid payload is imported
+into public code; the supplemental examples are deliberately public and ungraded.
+
+Coverage: 2/33 OG lessons, 6 exercises, plus the earlier 5/5 free guides.
+Remaining: 31 OG lessons and 448 Academy lessons have NOT been migrated.
+No production database or content import has been performed. Browser verification
+and publication are pending. Source lessons may differ from live database copies.
+
+Next batches: text/report calculations with a frozen fixture; coding/spec state
+and acceptance checks; automation duplicate/error scenarios. Each needs explicit
+answer evidence and task-specific feedback, not generic quizzes derived from
+headings. Academy retains its existing server assessment engine. The blocker to
+claiming full coverage is actual authoring/review of all remaining lesson data,
+not an absent UI component.

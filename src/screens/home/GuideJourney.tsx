@@ -1,13 +1,13 @@
 import {useId,useRef,useState,type ReactNode} from 'react'
 import {ArrowDown,ArrowLeft,ArrowRight,ArrowUp} from 'lucide-react'
 import {Tap} from '../../ui'
-import {evaluateGuideAnswer,guideAnswerPresent,guideInteractions,guideJourneyKey,moveGuideItem,readGuideJourney,saveGuideJourney,type GuideAnswer,type GuideJourneyState} from '../../lib/guide-interactions'
+import {evaluateGuideAnswer,guideAnswerPresent,guideInteractions,guideJourneyKey,moveGuideItem,readGuideJourney,saveGuideJourney,type GuideAnswer,type GuideChallenge,type GuideJourneyState} from '../../lib/guide-interactions'
 import './guide-journey.css'
 
-type Props={initialPractice?:boolean;scope:string;guide:{id:string;steps:{title:string;text:string}[]};children:ReactNode}
+type Props={initialPractice?:boolean;scope:string;guide:{id:string;steps:{title:string;text:string}[]};children:ReactNode;challenges?:GuideChallenge[]}
 export function GuideJourney(props:Props){return <Journey key={`${guideJourneyKey(props.scope,props.guide.id)}:${props.initialPractice ? 'work' : 'lesson'}`} {...props}/>}
-function Journey({scope,guide,children,initialPractice=false}:Props){
- const questions=guideInteractions[guide.id],key=guideJourneyKey(scope,guide.id),id=useId(),heading=useRef<HTMLHeadingElement>(null)
+function Journey({scope,guide,children,challenges,initialPractice=false}:Props){
+ const questions=challenges??guideInteractions[guide.id],key=guideJourneyKey(scope,guide.id),id=useId(),heading=useRef<HTMLHeadingElement>(null)
  const [state,setState]=useState(()=>{const saved=readGuideJourney(key,questions||[]);return initialPractice ? {...saved,step:guide.steps.length} : saved}),[all,setAll]=useState(false)
  if(!questions||questions.length!==guide.steps.length)return <>{guide.steps.map(step=><section key={step.title}><h2>{step.title}</h2><p>{step.text}</p></section>)}{children}</>
  const update=(next:GuideJourneyState)=>{saveGuideJourney(key,next);setState(next)}

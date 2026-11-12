@@ -5,6 +5,8 @@ import { practiceSections } from '../../lib/og-practice'
 import { practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck, type PracticeReaderView } from '../../lib/practice-reader'
 import { Tap } from '../../ui'
 import './practice.css'
+import { GuideJourney } from './GuideJourney'
+import { ogLessonInteraction } from '../../lib/og-lesson-interactions'
 import { PracticeArtifact } from './PracticeArtifact'
 
 export type PracticeReaderProps = {
@@ -33,6 +35,7 @@ export function PracticeReader(props: PracticeReaderProps) {
 }
 
 function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNext, children}: PracticeReaderProps) {
+ const interaction = ogLessonInteraction(course.key, lesson.key)
  const content = useMemo(() => practiceSections(lesson.body), [lesson.body])
  const check = useMemo(() => splitPracticeCheck(content.check), [content.check])
  const storageKey = practiceReaderStorageKey(userId, course.key, lesson.key)
@@ -102,7 +105,11 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
      <Tap aria-expanded={showAnswer} aria-controls={answerId} onClick={() => setShowAnswer(current => !current)}><ListChecks size={18}/><span>{showAnswer ? 'Скрыть разбор' : 'Показать разбор'}</span><ChevronDown size={17} className={showAnswer ? 'is-open' : ''}/></Tap>
      <div id={answerId} hidden={!showAnswer}>{showAnswer && <Markdown text={check.answer}/>}</div>
     </div>}
-   </> : <Markdown key={view} text={view === 'all' ? lesson.body : content[view]}/>}
+   </> : view === 'reading' && interaction ? <GuideJourney scope={String(userId ?? 'demo')} guide={interaction} challenges={interaction.challenges}>
+    <p>Теперь выполни самостоятельную работу из урока. Ответы в тренировке не подтверждают навык.</p>
+    <Tap onClick={() => select('practice', true)}>Открыть задание и сохранить свою работу</Tap>
+    <details><summary>Полное объяснение и примеры урока</summary><Markdown text={content.reading}/></details>
+   </GuideJourney> : <Markdown key={view} text={view === 'all' ? lesson.body : content[view]}/>}
   </div>
   {content.practice && <div hidden={view !== 'practice'}><PracticeArtifact scope={userId} course={course.key} lesson={lesson.key} title={lesson.title} task={lesson.subtitle || 'Выполни задание выше. Сохрани результат и объясни способ его проверки.'} criteria={['Результат отвечает заданию и его ограничениям.','Факты и источники проверены, неподтверждённое отмечено.','Я могу объяснить своё решение и повторить его на другом примере.']}/></div>}
   {view === 'reading' && content.practice && <Tap onClick={() => select('practice', true)} className="og-reader-to-practice"><span><span>Теперь попробуй сам</span><b>Перейти к практике</b></span><ArrowRight size={19}/></Tap>}
