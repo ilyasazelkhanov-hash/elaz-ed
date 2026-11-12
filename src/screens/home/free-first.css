@@ -30,3 +30,8 @@
 @media (prefers-reduced-motion:reduce) {
  .reader-post,.reader-filter-tabs button,.reader-post-bottom button svg { transition:none!important; transform:none!important; }
 }
+
+/* Content first: advanced controls are opt-in, with visible filter status. */
+.reader-filter-disclosure[open] { border-bottom:1px solid var(--color-line); }
+.reader-filter-disclosure > summary:focus-visible, .course-discovery summary:focus-visible { outline:2px solid var(--color-violet); outline-offset:2px; border-radius:8px; }
+

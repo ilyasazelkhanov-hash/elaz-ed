@@ -1,5 +1,5 @@
 import {learningScope} from '../../lib/learning-next'
-import {ArrowLeft, ArrowRight, BookOpen, Check, Clock3, LockKeyhole, Search, ShieldCheck, Sparkles, X} from 'lucide-react'
+import {ArrowLeft, ArrowRight, BookOpen, Check, Clock3, ChevronDown, LockKeyhole, Search, ShieldCheck, X} from 'lucide-react'
 import {useEffect, useMemo, useRef, useState} from 'react'
 import {api, ApiError, errorText, isDemo} from '../../lib/api'
 import {canOpenPracticeLesson, practiceOffer, resolvePracticeCourse, resolvePracticeLesson} from '../../lib/og-course-access'
@@ -41,21 +41,25 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
  if (course && lesson) return <SecurePracticeLesson key={`${scopeKey}:${course.key}/${lesson.key}`} course={course} lesson={lesson} go={go}/>
  if (course) return <PracticeProgram course={course} go={go}/>
  return <section aria-label="Платные курсы OG Cre8r">
-  <div className="overflow-hidden rounded-[28px] border border-violet/20 bg-gradient-to-br from-violet/15 via-card to-mint/10 p-5">
-   <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] text-violet"><Sparkles size={15}/>OG CRE8R² · Курсы с практикой</p>
-   <h1 className="mt-3 max-w-[15ch] font-display text-[29px] font-semibold leading-[1.16]">От интереса к ИИ - к своему проекту</h1>
-   <p className="mt-3 text-sm leading-relaxed text-mute">Выбери навык и пройди понятный маршрут: объяснение, пример, практика и готовая работа.</p>
-   <LearningScene/>
-   <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold"><span className="rounded-full border border-line bg-card/80 px-3 py-2">5 платных программ</span><span className="rounded-full border border-line bg-card/80 px-3 py-2">33 урока с практикой</span><span className="rounded-full border border-line bg-card/80 px-3 py-2">В своём темпе</span></div>
-  </div>
-  <Tap onClick={() => go('/start')} className="mt-4 flex min-h-20 w-full items-center gap-3 rounded-[22px] border border-mint/25 bg-mint/8 p-4 text-left"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-mint/15 text-success"><BookOpen size={20}/></span><span className="min-w-0 flex-1"><b className="block text-sm">Впервые с ИИ? Начни бесплатно</b><span className="mt-1 block text-xs leading-relaxed text-mute">Короткий старт: первый запрос, проверка ответа и выбор задачи.</span></span><ArrowRight size={17} className="shrink-0 text-success"/></Tap>
-  {isDemo && <p role="note" className="mt-4 rounded-2xl border border-line bg-card px-4 py-3 text-xs leading-relaxed text-mute">Демо: в курсах показаны отдельные короткие примеры. Покупки условные, звёзды не списываются. Цены настоящих курсов доступны в Telegram.</p>}
+  <h1 className="sr-only">Курсы с практикой</h1>
+  <LearningScene/>
+  {isDemo && <p role="note" className="mt-2 text-xs leading-relaxed text-mute">Демо: короткие примеры, без списания звёзд. Настоящие цены доступны в Telegram.</p>}
   {resume && <Tap onClick={() => go(practicePath(resume.course.key, resume.lesson.key))} className="mt-4 flex min-h-20 w-full items-center gap-3 rounded-2xl border border-violet/20 bg-violet/8 p-4 text-left"><span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-violet">Продолжить обучение</span><b className="mt-1 block text-sm leading-snug">{resume.lesson.title}</b><span className="mt-1 block text-xs text-mute">{resume.course.title}{isDemo ? ' · место чтения на этом устройстве' : ''}</span></span><ArrowRight size={18} className="shrink-0 text-violet"/></Tap>}
-  <CoursePathway key={learningScope(user, isDemo)} scope={learningScope(user, isDemo)} mode="practice" go={go}/>
-  <h2 className="mt-6 font-display text-lg font-semibold">Все программы</h2>
-  <label className="mt-5 flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-card pl-4 pr-1"><Search size={17} className="shrink-0 text-mute"/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Найти курс, инструмент или урок" aria-label="Найти учебную тему" className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none"/>{query && <Tap aria-label="Очистить поиск" onClick={() => setQuery('')} className="grid h-11 w-11 shrink-0 place-items-center text-mute"><X size={17}/></Tap>}</label>
+  <details className="course-discovery group my-3">
+   <summary tabIndex={0} className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm text-mute [&::-webkit-details-marker]:hidden"><span>Подобрать курс{query || filter !== 'Все' ? ' · фильтры выбраны' : ''}</span><ChevronDown size={16} className="shrink-0 transition-transform group-open:rotate-180" aria-hidden="true"/></summary>
+   <div className="pb-2">
+  <label className="mt-2 flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-card pl-4 pr-1"><Search size={17} className="shrink-0 text-mute"/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Найти курс, инструмент или урок" aria-label="Найти учебную тему" className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none"/>{query && <Tap aria-label="Очистить поиск" onClick={() => setQuery('')} className="grid h-11 w-11 shrink-0 place-items-center text-mute"><X size={17}/></Tap>}</label>
   <div className="no-bar my-4 flex gap-2 overflow-x-auto pb-1" aria-label="Темы обучения">{practiceTopics.map(item => <Tap key={item} aria-pressed={filter === item} onClick={() => setFilter(item)} className={chip(filter === item)}>{item}</Tap>)}</div>
-  <p role="status" className="mb-3 text-xs text-mute">{query || filter !== 'Все' ? 'Найдено курсов: ' + courses.length : 'Выбери результат, который хочешь получить'}</p>
+    <details className="border-t border-line">
+     <summary tabIndex={0} className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-violet">Помочь с маршрутом</summary>
+     <CoursePathway key={learningScope(user, isDemo)} scope={learningScope(user, isDemo)} mode="practice" go={go}/>
+    </details>
+   </div>
+  </details>
+  <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+   <p role="status" className="min-w-0 break-words text-xs text-mute">{query || filter !== 'Все' ? `Найдено: ${courses.length}${filter !== 'Все' ? ' · ' + filter : ''}${query ? ' · «' + query + '»' : ''}` : `${courses.length} программ`}</p>
+   {query || filter !== 'Все' ? <Tap onClick={() => {setFilter('Все'); setQuery('')}} className="min-h-11 text-xs font-semibold text-violet">Сбросить фильтры</Tap> : <Tap onClick={() => go('/start')} className="flex min-h-11 items-center gap-1 text-xs font-semibold text-violet">Начать бесплатно<ArrowRight size={14}/></Tap>}
+  </div>
   <EditorialCards revision={courses.map(item => item.key).join(',')}>{courses.map(item => {
    const live = resolvePracticeCourse(item, liveCourses), offer = practiceOffer(live), duration = item.lessons.reduce((sum, current) => sum + current.minutes, 0)
    const count = item.lessons.filter(current => resolvePracticeLesson(live, current, feed)?.completed).length

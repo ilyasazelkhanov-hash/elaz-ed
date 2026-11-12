@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import vm from 'node:vm'
 import {rolldown} from 'rolldown'
 import {fileURLToPath} from 'node:url'
+import {learningScope} from '../src/lib/learning-next.ts'
 import * as learningDrafts from '../src/lib/learning-drafts.ts'
 import {discoveryEvent} from '../src/lib/discovery-events.ts'
 import {ogPracticeCourses, practiceMatches, practiceTopics, practiceProgressStorageKey, practiceProjectLesson} from '../src/lib/og-practice.ts'
@@ -47,7 +48,7 @@ function setup() {
   tg:{get canPayStars(){return behavior.canPay},inTelegram:true,haptic:{success(){},tap(){},error(){}},confirmDialog:async()=>true,async openInvoice(){calls.open++;return behavior.status}},
   track:{track:(name,props,lessonId)=>events.push(discoveryEvent(name,props,lessonId))},
   game:{iconFor:()=> '✨',GRADIENTS:{ocean:{css:'blue',ink:'white'}},lessonsWord:()=> 'уроков',plural:()=> 'друзей'},
-  'learning-drafts':learningDrafts,
+  'learning-drafts':learningDrafts, 'learning-next':{learningScope},
   links:{appLink:()=>null},sfx:{sfx:{levelUp(){}}},content:{isBlogPost:()=>false},
   'og-practice':{ogPracticeCourses:[{...ogPracticeCourses[0],key:'foundations',title:course.title,lessons:[{...ogPracticeCourses[0].lessons[0],key:'one',title:card.title,minutes:5}]}],practiceMatches,practiceTopics,practiceProgressStorageKey,practiceProjectLesson,readPracticeProgress:()=>({done:[]}),subscribePracticeProgress:()=>()=>{},getPracticeResume:()=>null,practicePath:(...parts)=>'/og-practice/'+parts.join('/'),writePracticeProgress(){}},
  }
@@ -267,4 +268,18 @@ test('a replaced server lesson mapping cannot be overwritten by an old completio
  assert.equal(lesson.render().props.lesson.body,'Replacement lesson')
  assert.equal(h.calls.setMe,0);assert.equal(h.calls.patch,0);assert.equal(h.calls.boot,0)
  lesson.unmount()
+})
+
+
+test('course catalogue opens with the cursor scene and opt-in discovery, not a settings wall', () => {
+ const h=setup()
+ const root=h.mount(h.load('screens/home/OGPractice.tsx').OGPractice,{path:'/og-practice',go(){}})
+ const tree=root.render()
+ const panel=find(tree,node=>node.type==='details' && node.props.className==='course-discovery group my-3')
+ assert.ok(panel)
+ assert.equal(panel.props.open,undefined)
+ assert.ok(find(panel,node=>node.type==='input' && node.props['aria-label']==='Найти учебную тему'))
+ assert.ok(find(tree,node=>node.props['data-og-course']==='foundations'))
+ assert.ok(find(tree,node=>node.type==='h1' && node.props.className==='sr-only'))
+ root.unmount()
 })

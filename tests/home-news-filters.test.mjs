@@ -47,7 +47,7 @@ async function feedPresentation() {
   Tap: ({ children, onClick, feedback, ...props }) => { state.clicks.push({ ...props, onClick, children }); return createElement('button', props, children) },
  }
  const { Feed } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}#fixture-${++feedHarnessId}`)
- return { state, render: lessons => { state.clicks = []; return renderToStaticMarkup(createElement(Feed, { lessons, compact: true })) } }
+ return { state, render: (lessons, compact = true) => { state.clicks = []; return renderToStaticMarkup(createElement(Feed, { lessons, compact })) } }
 }
 
 test('home renders accessible filters, a bounded matching list and an explicit path through the archive', async () => {
@@ -56,14 +56,14 @@ test('home renders accessible filters, a bounded matching list and an explicit p
  let html = render(posts)
  for (const label of ['Режим публикаций', 'Новые', 'Непрочитанные', 'Сохранённые', 'Поиск в новостях', 'Тема публикаций']) assert.ok(html.includes(label), label)
  assert.equal((html.match(/<article /g) || []).length, 3)
- assert.match(html, /<details class="group mb-4"/); assert.doesNotMatch(html, /<details[^>]+open/)
+ assert.match(html, /<details class="reader-filter-disclosure group mb-3"/); assert.doesNotMatch(html, /<details[^>]+open/)
  assert.match(html, /в загруженной подборке/)
  assert.match(html, /Все подходящие публикации/)
  assert.equal(state.requests.length, 1)
  assert.equal(state.requests[0].enabled, true)
  state.view = { ...defaults, topic: 'automation', filter: 'saved', query: 'n8n' }
  html = render(posts)
- assert.match(html, /<details open=""/); assert.match(html, /Поиск и фильтры · выбраны/)
+ assert.doesNotMatch(html, /<details[^>]+open/); assert.match(html, /Поиск и фильтры · выбраны/)
  assert.match(html, /В загруженной подборке пока пусто/)
  assert.match(html, /Искать дальше в архиве/)
  assert.match(html, /Все новости/)
@@ -159,3 +159,21 @@ test('home and archive collapse only known duplicate categories and retain legac
  assert.ok(html.includes('ИИ - практика'))
  assert.equal(original.title, 'ИИ — практика')
  })
+
+
+test('news tab is content first with collapsed controls even for an active saved filter', async () => {
+ const {state, render} = await feedPresentation()
+ state.posts = [card(1)]; state.more = false
+ let html = render([], false)
+ assert.match(html, /<details class="reader-filter-disclosure group mb-3"/)
+ assert.doesNotMatch(html, /<details[^>]+open/)
+ assert.match(html, /<article /)
+ state.view = {...defaults, filter:'saved', query:'Новость'}; state.saved=[1]
+ html = render([], false)
+ assert.doesNotMatch(html, /<details[^>]+open/)
+ const afterPanel = html.slice(html.indexOf('</details>'))
+ assert.match(afterPanel, /Сохранённые/)
+ assert.match(afterPanel, /Новость/)
+ state.clicks.find(button=>button['aria-label']==='Сбросить выбранные фильтры').onClick()
+ assert.deepEqual(state.view, defaults)
+})
