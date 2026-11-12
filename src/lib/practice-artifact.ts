@@ -39,3 +39,39 @@ export function removeArtifact(key: string | null, storage?: Pick<Storage,'remov
  if (!key) return true
  try {(storage ?? localStorage).removeItem(key);return true} catch {return false}
 }
+
+export const ARTIFACT_RECOVERY_LIMIT = 12
+const RECOVERY_CHECK_LIMIT = 64
+export type ArtifactSession = {value: PracticeArtifact; dirty: boolean}
+/** Bounded JS-memory cache only. No local/sessionStorage, network or hidden autosave. */
+export function createArtifactRecovery() {
+ const entries = new Map<string,{rubric:string;session:ArtifactSession}>()
+ const copy = (value:PracticeArtifact,count=value.checks.length):PracticeArtifact => ({
+  result:value.result.slice(0,PRACTICE_LIMIT),evidence:value.evidence.slice(0,PRACTICE_LIMIT),revision:value.revision.slice(0,PRACTICE_LIMIT),
+  checks:Array.from({length:Math.min(count,RECOVERY_CHECK_LIMIT)},(_,i)=>value.checks[i]===true),
+ })
+ return {
+  put(key:string,rubric:string,session:ArtifactSession) {
+   if(key.length>1024 || rubric.length>8192)return
+   entries.delete(key)
+   entries.set(key,{rubric,session:{value:copy(session.value),dirty:session.dirty}})
+   while(entries.size>ARTIFACT_RECOVERY_LIMIT)entries.delete(entries.keys().next().value!)
+  },
+  get(key:string,rubric:string,count:number):ArtifactSession|null {
+   const entry=entries.get(key)
+   if(!entry)return null
+   entries.delete(key);entries.set(key,entry)
+   const value=copy(entry.session.value,count),changed=entry.rubric!==rubric
+   if(changed)value.checks=value.checks.map(()=>false)
+   return {value,dirty:entry.session.dirty || changed}
+  },
+  remove(key:string){entries.delete(key)},
+ }
+}
+export const artifactRecovery = createArtifactRecovery()
+export function artifactRecoveryKey(scope:string|number|undefined,course:string,lesson:string) {
+ return JSON.stringify([scope===undefined?'guest':'account',scope??null,course,lesson])
+}
+export function readArtifactSession(recoveryKey:string,key:string|null,count:number,rubric:string):ArtifactSession {
+ return artifactRecovery.get(recoveryKey,rubric,count) ?? {value:readArtifact(key,count,rubric),dirty:false}
+}
