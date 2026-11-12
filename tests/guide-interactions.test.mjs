@@ -20,8 +20,10 @@ test('all five free guides have exactly one authored interaction per short conce
 test('malformed answers cannot count as correct, numeric feedback explains independent calculation',()=>{
  const q=guideInteractions['check-answer'][2]
  for(const answer of ['',null,[],NaN,'6%','Infinity','0x6','6e0','6 garbage'])assert.equal(evaluateGuideAnswer(q,answer).correct,false)
- assert.equal(evaluateGuideAnswer(q,'6,0').correct,true)
- assert.match(evaluateGuideAnswer(q,'12').explanation,/18 \/ 300/)
+ assert.equal(evaluateGuideAnswer(q,'7,0').correct,true)
+ assert.match(evaluateGuideAnswer(q,'12').explanation,/21 \/ 300/)
+ assert.equal(evaluateGuideAnswer(q,'6').correct,false,'new task must not reuse the worked example answer')
+ assert.equal(q.answer,21 * 100 / 300)
  for(const answer of [null,99,-1,0.5,'1'])assert.equal(guideAnswerPresent(guideInteractions['first-request'][0],answer),false)
  const order=guideInteractions['first-request'][2]
  for(const answer of [[1,1,0],[0,1],[1,2,3],null,'1,2,0'])assert.equal(evaluateGuideAnswer(order,answer).correct,false)
@@ -53,7 +55,10 @@ test('actual player explains errors, permits retry, preserves answer and support
  code=code.replace(/import ["']\.\/guide-journey\.css["'];?/g,'')
  for(const name of ['react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
  let index=0,states=[];const previous=globalThis.requestAnimationFrame;globalThis.requestAnimationFrame=fn=>fn()
- globalThis.__guide={...model,Tap(){},useRef:()=>({current:null}),useId:()=>':guide:',useState(init){const i=index++;if(!(i in states))states[i]=typeof init==='function'?init():init;return[states[i],next=>{states[i]=typeof next==='function'?next(states[i]):next}]}}
+ const focusCalls=[],scrollCalls=[]
+ const scroller={scrollTop:1800,getBoundingClientRect:()=>({top:76}),scrollTo:options=>scrollCalls.push(options)}
+ const heading={focus:options=>focusCalls.push(options),closest:selector=>{assert.equal(selector,'.scroll');return scroller},getBoundingClientRect:()=>({top:460}),scrollIntoView(){assert.fail('step navigation must not scroll outer app/body ancestors')}}
+ globalThis.__guide={...model,Tap(){},useRef:()=>({current:heading}),useId:()=>':guide:',useState(init){const i=index++;if(!(i in states))states[i]=typeof init==='function'?init():init;return[states[i],next=>{states[i]=typeof next==='function'?next(states[i]):next}]}}
  const nodes=t=>!t||typeof t!=='object'?[]:[t,...[t.props?.children].flat(Infinity).flatMap(nodes)],label=n=>[n.props?.children].flat(Infinity).filter(x=>typeof x==='string').join('')
  try{
   const {GuideJourney}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
@@ -69,9 +74,20 @@ test('actual player explains errors, permits retry, preserves answer and support
   nodes(tree).find(n=>label(n)==='Проверить ответ').props.onClick()
   tree=render();assert.equal(nodes(tree).find(n=>label(n)==='Дальше').props.disabled,false)
   nodes(tree).find(n=>label(n)==='Дальше').props.onClick()
+  assert.deepEqual(focusCalls,[{preventScroll:true}]);assert.deepEqual(scrollCalls,[{top:2172,behavior:'instant'}])
   states=[];tree=render();assert.ok(nodes(tree).some(n=>n.type==='h2'&&label(n)==='Передай факты'))
   nodes(tree).find(n=>label(n)==='Весь материал').props.onClick()
   tree=render();assert.equal(nodes(tree).find(n=>n.type==='div'&&n.props.children==='Практическая работа').props.hidden,false)
   assert.ok(nodes(tree).some(n=>label(n)==='Вернуться к шагам'))
  }finally{delete globalThis.__guide;globalThis.requestAnimationFrame=previous}
+})
+
+ test('ordering examples require outputs before dependent decisions or corrections',()=>{
+ const compare=guideInteractions['choose-tool'][2],image=guideInteractions['image-brief'][2]
+ assert.match(compare.items[1],/получить ответы/);assert.match(compare.items[0],/полученные ответы/);assert.match(compare.items[2],/результатам сравнения/)
+ assert.match(image.items[1],/найти ошибку/);assert.match(image.items[0],/найденную/);assert.match(image.items[2],/исправленный/)
+ for(const q of [compare,image]){
+  assert.equal(evaluateGuideAnswer(q,[1,0,2]).correct,true)
+  for(const invalid of [[0,1,2],[0,2,1],[1,2,0],[2,0,1],[2,1,0]])assert.equal(evaluateGuideAnswer(q,invalid).correct,false)
+ }
 })

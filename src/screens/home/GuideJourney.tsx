@@ -14,7 +14,7 @@ function Journey({scope,guide,children}:Props){
  const step=Math.min(state.step,guide.steps.length),practice=step===guide.steps.length,question=questions[step],answer=state.answers[step]
  const result=!practice&&state.checked[step]?evaluateGuideAnswer(question,answer):null
  const change=(value:GuideAnswer)=>update({...state,answers:state.answers.map((old,i)=>i===step?value:old),checked:state.checked.map((old,i)=>i===step?false:old)})
- const go=(next:number)=>{update({...state,step:Math.max(0,Math.min(next,guide.steps.length))});requestAnimationFrame(()=>{heading.current?.focus({preventScroll:true});heading.current?.scrollIntoView({block:'start',behavior:'instant'})})}
+ const go=(next:number)=>{update({...state,step:Math.max(0,Math.min(next,guide.steps.length))});requestAnimationFrame(()=>{const title=heading.current;if(!title)return;title.focus({preventScroll:true});const scroller=title.closest<HTMLElement>('.scroll');if(scroller)scroller.scrollTo({top:Math.max(0,scroller.scrollTop+title.getBoundingClientRect().top-scroller.getBoundingClientRect().top-12),behavior:'instant'})})}
  return <section className="guide-journey" aria-label="Пошаговый урок">
   <div className="guide-journey-top"><span>Шаг {step+1} из {guide.steps.length+1}</span><Tap onClick={()=>setAll(v=>!v)} aria-pressed={all}>{all?'Вернуться к шагам':'Весь материал'}</Tap></div>
   <progress max={guide.steps.length+1} value={step+1} aria-label="Место в уроке, не оценка навыка"/>
