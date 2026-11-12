@@ -119,7 +119,9 @@ export function Companion({ userId }: { userId: number }) {
           const box = event.currentTarget.getBoundingClientRect()
           gaze.current.x = Math.max(-1, Math.min(1, (event.clientX - box.x) / box.width * 2 - 1))
           gaze.current.y = Math.max(-1, Math.min(1, (event.clientY - box.y) / box.height * 2 - 1))
-        }} onPointerLeave={() => { gaze.current.x = 0; gaze.current.y = 0 }}>
+          event.currentTarget.style.setProperty('--dots-look-x', `${gaze.current.x * 8}deg`)
+          event.currentTarget.style.setProperty('--dots-look-y', `${-gaze.current.y * 5}deg`)
+        }} onPointerLeave={event => { gaze.current.x = 0; gaze.current.y = 0; event.currentTarget.style.setProperty('--dots-look-x', '0deg'); event.currentTarget.style.setProperty('--dots-look-y', '0deg') }}>
         <DotsCharacter look={look} mood={mood} active={visible && documentVisible && !covered} motion={!reduce && !session.paused} reaction={reactionId} gaze={gaze} lantern={interactions.preferences.lantern}/>
       </button>
       <div className="og-dots-conversation">

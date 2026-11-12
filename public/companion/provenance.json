@@ -1,0 +1,42 @@
+{
+  "created": "2026-11-12",
+  "method": "Original artwork generated with built-in image_gen; WebP encoding for delivery",
+  "ownership_note": "Not an OpenAI character or brand asset",
+  "frames": [
+    "neutral",
+    "blink",
+    "happy",
+    "wink",
+    "surprised",
+    "wave"
+  ],
+  "files": [
+    {
+      "file": "plush-soft-v1.webp",
+      "bytes": 380424,
+      "sha256": "5e7b3ec18b4a6e7666d8ec364ddde69ddece198e451b14b6ee23b082be57e22a",
+      "width": 1536,
+      "height": 1024,
+      "columns": 3,
+      "rows": 2
+    },
+    {
+      "file": "plush-round-v1.webp",
+      "bytes": 284706,
+      "sha256": "535e2c2f3583c03a4b78c029732efad21c795fcdecf828db3f3937d32b1fe898",
+      "width": 1536,
+      "height": 1024,
+      "columns": 3,
+      "rows": 2
+    },
+    {
+      "file": "plush-spark-v1.webp",
+      "bytes": 252190,
+      "sha256": "dfaf64a81998a78552c756ab2ea74070a11f69b557e2d8ecd820f04a4ffbace3",
+      "width": 1536,
+      "height": 1024,
+      "columns": 3,
+      "rows": 2
+    }
+  ]
+}
