@@ -21,6 +21,7 @@ import { updateSummary } from '../lib/discovery'
 import { knowledgeTopics } from '../lib/knowledge'
 import { openBlogLibrary } from './home/blog-view'
 import { SavedPracticeShelf } from './profile/SavedPracticeShelf'
+import { GifPreference } from './profile/GifPreference'
 import { LearningGoalCard } from './profile/LearningGoalCard'
 import { usePrefersReducedMotion } from '../lib/visibility'
 
@@ -78,6 +79,7 @@ export function Profile() {
       <Tap onClick={()=>push({type:'certifications'})} className="mx-5 mt-4 flex min-h-14 w-[calc(100%-40px)] items-center gap-3 rounded-2xl border border-line bg-card p-4 text-left text-sm font-semibold"><Award size={20} className="shrink-0 text-violet"/>ИИ-сертификации<ChevronRight size={18} className="ml-auto shrink-0"/></Tap>
       <h2 className="mb-3 mt-7 px-5 font-display text-[17px] font-semibold">Настройки</h2>
       <LearningGoalCard key={me.id} onOpenLesson={id => push({ type: 'lesson', id })} />
+      <GifPreference />
 
       <div className="mx-5 mt-3 rounded-[24px] border border-line bg-card/80 p-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

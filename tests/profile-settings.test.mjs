@@ -237,6 +237,7 @@ async function profileComponent() {
     '../lib/knowledge': dataUrl('export const knowledgeTopics = []'),
     './home/blog-view': dataUrl('export const openBlogLibrary = () => {}'),
     './profile/SavedPracticeShelf': dataUrl(`import { createElement } from ${JSON.stringify(import.meta.resolve('react'))}; export const SavedPracticeShelf = ({scope}) => createElement("section", {"data-practice-scope":scope}, "LOCAL_PRACTICE_SHELF")`),
+    './profile/GifPreference': dataUrl('export const GifPreference = () => null'),
     './profile/LearningGoalCard': dataUrl(`import { createElement } from ${JSON.stringify(import.meta.resolve('react'))}; export const LearningGoalCard = () => createElement("section", null, "PROFILE_LEARNING_CARD")`),
     '../lib/visibility': dataUrl('export const usePrefersReducedMotion = () => globalThis.__profileReducedMotion ?? true'),
   }
