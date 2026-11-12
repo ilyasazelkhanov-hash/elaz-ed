@@ -49,7 +49,8 @@
     "test:companion": "node --experimental-strip-types --test tests/home-companion.test.mjs tests/dots-scene.test.mjs tests/dots-puppet-motion.test.mjs tests/companion-motion.test.mjs tests/companion-device.test.mjs",
     "academy:labs": "node scripts/academy-freshness-labs.mjs",
     "test:course-freshness": "node --test tests/course-freshness.test.mjs content/ai-academy/projects/mcp-authorization-lab/policy.test.mjs content/ai-academy/projects/voice-confirmation-lab/confirmation.test.mjs",
-    "test:editorial-motion": "node --experimental-strip-types --test tests/editorial-motion.test.mjs"
+    "test:editorial-motion": "node --experimental-strip-types --test tests/editorial-motion.test.mjs",
+    "test:home-hierarchy": "node --experimental-strip-types --test tests/home-hierarchy.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",

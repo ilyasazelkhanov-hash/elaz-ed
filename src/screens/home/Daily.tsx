@@ -1,4 +1,4 @@
-import { Share2, Snowflake } from 'lucide-react'
+import { Check, ChevronDown, Share2, Snowflake } from 'lucide-react'
 import { animate, motion, useMotionValue, useTransform } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { api, errorText } from '../../lib/api'
@@ -101,7 +101,7 @@ export function DailyCard() {
       <div className="relative min-w-0 flex-1">
         <p className="text-[12px] font-semibold uppercase tracking-wider opacity-70">Бонус дня</p>
         <p className="tabular font-display text-[19px] font-semibold leading-tight">+{reward} XP</p>
-        <p className="mt-1 text-[13px] font-medium opacity-80">{hint ? 'Не отпускай, пока не зарядится' : me.streak > 0 ? `Стрик ${days(me.streak)} — не обрывай` : 'Зажми кнопку и держи'}</p>
+        <p className="mt-1 text-[13px] font-medium opacity-80">{hint ? 'Не отпускай, пока не зарядится' : me.streak > 0 ? `Серия ${days(me.streak)}` : 'Зажми кнопку и держи'}</p>
       </div>
       <motion.button
         ref={orb}
@@ -136,24 +136,21 @@ export function StreakCard() {
   const me = useStore((s) => s.me)!
   const filled = me.streak > 0 ? ((me.streak - 1) % 7) + 1 : 0
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="rounded-[26px] border border-line bg-card/80 p-4">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="rounded-[22px] border border-line bg-card/80 px-4 py-3">
       <div className="flex items-center gap-3">
-        <Emoji char="🔥" size={34} animated />
+        <Check size={20} className="shrink-0 text-violet" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[15px] font-semibold leading-tight">Стрик {days(me.streak)}</p>
-          <p className="tabular mt-0.5 text-[12.5px] text-mute">
-            Завтра +{dailyReward(me.streak + 1)} XP · рекорд {me.best_streak}
-          </p>
+          <p className="text-sm font-semibold">Отметка за сегодня получена</p>
+          <p className="mt-0.5 text-xs text-mute">Стрик {days(me.streak)} · завтра +{dailyReward(me.streak + 1)} XP</p>
         </div>
-        {me.freezes > 0 && (
-          <span className="tabular flex h-9 items-center gap-1 rounded-full bg-sky/15 px-2.5 text-[12.5px] font-semibold text-sky">
-            <Snowflake size={15} /> {me.freezes}
-          </span>
-        )}
-        <Tap onClick={() => useStore.setState({ share: streakCard(me) })} aria-label="Поделиться стриком" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-veil/8 text-mute">
-          <Share2 size={16} />
-        </Tap>
       </div>
+      <details className="group mt-1">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-xs text-mute [&::-webkit-details-marker]:hidden">Серия и заморозки<ChevronDown size={15} className="transition-transform group-open:rotate-180" aria-hidden="true"/></summary>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-mute">
+          <span>Рекорд: {me.best_streak}</span>
+          {me.freezes > 0 && <span className="flex items-center gap-1"><Snowflake size={14} aria-hidden="true"/>{me.freezes} в запасе</span>}
+          <Tap onClick={() => useStore.setState({ share: streakCard(me) })} aria-label="Поделиться стриком" className="flex min-h-11 items-center gap-1.5 text-xs text-violet"><Share2 size={15}/>Поделиться</Tap>
+        </div>
       <div className="mt-3.5 flex gap-1.5">
         {Array.from({ length: 7 }, (_, i) => (
           <motion.div
@@ -174,6 +171,7 @@ export function StreakCard() {
             ? 'Неделя закрыта. Заморозка в запасе: она спасёт стрик, если пропустишь день.'
             : `Ещё ${days(7 - filled)} до заморозки — она спасает стрик, если пропустишь день.`}
       </p>
+      </details>
     </motion.div>
   )
 }
