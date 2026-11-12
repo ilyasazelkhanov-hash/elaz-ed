@@ -1,0 +1,66 @@
+{
+  "format": "og-design-contract/1",
+  "name": "OG CRE8R design contract",
+  "recorded_on": "2026-11-12",
+  "reference_commit": "82cfcbdc4cb9d134d618ac3f1afb2d1191646e1b",
+  "purpose": "Documentation and acceptance criteria; not a runtime theme or OpenDesign-compatible package.",
+  "source_of_truth": {
+    "design": "DESIGN.md",
+    "implemented_tokens": "src/index.css",
+    "fixtures": "docs/design/QA-FIXTURES.md",
+    "components": [
+      "src/screens/home/Companion.tsx",
+      "src/screens/home/companion.css",
+      "src/screens/Home.tsx",
+      "src/screens/home/Daily.tsx",
+      "src/screens/home/Feed.tsx",
+      "src/screens/home/LearningMotion.tsx",
+      "src/screens/home/learning-motion.css",
+      "src/lib/editorial-motion.ts",
+      "src/screens/Stories.tsx",
+      "src/lib/use-story-playback.ts",
+      "src/MarkdownImpl.tsx"
+    ],
+    "performance_method": "docs/performance/assets.md"
+  },
+  "acceptance": {
+    "minimum_css_widths": [320, 390],
+    "themes": ["light", "dark"],
+    "preferred_touch_target_css_px": 44,
+    "accessibility_target": "WCAG 2.2 AA; not a certification",
+    "required_motion_states": ["playing", "user-paused", "reduced-motion", "offscreen", "background", "covered", "resumed"],
+    "relevant_test_scripts": ["test:companion", "test:home-hierarchy", "test:editorial-motion", "test:highlights", "test:plain-dashes", "test:all"]
+  },
+  "external_guidance": [
+    {
+      "project": "UI UX Pro Max",
+      "repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+      "guidance": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/blob/main/.claude/skills/ui-ux-pro-max/SKILL.md",
+      "license": "MIT",
+      "license_url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/blob/main/LICENSE",
+      "attribution": "Next Level Builder",
+      "reviewed_on": "2026-11-12",
+      "reviewed_package_version": "2.5.0 (CLI package in supplied source review)",
+      "pinned_commit": null,
+      "used": "Accessibility-first review, existing-stack preservation, semantic tokens and outcome-first QA",
+      "copied_source_or_assets": false,
+      "installed_or_executed": false
+    },
+    {
+      "project": "OpenDesign",
+      "repository": "https://github.com/nexu-io/open-design",
+      "guidance": "https://github.com/nexu-io/open-design/blob/main/design-systems/README.md",
+      "license": "Apache-2.0 at repository root; separately licensed bundled material keeps its own terms",
+      "license_url": "https://github.com/nexu-io/open-design/blob/main/LICENSE",
+      "attribution": "nexu-io OpenDesign contributors",
+      "reviewed_on": "2026-11-12",
+      "reviewed_package_version": "0.25.1 (root package in supplied source review)",
+      "pinned_commit": null,
+      "used": "Portable design prose, token source of truth, provenance and component fixtures",
+      "copied_source_or_assets": false,
+      "installed_or_executed": false
+    }
+  ],
+  "provenance_limits": "External license/package facts are from the supplied read-only source review. Default-branch links are mutable; pin exact commits and inspect applicable notices before any future vendoring. No exhaustive dependency, runtime security or license audit is claimed.",
+  "non_goals": ["Installing a design daemon", "Replacing the OG brand with a catalog preset", "Creating a duplicate token sheet", "Changing rewards, access or payments", "Granting publication or account permissions"]
+}
