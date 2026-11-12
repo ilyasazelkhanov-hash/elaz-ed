@@ -70,7 +70,7 @@
 .og-dots-editor legend { font-size: 13px; font-weight: 650; margin-bottom: 8px; }
 .og-dots-options { display: flex; flex-wrap: wrap; gap: 6px; }
 .og-dots-option { position: relative; cursor: pointer; }
-.og-dots-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.og-dots-option input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .og-dots-option > span { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--color-line); font-size: 12px; color: var(--color-mute); }
 .og-dots-option input:checked + span { color: var(--color-ink); border-color: var(--color-violet); background: color-mix(in srgb, var(--color-violet) 10%, transparent); }
 .og-dots-option input:focus-visible + span { outline: 2px solid var(--color-violet); outline-offset: 2px; }
