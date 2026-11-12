@@ -22,7 +22,9 @@ test('publishing queue is chronological, excludes courses/drafts and never recla
  await db.exec("update public.news_publications set retry_at=now()-interval '1 second'")
  const retry=await claim();assert.equal(retry.lesson.id,2);assert.notEqual(retry.attempt_id,first.attempt_id)
  assert.equal((await db.query("select public.finish_news_post($1,$2,$3,'sent',123,null,0) as done",[-100123,2,first.attempt_id])).rows[0].done,false)
- await db.query("select public.finish_news_post($1,$2,$3,'sent',123,null,0)",[-100123,2,retry.attempt_id])
+ await db.query("select public.finish_news_post($1,$2,$3,'sent',123,'media_400_text_fallback',0)",[-100123,2,retry.attempt_id])
+ const receipt=(await db.query('select status,error_code,retry_at from public.news_publications where lesson_id=2')).rows[0]
+ assert.equal(receipt.status,'sent');assert.equal(receipt.error_code,'media_400_text_fallback');assert.equal(receipt.retry_at,null)
  assert.equal(await claim(),null,'enforce chat rate limit across workers')
  await db.exec("update public.news_publications set attempted_at=now()-interval '10 seconds'")
  const second=await claim();assert.equal(second.lesson.id,1)

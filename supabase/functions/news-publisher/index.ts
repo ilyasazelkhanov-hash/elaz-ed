@@ -61,6 +61,7 @@ Deno.serve(async req => {
    return json({ok:results.length===input.ids.length&&results.every(r=>r.ok),results})
   }
   let sent=0
+  const deliveries: Array<{lesson_id:number,message_id:number,requested:string,delivered:string,fallback:boolean}> = []
   for(let i=0;i<10;i++){
    const claimed=await db.rpc('claim_news_post',{p_chat:cfg.chat_id})
    if(claimed.error)throw new Error('claim')
@@ -68,25 +69,37 @@ Deno.serve(async req => {
    const {lesson,attempt_id}=claimed.data
    const post=newsTelegramPost(lesson,s.bot)
    let result;let status='failed';let messageId=null;let error=null;let retry=60
+   const requested=lesson.cover_url?(isGifCoverUrl(lesson.cover_url)?'animation':'photo'):'text'
+   let fallback=false
    const markup={inline_keyboard:[[{text:'Читать полностью',url:post.link}]]}
    try{
     if(lesson.cover_url){
      const animated = isGifCoverUrl(lesson.cover_url)
      result=await telegram(animated ? 'sendAnimation' : 'sendPhoto',{chat_id:cfg.chat_id,[animated ? 'animation' : 'photo']:lesson.cover_url,caption:post.text,parse_mode:'HTML',reply_markup:markup})
      // A definite 400 means Telegram rejected the media; no message was sent.
-     if(result?.ok===false&&result.error_code===400)result=await telegram('sendMessage',{chat_id:cfg.chat_id,text:post.text,parse_mode:'HTML',reply_markup:markup,link_preview_options:{is_disabled:true}})
+     if(result?.ok===false&&result.error_code===400){
+      fallback=true
+      result=await telegram('sendMessage',{chat_id:cfg.chat_id,text:post.text,parse_mode:'HTML',reply_markup:markup,link_preview_options:{is_disabled:true}})
+     }
     }else result=await telegram('sendMessage',{chat_id:cfg.chat_id,text:post.text,parse_mode:'HTML',reply_markup:markup,link_preview_options:{is_disabled:true}})
-    if(result?.ok===true&&Number.isSafeInteger(result.result?.message_id)&&result.result.message_id>0){status='sent';messageId=result.result.message_id}
+    if(result?.ok===true&&Number.isSafeInteger(result.result?.message_id)&&result.result.message_id>0){status='sent';messageId=result.result.message_id;error=fallback?'media_400_text_fallback':null}
     else if(result?.ok===true){status='uncertain';error='missing_message_id'}
     else if(result?.ok===false&&[400,401,403,404,409,429].includes(result.error_code)){error=`telegram_${result.error_code}`;retry=Math.max(60,Number(result.parameters?.retry_after??0)+5)}
     else {status='uncertain';error='invalid_delivery_response'}
    }catch{status='uncertain';error='network_unknown_delivery'}
    const finished=await db.rpc('finish_news_post',{p_chat:cfg.chat_id,p_lesson:lesson.id,p_attempt:attempt_id,p_status:status,p_message:messageId,p_error:error,p_retry:retry})
-   if(finished.error||!finished.data)return json({ok:false,sent,reason:'delivery_record_failed'},500)
-   if(status!=='sent')return json({ok:false,sent,reason:status,error})
+   if(finished.error||!finished.data)return json({ok:false,sent,deliveries,reason:'delivery_record_failed'},500)
+   if(status!=='sent')return json({ok:false,sent,deliveries,reason:status,error})
+   // A message ID proves acceptance, not a GIF. Report only fields Telegram returned.
+   const message=result.result
+   const delivered=message.animation?.file_id?'animation':Array.isArray(message.photo)&&message.photo.some((p:any)=>p?.file_id)?'photo':typeof message.text==='string'?'text':'unknown'
+   const evidence={lesson_id:lesson.id,message_id:messageId!,requested,delivered,fallback}
+   deliveries.push(evidence)
+   // No token, source URL, caption or response body is logged.
+   console.info(JSON.stringify({event:'news_delivery_recorded',...evidence}))
    sent++
    if(i<9)await new Promise(resolve=>setTimeout(resolve,5200))
   }
-  return json({ok:true,sent})
+  return json({ok:true,sent,deliveries})
  }catch{return json({error:'publisher_failed'},500)}
 })

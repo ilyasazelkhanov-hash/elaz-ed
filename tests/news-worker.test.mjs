@@ -34,3 +34,32 @@ test('HTTP server failures cannot claim success or trigger fallback from a confl
   setup();const gif=item();gif.lesson.cover_url='https://example.org/cover.gif';claims=[gif,gif];reply=()=>new Response(JSON.stringify(body),{status});assert.equal((await invoke()).body.reason,'uncertain');assert.equal(calls.length,1);assert.equal(finished[0].p_status,'uncertain');assert.equal(claims.length,1)
  }
 })
+
+test('successful media rejection fallback leaves a durable warning, not a failure or retry',async()=>{
+ setup();const gif=item();gif.lesson.cover_url='https://example.org/cover.gif';claims=[gif]
+ reply=call=>new Response(JSON.stringify(call.method==='sendAnimation'?{ok:false,error_code:400}:{ok:true,result:{message_id:124,text:'published text'}}))
+ const r=await invoke()
+ assert.equal(finished[0].p_status,'sent');assert.equal(finished[0].p_error,'media_400_text_fallback')
+ assert.deepEqual(r.body.deliveries,[{lesson_id:42,message_id:124,requested:'animation',delivered:'text',fallback:true}])
+ assert.equal(calls.length,2)
+})
+test('delivery evidence distinguishes confirmed animation, photo, text and unknown media',async()=>{
+ for(const [cover,result,expected] of [
+  ['x.gif',{animation:{file_id:'file'}},'animation'],
+  ['x.jpg',{photo:[{file_id:'file'}]},'photo'],
+  [null,{text:'article'},'text'],
+  ['x.gif',{},'unknown'],
+  ['x.gif',{animation:{}},'unknown']
+ ]){
+  setup();const entry=item();entry.lesson.cover_url=cover;claims=[entry]
+  reply=()=>new Response(JSON.stringify({ok:true,result:{message_id:125,...result}}))
+  const r=await invoke();assert.equal(r.body.deliveries[0].delivered,expected)
+  assert.equal(r.body.deliveries[0].fallback,false);assert.equal(finished[0].p_error,null)
+ }
+})
+test('ambiguous fallback is never labelled a successful degraded delivery',async()=>{
+ setup();const gif=item();gif.lesson.cover_url='x.gif';claims=[gif]
+ reply=call=>{if(call.method==='sendAnimation')return new Response(JSON.stringify({ok:false,error_code:400}));throw Error('timeout')}
+ const r=await invoke();assert.deepEqual(r.body.deliveries,[])
+ assert.equal(finished[0].p_status,'uncertain');assert.equal(finished[0].p_error,'network_unknown_delivery')
+})
