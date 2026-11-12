@@ -73,8 +73,8 @@ test('free guides expose tool access conditions before practice and a safe concr
    assert.match(html,/Это не проверка результата, без оценки и XP/)
    if(guide.workedExample){
     assert.match(html,/Найди слабое место/)
-    assert.match(html,/<details><summary>Посмотреть разбор и улучшенный вариант<\/summary>/)
-    assert.match(html,/<details><summary>Если застрял на своей задаче<\/summary>/)
+    assert.match(html,/<details><summary tabindex="0">Посмотреть разбор и улучшенный вариант<\/summary>/)
+    assert.match(html,/<details><summary tabindex="0">Если застрял на своей задаче<\/summary>/)
     assert.ok(!html.includes('<details open'))
     assert.ok(html.includes(guide.workedExample.improved))
     assert.match(html,/не оценка твоей работы/)
@@ -88,4 +88,50 @@ test('free guides expose tool access conditions before practice and a safe concr
  const source=await readFile(file,'utf8')
  assert.match(source,/navigateTab\('blog'\)/)
  assert.doesNotMatch(source,/store\.pop\(\);store\.setTab/)
+})
+
+test('worked example disclosures remain reachable through the real FocusLayer Tab handler',async()=>{
+ const {transformWithOxc}=await import('vite')
+ const file=new URL('../src/FocusLayer.tsx',import.meta.url)
+ const source=await readFile(new URL('../src/screens/home/FreeStart.tsx',import.meta.url),'utf8')
+ assert.match(source,/<summary tabIndex=\{0\}>Посмотреть/)
+ assert.match(source,/<summary tabIndex=\{0\}>Если застрял/)
+ let code=(await transformWithOxc(await readFile(file,'utf8'),file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
+ code=code.replace(/import \{([^}]+)\} from ["'](?:react|motion\/react)["'];?/g,(_m,names)=>`const {${names}} = globalThis.__freeFocusHarness;`)
+ code=code.replaceAll('from "react/jsx-runtime"',`from ${JSON.stringify(import.meta.resolve('react/jsx-runtime'))}`)
+ const handlers=new Map();let ref=0,open=false
+ class Element {
+  constructor(name,inside=false){this.name=name;this.tabIndex=0;this.inside=inside}
+  closest(){return null} matches(){return false}
+  getClientRects(){return this.inside&&!open?[]:[{}]}
+  focus(){globalThis.document.activeElement=this}
+ }
+ const first=new Element('close'),solution=new Element('solution-summary'),inside=new Element('inside',true),hints=new Element('hints-summary'),last=new Element('practice')
+ const items=[first,solution,inside,hints,last]
+ const root={querySelectorAll(selector){assert.match(selector,/\[tabindex\]/);return items},contains:element=>items.includes(element),focus(){}}
+ const previous={document:globalThis.document,HTMLElement:globalThis.HTMLElement}
+ globalThis.HTMLElement=Element
+ globalThis.document={activeElement:solution,addEventListener:(name,fn)=>handlers.set(name,fn),removeEventListener:name=>handlers.delete(name)}
+ globalThis.__freeFocusHarness={useRef:value=>({current:ref++===0?root:value}),useLayoutEffect:fn=>fn(),useIsPresent:()=>true,motion:{div:'div'},AnimatePresence:'div'}
+ try{
+  const {FocusLayer}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
+  FocusLayer({active:true,label:'Free start',children:null})
+  for(const expanded of [false,true]){
+   open=expanded
+   for(const summary of [solution,hints])for(const shiftKey of [false,true]){
+    document.activeElement=summary;let prevented=false
+    handlers.get('keydown')({key:'Tab',shiftKey,preventDefault(){prevented=true}})
+    assert.equal(prevented,false,`${summary.name}: native Tab/Shift+Tab must proceed when details is ${expanded?'open':'closed'}`)
+    assert.equal(document.activeElement,summary,'trap must not reset focus to the first control')
+   }
+   document.activeElement=last
+   handlers.get('keydown')({key:'Tab',shiftKey:false,preventDefault(){}})
+   assert.equal(document.activeElement,first)
+   handlers.get('keydown')({key:'Tab',shiftKey:true,preventDefault(){}})
+   assert.equal(document.activeElement,last)
+  }
+ }finally{
+  delete globalThis.__freeFocusHarness
+  for(const key of ['document','HTMLElement'])if(previous[key]===undefined)delete globalThis[key];else globalThis[key]=previous[key]
+ }
 })

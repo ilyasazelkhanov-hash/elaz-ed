@@ -64,12 +64,12 @@ function FreeStartSession({path,go,user}:FreeStartProps & {user:number}) {
   {guide.workedExample ? <section className="free-start-example free-start-worked" aria-label="Разбор учебного примера">
    <h2>Найди слабое место</h2><p>{guide.workedExample.question}</p>
    <div className="free-start-example-version"><strong>Слабый вариант</strong><p>{guide.workedExample.weak}</p></div>
-   <details key={guide.id + '-solution'}><summary>Посмотреть разбор и улучшенный вариант</summary>
+   <details key={guide.id + '-solution'}><summary tabIndex={0}>Посмотреть разбор и улучшенный вариант</summary>
     <p>{guide.workedExample.issue}</p>
     <div className="free-start-example-version"><strong>Улучшенный вариант</strong><p>{guide.workedExample.improved}</p></div>
     <p>{guide.workedExample.explanation}</p>
    </details>
-   <details key={guide.id + '-hints'}><summary>Если застрял на своей задаче</summary><ul>{guide.workedExample.hints.map(hint=><li key={hint}>{hint}</li>)}</ul></details>
+   <details key={guide.id + '-hints'}><summary tabIndex={0}>Если застрял на своей задаче</summary><ul>{guide.workedExample.hints.map(hint=><li key={hint}>{hint}</li>)}</ul></details>
    <p className="free-start-note">Это учебный разбор, не оценка твоей работы. Примени принцип к своей задаче ниже.</p>
   </section> : <section className="free-start-example"><h2>На примере</h2><p>{guide.example}</p></section>}
   <PracticeArtifact scope={user ? `${isDemo ? 'demo' : 'live'}:${user}` : undefined} course="free-start" lesson={guide.id} title={guide.title} task={guide.task} criteria={guide.checks}/>
