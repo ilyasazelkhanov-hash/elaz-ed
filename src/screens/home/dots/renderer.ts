@@ -3,7 +3,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import type { CompanionPreferences } from '../../../lib/home-companion'
 import { clamp, DOTS_DPR_LIMIT, DOTS_FPS, dotsPose, easePose, safeMood } from './rig'
 
-export type DotsSceneState = { look: CompanionPreferences; mood: string; motion: boolean; active: boolean; reaction: number; gaze: { x: number; y: number } }
+export type DotsSceneState = { look: CompanionPreferences; mood: string; motion: boolean; active: boolean; reaction: number; lantern?: boolean; gaze: { x: number; y: number } }
 export type DotsScene = { update(state: DotsSceneState): void; dispose(): void }
 const colors = { violet: '#9d81e7', mint: '#76c7af', peach: '#f4ad8c', sky: '#86bce8' }
 
@@ -99,6 +99,15 @@ export function createDotsScene(canvas: HTMLCanvasElement, initial: DotsSceneSta
   ellipsoid(sprout, leafMat, 0, .13, 0, .025, .15, .025)
   const leaf1 = ellipsoid(sprout, leafMat, -.11, .23, 0, .14, .065, .035); leaf1.rotation.z = -.5
   const leaf2 = ellipsoid(sprout, leafMat, .11, .27, 0, .15, .067, .035); leaf2.rotation.z = .5
+  // A purely visual lamp held by the right paw. No device/camera/torch access.
+  const lantern = new T.Group(); rightArm.add(lantern); lantern.position.set(.08, -.36, .22)
+  ellipsoid(lantern, warm, 0, 0, 0, .13, .15, .1)
+  const bulb = material(new T.MeshBasicMaterial({ color: '#ffe6a5' }))
+  ellipsoid(lantern, bulb, 0, .005, .09, .09, .1, .027)
+  ellipsoid(lantern, ink, 0, .16, 0, .085, .025, .05)
+  ellipsoid(lantern, ink, 0, -.15, 0, .12, .025, .08)
+  const halo = new T.Mesh(geo(new T.CircleGeometry(.31, 24)), material(new T.MeshBasicMaterial({ color: '#ffd694', transparent: true, opacity: .13, depthWrite: false })))
+  halo.position.set(0, 0, -.03); lantern.add(halo)
   // Tiny shoulder pin is part of the character, not a particle effect.
   const pin = new T.Mesh(geo(new T.OctahedronGeometry(.075)), warm); pin.position.set(.6, -.4, .42); pin.rotation.z = .2; torso.add(pin)
   const shadowCanvas = document.createElement('canvas'); shadowCanvas.width = 64; shadowCanvas.height = 64
@@ -120,6 +129,7 @@ export function createDotsScene(canvas: HTMLCanvasElement, initial: DotsSceneSta
   function draw(dt: number) {
     if (disposed) return
     setLook()
+    lantern.visible = state.lantern === true
     const pose = dotsPose(elapsed, safeMood(state.mood), elapsed - reactionStart, state.gaze, state.motion)
     rig.rotation.y = easePose(rig.rotation.y, pose.yaw, dt, 7); rig.rotation.x = easePose(rig.rotation.x, pose.pitch, dt, 7); rig.rotation.z = easePose(rig.rotation.z, pose.roll, dt, 7)
     torso.position.y = pose.lift; torso.scale.set(1 + pose.squash, 1 - pose.squash, 1 + pose.squash * .4)
@@ -127,8 +137,8 @@ export function createDotsScene(canvas: HTMLCanvasElement, initial: DotsSceneSta
     eyes[0].scale.y = pose.leftEye; eyes[1].scale.y = pose.rightEye
     brows[0].position.y = .44 + pose.brow; brows[1].position.y = .44 + (state.mood === 'curious' ? -.025 : pose.brow)
     leftArm.rotation.z = pose.leftArm; rightArm.rotation.z = pose.rightArm
-    mouth.visible = state.mood === 'happy' || state.mood === 'curious'; smile.visible = !mouth.visible; tongue.visible = state.mood === 'happy'
-    mouth.scale.y = pose.mouth; mouth.scale.x = state.mood === 'curious' ? .055 : .095
+    mouth.visible = state.mood === 'happy' || state.mood === 'curious' || state.mood === 'surprised'; smile.visible = !mouth.visible; tongue.visible = state.mood === 'happy'
+    mouth.scale.y = pose.mouth; mouth.scale.x = state.mood === 'curious' || state.mood === 'surprised' ? .055 : .095
     shadow.scale.x = 1 - pose.lift * .2
     renderer.render(scene, camera)
   }

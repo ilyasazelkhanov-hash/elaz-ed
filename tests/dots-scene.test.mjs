@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises'
 import { dotsPose, easePose, safeMood, DOTS_DPR_LIMIT, DOTS_FPS } from '../src/screens/home/dots/rig.ts'
 
 test('pose math stays finite and bounded after hidden tabs and invalid pointers',()=>{
- for(const t of [0,1,4.8,600,1e9,NaN,Infinity])for(const mood of ['calm','happy','wink','curious']){
+ for(const t of [0,1,4.8,600,1e9,NaN,Infinity])for(const mood of ['calm','happy','wink','curious','surprised']){
   const pose=dotsPose(t,mood,.25,{x:Infinity,y:-99},true)
   assert.ok(Object.values(pose).every(Number.isFinite))
   assert.ok(Math.abs(pose.yaw)<.5 && Math.abs(pose.pitch)<.2 && Math.abs(pose.squash)<.1)
@@ -14,7 +14,7 @@ test('pose math stays finite and bounded after hidden tabs and invalid pointers'
  assert.equal(DOTS_FPS,30);assert.ok(DOTS_DPR_LIMIT<=1.5)
 })
 test('reduced motion freezes the pose, but keeps readable distinct expressions',()=>{
- for(const mood of ['calm','happy','wink','curious'])assert.deepEqual(dotsPose(0,mood,.1,{x:0,y:0},false),dotsPose(360,mood,.9,{x:99,y:88},false))
+ for(const mood of ['calm','happy','wink','curious','surprised'])assert.deepEqual(dotsPose(0,mood,.1,{x:0,y:0},false),dotsPose(360,mood,.9,{x:99,y:88},false))
  const calm=dotsPose(1,'calm',-1,{x:0,y:0},false),wink=dotsPose(1,'wink',-1,{x:0,y:0},false),happy=dotsPose(1,'happy',-1,{x:0,y:0},false)
  assert.equal(calm.rightEye,1);assert.equal(wink.rightEye,.08);assert.ok(happy.mouth>calm.mouth)
 })
@@ -47,6 +47,7 @@ test('poster is original vector, unique per instance and each palette/shape/acce
   const html=renderToStaticMarkup(createElement(DotsPoster,{look:{name:'Dots',color,shape,accessory},mood:'happy'}))
   assert.match(html,/viewBox="0 0 160 160"/);assert.doesNotMatch(html,/<image|<script|href="http|filter=/)
  }
+ const lamp=renderToStaticMarkup(createElement(DotsPoster,{look:{name:'Dots',color:'mint',shape:'soft',accessory:'none'},mood:'surprised',lantern:true}));assert.doesNotMatch(lamp,/<script|<image|href="http/);assert.match(lamp,/linearGradient/)
  const html=renderToStaticMarkup(createElement('div',null,...[1,2].map(key=>createElement(DotsPoster,{key,look:{name:'Dots',color:'violet',shape:'soft',accessory:'none'},mood:'calm'}))))
  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);assert.equal(ids.length,new Set(ids).size)
 })

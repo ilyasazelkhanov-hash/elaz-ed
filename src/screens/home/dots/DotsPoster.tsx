@@ -14,13 +14,15 @@ const silhouettes = {
 }
 
 /** A complete, original static illustration: readable before WebGL or when GPU/motion is unavailable. */
-export function DotsPoster({ look, mood }: { look: CompanionPreferences; mood: string }) {
+export function DotsPoster({ look, mood, lantern = false }: { look: CompanionPreferences; mood: string; lantern?: boolean }) {
   const uid = useId().replace(/:/g, '')
   const id = (part: string) => `dots-${uid}-${part}`
   const fill = (part: string) => `url(#${id(part)})`
   const p = palettes[look.color]
   const happy = mood === 'happy'
   const curious = mood === 'curious'
+  const surprised = mood === 'surprised'
+  const lanternY = happy ? 84 : 102
   return <svg className="og-dots-poster-art" viewBox="0 0 160 160" aria-hidden="true" focusable="false" style={{ display: 'block', width: '100%', height: '100%', overflow: 'visible' }}>
     <defs>
       <radialGradient id={id('body')} cx="28%" cy="20%" r="88%"><stop stopColor={p.light}/><stop offset=".33" stopColor={p.middle}/><stop offset=".75" stopColor={p.dark}/><stop offset="1" stopColor={p.edge}/></radialGradient>
@@ -30,7 +32,10 @@ export function DotsPoster({ look, mood }: { look: CompanionPreferences; mood: s
       <linearGradient id={id('shine')} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#fff" stopOpacity=".75"/><stop offset="1" stopColor="#fff" stopOpacity="0"/></linearGradient>
       <linearGradient id={id('cream')} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#fff2d9"/><stop offset=".5" stopColor="#eacba9"/><stop offset="1" stopColor="#b58d88"/></linearGradient>
       <radialGradient id={id('cheek')}><stop stopColor={p.blush} stopOpacity=".7"/><stop offset="1" stopColor={p.blush} stopOpacity="0"/></radialGradient>
+      <linearGradient id={id('lantern-cone')} x1="0" y1="0" x2=".8" y2="1"><stop stopColor="#ffdf91" stopOpacity=".3"/><stop offset="1" stopColor="#ffdf91" stopOpacity="0"/></linearGradient>
+      <radialGradient id={id('lantern-light')}><stop stopColor="#fff9d8"/><stop offset=".45" stopColor="#ffe6a0"/><stop offset="1" stopColor="#f0b760"/></radialGradient>
     </defs>
+    {lantern && <path d={`M128 ${lanternY + 9}L155 148L112 146Z`} fill={fill('lantern-cone')}/>}
     <ellipse cx="81" cy="140" rx="48" ry="12" fill={fill('shadow')}/>
     <ellipse cx="59" cy="123" rx="15" ry="8" fill={fill('limb')} transform="rotate(-12 59 123)"/>
     <ellipse cx="104" cy="123" rx="14" ry="8" fill={fill('limb')} transform="rotate(12 104 123)"/>
@@ -41,23 +46,32 @@ export function DotsPoster({ look, mood }: { look: CompanionPreferences; mood: s
     <ellipse cx="128" cy={happy ? 77 : 93} rx="10" ry="17" fill={fill('limb')} transform={`rotate(${happy ? -42 : -26} 128 ${happy ? 77 : 93})`}/>
     <path d="M29 86C28 90 29 94 31 96" fill="none" stroke="#fff" strokeOpacity=".35" strokeWidth="2" strokeLinecap="round"/>
     <ellipse cx="53" cy="91" rx="13" ry="8" fill={fill('cheek')}/><ellipse cx="108" cy="91" rx="13" ry="8" fill={fill('cheek')}/>
+    {surprised && <g fill="none" stroke={p.edge} strokeOpacity=".7" strokeWidth="2.6" strokeLinecap="round"><path d="M54 56Q61 51 68 55"/><path d="M95 55Q102 51 109 56"/></g>}
     <g transform={curious ? 'translate(0 -2) rotate(-4 80 78)' : undefined}>
       <g className="og-dots-poster-eye" style={{transformOrigin: '62px 76px'}}>
-      <ellipse cx="62" cy="76" rx="10" ry="14" fill={p.edge} opacity=".18" transform="translate(0 2)"/>
-      <ellipse cx="62" cy="76" rx="9" ry="13" fill={fill('eye')}/>
+      <ellipse cx="62" cy="76" rx={surprised ? 11 : 10} ry={surprised ? 16 : 14} fill={p.edge} opacity=".18" transform="translate(0 2)"/>
+      <ellipse cx="62" cy="76" rx={surprised ? 10 : 9} ry={surprised ? 15 : 13} fill={fill('eye')}/>
       <ellipse cx="59" cy="71" rx="3.2" ry="4.5" fill="#fff" opacity=".95" transform="rotate(20 59 71)"/>
       <circle cx="66" cy="81" r="1.6" fill="#c9c6f4" opacity=".8"/>
       </g>
       {mood === 'wink' ? <path d="M94 78Q101 71 108 78" fill="none" stroke="#211b35" strokeWidth="4" strokeLinecap="round"/> : <g className="og-dots-poster-eye" style={{transformOrigin: '101px 76px'}}>
-        <ellipse cx="101" cy="76" rx="10" ry="14" fill={p.edge} opacity=".18" transform="translate(0 2)"/>
-        <ellipse cx="101" cy="76" rx="9" ry="13" fill={fill('eye')}/>
+        <ellipse cx="101" cy="76" rx={surprised ? 11 : 10} ry={surprised ? 16 : 14} fill={p.edge} opacity=".18" transform="translate(0 2)"/>
+        <ellipse cx="101" cy="76" rx={surprised ? 10 : 9} ry={surprised ? 15 : 13} fill={fill('eye')}/>
         <ellipse cx="98" cy="71" rx="3.2" ry="4.5" fill="#fff" opacity=".95" transform="rotate(20 98 71)"/>
         <circle cx="105" cy="81" r="1.6" fill="#c9c6f4" opacity=".8"/>
       </g>}
-      {happy ? <><path d="M73 91Q81 94 89 91Q88 106 81 106Q74 106 73 91Z" fill="#32213e"/><path d="M76 101Q81 97 86 101Q82 109 76 101Z" fill="#ee97b4"/></> : curious ? <ellipse cx="82" cy="96" rx="4" ry="5" fill="#342444"/> : <path d="M75 94Q82 102 89 93" fill="none" stroke="#352346" strokeWidth="2.7" strokeLinecap="round"/>}
+      {happy ? <><path d="M73 91Q81 94 89 91Q88 106 81 106Q74 106 73 91Z" fill="#32213e"/><path d="M76 101Q81 97 86 101Q82 109 76 101Z" fill="#ee97b4"/></> : (curious || surprised) ? <ellipse cx="82" cy="97" rx={surprised ? 5.5 : 4} ry={surprised ? 7.5 : 5} fill="#342444"/> : <path d="M75 94Q82 102 89 93" fill="none" stroke="#352346" strokeWidth="2.7" strokeLinecap="round"/>}
     </g>
     {look.accessory === 'glasses' && <g fill="#fff" fillOpacity=".06" stroke="#40354f" strokeWidth="3"><circle cx="61" cy="77" r="15"/><circle cx="102" cy="77" r="15"/><path d="M76 76Q82 72 87 76M46 75L39 72M117 75L124 72" fill="none" strokeLinecap="round"/><path d="M52 68L58 65M93 68L99 65" stroke="#fff" strokeOpacity=".5" strokeWidth="2"/></g>}
     {look.accessory === 'sprout' && <g><path d="M80 32Q83 19 78 12" fill="none" stroke="#43836e" strokeWidth="3.5" strokeLinecap="round"/><path d="M79 21C63 22 60 14 61 9C73 8 80 12 79 21Z" fill="#81bd8f"/><path d="M80 17C83 6 93 5 100 8C97 18 88 22 80 17Z" fill="#a3d3a2"/><path d="M65 12L77 19M84 16L95 10" fill="none" stroke="#d6efba" strokeWidth="1.3" strokeLinecap="round"/></g>}
     {look.accessory === 'headphones' && <g><path d="M35 76C25 15 129 12 128 75" fill="none" stroke="#4f3d63" strokeWidth="8" strokeLinecap="round"/><path d="M35 60C41 19 115 20 125 60" fill="none" stroke="#e5c8c0" strokeWidth="3" strokeLinecap="round"/><rect x="24" y="64" width="16" height="31" rx="8" fill={fill('cream')} stroke="#9d7b82" strokeWidth="1" transform="rotate(-7 32 80)"/><rect x="122" y="64" width="16" height="31" rx="8" fill={fill('cream')} stroke="#9d7b82" strokeWidth="1" transform="rotate(7 130 80)"/><path d="M28 71V85M126 71V85" stroke="#fff5e6" strokeOpacity=".7" strokeWidth="2" strokeLinecap="round"/></g>}
+    {lantern && <g transform={`translate(124 ${lanternY})`}>
+      <path d="M3 3V0C3-7 15-7 15 0V3" fill="none" stroke="#88716a" strokeWidth="2.5" strokeLinecap="round"/>
+      <rect x="0" y="2" width="18" height="22" rx="6" fill="#b99068" stroke="#7d645b" strokeWidth="1"/>
+      <rect x="3" y="5" width="12" height="14" rx="4" fill={fill('lantern-light')}/>
+      <path d="M9 6V18" stroke="#fff9dd" strokeWidth="2" strokeLinecap="round" opacity=".9"/>
+      <path d="M3 22H15M2 3H16" stroke="#e5c29a" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="9" cy="12" r="2.3" fill="#fffbe8"/>
+    </g>}
   </svg>
 }

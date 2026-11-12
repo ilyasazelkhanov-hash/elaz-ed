@@ -86,9 +86,10 @@ test('single compact layout exposes separate real action, pet and settings; anim
  code=code.replace(/import \{([^}]+)\} from ["']\.\.\/[^"']+["'];?/g,(_statement,names)=>`const {${names}} = globalThis.__companionHarness;`)
  code=code.replace(/import ["']\.\/companion\.css["'];?/g,'')
  code=code.replace(/import \{ DotsCharacter \} from ["']\.\/dots\/DotsCharacter["'];?/g,'const { DotsCharacter } = globalThis.__companionHarness;')
+ code=code.replace(/import \{ useDotsInteractions \} from ["']\.\/dots\/useInteractions["'];?/g,'const { useDotsInteractions } = globalThis.__companionHarness;')
  for(const name of ['react','react-dom','react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
  let reduced=false
- globalThis.__companionHarness={...companion,DotsCharacter:()=>null,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>parseCompanionSession(null),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
+ globalThis.__companionHarness={...companion,useDotsInteractions:()=>({preferences:{voice:false,lantern:false},voiceState:'idle',motionStatus:'off',moment:'',readAloud(){}}),DotsCharacter:()=>null,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>parseCompanionSession(null),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
  useStore:selector=>selector({feed:[card(8)],advent,me:{daily_claimed:false},courses:[],stack:[],reward:null,share:null,push(){}})}
  try{
   const {Companion}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)

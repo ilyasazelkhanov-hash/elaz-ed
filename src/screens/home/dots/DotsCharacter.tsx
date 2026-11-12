@@ -5,8 +5,8 @@ import type { DotsScene, DotsSceneState } from './renderer'
 import { DotsPoster } from './DotsPoster'
 
 /** The native button/CTA never depends on this optional renderer. SVG is a complete fallback. */
-export function DotsCharacter({ look, mood, active, motion, reaction = 0, gaze }: {
-  look: CompanionPreferences; mood: string; active: boolean; motion: boolean; reaction?: number; gaze?: RefObject<{ x: number; y: number }>
+export function DotsCharacter({ look, mood, active, motion, reaction = 0, gaze, lantern = false }: {
+  look: CompanionPreferences; mood: string; active: boolean; motion: boolean; reaction?: number; lantern?: boolean; gaze?: RefObject<{ x: number; y: number }>
 }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const host = useRef<HTMLSpanElement>(null)
@@ -17,8 +17,8 @@ export function DotsCharacter({ look, mood, active, motion, reaction = 0, gaze }
   const [activated, setActivated] = useState(false)
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
-  const latest = useRef<DotsSceneState>({ look, mood, active: activeNow, motion, reaction, gaze: gaze?.current ?? neutral.current })
-  latest.current = { look, mood, active: activeNow, motion, reaction, gaze: gaze?.current ?? neutral.current }
+  const latest = useRef<DotsSceneState>({ look, mood, active: activeNow, motion, reaction, lantern, gaze: gaze?.current ?? neutral.current })
+  latest.current = { look, mood, active: activeNow, motion, reaction, lantern, gaze: gaze?.current ?? neutral.current }
   useEffect(() => { if (activeNow && motion) setActivated(true) }, [activeNow, motion])
   useEffect(() => {
     if (!activated || !motion || failed) { setReady(false); return }
@@ -36,9 +36,9 @@ export function DotsCharacter({ look, mood, active, motion, reaction = 0, gaze }
   }, [activated, motion, failed])
   useEffect(() => {
     try { controller.current?.update(latest.current) } catch { setFailed(true); setReady(false) }
-  }, [look, mood, activeNow, motion, reaction])
+  }, [look, mood, activeNow, motion, reaction, lantern])
   return <span ref={host} className="og-dots-character" data-renderer={ready && motion ? 'webgl' : 'poster'} data-active={activeNow} data-motion={motion} data-color={look.color} data-shape={look.shape} data-accessory={look.accessory} aria-hidden="true">
-    <span className="og-dots-poster"><DotsPoster look={look} mood={mood}/></span>
+    <span className="og-dots-poster"><DotsPoster look={look} mood={mood} lantern={lantern}/></span>
     <canvas ref={canvas} className="og-dots-canvas" aria-hidden="true"/>
   </span>
 }

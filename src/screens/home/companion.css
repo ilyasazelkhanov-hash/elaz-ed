@@ -61,3 +61,19 @@
 @media (hover: hover) { .og-dots-settings:hover { color: var(--color-ink); background: color-mix(in srgb, var(--color-veil) 5%, transparent); } .og-dots-speech:hover .og-dots-action { text-decoration: underline; } }
 @media (max-width: 359px) { .og-companion { grid-template-columns: 76px minmax(0, 1fr); gap: 7px; } .og-dots-pet { width: 76px; height: 108px; } .og-dots-name > span { display: none; } .og-dots-speech { padding: 10px 11px; } .og-dots-line { font-size: 13px; } .og-dots-editor { padding-inline: 18px; } .og-dots-preview { gap: 12px; padding-inline: 10px; } .og-dots-preview .og-dots-character { width: 110px; flex-basis: 110px; } }
 @media (prefers-reduced-motion: reduce) { .og-companion *, .og-companion *::before, .og-companion *::after, .og-dots-modal * { animation: none !important; transition: none !important; } }
+
+.og-dots-heading-actions { display: flex; flex: 0 0 auto; gap: 0; }
+.og-dots-interactions { padding: 15px; margin: 20px 0 0; border: 1px solid var(--color-line); border-radius: 18px; }
+.og-dots-interactions summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 650; }
+.og-dots-interactions summary::after { content: "+"; margin-left: auto; font-size: 20px; }
+.og-dots-interactions[open] summary::after { content: "−"; }
+.og-dots-interactions summary:focus-visible { outline: 2px solid var(--color-violet); outline-offset: 3px; border-radius: 8px; }
+.og-dots-sensors strong { font-size: 13px; }
+.og-dots-sensors p, .og-dots-sensors small { display: block; font-size: 11px; line-height: 1.5; color: var(--color-mute); margin: 6px 0; }
+.og-dots-sensors button { width: 100%; padding: 10px 12px; font-size: 12px; line-height: 1.4; font-weight: 650; color: var(--color-violet); background: color-mix(in srgb, var(--color-violet) 10%, transparent); }
+.og-dots-editor button:disabled, .og-dots-editor input:disabled { cursor: not-allowed; opacity: .55; }
+.og-dots-interactions .og-dots-motion { margin-top: 14px; }
+.og-dots-interactions .og-dots-privacy { margin-bottom: 0; }
+
+.og-dots-character[data-renderer='poster'][data-motion='true'] .og-dots-poster { transform: perspective(240px) rotateX(var(--dots-tilt-x, 0deg)) rotateY(var(--dots-tilt-y, 0deg)); transition: transform 120ms linear; }
+@media (prefers-reduced-motion: reduce) { .og-dots-character .og-dots-poster { transform: none !important; } }
