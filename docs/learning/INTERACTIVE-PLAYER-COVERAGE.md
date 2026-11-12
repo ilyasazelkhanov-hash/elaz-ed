@@ -33,7 +33,7 @@
 | Семейство | Объём | Текущий движок | Изменено здесь |
 | --- | --- | --- | --- |
 | Бесплатный старт | 5 разборов | FreeStart | 5 пошаговых уроков, 15 упражнений, final artifact |
-| OG Practice | 5 курсов, 33 урока в paths.json | PracticeReader: разделы/разбор ответа/работа | Нет нового authored player; текущая практика сохранена |
+| OG Practice | 5 курсов, 33 урока в paths.json | PracticeReader: разделы/разбор ответа/работа | 2 reviewed candidates / 6 упражнений с exact-body guard; активный live-охват не подтверждён |
 | AI Academy | 28 курсов, 448 lesson и 448 assessment в catalog.learning.json | LessonReading/Quiz/Assignment/versioned review | Не мигрированы; существующий server grading сохранён |
 | Legacy lessons | Динамические данные БД | Lesson/Quiz | Не менялись, production охват не проверен |
 
@@ -62,18 +62,20 @@ Unit: все 5 guide покрыты; ответы, edge cases, формат чи
 - https://brilliant.org/about/
 - https://blog.duolingo.com/
 
-## Package 2: two OG lessons (v1, local candidate)
+## Package 2: two reviewed OG candidates (v1, conditional activation)
 
 Inspected the 33 source lessons in paths.json by course and content shape; closely
-read foundations/block-1 and foundations/foundations-context. These two now have
-three short authored concepts and three formative checks each in the authorized
-PracticeReader. Correct answers unlock the next training step; incorrect choices
+read foundations/block-1 and foundations/foundations-context. Each reviewed fixture has
+three short authored concepts and three formative checks. The authorized
+PracticeReader activates them only after exact-body compatibility verification. Correct answers unlock the next training step; incorrect choices
 explain the actual error and allow retry. Final step links to the existing real
 assignment and PracticeArtifact. Full original lesson, resources and own-answer
 self-check remain available through existing tabs. No paid payload is imported
 into public code; the supplemental examples are deliberately public and ungraded.
 
-Coverage: 2/33 OG lessons, 6 exercises, plus the earlier 5/5 free guides.
+Authored candidate coverage: 2/33 OG source lessons, 6 exercises, plus the earlier
+5/5 free guides. Effective live coverage of this package is unverified and may be
+0/33; candidate counts do not establish active lesson coverage.
 Remaining: 31 OG lessons and 448 Academy lessons have NOT been migrated.
 No production database or content import has been performed. Browser verification
 and publication are pending. Source lessons may differ from live database copies.

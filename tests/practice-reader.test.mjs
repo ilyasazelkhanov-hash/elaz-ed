@@ -72,3 +72,44 @@ test('reader exposes primary sections and an explicit menu for other sections', 
   assert.match(html, /tabindex="-1" class="og-reader-content"/)
  } finally { delete globalThis.__readerHarness }
 })
+
+test('actual reader blocks stale hashes and unmounted results while preserving source fallback',async()=>{
+ const {readFile}=await import('node:fs/promises'),{transformWithOxc}=await import('vite')
+ const {practiceSections}=await import('../src/lib/og-practice.ts')
+ const file=new URL('../src/screens/home/PracticeReader.tsx',import.meta.url)
+ let code=(await transformWithOxc(await readFile(file,'utf8'),file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
+ code=code.replace(/import[^;\n]*from ["']react["'];?/g,'const {useState,useEffect,useMemo,useRef,useId}=globalThis.__readerLife;')
+ for(const [path,names]of Object.entries({'./GuideJourney':'GuideJourney','../../lib/og-lesson-interactions':'ogLessonInteraction','./PracticeArtifact':'PracticeArtifact','../../Markdown':'Markdown','../../lib/og-practice':'practiceSections','../../lib/practice-reader':'practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck','../../ui':'Tap'}))code=code.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.','\\.')}["'];?`,'g'),`const {${names}}=globalThis.__readerLife;`)
+ code=code.replace(/import ["']\.\/practice\.css["'];?/g,'')
+ for(const name of ['react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
+ const states=[],effects=[],queued=[],pending=[];let si=0,ei=0,writes=0
+ const Journey=()=>null,Markdown=()=>null
+ const previous=globalThis.document
+ globalThis.document={addEventListener(){},removeEventListener(){}}
+ globalThis.__readerLife={GuideJourney:Journey,Markdown,Tap:()=>null,PracticeArtifact:()=>null,practiceSections,practiceReaderStorageKey,readPracticeReaderDraft,splitPracticeCheck,
+  useState:init=>{const i=si++;if(!(i in states))states[i]=typeof init==='function'?init():init;return[states[i],v=>{writes++;states[i]=typeof v==='function'?v(states[i]):v}]},
+  useEffect:(fn,deps)=>{const i=ei++,old=effects[i];if(!old||deps.some((v,n)=>v!==old.deps[n]))queued.push(()=>{old?.cleanup?.();effects[i]={deps,cleanup:fn()}})},
+  useMemo:fn=>fn(),useRef:()=>({current:null}),useId:()=>':test:',
+  ogLessonInteraction:(course,lesson,body)=>new Promise(resolve=>pending.push({course,lesson,body,resolve}))}
+ const nodes=t=>!t||typeof t!=='object'?[]:[t,...[t.props?.children].flat(Infinity).flatMap(nodes)]
+ const body=text=>`## Объяснение\n${text}\n## Самостоятельная работа\nЗадание`
+ const flow={id:'flow',steps:[],challenges:[]}
+ try{
+  const {PracticeReader}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
+  const props={course:{key:'foundations',title:'Основы'},lesson:{key:'block-1',title:'Урок',minutes:5,body:body('A')},index:0,total:1,onBack(){}}
+  const render=()=>{si=0;ei=0;const outer=PracticeReader(props);return outer.type(outer.props)}
+  const flush=()=>{while(queued.length)queued.shift()()}
+  const settle=()=>new Promise(resolve=>setImmediate(resolve))
+  const assertSource=(tree,text)=>{assert.ok(nodes(tree).some(n=>n.type===Markdown&&n.props.text.includes(text)));assert.ok(!nodes(tree).some(n=>n.type===Journey))}
+  assertSource(render(),'A');flush()
+  props.lesson={...props.lesson,body:body('B')};assertSource(render(),'B');flush()
+  pending[0].resolve(flow);await settle();assertSource(render(),'B')
+  pending[1].resolve(flow);await settle();let tree=render()
+  assert.ok(nodes(tree).some(n=>n.type===Journey));assert.ok(nodes(tree).some(n=>n.type===Markdown&&n.props.text.includes('B')))
+  props.lesson={...props.lesson,body:body('C')};assertSource(render(),'C') // before effect cleanup too
+  flush();pending[2].resolve(undefined);await settle();assertSource(render(),'C')
+  props.lesson={...props.lesson,body:body('D')};render();flush()
+  for(const effect of effects)effect?.cleanup?.()
+  const before=writes;pending[3].resolve(flow);await settle();assert.equal(writes,before,'unmounted hash must not set state')
+ }finally{delete globalThis.__readerLife;if(previous===undefined)delete globalThis.document;else globalThis.document=previous}
+})

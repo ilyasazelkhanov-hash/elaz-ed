@@ -51,3 +51,15 @@ test('reader keeps source visible and never bypasses an entitlement boundary',()
  assert.match(journey,/initialPractice/)
  assert.match(journey,/closest<HTMLElement>\('\.scroll'\)/)
 })
+
+test('real compatibility guard fails closed without crypto or when digest rejects',async()=>{
+ const descriptor=Object.getOwnPropertyDescriptor(globalThis,'crypto')
+ const paths=JSON.parse(readFileSync(new URL('../content/ai-practice-2026-10-25/paths.json',import.meta.url)))
+ const body=paths.courses.find(c=>c.key==='foundations').lessons.find(l=>l.key==='block-1').body
+ try{
+  Object.defineProperty(globalThis,'crypto',{configurable:true,value:undefined})
+  assert.equal(await ogLessonInteraction('foundations','block-1',body),undefined)
+  Object.defineProperty(globalThis,'crypto',{configurable:true,value:{subtle:{digest:async()=>{throw Error('unavailable')}}}})
+  assert.equal(await ogLessonInteraction('foundations','block-1',body),undefined)
+ }finally{if(descriptor)Object.defineProperty(globalThis,'crypto',descriptor);else delete globalThis.crypto}
+})
