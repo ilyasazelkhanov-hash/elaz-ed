@@ -79,6 +79,19 @@ test('actual player explains errors, permits retry, preserves answer and support
   nodes(tree).find(n=>label(n)==='Весь материал').props.onClick()
   tree=render();assert.equal(nodes(tree).find(n=>n.type==='div'&&n.props.children==='Практическая работа').props.hidden,false)
   assert.ok(nodes(tree).some(n=>label(n)==='Вернуться к шагам'))
+  const remembered=readGuideJourney(guideJourneyKey(props.scope,props.guide.id),guideInteractions[props.guide.id])
+  states=[];props.initialPractice=true;tree=render()
+  assert.ok(nodes(tree).some(n=>n.type==='h2'&&label(n)==='Теперь создай свою работу'))
+  assert.equal(nodes(tree).find(n=>n.type==='div'&&n.props.children==='Практическая работа').props.hidden,false)
+  assert.deepEqual(states[0].answers,remembered.answers,'explicit work view retains answers')
+  assert.deepEqual(readGuideJourney(guideJourneyKey(props.scope,props.guide.id),guideInteractions[props.guide.id]),remembered,'opening work does not mark learning progress')
+  states=[];props.initialPractice=false;tree=render()
+  assert.ok(nodes(tree).some(n=>n.type==='h2'&&label(n)==='Передай факты'),'ordinary route resumes remembered step')
+  props.scope='test:empty-work';props.initialPractice=true;states=[];tree=render()
+  assert.equal(states[0].step,3,'work route opens practice even after reload clears journey memory')
+  props.initialPractice=false;states=[];tree=render()
+  assert.equal(states[0].step,0,'ordinary fresh route still starts at step zero')
+
  }finally{delete globalThis.__guide;globalThis.requestAnimationFrame=previous}
 })
 

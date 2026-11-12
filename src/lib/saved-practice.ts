@@ -15,7 +15,7 @@ export function savedFreePractice(scope:string|undefined,storage?:ReadStorage): 
    if(!raw)continue
    const value=readArtifact(key,guide.checks.length,JSON.stringify(guide.checks),{getItem:()=>raw})
    const status=artifactStatus(value)
-   if(status!=='empty')items.push({id:guide.id,title:guide.title,path:`/start/${guide.id}`,status})
+   if(status!=='empty')items.push({id:guide.id,title:guide.title,path:`/start/${guide.id}/work`,status})
   }
   return {items,unavailable:false}
  }catch{return {items:[],unavailable:true}}

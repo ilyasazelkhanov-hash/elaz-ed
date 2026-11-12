@@ -86,6 +86,7 @@ test('free guides expose tool access conditions before practice and a safe concr
   }
  }finally{delete globalThis.__freeStartHarness}
  const source=await readFile(file,'utf8')
+ assert.match(source,/initialPractice=\{path\.split\('\/'\)\.filter\(Boolean\)\[2\] === 'work'\}/)
  assert.match(source,/navigateTab\('blog'\)/)
  assert.doesNotMatch(source,/store\.pop\(\);store\.setTab/)
 })

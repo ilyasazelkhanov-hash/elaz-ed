@@ -13,7 +13,7 @@ test('shelf reads only current account/mode and the free guide allowlist',()=>{
  const requested=[],read={getItem:key=>{requested.push(key);return store.getItem(key)}}
  const result=savedFreePractice('live:1',read)
  assert.equal(result.unavailable,false);assert.equal(result.items.length,1)
- assert.deepEqual(result.items[0],{id:guide.id,title:guide.title,path:`/start/${guide.id}`,status:'self_checked'})
+ assert.deepEqual(result.items[0],{id:guide.id,title:guide.title,path:`/start/${guide.id}/work`,status:'self_checked'})
  assert.deepEqual(requested,beginnerGuides.map(g=>artifactKey('live:1','free-start',g.id)))
  assert.deepEqual(savedFreePractice(undefined,{getItem(){throw Error('must not read')}}),{items:[],unavailable:false})
 })
