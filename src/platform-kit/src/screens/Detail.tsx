@@ -2,6 +2,7 @@ import { UPLOAD_ACCEPT, UPLOAD_TYPES, validateUpload, uploadResponseError } from
 import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { remarkPlainDashes } from '../../../lib/plain-dashes'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -211,7 +212,7 @@ export default function EntityDetail({ id }: { id: string }) {
             </div>
           ) : (
             <div className="az-prose">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{e.body}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkPlainDashes]}>{e.body}</ReactMarkdown>
             </div>
           )}
           {(e.kind === 'article' || e.kind === 'video' || e.kind === 'file') && (
