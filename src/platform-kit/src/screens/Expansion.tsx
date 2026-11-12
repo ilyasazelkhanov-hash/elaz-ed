@@ -55,7 +55,7 @@ export function Gifts() {
   const { snapshot: s, act, busy, message } = usePlatform()
   const reduced = useReducedMotion()
   const brand = useBrand()
-  const [text, setText] = useState('Для тебя — маленькая радость.')
+  const [text, setText] = useState('Для тебя - маленькая радость.')
   const [link, setLink] = useState('')
   const [request, setRequest] = useState(crypto.randomUUID())
   const [selected, setSelected] = useState('')
@@ -518,7 +518,7 @@ export function Recap() {
   const progress = s.progress.filter((v) => v.userId === s.me.id && within(v.completedAt))
   const bookings = s.bookings.filter((v) => v.userId === s.me.id && v.status !== 'cancelled' && within(v.createdAt))
   const orders = s.orders.filter((v) => v.userId === s.me.id && v.status !== 'cancelled' && within(v.createdAt))
-  const range = `${date(start.toISOString())} — ${date(end.toISOString())}`
+  const range = `${date(start.toISOString())} - ${date(end.toISOString())}`
   const save = async () => {
     const c = document.createElement('canvas')
     c.width = 1080

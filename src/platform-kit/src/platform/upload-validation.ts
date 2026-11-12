@@ -9,7 +9,7 @@ export function validateUpload(file: { name: string; type: string; size: number 
   if (file.name.length > 200) return { contentType, error: 'Имя файла слишком длинное. Сократите его до 200 символов.' }
   if (file.type && file.type !== contentType) return { contentType, error: 'Тип файла не совпадает с расширением. Экспортируйте файл в поддерживаемом формате, не переименовывая расширение.' }
   if (file.size === 0) return { contentType, error: 'Файл пуст. Выберите файл с содержимым.' }
-  if (file.size > limitMB * 1024 * 1024) return { contentType, error: `Файл слишком большой. Максимальный размер — ${limitMB} МБ.` }
+  if (file.size > limitMB * 1024 * 1024) return { contentType, error: `Файл слишком большой. Максимальный размер - ${limitMB} МБ.` }
   return { contentType }
 }
 export function uploadResponseError(status: number): string {

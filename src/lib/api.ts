@@ -207,11 +207,11 @@ export function errorText(e: unknown) {
     case 'not_for_sale':
       return 'Этот курс не продаётся за звёзды'
     case 'bad_pin_format':
-      return 'PIN — от 4 до 8 цифр'
+      return 'PIN - от 4 до 8 цифр'
     case 'point_used':
-      return 'На этой точке уже гасили коды — удалить нельзя, можно сменить PIN'
+      return 'На этой точке уже гасили коды - удалить нельзя, можно сменить PIN'
     case 'stock_required':
-      return 'У розыгрыша и случайного приза нужен лимит — сколько штук всего'
+      return 'У розыгрыша и случайного приза нужен лимит - сколько штук всего'
     case 'bad_window':
       return 'День «до» не может быть раньше дня «с»'
     case 'already_drawn':
@@ -230,17 +230,17 @@ export function errorText(e: unknown) {
     case 'prize_required':
       return 'Напиши, что под защитным слоем'
     case 'door_opened':
-      return 'Эту дверь уже открывали — удалить нельзя, можно только поправить'
+      return 'Эту дверь уже открывали - удалить нельзя, можно только поправить'
     case 'bad_day':
-      return 'Номер дня — от 1 до 60'
+      return 'Номер дня - от 1 до 60'
     case 'need_ticket':
       return 'Нужен билет, чтобы догнать эту дверь'
     case 'reward_payload':
       return 'Проверь содержимое приза: текст, ссылку, урок или курс'
     case 'reward_issued':
-      return 'Этот приз уже выдавали — удалить нельзя. Поставь лимит 0'
+      return 'Этот приз уже выдавали - удалить нельзя. Поставь лимит 0'
     case 'bad_date':
-      return 'Дата старта — в формате ГГГГ-ММ-ДД'
+      return 'Дата старта - в формате ГГГГ-ММ-ДД'
     case 'paid_only':
       return 'Этот курс открывается за звёзды'
     case 'already_open':

@@ -558,7 +558,7 @@ function EntityEditor({
         )}
         {e.kind === 'product' && (
           <label>
-            Варианты — название | цена, каждый с новой строки
+            Варианты - название | цена, каждый с новой строки
             <textarea
               value={((e.data.variants ?? []) as { name: string; price: number }[])
                 .map((v) => `${v.name} | ${v.price}`)
@@ -733,7 +733,7 @@ function EntityEditor({
                   />
                 </label>
                 <label>
-                  Ответы — каждый с новой строки
+                  Ответы - каждый с новой строки
                   <textarea
                     value={q.options.join('\n')}
                     onChange={(ev) =>
@@ -801,7 +801,7 @@ function EntityEditor({
               <input value={String(e.data.location ?? '')} onChange={(ev) => data('location', ev.target.value)} />
             </label>
             <label>
-              Программа — по строкам
+              Программа - по строкам
               <textarea
                 value={((e.data.agenda as string[]) ?? []).join('\n')}
                 onChange={(ev) => data('agenda', ev.target.value.split('\n'))}
@@ -844,7 +844,7 @@ function EntityEditor({
           Опубликовать
         </label>
         <label>
-          Дата публикации (пусто — сразу)
+          Дата публикации (пусто - сразу)
           <input
             type="datetime-local"
             value={toLocalInput(e.publishAt)}
@@ -1080,7 +1080,7 @@ export function Cashier() {
     <div className="az-cashier">
       <div className="az-panel">
         <span className="az-eyebrow">ПОЛУЧЕНИЕ ПОДАРКОВ И РЕГИСТРАЦИЯ</span>
-        <h2>Хороший момент — здесь.</h2>
+        <h2>Хороший момент - здесь.</h2>
         <p>Введите код участника. Операция проверяется сервером и записывается один раз.</p>
         <label>
           Точка

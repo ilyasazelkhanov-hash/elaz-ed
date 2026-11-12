@@ -40,7 +40,7 @@ class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
     return (
       <div className="flex h-full flex-col items-center justify-center px-8 text-center">
         <p className="font-display text-[22px] font-semibold">Что-то сломалось</p>
-        <p className="mt-2 text-[15px] text-mute">Перезапусти приложение — прогресс сохранён.</p>
+        <p className="mt-2 text-[15px] text-mute">Перезапусти приложение - прогресс сохранён.</p>
         <button onClick={() => location.reload()} className="mt-6 h-[52px] rounded-[20px] border border-line bg-card px-7 text-[14.5px] font-semibold">
           Перезапустить
         </button>

@@ -50,7 +50,7 @@ interface AdventDemo {
 const SEED_DOORS = seed.doors as Door[]
 // Призы демо показывают разные виды: промокод, сообщение, видео.
 const DEMO_KINDS: Pick<AdminReward, 'kind' | 'payload'>[] = [
-  { kind: 'message', payload: { text: 'Промпт-пак: «Ты — редактор. Сократи текст на треть, сохрани факты и голос автора».' } },
+  { kind: 'message', payload: { text: 'Промпт-пак: «Ты - редактор. Сократи текст на треть, сохрани факты и голос автора».' } },
   { kind: 'video', payload: { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', label: 'Смотреть разбор' } },
   { kind: 'promo', payload: {} },
   { kind: 'promo', payload: {} },

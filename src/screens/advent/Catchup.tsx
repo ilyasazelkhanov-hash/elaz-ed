@@ -18,7 +18,7 @@ const METHOD: Record<CatchupMethod, { emoji: string; title: string; how: string 
   quiz: { emoji: '🧠', title: 'Пройди урок с квизом без ошибок', how: 'Любой урок ленты с квизом, пройденный на все правильные ответы во время календаря.' },
   invite: { emoji: '🤝', title: 'Приведи друга', how: 'Билет придёт, когда друг откроет приложение по твоей ссылке и подпишется на канал.' },
   story: { emoji: '📲', title: 'Выложи сторис', how: 'Билет придёт, когда по ссылке из сторис кто-то зайдёт в приложение. До 5 билетов.' },
-  stars: { emoji: '⭐', title: 'Купи билет', how: 'Оплата звёздами Telegram. Вопрос по оплате — /paysupport в чате с ботом.' },
+  stars: { emoji: '⭐', title: 'Купи билет', how: 'Оплата звёздами Telegram. Вопрос по оплате - /paysupport в чате с ботом.' },
 }
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -72,7 +72,7 @@ export function CatchupSheet({ open, onClose, data, reload }: { open: boolean; o
   const invite = () => {
     const link = appLink()
     if (!link) return toast('Ссылка появится, когда бот будет настроен')
-    shareLink(link, 'Залетай в OG CRE8R² — там адвент-календарь с призами.')
+    shareLink(link, 'Залетай в OG CRE8R² - там адвент-календарь с призами.')
   }
 
   // Сторис: та же шторка «Поделиться», но со ссылкой, которая засчитывает переход автору.
@@ -90,7 +90,7 @@ export function CatchupSheet({ open, onClose, data, reload }: { open: boolean; o
         big: `${data.opened} из ${data.days}`,
         bigFirst: true,
         sub: 'Адвент-календарь в OG CRE8R²',
-        caption: 'Открываю адвент-календарь в OG CRE8R². Заходи по ссылке — там призы.',
+        caption: 'Открываю адвент-календарь в OG CRE8R². Заходи по ссылке - там призы.',
         link,
       },
     })
@@ -118,7 +118,7 @@ export function CatchupSheet({ open, onClose, data, reload }: { open: boolean; o
         <Emoji char="🎟" size={40} />
         <div>
           <p className="font-display text-[19px] font-semibold leading-tight">Билеты «догнать»</p>
-          <p className="mt-0.5 text-[13.5px] text-mute">Один билет открывает одну пропущенную дверь — за половину XP.</p>
+          <p className="mt-0.5 text-[13.5px] text-mute">Один билет открывает одну пропущенную дверь - за половину XP.</p>
         </div>
       </div>
       <div className="mt-4 flex gap-2">

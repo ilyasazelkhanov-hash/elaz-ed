@@ -304,7 +304,7 @@ export function Arcade({ seconds, onEnd }: { seconds: number; onEnd: (score: num
       </div>
       <p className="px-4 py-2.5 text-center text-[12.5px] leading-snug text-faint">
         Веди {skin.catcher} пальцем · {skin.good} +1 · {skin.rare} +3 · {skin.bad} −3 · {skin.time} +3 с
-        <br />5 подряд — ×2, 12 подряд — ×3. Пропущенный {skin.good} сбрасывает серию.
+        <br />5 подряд - ×2, 12 подряд - ×3. Пропущенный {skin.good} сбрасывает серию.
       </p>
     </div>
   )

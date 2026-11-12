@@ -60,7 +60,7 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
     ? `Курс закрыт. Открой его за звёзды${byFriends ? ' или вместе с друзьями' : ''}.`
     : byFriends
       ? 'Курс закрыт. Открой его по заявке или вместе с друзьями.'
-      : 'Курс закрыт. Доступ открывает автор — по заявке.'
+      : 'Курс закрыт. Доступ открывает автор - по заявке.'
   // Высота нижней панели зависит от того, какие кнопки на ней есть.
   const panel = 80 + (paid ? 104 : 0) + (!paid || byFriends ? 58 : 0)
 
@@ -110,7 +110,7 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
       report(status)
       if (status === 'paid') {
         if (await waitForAccess()) await opened()
-        else toast('Оплата прошла. Курс откроется через минуту — обнови приложение')
+        else toast('Оплата прошла. Курс откроется через минуту - обнови приложение')
       } else if (status === 'failed') {
         toast('Оплата не прошла. Звёзды не списаны')
       } else if (status === 'pending') {
@@ -293,7 +293,7 @@ export function CourseScreen({ id, from }: { id: number; from?: Inset }) {
                 )}
               </div>
             )}
-            {paid && <p className="px-2 pt-1 text-center text-[12px] leading-snug text-faint">Оплата звёздами Telegram. Вопрос по оплате — команда /paysupport в чате с ботом.</p>}
+            {paid && <p className="px-2 pt-1 text-center text-[12px] leading-snug text-faint">Оплата звёздами Telegram. Вопрос по оплате - команда /paysupport в чате с ботом.</p>}
           </motion.div>
         )}
       </div>

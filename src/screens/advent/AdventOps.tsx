@@ -53,7 +53,7 @@ export function PulsePanel() {
       </div>
 
       <div className="rounded-[20px] border border-line bg-card p-4">
-        <p className="text-[13px] font-semibold text-mute">Призы с окном — выдано и ожидалось к сегодня</p>
+        <p className="text-[13px] font-semibold text-mute">Призы с окном - выдано и ожидалось к сегодня</p>
         <div className="mt-2.5 space-y-2.5">
           {p.pacing.filter((r) => r.mode !== 'threshold').length === 0 && <p className="text-[13px] text-faint">Призов с окном дней нет.</p>}
           {p.pacing
@@ -77,8 +77,8 @@ export function PulsePanel() {
                         ? 'Розыгрыш прошёл'
                         : `Розыгрыш после дня ${r.day_to}`
                       : r.mode === 'day'
-                        ? `Подарок дней ${r.day_from}–${r.day_to}`
-                        : `Ожидалось к сегодня ≈ ${r.expected}. ${ahead ? 'Расходится быстрее — можно поднять лимит или растянуть окно.' : behind ? 'Расходится медленнее — дальше шанс сам вырастет; в последний день окна разыграется остаток.' : 'Идёт по плану.'}`}
+                        ? `Подарок дней ${r.day_from}-${r.day_to}`
+                        : `Ожидалось к сегодня ≈ ${r.expected}. ${ahead ? 'Расходится быстрее - можно поднять лимит или растянуть окно.' : behind ? 'Расходится медленнее - дальше шанс сам вырастет; в последний день окна разыграется остаток.' : 'Идёт по плану.'}`}
                   </p>
                 </div>
               )
@@ -108,7 +108,7 @@ export function PulsePanel() {
         )}
         {tries.length > 0 && (
           <p className="mt-3 text-[12px] leading-snug text-faint">
-            Нажимали: {tries.map(([m, n]) => `${METHOD_NAME[m] ?? m} — ${n}`).join(', ')}. Если способ нажимают, а билетов по нему мало — людям что-то мешает его выполнить.
+            Нажимали: {tries.map(([m, n]) => `${METHOD_NAME[m] ?? m} - ${n}`).join(', ')}. Если способ нажимают, а билетов по нему мало - людям что-то мешает его выполнить.
           </p>
         )}
         <GrantTicket onDone={reload} />
@@ -212,7 +212,7 @@ export function PointsPanel() {
     <>
       <div className="mt-3 overflow-hidden rounded-[20px] border border-line bg-card">
         {!points && <div className="skeleton h-16" />}
-        {points?.length === 0 && <p className="px-4 py-6 text-center text-[13.5px] text-mute">Касс пока нет — промокоды гасить негде.</p>}
+        {points?.length === 0 && <p className="px-4 py-6 text-center text-[13.5px] text-mute">Касс пока нет - промокоды гасить негде.</p>}
         {points?.map((p) => (
           <Tap key={p.id} onClick={() => setEdit({ id: p.id, name: p.name })} className="flex w-full items-center gap-3 border-b border-line px-4 py-3 text-left last:border-b-0">
             <KeyRound size={18} className="shrink-0 text-mute" />
@@ -253,7 +253,7 @@ function PointForm({ initial, onDone }: { initial: { id?: number; name: string }
   const [busy, setBusy] = useState<string | null>(null)
   const save = async () => {
     if (!name.trim()) return toast('Нужно название')
-    if (!initial.id && !/^\d{4,8}$/.test(pin)) return toast('PIN — от 4 до 8 цифр')
+    if (!initial.id && !/^\d{4,8}$/.test(pin)) return toast('PIN - от 4 до 8 цифр')
     setBusy('save')
     try {
       await api.adminAdventPointSave({ id: initial.id, name: name.trim(), pin: pin || undefined })
@@ -290,8 +290,8 @@ function PointForm({ initial, onDone }: { initial: { id?: number; name: string }
         )}
       </div>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Название: «Кофейня на Абая»" maxLength={60} className={`${field} mt-3`} />
-      <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} inputMode="numeric" placeholder={initial.id ? 'Новый PIN — оставь пустым, чтобы не менять' : 'PIN, 4–8 цифр'} className={`${field} mt-2`} />
-      <p className="mt-2 text-[12px] leading-snug text-faint">PIN хранится в зашифрованном виде — посмотреть его потом нельзя, только задать новый. Новый PIN снимает блокировку.</p>
+      <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} inputMode="numeric" placeholder={initial.id ? 'Новый PIN - оставь пустым, чтобы не менять' : 'PIN, 4–8 цифр'} className={`${field} mt-2`} />
+      <p className="mt-2 text-[12px] leading-snug text-faint">PIN хранится в зашифрованном виде - посмотреть его потом нельзя, только задать новый. Новый PIN снимает блокировку.</p>
       <Cta className="mt-4 w-full" busy={busy === 'save'} onClick={save}>
         Сохранить
       </Cta>

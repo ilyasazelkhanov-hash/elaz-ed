@@ -2,6 +2,7 @@ import { Check, Copy } from 'lucide-react'
 import { Children, isValidElement, useRef, useState, type ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { remarkPlainDashes } from './lib/plain-dashes'
 import { copyText, haptic, openLink } from './lib/tg'
 import { Tap } from './ui'
 import { MarkdownTable } from './MarkdownTable'
@@ -51,7 +52,7 @@ export default function MarkdownImpl({ text, className = 'prose-ed' }: { text: s
   return (
     <div className={`${className} selectable`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkPlainDashes]}
         components={{
           pre: MarkdownPre,
           table: ({ children }) => <MarkdownTable>{children}</MarkdownTable>,

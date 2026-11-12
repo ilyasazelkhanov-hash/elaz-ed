@@ -60,7 +60,7 @@ export function ModulePage({ id }: { id: string }) {
         {id === 'campaigns' && (
           <div className="az-note-strip">
             <Sparkles size={19} />
-            <p>Выберите кампанию или начните с небольшого задания. У каждого действия — свой результат.</p>
+            <p>Выберите кампанию или начните с небольшого задания. У каждого действия - свой результат.</p>
           </div>
         )}
         <div className="az-card-grid">
@@ -315,14 +315,14 @@ export function Team() {
   const people = s.members.slice().sort((a, b) => b.xp - a.xp)
   return (
     <>
-      <PageHeader title="Команда — это мы" subtitle="Каждый вклад делает нас сильнее." />
+      <PageHeader title="Команда - это мы" subtitle="Каждый вклад делает нас сильнее." />
       <div className="az-page-body">
         <div className="az-team-banner">
           <span className="az-eyebrow">ОБЩАЯ ЭНЕРГИЯ</span>
           <strong>
             {s.members.reduce((n, m) => n + m.xp, 0).toLocaleString('ru')} <small>XP</small>
           </strong>
-          <p>Уже собрали вместе. Дальше — больше.</p>
+          <p>Уже собрали вместе. Дальше - больше.</p>
           <Users size={90} />
         </div>
         <SectionTitle title="Первые шаги" />
@@ -446,7 +446,7 @@ export function Progress() {
         })))
   return (
     <>
-      <PageHeader title="Каждый шаг — ваш" subtitle="Небольшие действия. Заметный прогресс." />
+      <PageHeader title="Каждый шаг - ваш" subtitle="Небольшие действия. Заметный прогресс." />
       <div className="az-page-body">
         <div className="az-progress-hero">
           <span className="az-eyebrow">ВАШ УРОВЕНЬ</span>
@@ -490,7 +490,7 @@ export function Progress() {
         </div>
         <div className="az-achievements">
           {[
-            ['first_step', 'Первый шаг', 'Начать — уже достижение.'],
+            ['first_step', 'Первый шаг', 'Начать - уже достижение.'],
             ['five_tasks', 'В потоке', 'Завершите пять заданий.'],
             ['week_streak', 'Своя традиция', 'Заглядывайте семь дней подряд.'],
             ['ambassador', 'Объединяющий', 'Пригласите друзей в клуб.'],
@@ -573,7 +573,7 @@ export function Wallet({ brand }: { brand: BrandConfig }) {
         {!s.coupons.filter((c) => c.userId === s.me.id).length ? (
           <Empty
             title="Здесь появится что-то хорошее"
-            body="Обменяйте баллы на подарок — и ваш первый купон будет здесь."
+            body="Обменяйте баллы на подарок - и ваш первый купон будет здесь."
             icon={Gift}
           />
         ) : (
@@ -628,7 +628,7 @@ export function Notifications() {
     act = usePlatform((v) => v.act)
   return (
     <>
-      <PageHeader title="Хорошие новости" subtitle="Важное для вас — в одном месте." />
+      <PageHeader title="Хорошие новости" subtitle="Важное для вас - в одном месте." />
       <div className="az-page-body">
         {s.notifications
           .filter((n) => n.userId === s.me.id)

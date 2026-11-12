@@ -54,7 +54,7 @@ export function LabScreen() {
               <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-violet/12 text-[22px]">🧪</div>
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-bold uppercase tracking-[.16em] text-violet">Telegram внутри OG</p>
-                <p className="mt-1 text-[13.5px] leading-snug text-mute">Попробуй возможности мини-аппа — или собери короткую практику для своей группы.</p>
+                <p className="mt-1 text-[13.5px] leading-snug text-mute">Попробуй возможности мини-аппа - или собери короткую практику для своей группы.</p>
               </div>
               <span className="shrink-0 rounded-full border border-line bg-card2 px-2.5 py-1 text-[11px] font-semibold tabular text-mute">{tried.length}/{TOTAL}</span>
             </div>
@@ -101,7 +101,7 @@ export function LabScreen() {
             </Demo>
           </LabSection>
 
-          {isDemo && <p className="mt-5 text-center text-[12.5px] text-faint">В браузере часть примеров недоступна — открой приложение в Telegram.</p>}
+          {isDemo && <p className="mt-5 text-center text-[12.5px] text-faint">В браузере часть примеров недоступна - открой приложение в Telegram.</p>}
           {tried.length === TOTAL && (
             <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} onAnimationComplete={() => toast('Всё попробовал. Теперь ты знаешь, что просить у разработчика', '🧪')} className="mt-5 text-center text-[13.5px] font-semibold">
               Лаборатория пройдена целиком
@@ -199,7 +199,7 @@ function Tilt({ onTry }: DemoProps) {
   )
 
   return (
-    <Demo title="Гироскоп" text={mobile ? 'Наклони телефон — шарик покатится.' : 'На телефоне шарик катается от наклона. Здесь води курсором.'} ok>
+    <Demo title="Гироскоп" text={mobile ? 'Наклони телефон - шарик покатится.' : 'На телефоне шарик катается от наклона. Здесь води курсором.'} ok>
       <div onPointerMove={tilt.onPointerMove} onPointerLeave={tilt.onPointerLeave} className="relative grid h-[76px] place-items-center overflow-hidden rounded-[16px] border border-line bg-card2">
         <motion.div className="absolute inset-0" style={{ background }} />
         <motion.div className="h-9 w-9 rounded-full" style={{ x, y, background: 'var(--aurora)', boxShadow: '0 6px 18px -4px #9b7bff' }} />
@@ -299,7 +299,7 @@ function Biometrics({ onTry }: DemoProps) {
   }
 
   return (
-    <Demo title="Лицо и отпечаток" text="Вход по Face ID или отпечатку — так защищают платежи и личные разделы." ok={ready} note="На этом устройстве биометрия недоступна">
+    <Demo title="Лицо и отпечаток" text="Вход по Face ID или отпечатку - так защищают платежи и личные разделы." ok={ready} note="На этом устройстве биометрия недоступна">
       <Action onClick={check}>Проверить меня</Action>
     </Demo>
   )
@@ -420,7 +420,7 @@ function Cloud({ onTry }: DemoProps) {
       storage.setItem(CLOUD_KEY, note.slice(0, 200), (err: unknown) => {
         onTry()
         if (!err) haptic.success()
-        toast(err ? 'Не сохранилось' : 'Сохранено. Открой приложение на другом устройстве — заметка будет там', err ? undefined : '☁️')
+        toast(err ? 'Не сохранилось' : 'Сохранено. Открой приложение на другом устройстве - заметка будет там', err ? undefined : '☁️')
       }),
     )
 
@@ -454,7 +454,7 @@ function GroupSprint({ onTry }: DemoProps) {
       toast('Ссылка на приложение пока не настроена')
       return
     }
-    const message = `🚀 Учебный спринт OG CRE8R² · 20 минут\n\n${sprint.emoji} ${sprint.headline}\n${sprint.task}\n\nПлан: 3 минуты — выбрать пример · 12 минут — сделать вместе · 5 минут — поделиться выводом.`
+    const message = `🚀 Учебный спринт OG CRE8R² · 20 минут\n\n${sprint.emoji} ${sprint.headline}\n${sprint.task}\n\nПлан: 3 минуты - выбрать пример · 12 минут - сделать вместе · 5 минут - поделиться выводом.`
     onTry()
     shareLink(link, message)
   }
@@ -469,7 +469,7 @@ function GroupSprint({ onTry }: DemoProps) {
         </div>
         <span className="rounded-full border border-line bg-card2 px-2.5 py-1 text-[11px] font-semibold text-mute">20 минут</span>
       </div>
-      <p className="relative mt-2 text-[13px] leading-snug text-mute">Выбери тему — Telegram подготовит приглашение в групповой чат.</p>
+      <p className="relative mt-2 text-[13px] leading-snug text-mute">Выбери тему - Telegram подготовит приглашение в групповой чат.</p>
       <div className="relative mt-4 grid grid-cols-3 gap-2" role="group" aria-label="Тема группового спринта">
         {SPRINTS.map((item) => (
           <button key={item.id} type="button" aria-pressed={selected === item.id} onClick={() => setSelected(item.id)} className={`min-h-[58px] rounded-[15px] border px-1.5 py-2 text-center transition-colors ${selected === item.id ? 'border-violet/60 bg-violet/12 text-ink shadow-[inset_0_0_0_1px_rgb(165_139_255_/_0.12)]' : 'border-line bg-card2 text-mute'}`}>
@@ -488,7 +488,7 @@ function GroupSprint({ onTry }: DemoProps) {
       <Tap onClick={launch} className="relative mt-3 flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[16px] bg-[var(--aurora)] px-4 text-[14px] font-bold text-[#170f2e] shadow-[0_8px_24px_rgb(124_107_255_/_0.24)]">
         <span>Отправить в группу</span><span aria-hidden="true">↗</span>
       </Tap>
-      <p className="relative mt-2.5 text-center text-[10.5px] leading-snug text-faint">Предпросмотр и отправка — под твоим контролем</p>
+      <p className="relative mt-2.5 text-center text-[10.5px] leading-snug text-faint">Предпросмотр и отправка - под твоим контролем</p>
     </section>
   )
 }

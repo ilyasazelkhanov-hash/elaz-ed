@@ -232,7 +232,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             ref={area}
             value={d.body}
             onChange={(e) => set('body', e.target.value)}
-            placeholder={story ? '# Первый слайд\n\nКороткая мысль.\n\n---\n\n## Второй слайд' : 'Текст материала. Заголовки — через ##, код — в тройных кавычках.'}
+            placeholder={story ? '# Первый слайд\n\nКороткая мысль.\n\n---\n\n## Второй слайд' : 'Текст материала. Заголовки - через ##, код - в тройных кавычках.'}
             rows={story ? 8 : 12}
             className={`${field} resize-y font-mono text-[14.5px] leading-relaxed`}
           />
@@ -250,7 +250,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
               <p className="mt-2 text-xs leading-relaxed text-mute">Для GIF используй прямую ссылку с .gif на заранее проверенный файл. Автопубликация принимает до 2 МБ. Редактор сохраняет ссылку без проверки содержимого; при уменьшении движения доступна кнопка воспроизведения.</p>
 
               {!post&&<>
-              <Label hint="если пусто — копируется весь урок">Текст для «Скопировать для нейронки»</Label>
+              <Label hint="если пусто - копируется весь урок">Текст для «Скопировать для нейронки»</Label>
               <textarea value={d.copy_text ?? ''} onChange={(e) => set('copy_text', e.target.value || null)} placeholder="Готовый промпт" rows={3} className={`${field} resize-y font-mono text-[14.5px]`} />
               </>}
             </>

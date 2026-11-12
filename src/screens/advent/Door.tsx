@@ -155,7 +155,7 @@ export function DoorScreen({ day }: { day: number }) {
                         Засчитано до {door.arcade.cap} очков.{practiceScore != null ? ` Тренировка: ${practiceScore}.` : ''}
                       </p>
                       <Tap onClick={() => setPlaying('practice')} className="mt-4 h-12 w-full rounded-[18px] border border-line bg-card2 font-display text-[14px] font-semibold">
-                        Сыграть ещё — без XP
+                        Сыграть ещё - без XP
                       </Tap>
                     </>
                   ) : busy ? (
@@ -293,7 +293,7 @@ function QuizReview({ door }: { door: DoorView }) {
           <p className="text-[15px] font-semibold leading-snug">{q.q}</p>
           <p className="mt-2 flex items-start gap-2 text-[14px] text-mint">
             <Check size={16} strokeWidth={3} className="mt-0.5 shrink-0" />
-            {q.correct != null ? q.options[q.correct] : '—'}
+            {q.correct != null ? q.options[q.correct] : '-'}
           </p>
           {q.explain && <p className="mt-2 text-[13.5px] leading-snug text-mute">{q.explain}</p>}
         </div>

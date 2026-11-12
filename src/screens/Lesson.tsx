@@ -239,7 +239,7 @@ function LessonSession({ id, from, post = false }: { id: number; from?: Inset; p
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-semibold">Скопировать для нейронки</span>
-                  <span className="mt-0.5 block text-[13px] leading-snug text-mute">{lesson.copy_text ? 'Готовый промпт из урока' : 'Текст урока целиком — разбери на своём примере'}</span>
+                  <span className="mt-0.5 block text-[13px] leading-snug text-mute">{lesson.copy_text ? 'Готовый промпт из урока' : 'Текст урока целиком - разбери на своём примере'}</span>
                 </span>
               </Tap>
 
@@ -442,7 +442,7 @@ function Quiz({ lessonId, topic, onReviewLesson, quiz: initialQuiz, practice, on
               {score} из {quiz.length}
             </p>
             <p className="mt-1 text-[14px] text-mute">
-              {attempt.practice || practice ? 'Тренировка без XP — урок уже засчитан.' : score === quiz.length ? `Чисто. Бонус +${points} XP` : score > 0 ? `Бонус +${points} XP` : 'Бывает. XP за урок всё равно твои.'}
+              {attempt.practice || practice ? 'Тренировка без XP - урок уже засчитан.' : score === quiz.length ? `Чисто. Бонус +${points} XP` : score > 0 ? `Бонус +${points} XP` : 'Бывает. XP за урок всё равно твои.'}
             </p>
             {attempt.done && <section className="mt-5 space-y-3 text-left" aria-label="Разбор квиза"><h3 className="font-semibold">{attempt.feedback.some(item => !item.correct) ? 'Разбор ошибок' : 'Все ответы верны'}</h3><p className="text-sm text-mute">Тема урока: {topic}</p>{attempt.feedback.filter(item => !item.correct).map(item => { const question = quiz[item.index]; return question ? <article key={item.index} className="rounded-xl border border-line p-3"><h4 className="text-sm font-semibold">{question.q}</h4><p className="mt-2 text-sm">Твой ответ: {question.options[item.answer]}</p><p className="mt-1 text-sm">Верный ответ: {question.options[item.correctIndex]}</p><p className="mt-2 text-sm text-mute">{item.explain || 'Пояснение к этому вопросу пока не добавлено. Повтори материал урока.'}</p></article> : null })}<Tap className="min-h-11 text-sm font-semibold text-violet" onClick={onReviewLesson}>Вернуться к материалу урока ↑</Tap></section>}
           </motion.div>

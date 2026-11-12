@@ -76,7 +76,7 @@ export function Top() {
         <div className="mx-5 mt-6 rounded-[26px] border border-dashed border-veil/15 px-6 py-10 text-center">
           <Emoji char="🏆" size={48} animated className="mx-auto" />
           <p className="mt-3 font-display text-[15px] font-semibold">Таблица пока пустая</p>
-          <p className="mt-1.5 text-[13.5px] text-mute">Забери бонус дня или пройди урок — первое место свободно.</p>
+          <p className="mt-1.5 text-[13.5px] text-mute">Забери бонус дня или пройди урок - первое место свободно.</p>
         </div>
       )}
 

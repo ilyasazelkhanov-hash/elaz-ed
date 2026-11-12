@@ -94,7 +94,7 @@ export function AdventScreen() {
   const locked = (cell: AdventCell) => {
     if (!data) return
     haptic.error()
-    if (cell.state === 'missed') return toast('Календарь закрыт — эту дверь уже не открыть')
+    if (cell.state === 'missed') return toast('Календарь закрыт - эту дверь уже не открыть')
     toast(`Откроется ${doorDate(data.start, cell.day)}`, '🔒')
   }
 
@@ -187,7 +187,7 @@ export function AdventScreen() {
                 ))}
               </div>
               <p className="mt-3 text-center text-[12.5px] leading-snug text-faint">
-                Пропущенную дверь можно догнать за билет — за половину XP. Серия растёт, только если открывать в свой день.{' '}
+                Пропущенную дверь можно догнать за билет - за половину XP. Серия растёт, только если открывать в свой день.{' '}
                 {data.catchup && data.catchup.methods.length > 0 && (
                   <button type="button" onClick={() => setCatchup(true)} className="font-semibold text-ink underline underline-offset-2">
                     Как получить билет
@@ -365,7 +365,7 @@ function DoorCell({ cell, index, theme, needTicket, onNeedTicket, onOpen, onLock
 
 /** Как получить приз — одной строкой под названием. */
 function modeLine(r: AdventReward) {
-  const range = r.day_from && r.day_to ? (r.day_from === r.day_to ? `дня ${r.day_from}` : `дней ${r.day_from}–${r.day_to}`) : ''
+  const range = r.day_from && r.day_to ? (r.day_from === r.day_to ? `дня ${r.day_from}` : `дней ${r.day_from}-${r.day_to}`) : ''
   const left = r.left != null && r.stock != null ? ` · осталось ${r.left} из ${r.stock}` : ''
   if (r.mode === 'day') return `Подарок за дверь ${range}${left}`
   if (r.mode === 'instant') return `Может выпасть при открытии двери ${range}${left}`
@@ -406,7 +406,7 @@ function RewardRow({ reward, opened }: { reward: AdventReward; opened: number })
       </div>
       {mode === 'threshold' && !issued && left > 0 && <Bar progress={opened / reward.doors} className="mt-3" />}
       {mode === 'threshold' && !issued && left === 0 && <p className="mt-2 text-[12.5px] text-faint">Награды этой ступени закончились.</p>}
-      {mode === 'draw' && !issued && !reward.drawn && <p className="mt-2 text-[12px] leading-snug text-faint">Каждая открытая дверь окна — ещё один шанс. Победителей выберет сервер случайно, им придёт сообщение в бот.</p>}
+      {mode === 'draw' && !issued && !reward.drawn && <p className="mt-2 text-[12px] leading-snug text-faint">Каждая открытая дверь окна - ещё один шанс. Победителей выберет сервер случайно, им придёт сообщение в бот.</p>}
       {issued && kind === 'promo' && reward.code && (
         <>
           <PromoCode code={reward.code} redeemed={reward.redeemed} />

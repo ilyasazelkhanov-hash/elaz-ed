@@ -114,7 +114,7 @@ export function AnalyticsScreen() {
                             Лайков {l.likes} · поделились {l.shares}
                           </p>
                         </div>
-                        <span className="font-display text-[14px] font-semibold">{l.opens > 0 ? `${rate}%` : '—'}</span>
+                        <span className="font-display text-[14px] font-semibold">{l.opens > 0 ? `${rate}%` : '-'}</span>
                       </div>
                       <div className="mt-2.5 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--track)' }}>
                         <div className="h-full rounded-full bg-violet" style={{ width: `${rate}%` }} />
@@ -122,7 +122,7 @@ export function AnalyticsScreen() {
                     </div>
                   )
                 })}
-                {data.lessons.length === 0 && <Empty>Опубликуй первый урок — здесь появится его статистика.</Empty>}
+                {data.lessons.length === 0 && <Empty>Опубликуй первый урок - здесь появится его статистика.</Empty>}
               </div>
             </Section>
 
@@ -180,14 +180,14 @@ export function DiscoveryAnalytics({report}:{report?:DiscoveryReport}) {
       <DiscoveryRate label="Попробовали за 7 суток" part={report.activation.attempted} whole={report.activation.eligible} waiting={report.activation.waiting}
         hint="Самооценка: нажали «Попробовал». Новые участники за 30 суток с полными 7 сутками наблюдения; попытка в первые 168 часов после регистрации." />
       <DiscoveryRate label="Вернулись на второй неделе" part={report.return14.returned} whole={report.return14.eligible} waiting={report.return14.waiting}
-        hint="Чтение упражнения или бесплатной статьи через 168–336 часов после первой отметки «Попробовал». В знаменателе только участники с полными 14 сутками; первая отметка — за 30 суток." />
+        hint="Чтение упражнения или бесплатной статьи через 168–336 часов после первой отметки «Попробовал». В знаменателе только участники с полными 14 сутками; первая отметка - за 30 суток." />
       <DiscoveryRate label="Повторное чтение за 7 суток" part={report.repeat7.repeated} whole={report.repeat7.readers} empty="Нет читателей за 7 суток"
         hint="Читали в 2 и более разные даты UTC за последние 7 × 24 часа. В знаменателе читатели упражнений и бесплатных статей; закрытые уроки исключены." />
       <DiscoveryRate label="Упражнение помогло" part={report.feedback.positive} whole={report.feedback.responses} empty="Нет ответов"
         hint="Самооценка за 30 суток. Последняя оценка каждой пары «участник + упражнение»; один участник может оценить несколько упражнений." />
     </div>
 
-    <Section title="Бесплатные упражнения" hint="Уникальные участники за 30 суток в каждом действии. «Попробовал» — самооценка, а не проверка навыка.">
+    <Section title="Бесплатные упражнения" hint="Уникальные участники за 30 суток в каждом действии. «Попробовал» - самооценка, а не проверка навыка.">
       {report.guides.length === 0 ? <Empty>Открытий упражнений пока нет.</Empty> : <div className="space-y-2">
         {report.guides.map(guide => <article key={guide.id ?? 'unknown'} className="rounded-[18px] border border-line bg-card p-4">
           <h3 className="text-[14px] font-semibold leading-snug">{beginnerGuides.find(item => item.id === guide.id)?.title ?? guide.id ?? 'Неизвестное упражнение'}</h3>
@@ -206,7 +206,7 @@ export function DiscoveryAnalytics({report}:{report?:DiscoveryReport}) {
       </dl>}
     </Section>
 
-    <Section title="Интерес к курсам" hint="За 30 суток. Просмотры, бесплатные уроки и начало оплаты — независимые количества уникальных участников, без обязательной последовательности.">
+    <Section title="Интерес к курсам" hint="За 30 суток. Просмотры, бесплатные уроки и начало оплаты - независимые количества уникальных участников, без обязательной последовательности.">
       {report.courses.length === 0 ? <Empty>Курсов для отчёта пока нет.</Empty> : <div className="space-y-3">
         {report.courses.map(course => <article key={course.id} className="rounded-[20px] border border-line bg-card p-4">
           <h3 className="text-[15px] font-semibold leading-snug">{course.title}</h3>
@@ -224,7 +224,7 @@ export function DiscoveryAnalytics({report}:{report?:DiscoveryReport}) {
       </div>}
     </Section>
 
-    <Section title="Оплаты курсов в Telegram Stars" hint="Только покупки, подтверждённые сервером, за последние 30 суток. Статус возврата — на момент среза.">
+    <Section title="Оплаты курсов в Telegram Stars" hint="Только покупки, подтверждённые сервером, за последние 30 суток. Статус возврата - на момент среза.">
       <div className="rounded-[20px] border border-line bg-card p-4">
         <p className="text-[12px] text-mute">Звёзды без возвратов и ожидающих возврата</p>
         <p className="mt-2 font-display text-[28px] font-semibold">{payments.stars} <span className="text-[15px]">Stars</span></p>
@@ -271,7 +271,7 @@ function Tile({ value, label }: { value: number; label: string }) {
 function Rate({ label, back, cohort }: { label: string; back: number; cohort: number }) {
   return (
     <div className="rounded-[20px] border border-line bg-card p-4">
-      <p className="font-display text-[26px] font-semibold leading-none">{cohort > 0 ? `${percent(back, cohort)}%` : '—'}</p>
+      <p className="font-display text-[26px] font-semibold leading-none">{cohort > 0 ? `${percent(back, cohort)}%` : '-'}</p>
       <p className="mt-2 text-[12.5px] text-mute">{label}</p>
       <p className="mt-0.5 text-[11.5px] text-faint">{cohort > 0 ? `${back} из ${cohort}` : 'пока мало данных'}</p>
     </div>

@@ -1,3 +1,4 @@
+import { plainDashes } from '../../lib/plain-dashes'
 import { CoverImage } from '../../CoverImage'
 import { ArrowRight, ArrowUpRight, Bookmark, Check, ChevronDown, Plus, RefreshCw, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
@@ -22,15 +23,16 @@ export function PostCard({ card }: { card: Card }) {
   const saved = useSavedPosts(me?.id ?? 0)
   const isSaved = saved.includes(card.id)
   const date = postDate(card.published_at)
-  const teaser = postTeaser(card)
+  const teaser = plainDashes(postTeaser(card))
+  const title = plainDashes(card.title)
   const open = () => push({ type: 'lesson', id: card.id, post: true })
   return <article className="reader-post">
-    <Tap onClick={open} className="reader-post-open p-[18px]" aria-label={`Читать публикацию: ${card.title}`}>
+    <Tap onClick={open} className="reader-post-open p-[18px]" aria-label={`Читать публикацию: ${title}`}>
       <div className="reader-post-meta"><span className="font-semibold text-violet">{card.category || 'ИИ и инструменты'}</span>{date && <time dateTime={card.published_at ?? undefined}>{date}</time>}{card.pinned && <span className="rounded-full bg-violet/10 px-2 py-0.5 text-[11px] text-violet">Выбор автора</span>}</div>
-      <h3 className="reader-post-heading mt-3">{card.title}</h3>
+      <h3 className="reader-post-heading mt-3">{title}</h3>
       {teaser && <p className="mt-2 line-clamp-2 text-base leading-relaxed text-mute">{teaser}</p>}
     </Tap>
-    {card.cover_url && <div className="px-[18px] pb-[18px]"><CoverImage src={card.cover_url} onOpen={open} openLabel={`Читать публикацию: ${card.title}`} className="aspect-[2/1] w-full rounded-2xl object-cover"/></div>}
+    {card.cover_url && <div className="px-[18px] pb-[18px]"><CoverImage src={card.cover_url} onOpen={open} openLabel={`Читать публикацию: ${title}`} className="aspect-[2/1] w-full rounded-2xl object-cover"/></div>}
     <div className="reader-post-bottom"><span className="flex flex-wrap items-center gap-2 text-xs text-mute">{card.minutes > 0 && <span>{card.minutes} мин чтения</span>}{read.includes(card.id) && <span className="inline-flex items-center gap-1"><Check size={12}/>Прочитано</span>}</span><div className="flex shrink-0 items-center gap-1"><Tap onClick={open} className="flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-violet">Читать<ArrowUpRight size={16}/></Tap><Tap onClick={() => {if (me) { const value = toggleSavedPost(me.id, card.id, saved => track('blog_save',{saved,source:'blog'},card.id)); useStore.getState().toast(value ? 'Добавлено в сохранённые' : 'Удалено из сохранённых') }}} aria-label={isSaved ? 'Убрать из сохранённых' : 'Сохранить публикацию'} aria-pressed={isSaved} className="grid h-11 w-11 place-items-center rounded-full text-violet"><Bookmark size={19} fill={isSaved ? 'currentColor' : 'none'}/></Tap></div></div>
   </article>
 }
@@ -71,7 +73,7 @@ export function Feed({ lessons, scroller, compact = false }: { lessons: Card[]; 
   }, [compact, remote.more, remote.busy, remote.error, remote.load, posts.length, found.length, scroller])
 
   const emptyTitle = filter === 'saved' ? 'Сохрани то, что пригодится' : filter === 'unread' ? 'Всё прочитано' : 'Пока без публикаций'
-  const emptyDetail = filter === 'saved' ? 'Нажми на закладку у публикации — она появится здесь.' : filter === 'unread' ? 'Новые материалы появятся здесь после публикации.' : 'Здесь появятся бесплатные разборы и идеи об ИИ.'
+  const emptyDetail = filter === 'saved' ? 'Нажми на закладку у публикации - она появится здесь.' : filter === 'unread' ? 'Новые материалы появятся здесь после публикации.' : 'Здесь появятся бесплатные разборы и идеи об ИИ.'
   const emptyHeading = remote.legacy ? 'В загруженной подборке пока пусто' : remote.more ? compact ? 'В загруженной подборке пока пусто' : 'Ищем публикации…' : hasSelection ? 'По запросу пока пусто' : emptyTitle
   const emptyDescription = remote.legacy ? 'Попробуй другие фильтры или обнови подборку, чтобы проверить новые публикации.' : remote.more ? compact ? 'Подходящее может быть в архиве. Загрузи следующую страницу или открой все подходящие публикации.' : 'Подгружаем архив, чтобы найти подходящее.' : hasSelection ? 'Попробуй другую тему или сократи поисковый запрос.' : emptyDetail
   const FilterPanel = compact ? 'details' : 'div'

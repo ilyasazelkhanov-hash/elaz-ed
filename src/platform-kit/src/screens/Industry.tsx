@@ -81,7 +81,7 @@ export default function Industry({ id }: { id: string }) {
     })
     if (result) {
       setRequest(crypto.randomUUID())
-      message('Заявка сохранена. Статус — в профиле.')
+      message('Заявка сохранена. Статус - в профиле.')
     }
   }
   return (
@@ -106,7 +106,7 @@ export default function Industry({ id }: { id: string }) {
                   Когда заберёте
                   <input maxLength={100} value={pickup} onChange={(e) => setPickup(e.target.value)} />
                 </label>
-                <p>Предзаказ подтверждает сотрудник. Оплата и готовность — по статусу заказа.</p>
+                <p>Предзаказ подтверждает сотрудник. Оплата и готовность - по статусу заказа.</p>
                 {products.map((e) => (
                   <section className="az-exp-panel" key={e.id}>
                     <Art kind={e.cover} />

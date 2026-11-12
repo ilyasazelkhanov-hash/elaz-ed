@@ -203,7 +203,7 @@ export default function EntityDetail({ id }: { id: string }) {
           {locked ? (
             <div className="az-locked">
               <LockKeyhole size={32} />
-              <h3>Продолжение — в закрытом курсе</h3>
+              <h3>Продолжение - в закрытом курсе</h3>
               <Button onClick={() => push({ type: 'entity', id: String(e.data.courseId) })}>
                 Посмотреть программу
                 <ArrowUpRight size={17} />
@@ -221,7 +221,7 @@ export default function EntityDetail({ id }: { id: string }) {
               onClick={async () => {
                 const generation = screenGeneration.current
                 const r = await act('content.complete', { entityId: id })
-                if (r && generation === screenGeneration.current) celebrate('Новая идея — в вашей копилке')
+                if (r && generation === screenGeneration.current) celebrate('Новая идея - в вашей копилке')
               }}
             >
               {done ? (
@@ -277,7 +277,7 @@ export default function EntityDetail({ id }: { id: string }) {
               {e.data.subscription === true && (
                 <p>
                   Подписка на 30 дней · {e.price} Stars за период. Продлевается автоматически в Telegram. Доступ
-                  подтверждается сервером после оплаты; управление продлением — в Telegram.
+                  подтверждается сервером после оплаты; управление продлением - в Telegram.
                 </p>
               )}
               {e.price > 0 && (e.data.subscription === true || lessons.some((l) => l.data.locked)) && (
@@ -345,7 +345,7 @@ export default function EntityDetail({ id }: { id: string }) {
             <>
               <div className="az-note-strip">
                 <span>✦</span>
-                <p>Закрепите идею практикой — и она станет вашим навыком.</p>
+                <p>Закрепите идею практикой - и она станет вашим навыком.</p>
               </div>
               <Button
                 disabled={done}
@@ -370,7 +370,7 @@ export default function EntityDetail({ id }: { id: string }) {
                   </>
                 )}
               </Button>
-              <SectionTitle title="Из идеи — в практику" />
+              <SectionTitle title="Из идеи - в практику" />
               <div className="az-panel">
                 <p>Поделитесь результатом с наставником. Расскажите, что попробовали и что получилось.</p>
                 <textarea
@@ -479,7 +479,7 @@ export default function EntityDetail({ id }: { id: string }) {
                 <GiftIcon />
               </Button>
               <small>
-                Код появится в кошельке. Срок действия — {String(e.data.expiresDays ?? 30)} дней. Получение на точке
+                Код появится в кошельке. Срок действия - {String(e.data.expiresDays ?? 30)} дней. Получение на точке
                 клуба.
               </small>
             </div>
@@ -614,7 +614,7 @@ export default function EntityDetail({ id }: { id: string }) {
                       ? 'Вы в листе ожидания'
                       : booking.status === 'checked_in'
                         ? 'Рады, что вы с нами!'
-                        : 'Место — ваше!'}
+                        : 'Место - ваше!'}
                   </h3>
                   <p>{booking.status === 'waitlist' ? 'Сообщим, когда освободится место.' : 'Покажите QR на входе.'}</p>
                   {booking.status !== 'waitlist' && <QR value={booking.code} />}
@@ -673,12 +673,12 @@ export function Cart() {
   }, 0)
   return (
     <>
-      <PageHeader title="Ваш хороший выбор" subtitle="До новых впечатлений — один шаг." />
+      <PageHeader title="Ваш хороший выбор" subtitle="До новых впечатлений - один шаг." />
       <div className="az-page-body">
         {!cart.length ? (
           <Empty
             title="Здесь ещё немного свободного места"
-            body="Загляните в коллекцию — возможно, там вас уже что-то ждёт."
+            body="Загляните в коллекцию - возможно, там вас уже что-то ждёт."
             icon={ShoppingBag}
           />
         ) : (

@@ -22,10 +22,10 @@ const METHODS: { id: CatchupMethod; label: string }[] = [
 const KINDS: RewardKind[] = ['promo', 'message', 'link', 'video', 'lesson', 'course', 'certification']
 const KIND_HINT: Record<RewardKind, string> = {
   certification: 'Открывает конкретный внешний курс в паспорте сертификаций без требования стрика.',
-  promo: 'Каждому — свой одноразовый код. Погашение на странице кассира /?redeem, видно, кто и где использовал.',
+  promo: 'Каждому - свой одноразовый код. Погашение на странице кассира /?redeem, видно, кто и где использовал.',
   message: 'Текст откроется в календаре и придёт в чат с ботом.',
   link: 'Кнопка со ссылкой: подарок, файл, форма записи.',
-  video: 'YouTube, Rutube, VK или ссылка на mp4 — откроется прямо в календаре.',
+  video: 'YouTube, Rutube, VK или ссылка на mp4 - откроется прямо в календаре.',
   lesson: 'Откроет один урок закрытого курса, без всего курса.',
   course: 'Откроет курс целиком.',
 }
@@ -107,14 +107,14 @@ function Switch({ on }: { on: boolean }) {
 const MODES: { id: RewardMode; label: string; hint: string }[] = [
   { id: 'threshold', label: 'За N дверей', hint: 'Получает каждый, кто открыл нужное число дверей, пока есть лимит.' },
   { id: 'day', label: 'Подарок дней', hint: 'Получает тот, кто открыл дверь одного из выбранных дней, пока есть лимит.' },
-  { id: 'instant', label: 'Случайный', hint: 'Выпадает случайно при открытии двери в окне. Шанс подстраивается под темп, чтобы весь лимит разошёлся к концу окна, а не в первый день. Одному человеку — не больше одного.' },
-  { id: 'draw', label: 'Розыгрыш', hint: 'После последнего дня окна сервер выберет победителей. Каждая открытая дверь окна — один шанс: открыл 7 дверей — 7 шансов. Победителям придёт сообщение.' },
+  { id: 'instant', label: 'Случайный', hint: 'Выпадает случайно при открытии двери в окне. Шанс подстраивается под темп, чтобы весь лимит разошёлся к концу окна, а не в первый день. Одному человеку - не больше одного.' },
+  { id: 'draw', label: 'Розыгрыш', hint: 'После последнего дня окна сервер выберет победителей. Каждая открытая дверь окна - один шанс: открыл 7 дверей - 7 шансов. Победителям придёт сообщение.' },
 ]
 
 const blank = (): AdminReward => ({ title: '', description: '', emoji: '🎁', doors: 3, stock: null, position: 0, kind: 'promo', payload: {}, mode: 'threshold', day_from: null, day_to: null })
 
 const modeLabel = (r: AdminReward) => {
-  const range = r.day_from && r.day_to ? `дни ${r.day_from}–${r.day_to}` : ''
+  const range = r.day_from && r.day_to ? `дни ${r.day_from}-${r.day_to}` : ''
   if (r.mode === 'day') return `подарок, ${range}`
   if (r.mode === 'instant') return `случайный, ${range}`
   if (r.mode === 'draw') return r.drawn_at ? 'разыгран' : `розыгрыш, ${range}`
@@ -128,7 +128,7 @@ export function RewardsEditor({ list, onChanged }: { list: AdminReward[]; onChan
 
   // Розыгрыш раньше конца окна — по кнопке, с подтверждением: повторить его нельзя.
   const draw = async (r: AdminReward) => {
-    if (!r.id || !(await confirmDialog(`Разыграть «${r.title}» сейчас? Победителей выберет сервер среди открывших двери ${r.day_from}–${r.day_to}. Повторить розыгрыш нельзя.`))) return
+    if (!r.id || !(await confirmDialog(`Разыграть «${r.title}» сейчас? Победителей выберет сервер среди открывших двери ${r.day_from}-${r.day_to}. Повторить розыгрыш нельзя.`))) return
     setDrawing(r.id)
     try {
       const n = await api.adminAdventDraw(r.id)
@@ -266,7 +266,7 @@ function RewardForm({ initial, onDone }: { initial: AdminReward; onDone: () => v
         <input value={r.emoji} onChange={(e) => set('emoji', e.target.value)} maxLength={8} className={`${field.replace('w-full', 'w-16 shrink-0')} text-center`} aria-label="Эмодзи" />
         <input value={r.title} onChange={(e) => set('title', e.target.value)} placeholder="Название" maxLength={80} className={field} />
       </div>
-      <input value={r.description} onChange={(e) => set('description', e.target.value)} placeholder="Описание — видно до получения" maxLength={300} className={`${field} mt-2`} />
+      <input value={r.description} onChange={(e) => set('description', e.target.value)} placeholder="Описание - видно до получения" maxLength={300} className={`${field} mt-2`} />
 
       {r.kind === 'message' && <textarea value={r.payload.text ?? ''} onChange={(e) => pay('text', e.target.value)} rows={4} placeholder="Текст приза: секрет, промпт, инструкция" className={`${field} mt-2 resize-y`} />}
       {r.kind === 'certification' && <select aria-label="Маршрут сертификации" value={r.payload.certification_id??''} onChange={e=>pay('certification_id',e.target.value)} className={`${field} mt-2`}><option value="">Выбери маршрут</option>{certifications.map(c=><option key={c.id} value={c.id}>{c.provider} · {c.title}</option>)}</select>}
@@ -328,7 +328,7 @@ function RewardForm({ initial, onDone }: { initial: AdminReward; onDone: () => v
           />
         </label>
       </div>
-      {r.mode === 'draw' && r.drawn_at && <p className="mt-2 text-[12px] text-amber">Розыгрыш уже прошёл — окно и лимит менять бессмысленно.</p>}
+      {r.mode === 'draw' && r.drawn_at && <p className="mt-2 text-[12px] text-amber">Розыгрыш уже прошёл - окно и лимит менять бессмысленно.</p>}
       <Cta className="mt-4 w-full" busy={busy === 'save'} onClick={save}>
         Сохранить приз
       </Cta>
@@ -340,7 +340,7 @@ function RewardForm({ initial, onDone }: { initial: AdminReward; onDone: () => v
 
 const DOOR_KINDS: { id: DoorKind; label: string; hint: string }[] = [
   { id: 'quiz', label: 'Квиз', hint: 'Вопросы с вариантами. Правильные ответы проверяет сервер, до открытия их не видно.' },
-  { id: 'scratch', label: 'Скретч', hint: 'Стираешь слой — под ним приз-текст.' },
+  { id: 'scratch', label: 'Скретч', hint: 'Стираешь слой - под ним приз-текст.' },
   { id: 'arcade', label: 'Аркада', hint: 'Мини-игра на время. Очки сверх потолка XP не дают.' },
   { id: 'story', label: 'История', hint: 'Просто текст: совет, история, анонс.' },
 ]
@@ -385,7 +385,7 @@ export function DoorsEditor({ days }: { days: number }) {
             )
           })}
       </div>
-      <p className="mt-2 text-[12px] text-faint">Нажми на день, чтобы настроить дверь. Бледные дни — за пределами календаря.</p>
+      <p className="mt-2 text-[12px] text-faint">Нажми на день, чтобы настроить дверь. Бледные дни - за пределами календаря.</p>
       <Sheet open={!!edit} onClose={() => setEdit(null)}>
         {edit && (
           <DoorForm
@@ -495,7 +495,7 @@ function DoorForm({ initial, exists, onDone }: { initial: AdminDoor; exists: boo
               + вопрос
             </Tap>
           )}
-          <p className="text-[12px] text-faint">Зелёная буква — правильный ответ.</p>
+          <p className="text-[12px] text-faint">Зелёная буква - правильный ответ.</p>
         </div>
       )}
       {d.kind === 'scratch' && <textarea value={d.prize} onChange={(e) => set('prize', e.target.value)} rows={2} placeholder="Что под защитным слоем" className={`${field} mt-3 resize-y`} />}

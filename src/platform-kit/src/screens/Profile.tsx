@@ -293,7 +293,7 @@ export default function Profile({
                 </option>
               ))}
             </select>
-            <span>—</span>
+            <span>-</span>
             <select
               aria-label="Конец тихих часов"
               value={s.me.quietTo}

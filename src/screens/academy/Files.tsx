@@ -22,7 +22,7 @@ export function AcademyFiles({ lessonCode, onChange, initialFileIds = [] }: { le
     setError('')
     const mime = extensions[file.name.split('.').pop()?.toLowerCase() || '']
     if (!mime || (file.type && file.type !== mime && !(mime === 'application/zip' && file.type === 'application/x-zip-compressed'))) { setError('Разрешены PDF, PNG, JPEG, WEBP, TXT и ZIP.'); return }
-    if (!file.size || file.size > 10 * 1024 * 1024) { setError('Размер файла — от 1 байта до 10 МБ.'); return }
+    if (!file.size || file.size > 10 * 1024 * 1024) { setError('Размер файла - от 1 байта до 10 МБ.'); return }
     setBusy(true)
     try {
       const signed = await academyRequest<{ file_id: string; signed_url: string }>('file_upload', { lesson_code: lessonCode, filename: file.name, mime, size: file.size })

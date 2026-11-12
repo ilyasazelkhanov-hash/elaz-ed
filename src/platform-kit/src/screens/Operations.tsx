@@ -90,7 +90,7 @@ export default function Operations({ payments = false }: { payments?: boolean })
             <p>
               {payments
                 ? `${String(row.name ?? row.userId)} · ${String(row.amount)} Stars`
-                : `Участник ${String(row.userId ?? '—')} · попыток: ${String(row.attempts ?? 0)}`}
+                : `Участник ${String(row.userId ?? '-')} · попыток: ${String(row.attempts ?? 0)}`}
             </p>
             <small>{new Date(String(row.createdAt)).toLocaleString('ru', { timeZone: s!.config.timezone })}</small>
             {row.lastError && <p role="alert">{String(row.lastError)}</p>}

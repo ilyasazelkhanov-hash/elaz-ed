@@ -55,7 +55,7 @@ function Visual({spec,stage,index}:{spec:LessonAnimationSpec;stage:AnimationStag
  if(spec.mode==='voice')return <div className="la-transcript">
   <Bars level={65}/><small>В исходнике: «седьмого ноября»</small>
   <strong className={f.status==='error'?'la-error':f.status==='success'?'la-success':''}>{index===0?'Сначала слушаем запись':index===1?'Встреча 9 ноября':'Встреча 7 ноября'}</strong>
-  <span>{index===1?'Дата не совпала — перепроверь':'Дату нельзя угадывать по контексту'}</span>
+  <span>{index===1?'Дата не совпала - перепроверь':'Дату нельзя угадывать по контексту'}</span>
  </div>
  return <div className="la-review">
   <div className="la-review-track">{['План','Правка','Проверки','Сохранить'].map((label,i)=><span key={label} className={index===i?'is-active':''}>{label}</span>)}</div>

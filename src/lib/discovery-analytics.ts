@@ -31,7 +31,7 @@ export type DiscoveryReport = {available:false} | {
 }
 
 export function discoveryRate(part:number, whole:number):string {
- return whole > 0 ? `${Math.round(part / whole * 100)}%` : '—'
+ return whole > 0 ? `${Math.round(part / whole * 100)}%` : '-'
 }
 
 /** Explicit UTC avoids relabelling an observation with the administrator's local day. */

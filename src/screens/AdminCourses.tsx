@@ -73,7 +73,7 @@ export function CoursesAdminScreen() {
     if (refundInFlight.current || p.refund_pending || p.refunded || unknownRefunds.has(p.id)) return
     refundInFlight.current = true
     try {
-      if (!(await confirmDialog(`Вернуть ${p.stars} ${plural(p.stars, ['звезду', 'звезды', 'звёзд'])} — ${p.name}? Оплаченный доступ к курсу «${p.course}» будет отозван. Независимые права доступа сохранятся.`))) return
+      if (!(await confirmDialog(`Вернуть ${p.stars} ${plural(p.stars, ['звезду', 'звезды', 'звёзд'])} - ${p.name}? Оплаченный доступ к курсу «${p.course}» будет отозван. Независимые права доступа сохранятся.`))) return
       setRefunding(p.id)
       await api.adminRefund(p.id)
       haptic.success()
@@ -170,7 +170,7 @@ export function CoursesAdminScreen() {
                   <p className="mt-1 flex items-center gap-2 text-[12px] text-mute">
                     <span className={`rounded-full px-2 py-0.5 font-semibold ${c.published ? 'bg-mint/15 text-mint' : 'bg-amber/15 text-amber'}`}>{c.published ? 'Опубликован' : 'Черновик'}</span>
                     <span className="tabular flex items-center gap-0.5">
-                      <Star size={12} /> {c.price_stars || '—'}
+                      <Star size={12} /> {c.price_stars || '-'}
                     </span>
                     <span className="tabular">учеников {c.students}</span>
                   </p>
@@ -337,9 +337,9 @@ export function CourseEditorScreen({ course }: { course: AdminCourse | null }) {
               <input id="course-invites" type="number" inputMode="numeric" value={d.invite_unlock} onChange={(e) => set('invite_unlock', Math.max(0, Number(e.target.value)))} min={0} className={field} />
             </div>
           </div>
-          <p className="mt-2 text-[12.5px] leading-snug text-faint">С ценой курс продаётся за звёзды, и кнопки «Запросить доступ» у него нет. Ноль в цене — курс не продаётся, доступ по заявке. Ноль в «друзьях» — открыть приглашениями нельзя.</p>
+          <p className="mt-2 text-[12.5px] leading-snug text-faint">С ценой курс продаётся за звёзды, и кнопки «Запросить доступ» у него нет. Ноль в цене - курс не продаётся, доступ по заявке. Ноль в «друзьях» - открыть приглашениями нельзя.</p>
 
-          <Label hint="меньше — выше в списке">Порядок</Label>
+          <Label hint="меньше - выше в списке">Порядок</Label>
           <input id="course-position" type="number" inputMode="numeric" value={d.position} onChange={(e) => set('position', Math.max(0, Number(e.target.value)))} min={0} className={field} />
 
           {d.id && (

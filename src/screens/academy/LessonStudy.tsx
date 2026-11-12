@@ -46,5 +46,5 @@ export function LessonChecks({criteria}:{criteria:string[]}){
 export function LessonResources({blocks}:{blocks:any[]}){
  const links=new Map<string,string>()
  for(const block of blocks){const value=block.data||block;for(const match of String(value.text||value.body||'').matchAll(/\[([^\]]+)\]\((\/learning\/academy\/[a-z0-9/-]+\.zip)\)/g))links.set(match[2],match[1])}
- return links.size?<section className={`${panel} academy-study-downloads`} aria-label="Файлы для практики"><h3>Учебные файлы</h3><p className="mt-2 text-sm leading-relaxed text-mute">Скачай архив, распакуй его и начни с README. Внутри — учебные данные и команды запуска.</p>{[...links].map(([src,label])=><Tap key={src} className="academy-chip mt-4" onClick={()=>openLink(src)}>{label} · ZIP</Tap>)}</section>:null
+ return links.size?<section className={`${panel} academy-study-downloads`} aria-label="Файлы для практики"><h3>Учебные файлы</h3><p className="mt-2 text-sm leading-relaxed text-mute">Скачай архив, распакуй его и начни с README. Внутри - учебные данные и команды запуска.</p>{[...links].map(([src,label])=><Tap key={src} className="academy-chip mt-4" onClick={()=>openLink(src)}>{label} · ZIP</Tap>)}</section>:null
 }

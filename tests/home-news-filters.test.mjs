@@ -33,7 +33,7 @@ async function feedPresentation() {
  for (const [path, names] of Object.entries(mocks)) compiled = compiled.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.', '\\.')}["'];?`, 'g'), `const { ${names} } = globalThis.__homeNewsHarness;`)
  compiled = compiled.replace(/import ["']\.\/free-first\.css["'];?/g, '')
  for (const name of ['react', 'react/jsx-runtime', 'lucide-react']) compiled = compiled.replaceAll(`from "${name}"`, `from ${JSON.stringify(import.meta.resolve(name))}`)
- for (const name of ['content', 'discovery', 'knowledge', 'news-categories']) compiled = compiled.replaceAll(`from "../../lib/${name}"`, `from ${JSON.stringify(new URL(`../src/lib/${name}.ts`, import.meta.url).href)}`)
+ for (const name of ['content', 'discovery', 'knowledge', 'news-categories', 'plain-dashes']) compiled = compiled.replaceAll(`from "../../lib/${name}"`, `from ${JSON.stringify(new URL(`../src/lib/${name}.ts`, import.meta.url).href)}`)
  const state = { view: { ...defaults }, posts: null, more: true, legacy: false, busy: false, error: '', read: [], saved: [], requests: [], clicks: [], actions: [], loadCalls: [] }
  const store = { me: { id: 1 }, push() {}, setTab(tab) { state.actions.push(tab) } }
  const useStore = selector => selector(store)
@@ -151,3 +151,11 @@ test('home and archive collapse only known duplicate categories and retain legac
  state.clicks.find(button => button['aria-label'] === 'Сбросить фильтры публикаций').onClick()
  assert.deepEqual(state.view, defaults)
 })
+
+ test('news cards normalize visible dashes without rewriting article data', async () => {
+ const { render } = await feedPresentation()
+ const original = card(99, {title:'ИИ — практика', subtitle:'Полезно — сегодня'})
+ const html = render([original])
+ assert.ok(html.includes('ИИ - практика'))
+ assert.equal(original.title, 'ИИ — практика')
+ })

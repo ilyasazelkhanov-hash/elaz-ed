@@ -165,7 +165,7 @@ export function Game({ id }: { id: string }) {
       if (r && active) {
         setSession(String(r.sessionId))
         setWait(Number(r.minSeconds ?? 0))
-        setOutcome(typeof r.outcome === 'number' ? `+${r.outcome} баллов` : String(r.outcome ?? 'Хороший момент — ваш'))
+        setOutcome(typeof r.outcome === 'number' ? `+${r.outcome} баллов` : String(r.outcome ?? 'Хороший момент - ваш'))
       } else if (active) setError('Не удалось открыть игру. Вернитесь к заданию и попробуйте ещё раз.')
     })
     return () => {

@@ -258,7 +258,7 @@ export default function Home({ brand }: { brand: BrandConfig }) {
               <div className={`az-story-ring ${i === 0 ? 'az-story-new' : ''}`}>
                 <Art kind={story.cover} />
               </div>
-              <span>{story.title === 'Место, где вы — свои' ? 'Знакомство' : story.title}</span>
+              <span>{story.title === 'Место, где вы - свои' ? 'Знакомство' : story.title}</span>
             </button>
           ))}
         </div>

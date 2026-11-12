@@ -31,7 +31,7 @@ export function levelCard(me: Me): ShareCard {
     title: lvl.title,
     big: `${me.xp} XP`,
     sub: [`Уровень ${lvl.index}`, me.streak > 0 ? `стрик ${days(me.streak)}` : '', `${me.rank} место`].filter(Boolean).join(' · '),
-    caption: `Мой уровень в OG CRE8R² — «${lvl.title}». Догоняй.`,
+    caption: `Мой уровень в OG CRE8R² - «${lvl.title}». Догоняй.`,
   }
 }
 
@@ -58,7 +58,7 @@ export function streakCard(me: Me): ShareCard {
     big: String(me.streak),
     bigFirst: true,
     title: `${plural(me.streak, ['день', 'дня', 'дней'])} подряд`,
-    sub: me.best_streak > me.streak ? `Рекорд — ${me.best_streak}` : 'Это мой рекорд',
+    sub: me.best_streak > me.streak ? `Рекорд - ${me.best_streak}` : 'Это мой рекорд',
     caption: `Держу стрик ${days(me.streak)} в OG CRE8R².`,
   }
 }
