@@ -4580,11 +4580,13 @@
       "data": {
         "format": "live_workshop",
         "minutes": 65,
-        "artifact": "Политика длительного approval и негативный случай",
+        "artifact": "Политика длительного approval и журнал голосового подтверждения текущей версии",
         "acceptance": [
           "Согласие связано с действием и версией",
           "Имитация reviewer не выдана за аутентификацию",
-          "Истечение approval не объявлено реализованным"
+          "Истечение approval не объявлено реализованным",
+          "Прерванное предложение и позднее подтверждение не приводят к действию",
+          "Слышимость моделируется событиями и не заявлена проверенной на реальном аудио"
         ],
         "is_new": false,
         "content_blocks": [
@@ -4611,12 +4613,17 @@
               "check": "Сверь версии и число результатов до и после повтора. Ограничение долговечности локального стенда укажи явно.",
               "diagram_src": "/learning/academy/concepts/AG-301-M2.svg"
             }
+          },
+          {
+            "type": "markdown",
+            "learning_role": "lesson_practice",
+            "text": "## Практика: согласие на услышанное предложение\n\nВ голосовом диалоге генерация текста, отправка аудио и его воспроизведение — разные события. Помощник мог подготовить вопрос «Сохранить отчёт?», но человек перебил его до окончания. Реплика «да» из прежнего контекста не должна разрешать новое действие. Даже завершённое воспроизведение само по себе не доказывает внимание и понимание; для реального сервиса нужны явное согласие, проверенная личность и понятные условия действия.\n\nДобавь к версии действия идентификатор конкретного предложения, срок его действия и состояние воспроизведения. Разрешение относится к текущему предложению после полного воспроизведения и только к его неизменённой версии. Прерывание, правка действия, отмена или истечение срока снимают основание для исполнения. Молчание и пустая очередь аудио — не согласие. Старый handoff не восстанавливает отменённое разрешение.\n\n[Скачать лабораторию голосового подтверждения](/learning/academy/voice-confirmation-lab.zip). На Node.js 24 в отдельной папке запусти node --test и node demo.mjs. Это модель последовательности событий без микрофона, настоящего аудио, языковой модели и внешней отправки. События проигрывания и реплики в ней синтетические. Наличие playback_completed в учебном входе не является проверкой того, что реальный человек услышал звук.\n\n### Разберём на примере\n\nВымышленному помощнику предложено сохранить учебную запись. Проследи полное воспроизведение, явное подтверждение текущего предложения и одно локальное исполнение. Теперь прерви предложение до конца и передай такое же подтверждение: действия быть не должно. Выпусти новое предложение для исправленной записи и проверь, что старое «да» не подходит новой версии.\n\n### Практика: перенос в новый контекст\n\nСоздай случай «перенести учебную встречу»: сначала одно время, затем исправленное. Добавь явный отказ человека и подтверждение после срока. Для каждого случая сохрани идентификатор предложения, версию, порядок событий и число исполнений. Объясни, какие данные должны приходить от доверенного аудиоклиента и слоя аутентификации в настоящей системе, а какие здесь просто заданы фикстурой.\n\n### Самопроверка: доказательства результата\n\n- Прерванное или только сгенерированное предложение не разрешает действие.\n- Подтверждение связано с актуальным предложением и неизменённым действием; позднее или чужое подтверждение отвергается.\n- Тишина, успешный handoff и повтор события не создают нового разрешения.\n- Явно разделены локальная модель событий, реальное воспроизведение и понимание человеком.\n\nУпражнение авторское. Официальный пример OpenAI Cookbook принят в основную ветку 10 ноября 2026 года, хотя редакционная дата статьи — 3 ноября. Использована идея проверки аудио и состояния, а не скопирована его реализация. Источники и MIT-оговорка находятся в SOURCES.md архива."
           }
         ],
         "required": true,
         "course_code": "AG-301",
-        "deliverable": "Политика длительного approval и негативный случай",
-        "criteria": "Согласие связано с действием и версией\nИмитация reviewer не выдана за аутентификацию\nИстечение approval не объявлено реализованным",
+        "deliverable": "Политика длительного approval и журнал голосового подтверждения текущей версии",
+        "criteria": "Согласие связано с действием и версией\nИмитация reviewer не выдана за аутентификацию\nИстечение approval не объявлено реализованным\nПрерванное предложение и позднее подтверждение не приводят к действию\nСлышимость моделируется событиями и не заявлена проверенной на реальном аудио",
         "authored_pack": "og-original:AG-301:1"
       },
       "seed_managed": false
@@ -4792,7 +4799,8 @@
         "acceptance": [
           "Прежние вопросы сохранены",
           "Слои ошибок разделены",
-          "Чувствительные данные исключены"
+          "Чувствительные данные исключены",
+          "Проверены повтор исполнения и поздний сигнал после смены контекста"
         ],
         "is_new": false,
         "content_blocks": [
@@ -4819,12 +4827,17 @@
               "check": "Свяжи каждый вывод с конкретным случаем и независимо пересмотри хотя бы один принятый ошибочный результат.",
               "diagram_src": "/learning/academy/concepts/AG-301-M3.svg"
             }
+          },
+          {
+            "type": "markdown",
+            "learning_role": "lesson_practice",
+            "text": "## Практика: гонка реплики и позднего handoff\n\nВ голосовом процессе несколько сигналов могут относиться к одному намерению: явная передача от модели, разбор реплики и отложенный fallback. Их порядок не гарантирован. Если каждый запускает действие отдельно, получится двойное сохранение; если поздний сигнал использует старый контекст, сохранится неверная версия.\n\nВ автономной [лаборатории подтверждения](/learning/academy/voice-confirmation-lab.zip) сопоставь предложение, подтверждение, запрос исполнения и локальный результат. Повтори один запрос с тем же ключом: новый эффект не должен появиться. Затем пришли позднее подтверждение после прерывания или изменения записи. Отказ должен быть наблюдаемым, а число эффектов оставаться прежним. Успешная обработка handoff и согласие человека проверяются раздельно.\n\n### Практика: другие исходные данные\n\nСоставь два порядка одинаковых событий: сначала человек меняет ответ, потом приходит старый handoff; затем handoff приходит раньше изменения, но до исполнения. Добавь дубликат запроса и проверь, что разрешение нельзя использовать для другого предложения. Сравни журнал и количество эффектов, а не только последнюю строку «готово». Для настоящей системы потребуются устойчивое хранение, транзакции, защита от конкуренции и доверенные идентификаторы. Последовательные тесты в одном Node-процессе не доказывают распределённую идемпотентность.\n\n### Что нужно сохранить\n\nТаблицу порядка событий и ожидаемых отказов, фактический вывод node --test, один собственный отрицательный тест и описание непройденных проверок. В журнале используй только вымышленные записи. Сырой звук, личные разговоры, токены и заголовки Authorization не нужны.\n\n### Самопроверка\n\n- Повтор разрешённого запроса не создаёт второе сохранение.\n- Правка или прерывание не позволяют старому сигналу действовать с прежним разрешением.\n- Согласие не подменяется наличием handoff или таймера.\n- Проверка локальной модели не названа проверкой реального звука, нескольких процессов или поставщика модели."
           }
         ],
         "required": true,
         "course_code": "AG-301",
         "deliverable": "Сравнение двух редакций по трассам",
-        "criteria": "Прежние вопросы сохранены\nСлои ошибок разделены\nЧувствительные данные исключены",
+        "criteria": "Прежние вопросы сохранены\nСлои ошибок разделены\nЧувствительные данные исключены\nПроверены повтор исполнения и поздний сигнал после смены контекста",
         "authored_pack": "og-original:AG-301:1"
       },
       "seed_managed": false
@@ -20256,11 +20269,14 @@
       "data": {
         "format": "knowledge_check",
         "minutes": 30,
-        "artifact": "Проверка трёх недопустимых вызовов",
+        "artifact": "Модель угроз локального MCP и таблица решений авторизации удалённого HTTP-сервера",
         "acceptance": [
           "Права подтверждены обработчиком",
           "Текст результата не становится политикой",
-          "Удалённая аутентификация не заявлена проверенной"
+          "Удалённая аутентификация не заявлена проверенной",
+          "В HTTP-модели отдельно проверены issuer, audience, scope и срок",
+          "Синтетическая проверка токена не названа настоящей JWT-валидацией",
+          "Различены stdio, HTTP и версия SDK expectedResource"
         ],
         "is_new": true,
         "content_blocks": [
@@ -20287,12 +20303,17 @@
               "check": "Сравни состояние файлов до и после: инструмент чтения не должен создавать правку; сам отказ не доказывает защиту всех остальных каналов.",
               "diagram_src": "/learning/academy/concepts/ENG-201-M2.svg"
             }
+          },
+          {
+            "type": "markdown",
+            "learning_role": "lesson_practice",
+            "text": "## Практика: авторизация удалённого MCP\n\nЛокальный stdio из предыдущего примера и удалённый HTTP-сервер имеют разные границы. OAuth-поток из официального руководства относится к HTTP. Не добавляй этот поток в stdio только ради одинакового названия MCP. Существующая лаборатория остаётся примером протокола 2025-03-26; следующие требования относятся к руководству для 2026-07-28, проверенному 12 ноября 2026 года.\n\nДля HTTP проверяй не наличие слова Bearer, а достоверность токена и его назначение. В настоящем сервисе доверенная библиотека проверяет подпись, разрешённый алгоритм, ключи издателя и срок. Затем сервер проверяет точный issuer, audience именно этого ресурса и требуемые scope. Токен другого сервиса не подходит даже при корректной подписи. Scope сравнивается как отдельное разрешение: mcp:read-extra не равно mcp:read. Origin проверяют отдельно от токена; это не доказательство личности пользователя. Идентификатор MCP-сессии тоже не является аутентификацией.\n\nВ обновлённом руководстве Client ID Metadata Documents (CIMD) рекомендованы новым реализациям вместо deprecated Dynamic Client Registration (DCR); DCR оставлен для совместимости. Регистрация происходит между клиентом и authorization server, а не превращает MCP-сервер в сервис регистрации. Примеры используют SDK v2. В TypeScript expectedResource требует @modelcontextprotocol/express 2.0.2 или новее, а прежние версии его игнорируют. Даже в новой версии нужно сохранять явную проверку audience в JWT-библиотеке: expectedResource сам не разбирает токен. Перед реальным запуском перепроверь версии своего SDK и провайдера.\n\n[Скачать автономную лабораторию авторизации](/learning/academy/mcp-authorization-lab.zip). В отдельной папке на Node.js 24 выполни node --test, затем node demo.mjs. Установка пакетов, сеть, аккаунт и настоящий токен не нужны. Это самостоятельная учебная модель решений после проверки токена, не JWT-валидатор, OAuth-сервер или реализация MCP. Флаг успешной криптографической проверки здесь задаёт синтетическая фикстура; его нельзя принимать от внешнего клиента в рабочем приложении.\n\n### Разберём на примере\n\nВымышленный сервер ждёт своего издателя, собственный audience и право чтения. Сначала проследи разрешённый запрос в demo. Затем измени по одному условию: чужой issuer, audience соседнего сервиса, похожий scope и истёкший срок. Во всех четырёх случаях исполнение должно быть запрещено. Отдельно сравни HTTP Origin с личностью владельца токена и объясни, почему одно не заменяет другое.\n\n### Практика: перенос в новый контекст\n\nСделай собственную копию теста для сервиса отчётов: другое имя ресурса и два обязательных scope. Проверь строковый и массивный audience, отсутствующее поле, слишком ранний токен и недоверенный Origin. Не ослабляй проверку ради зелёного результата. Сохрани таблицу «вход → отказ/разрешение → причина» и фактический вывод тестов.\n\n### Самопроверка: границы результата\n\n- Есть разрешённый случай и независимые отказы по issuer, audience и scope.\n- Криптографическая проверка отделена от проверки политики; поддельный флаг из сети не считается доказательством.\n- Указаны версия протокола, версия SDK из источника и отличие HTTP от stdio.\n- Отчёт не заявляет проверенный вход, сетевую интеграцию, безопасность production или выполнение реального действия.\n\nАвторский пример создан по интерфейсным требованиям официального руководства. Его текст и код не перепечатаны; точные ссылки, дата проверки и условия лицензий включены в README и SOURCES.md архива."
           }
         ],
         "required": true,
         "course_code": "ENG-201",
-        "deliverable": "Проверка трёх недопустимых вызовов",
-        "criteria": "Права подтверждены обработчиком\nТекст результата не становится политикой\nУдалённая аутентификация не заявлена проверенной",
+        "deliverable": "Модель угроз локального MCP и таблица решений авторизации удалённого HTTP-сервера",
+        "criteria": "Права подтверждены обработчиком\nТекст результата не становится политикой\nУдалённая аутентификация не заявлена проверенной\nВ HTTP-модели отдельно проверены issuer, audience, scope и срок\nСинтетическая проверка токена не названа настоящей JWT-валидацией\nРазличены stdio, HTTP и версия SDK expectedResource",
         "authored_pack": "og-original:ENG-201:1"
       },
       "seed_managed": false
@@ -37625,7 +37646,7 @@
       "seed_managed": false,
       "data": {
         "kind": "assignment",
-        "instructions": "Политика длительного approval и негативный случай\nСогласие связано с действием и версией\nИмитация reviewer не выдана за аутентификацию\nИстечение approval не объявлено реализованным",
+        "instructions": "Политика длительного approval и журнал голосового подтверждения текущей версии\nСогласие связано с действием и версией\nИмитация reviewer не выдана за аутентификацию\nИстечение approval не объявлено реализованным\nПрерванное предложение и позднее подтверждение не приводят к действию\nСлышимость моделируется событиями и не заявлена проверенной на реальном аудио",
         "rubric_code": "AG-301-PRACTICE-RUBRIC",
         "passing_score": 70,
         "max_attempts": 5,
@@ -37697,7 +37718,7 @@
       "seed_managed": false,
       "data": {
         "kind": "assignment",
-        "instructions": "Сравнение двух редакций по трассам\nПрежние вопросы сохранены\nСлои ошибок разделены\nЧувствительные данные исключены",
+        "instructions": "Сравнение двух редакций по трассам\nПрежние вопросы сохранены\nСлои ошибок разделены\nЧувствительные данные исключены\nПроверены повтор исполнения и поздний сигнал после смены контекста",
         "rubric_code": "AG-301-PRACTICE-RUBRIC",
         "passing_score": 70,
         "max_attempts": 5,
@@ -37872,6 +37893,72 @@
         "rights_state": "public_link",
         "link_state": "verified",
         "checked_at": "2026-10-26",
+        "rights": "Ссылка на официальный источник. Материал не перепечатывается.",
+        "authored_pack": "og-original:AG-301:1"
+      }
+    },
+    {
+      "code": "AUTH-SRC-AG301-VOICE-SOP-20261112",
+      "kind": "source",
+      "parent_code": null,
+      "title": "OpenAI Cookbook: Build a voice agent that follows an SOP",
+      "position": 0,
+      "state": "published",
+      "version": 1,
+      "seed_managed": false,
+      "data": {
+        "url": "https://github.com/openai/openai-cookbook/blob/2658c92cd4cd562504571b9d7491fc51524a7dc9/articles/sop_to_voice_agent_builder.md",
+        "canonical_url": "https://github.com/openai/openai-cookbook/blob/2658c92cd4cd562504571b9d7491fc51524a7dc9/articles/sop_to_voice_agent_builder.md",
+        "type": "documentation",
+        "source_type": "documentation",
+        "language": "EN",
+        "rights_state": "public_link",
+        "link_state": "verified",
+        "checked_at": "2026-11-12",
+        "rights": "Ссылка на официальный источник. Материал не перепечатывается.",
+        "authored_pack": "og-original:AG-301:1"
+      }
+    },
+    {
+      "code": "AUTH-SRC-AG301-VOICE-EVIDENCE-20261112",
+      "kind": "source",
+      "parent_code": null,
+      "title": "OpenAI Cookbook: воспроизведение предложения, версия и поздние сигналы",
+      "position": 0,
+      "state": "published",
+      "version": 1,
+      "seed_managed": false,
+      "data": {
+        "url": "https://github.com/openai/openai-cookbook/blob/2658c92cd4cd562504571b9d7491fc51524a7dc9/examples/audio/sop_voice_workflows/interview_app/live.py#L178",
+        "canonical_url": "https://github.com/openai/openai-cookbook/blob/2658c92cd4cd562504571b9d7491fc51524a7dc9/examples/audio/sop_voice_workflows/interview_app/live.py#L178",
+        "type": "documentation",
+        "source_type": "documentation",
+        "language": "EN",
+        "rights_state": "public_link",
+        "link_state": "verified",
+        "checked_at": "2026-11-12",
+        "rights": "Ссылка на официальный источник. Материал не перепечатывается.",
+        "authored_pack": "og-original:AG-301:1"
+      }
+    },
+    {
+      "code": "AUTH-SRC-AG301-VOICE-LICENSE-20261112",
+      "kind": "source",
+      "parent_code": null,
+      "title": "OpenAI Cookbook: MIT License",
+      "position": 0,
+      "state": "published",
+      "version": 1,
+      "seed_managed": false,
+      "data": {
+        "url": "https://github.com/openai/openai-cookbook/blob/2658c92cd4cd562504571b9d7491fc51524a7dc9/LICENSE",
+        "canonical_url": "https://github.com/openai/openai-cookbook/blob/2658c92cd4cd562504571b9d7491fc51524a7dc9/LICENSE",
+        "type": "documentation",
+        "source_type": "documentation",
+        "language": "EN",
+        "rights_state": "public_link",
+        "link_state": "verified",
+        "checked_at": "2026-11-12",
         "rights": "Ссылка на официальный источник. Материал не перепечатывается.",
         "authored_pack": "og-original:AG-301:1"
       }
@@ -38101,6 +38188,36 @@
               "Повысить роль пользователя"
             ],
             "answer": 0
+          },
+          {
+            "id": "ENG-201-remote-issuer",
+            "prompt": "Подпись корректна, но audience указывает другой сервис. Можно ли выполнить инструмент?",
+            "choices": [
+              "Да, подписи достаточно",
+              "Нет, токен не предназначен этому ресурсу",
+              "Да, если имя инструмента read-only"
+            ],
+            "answer": 1
+          },
+          {
+            "id": "ENG-201-remote-sdk",
+            "prompt": "Что следует проверить при использовании expectedResource?",
+            "choices": [
+              "Только строку версии протокола",
+              "Версию @modelcontextprotocol/express и отдельную проверку audience в JWT-библиотеке",
+              "Наличие любого MCP session ID"
+            ],
+            "answer": 1
+          },
+          {
+            "id": "ENG-201-remote-fixture",
+            "prompt": "Что подтверждают тесты автономной модели?",
+            "choices": [
+              "Реальный OAuth-вход и подпись любого JWT",
+              "Решения локальной политики на синтетических входах",
+              "Совместимость со всеми MCP-клиентами"
+            ],
+            "answer": 1
           }
         ],
         "passing_score": 70,
@@ -38292,6 +38409,50 @@
         "rights_state": "public_link",
         "link_state": "verified",
         "checked_at": "2026-10-26",
+        "rights": "Ссылка на официальный источник. Материал не перепечатывается.",
+        "authored_pack": "og-original:ENG-201:1"
+      }
+    },
+    {
+      "code": "AUTH-SRC-ENG201-HTTP-AUTH-20261112",
+      "kind": "source",
+      "parent_code": null,
+      "title": "MCP 2026-07-28: HTTP authorization, CIMD и проверка токенов",
+      "position": 0,
+      "state": "published",
+      "version": 1,
+      "seed_managed": false,
+      "data": {
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/0b22bfed6e94c0c7751046d2e845fac954cac8a7/docs/docs/2026-07-28/tutorials/security/authorization.mdx",
+        "canonical_url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/0b22bfed6e94c0c7751046d2e845fac954cac8a7/docs/docs/2026-07-28/tutorials/security/authorization.mdx",
+        "type": "documentation",
+        "source_type": "documentation",
+        "language": "EN",
+        "rights_state": "public_link",
+        "link_state": "verified",
+        "checked_at": "2026-11-12",
+        "rights": "Ссылка на официальный источник. Материал не перепечатывается.",
+        "authored_pack": "og-original:ENG-201:1"
+      }
+    },
+    {
+      "code": "AUTH-SRC-ENG201-HTTP-LICENSE-20261112",
+      "kind": "source",
+      "parent_code": null,
+      "title": "MCP: условия использования документации и спецификации",
+      "position": 0,
+      "state": "published",
+      "version": 1,
+      "seed_managed": false,
+      "data": {
+        "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/0b22bfed6e94c0c7751046d2e845fac954cac8a7/LICENSE",
+        "canonical_url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/0b22bfed6e94c0c7751046d2e845fac954cac8a7/LICENSE",
+        "type": "documentation",
+        "source_type": "documentation",
+        "language": "EN",
+        "rights_state": "public_link",
+        "link_state": "verified",
+        "checked_at": "2026-11-12",
         "rights": "Ссылка на официальный источник. Материал не перепечатывается.",
         "authored_pack": "og-original:ENG-201:1"
       }
@@ -59522,6 +59683,69 @@
       "start_seconds": 0
     },
     {
+      "source_code": "AUTH-SRC-AG301-VOICE-SOP-20261112",
+      "target_code": "AG-301",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-AG301-VOICE-SOP-20261112",
+      "target_code": "AG-301-M2-L2",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-AG301-VOICE-SOP-20261112",
+      "target_code": "AG-301-M3-L2",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-AG301-VOICE-EVIDENCE-20261112",
+      "target_code": "AG-301",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-AG301-VOICE-EVIDENCE-20261112",
+      "target_code": "AG-301-M2-L2",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-AG301-VOICE-EVIDENCE-20261112",
+      "target_code": "AG-301-M3-L2",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-AG301-VOICE-LICENSE-20261112",
+      "target_code": "AG-301",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-AG301-VOICE-LICENSE-20261112",
+      "target_code": "AG-301-M2-L2",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-AG301-VOICE-LICENSE-20261112",
+      "target_code": "AG-301-M3-L2",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
       "source_code": "AUTH-SRC-ENG201-MCP",
       "target_code": "ENG-201",
       "usage": "supplementary",
@@ -59755,6 +59979,34 @@
     {
       "source_code": "AUTH-SRC-ENG201-CODEX",
       "target_code": "ENG-201-M4-L4",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-ENG201-HTTP-AUTH-20261112",
+      "target_code": "ENG-201",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-ENG201-HTTP-AUTH-20261112",
+      "target_code": "ENG-201-M2-L4",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-ENG201-HTTP-LICENSE-20261112",
+      "target_code": "ENG-201",
+      "usage": "supplementary",
+      "visibility": "student",
+      "start_seconds": 0
+    },
+    {
+      "source_code": "AUTH-SRC-ENG201-HTTP-LICENSE-20261112",
+      "target_code": "ENG-201-M2-L4",
       "usage": "supplementary",
       "visibility": "student",
       "start_seconds": 0
@@ -63967,5 +64219,5 @@
       "External rights, availability, attribution and chapter relevance require editorial verification."
     ]
   },
-  "content_revision": "7cf542e0234c709a"
+  "content_revision": "0c9994c0db325f68"
 }

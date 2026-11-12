@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-11-12",
+  "protocol_revision": "2026-07-28",
+  "upstream_commit": "0b22bfed6e94c0c7751046d2e845fac954cac8a7",
+  "implementation": "Original offline policy teaching model; no copied upstream code or schemas, no JWT verifier, no HTTP server, no external side effects.",
+  "sources": [
+    {
+      "title": "Model Context Protocol: Authorization tutorial",
+      "author": "Model Context Protocol contributors / Model Context Protocol, a Series of LF Projects, LLC",
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/0b22bfed6e94c0c7751046d2e845fac954cac8a7/docs/docs/2026-07-28/tutorials/security/authorization.mdx",
+      "checked_facts": [
+        "OAuth tutorial applies to HTTP transports; stdio uses environment or embedded-library credentials.",
+        "CIMD recommended for new implementations; DCR deprecated for compatibility.",
+        "Exact issuer, intended audience, lifetime and scopes must be validated.",
+        "expectedResource requires @modelcontextprotocol/express 2.0.2 and is ignored by earlier versions; it does not replace audience validation inside jwtVerify.",
+        "MCP 2026-07-28 has no sessions; session IDs must not establish identity for legacy clients either."
+      ]
+    },
+    {
+      "title": "Authorization tutorial update, November 8, 2026",
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/commit/fd502785f2732ae0028de7e9fa34d6ebcd950c65"
+    },
+    {
+      "title": "MCP licensing transition",
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/0b22bfed6e94c0c7751046d2e845fac954cac8a7/LICENSE",
+      "license_note": "Non-specification documentation CC-BY-4.0; new code/spec Apache-2.0; unrelicensed historical contributions MIT. This lab cites and independently explains concepts without copying upstream code."
+    }
+  ],
+  "validation_scope": {
+    "runtime": "Node.js 24",
+    "dependencies": "none",
+    "signature_verification": "not_implemented",
+    "oauth_http_integration": "not_implemented",
+    "external_sdk_compatibility": "not_tested",
+    "conformance_claim": "none"
+  }
+}

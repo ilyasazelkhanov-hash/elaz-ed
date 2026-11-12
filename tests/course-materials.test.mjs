@@ -58,7 +58,8 @@ test('public books deliver reviewed lesson and course references without bundlin
  assert.match(nist.title,/NIST/);assert.equal(nist.checked_at,'2026-10-18')
  assert.ok(core.sources.some(source=>source.code==='AUTH-SRC-CORE-NIST'))
  assert.equal(books.reduce((sum,book)=>sum+book.lessons.filter(lesson=>lesson.sources.length>0).length,0),448)
- assert.equal(books.reduce((sum,book)=>sum+book.sources.length+book.lessons.reduce((total,lesson)=>total+lesson.sources.length,0),0),851)
+ // Baseline 851 plus 13 reviewed course/lesson references for the two freshness labs.
+ assert.equal(books.reduce((sum,book)=>sum+book.sources.length+book.lessons.reduce((total,lesson)=>total+lesson.sources.length,0),0),864)
  for(const book of books)for(const source of [...book.sources,...book.lessons.flatMap(lesson=>lesson.sources)]){
   assert.ok(source.url.startsWith('https://'));assert.ok(source.title);assert.equal(source.data,undefined)
   assert.equal(source.body,undefined);assert.equal(source.note,undefined)

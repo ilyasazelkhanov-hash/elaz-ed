@@ -3,6 +3,7 @@ import {pathToFileURL,fileURLToPath} from 'node:url'
 import path from 'node:path'
 import {createHash} from 'node:crypto'
 import {loadLessonExamples,assertLessonExamplesCurrent} from './academy-enrich-lessons.mjs'
+import {writeFreshnessLabs} from './academy-freshness-labs.mjs'
 import {writeCourseMaterials} from './course-materials.mjs'
 import {academyDemoSample} from './academy-demo-sample.mjs'
 import {publicAcademyCatalog} from './academy-public.mjs'
@@ -109,6 +110,7 @@ export async function loadAuthoredPacks(){
  }))
 }
 export async function buildContent(){
+ await writeFreshnessLabs(root)
  const base=JSON.parse(await readFile(path.join(root,'content/ai-academy/catalog.normalized.json'),'utf8'))
  const packs=await loadAuthoredPacks()
  const catalog=composeLearningCatalog(base,packs)

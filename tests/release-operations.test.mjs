@@ -3,8 +3,9 @@ import assert from 'node:assert/strict'
 import {RELEASE,checkRelease,publicApiUrl} from '../scripts/release-contract.mjs'
 import {chunkUrls,discoverApi,smoke} from '../scripts/release-smoke.mjs'
 import {reconcileRecovery,recoveryFixture} from '../scripts/verify-recovery.mjs'
-import {frontendRelease} from '../scripts/frontend-release.mjs'
-import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises'
+import {frontendRelease,frontendSourceIdentity} from '../scripts/frontend-release.mjs'
+import {mkdtemp,mkdir,readFile,writeFile,rm} from 'node:fs/promises'
+import {execFileSync} from 'node:child_process'
 import {tmpdir} from 'node:os'
 import path from 'node:path'
 
@@ -97,4 +98,52 @@ test('smoke verifies the exact published commit and fails on missing or dirty id
   assert.equal((await smoke({appUrl:app,fetcher})).pass,false)
   await assert.rejects(smoke({apiUrl:api,expectedCommit:commit,fetcher}),/requires an app URL/)
   await assert.rejects(smoke({appUrl:app,expectedCommit:'main',fetcher}),/full Git SHA/)
+})
+
+
+test('Vercel installs the frozen lockfile before capturing source identity',async()=>{
+  const config=JSON.parse(await readFile(new URL('../vercel.json',import.meta.url),'utf8'))
+  assert.equal(config.installCommand,'npm ci')
+  assert.equal(config.buildCommand,'npm run build')
+})
+
+test('source identity remains honest for clean, modified and staged tracked files',async()=>{
+  const base=await mkdtemp(path.join(tmpdir(),'og-release-source-'))
+  const git=(...args)=>execFileSync('git',args,{cwd:base,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim()
+  try {
+    git('init','--quiet')
+    await writeFile(path.join(base,'package-lock.json'),'{}\n')
+    git('add','package-lock.json')
+    git('-c','user.name=Release identity test','-c','user.email=test@example.invalid','commit','--quiet','-m','Fixture')
+    const commit=git('rev-parse','HEAD'),env={VERCEL_GIT_COMMIT_SHA:commit}
+    assert.deepEqual(frontendSourceIdentity(base,env),{commit,dirty:false})
+    await writeFile(path.join(base,'untracked-cache'),'not a source edit')
+    assert.equal(frontendSourceIdentity(base,env).dirty,false)
+    await writeFile(path.join(base,'package-lock.json'),'{"changed":true}\n')
+    assert.equal(frontendSourceIdentity(base,env).dirty,true)
+    git('add','package-lock.json')
+    assert.equal(frontendSourceIdentity(base,env).dirty,true)
+  } finally {await rm(base,{recursive:true,force:true})}
+})
+
+test('generated outputs are fingerprinted after capturing the clean source checkout',async()=>{
+  const base=await mkdtemp(path.join(tmpdir(),'og-release-generated-'))
+  const git=(...args)=>execFileSync('git',args,{cwd:base,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim()
+  try {
+    git('init','--quiet')
+    await writeFile(path.join(base,'generated-book.md'),'tracked draft\n')
+    git('add','generated-book.md')
+    git('-c','user.name=Release identity test','-c','user.email=test@example.invalid','commit','--quiet','-m','Fixture')
+    const commit=git('rev-parse','HEAD'),env={VERCEL_GIT_COMMIT_SHA:commit}
+    const source=frontendSourceIdentity(base,env)
+    await writeFile(path.join(base,'generated-book.md'),'generated during build\n')
+    await mkdir(path.join(base,'dist'))
+    await writeFile(path.join(base,'dist/index.html'),'generated build')
+    assert.equal(frontendSourceIdentity(base,env).dirty,true)
+    const release=await frontendRelease(base,env,source)
+    assert.equal(release.dirty,false)
+    assert.equal(release.commit,commit)
+    assert.equal(release.file_count,1)
+    assert.match(release.build_sha256,/^[a-f0-9]{64}$/)
+  } finally {await rm(base,{recursive:true,force:true})}
 })
