@@ -23,33 +23,48 @@ const dayLabel = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString
 const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0)
 
 export function AnalyticsScreen() {
-  const { guard, toast } = useStore.getState()
+  const { guard } = useStore.getState()
   const [data, setData] = useState<Analytics | null>(null)
   const [metric, setMetric] = useState<Metric>('active')
+  const [error, setError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let alive = true
+    setError(null)
+    setData(null)
     api
       .adminAnalytics()
       .then((d) => alive && setData(d))
       .catch((e) => {
+        if (!alive) return
+        setError(errorText(e))
         guard(e)
-        toast(errorText(e))
       })
     return () => {
       alive = false
     }
-  }, [guard, toast])
+  }, [guard, attempt])
 
   return (
     <motion.div {...sheet} className="absolute inset-0 z-[31] bg-bg">
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(40px + var(--bottom))' }}>
         <Header title="Аналитика" />
 
-        {!data ? (
-          <div className="mt-5 space-y-2.5 px-5">
+        {error !== null ? (
+          <div className="mx-5 mt-5 rounded-[22px] border border-line bg-card p-5">
+            <div role="alert">
+              <h2 className="font-semibold">Не удалось загрузить аналитику</h2>
+              <p className="mt-2 break-words text-[13px] text-mute">{error}</p>
+              <p className="mt-2 text-[13px] text-mute">Показатели недоступны. Это не означает, что оплат или активности нет.</p>
+            </div>
+            <Tap className="mt-4 min-h-11 rounded-xl bg-inverse px-4 text-on-inverse" onClick={() => { setError(null); setAttempt((value) => value + 1) }}>Повторить загрузку</Tap>
+          </div>
+        ) : !data ? (
+          <div role="status" aria-label="Загрузка аналитики" className="mt-5 space-y-2.5 px-5">
+            <span className="sr-only">Загрузка аналитики</span>
             {[84, 220, 150, 240].map((h) => (
-              <div key={h} className="skeleton rounded-[22px]" style={{ height: h }} />
+              <div key={h} aria-hidden="true" className="skeleton rounded-[22px]" style={{ height: h }} />
             ))}
           </div>
         ) : (

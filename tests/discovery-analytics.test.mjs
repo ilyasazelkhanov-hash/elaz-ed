@@ -60,3 +60,87 @@ test('discovery presentation never substitutes legacy stats and shows exact coho
  assert.match(empty,/Источники новых участников пока не зафиксированы/)
  assert.match(empty,/Курсов для отчёта пока нет/)
 })
+
+// Exercise the actual screen's hooks and handlers without initializing Telegram/store.
+async function screenHarness() {
+ const pending = [], states = [], effects = [], guards = []
+ let cursor = 0, deps, cleanup
+ const guard = error => guards.push(error)
+ const harness = {
+  api: {adminAnalytics: () => new Promise((resolve,reject) => pending.push({resolve,reject}))},
+  useStore: {getState: () => ({guard})},
+  useState: initial => {
+   const slot = cursor++
+   if (!(slot in states)) states[slot] = initial
+   return [states[slot], value => {states[slot] = typeof value === 'function' ? value(states[slot]) : value}]
+  },
+  useEffect: (effect,next) => {
+   if (!deps || next.some((value,i) => value !== deps[i])) {
+    deps = next
+    effects.push(() => {cleanup?.(); cleanup = effect()})
+   }
+  },
+ }
+ const key = `__analyticsTest${Math.random().toString(36).slice(2)}`
+ globalThis[key] = harness
+ const file = new URL('../src/screens/Analytics.tsx', import.meta.url)
+ let compiled = (await transformWithOxc(await readFile(file,'utf8'),file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
+ compiled = `const harness = globalThis[${JSON.stringify(key)}];\n` + compiled
+  .replace(/import[^;\n]*from ["']react["'];?/g,'const {useState,useEffect} = harness;')
+  .replace(/import[^;\n]*from ["']motion\/react["'];?/g,'const motion = new Proxy({}, {get: (_, tag) => tag});')
+  .replace(/import[^;\n]*from ["']\.\.\/lib\/api["'];?/g,'const {api} = harness; const errorText = e => e.message;')
+  .replace(/import[^;\n]*from ["']\.\.\/store["'];?/g,'const {useStore} = harness;')
+  .replace(/import[^;\n]*from ["']\.\.\/ui["'];?/g,'const EmojiTile = () => null; const Tap = "button";')
+  .replace(/import[^;\n]*from ["']\.\/Admin["'];?/g,'const Header = () => null; const sheet = {};')
+ compiled = compiled.replaceAll('from "react/jsx-runtime"',`from ${JSON.stringify(import.meta.resolve('react/jsx-runtime'))}`)
+ for(const name of ['discovery-analytics','beginner-content']) compiled = compiled.replaceAll(`from "../lib/${name}"`,`from ${JSON.stringify(new URL(`../src/lib/${name}.ts`,import.meta.url).href)}`)
+ const {AnalyticsScreen} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`)
+ delete globalThis[key]
+ return {
+  pending,guards,
+  render: () => {cursor=0; return AnalyticsScreen()},
+  flush: () => {while(effects.length) effects.shift()()},
+  unmount: () => cleanup?.(),
+ }
+}
+const tick = () => new Promise(resolve => setImmediate(resolve))
+function button(tree,label) {
+ if (!tree || typeof tree !== 'object') return null
+ if (tree.type === 'button' && tree.props.children === label) return tree
+ for(const child of [tree.props?.children].flat(Infinity)) {const found=button(child,label);if(found)return found}
+ return null
+}
+
+test('analytics failure is persistent and accessible; retry loads genuine empty results rather than fake zero metrics',async()=>{
+ const screen = await screenHarness()
+ assert.match(renderToStaticMarkup(screen.render()),/role="status"/)
+ screen.flush()
+ assert.equal(screen.pending.length,1)
+ screen.pending[0].reject(new Error('HTTP 503'))
+ await tick()
+ const failed = screen.render(), html = renderToStaticMarkup(failed)
+ assert.match(html,/role="alert"/)
+ assert.match(html,/HTTP 503/)
+ assert.doesNotMatch(html,/animate-pulse|Заходили сегодня/)
+ assert.equal(screen.guards.length,1)
+ button(failed,'Повторить загрузку').props.onClick()
+ assert.match(renderToStaticMarkup(screen.render()),/Загрузка аналитики/)
+ screen.flush()
+ assert.equal(screen.pending.length,2)
+ screen.pending[1].resolve({totals:{dau:0,wau:0,mau:0,new7:0},series:[],retention:{d1:0,d1n:0,d7:0,d7n:0},funnel:{opened:0,subscribed:0,done1:0,done3:0,streak3:0},lessons:[],shares:[],invited:0})
+ await tick()
+ const success = renderToStaticMarkup(screen.render())
+ assert.match(success,/Заходили сегодня/)
+ assert.match(success,/Опубликуй первый урок/)
+ assert.doesNotMatch(success,/role="alert"|Загрузка аналитики/)
+ screen.unmount()
+})
+
+test('analytics late rejection after unmount does not trigger guard or mutate the visible state',async()=>{
+ const screen = await screenHarness()
+ screen.render();screen.flush();screen.unmount()
+ screen.pending[0].reject(new Error('late HTTP error'))
+ await tick()
+ assert.equal(screen.guards.length,0)
+ assert.doesNotMatch(renderToStaticMarkup(screen.render()),/late HTTP error|role="alert"/)
+})
