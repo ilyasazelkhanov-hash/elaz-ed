@@ -63,3 +63,27 @@ test('interaction owner gates and cleans up sensors and sound; no physical torch
  assert.match(ui,/Яркость экрана не считывается/);assert.match(ui,/беззвучный режим телефона определить нельзя/)
  assert.doesNotMatch(hook+ui+device,/getUserMedia|AmbientLightSensor|mozBrightness|applyConstraints|deviceVolume|fetch\(/)
 })
+
+test('device disclosure stays in the real focus trap for closed/open keyboard navigation',async()=>{
+ const {transformWithOxc}=await import('vite')
+ const file=new URL('../src/FocusLayer.tsx',import.meta.url),source=await readFile(file,'utf8')
+ const companion=await readFile(new URL('../src/screens/home/Companion.tsx',import.meta.url),'utf8')
+ assert.match(companion,/<summary tabIndex=\{0\}>Движение/)
+ let code=(await transformWithOxc(source,file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
+ code=code.replace(/import \{([^}]+)\} from ["'](?:react|motion\/react)["'];?/g,(_m,names)=>`const {${names}} = globalThis.__focusHarness;`)
+ code=code.replaceAll('from "react/jsx-runtime"',`from ${JSON.stringify(import.meta.resolve('react/jsx-runtime'))}`)
+ const handlers=new Map(),cleanups=[];let ref=0,open=false
+ class Element {constructor(name,inside=true){this.name=name;this.tabIndex=0;this.inside=inside}closest(){return null}matches(){return false}getClientRects(){return this.inside&&!open?[]:[{}]}focus(){globalThis.document.activeElement=this}}
+ const first=new Element('close',false),summary=new Element('summary',false),sensor=new Element('sensor',true),save=new Element('save',false),items=[first,summary,sensor,save]
+ const root={querySelectorAll(selector){assert.match(selector,/\[tabindex\]/);return items},contains:element=>items.includes(element),focus(){}}
+ globalThis.HTMLElement=Element;globalThis.document={activeElement:summary,addEventListener:(name,fn)=>handlers.set(name,fn),removeEventListener:name=>handlers.delete(name)}
+ globalThis.__focusHarness={useRef:value=>({current:ref++===0?root:value}),useLayoutEffect:fn=>{const cleanup=fn();if(cleanup)cleanups.push(cleanup)},useIsPresent:()=>true,motion:{div:'div'},AnimatePresence:'div'}
+ try {
+  const {FocusLayer}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);FocusLayer({active:true,label:'Dots',children:null})
+  for(const expanded of [false,true]){
+   open=expanded;document.activeElement=summary;let prevented=false
+   handlers.get('keydown')({key:'Tab',shiftKey:false,preventDefault(){prevented=true}});assert.equal(prevented,false,'native Tab from summary proceeds, never jumps to first control')
+   document.activeElement=save;handlers.get('keydown')({key:'Tab',shiftKey:false,preventDefault(){prevented=true}});assert.equal(document.activeElement,first)
+  }
+ }finally{delete globalThis.__focusHarness;delete globalThis.document;delete globalThis.HTMLElement}
+})
