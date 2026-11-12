@@ -32,13 +32,12 @@ export function AdventBanner() {
       aria-label="Адвент-календарь"
       feedback="soft"
       onClick={() => push({ type: 'advent' })}
-      className="relative mx-5 mt-5 flex min-h-[104px] w-[calc(100%-40px)] items-center gap-3.5 overflow-hidden rounded-[26px] p-4 text-left"
+      className="relative mx-5 mt-5 flex min-h-[88px] w-[calc(100%-40px)] items-center gap-3.5 overflow-hidden rounded-[26px] p-4 text-left"
       style={{ background: theme.hero, color: theme.ink }}
     >
       <ThemeScene theme={theme.id} compact />
       <div className="relative min-w-0 flex-1">
-        <p className="text-[12px] font-semibold uppercase tracking-wider opacity-75">{advent.title}</p>
-        <p className="mt-0.5 font-display text-[17px] font-semibold leading-tight">{before ? 'Скоро открытие' : hot ? 'Открой дверь дня' : 'Календарь'}</p>
+        <p className="font-display text-[17px] font-semibold leading-tight">{advent.title}</p>
         <p className="mt-1 text-[13px] font-medium leading-snug opacity-85">{line}</p>
       </div>
       <motion.div

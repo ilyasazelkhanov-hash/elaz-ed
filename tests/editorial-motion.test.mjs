@@ -76,10 +76,14 @@ test('scene starts in view, pauses offscreen/background and cleans up on repeate
  } finally {env.restore()}
 })
 
-test('motion is finite, isolated from controls, and has an accessible static description',async()=>{
+test('motion loops inside a bounded scene and exposes pause plus an accessible static description',async()=>{
  const [css,ui,reader]=await Promise.all(['src/screens/home/learning-motion.css','src/screens/home/LearningMotion.tsx','src/screens/home/free-first.css'].map(path=>readFile(new URL('../'+path,import.meta.url),'utf8')))
- assert.doesNotMatch(css,/infinite|cursor\s*:\s*none/)
- assert.match(css,/4\.6s/);assert.match(css,/prefers-reduced-motion:reduce/)
+ assert.doesNotMatch(css,/cursor\s*:\s*none/)
+ assert.equal((css.match(/7s [^;]+ infinite/g)||[]).length,3)
+ assert.match(css,/data-user-paused='true'/)
+ assert.match(ui,/Приостановить анимацию маршрута/);assert.match(ui,/aria-pressed=\{paused\}/)
+ assert.match(ui,/setPaused\(value => !value\)/);
+assert.match(css,/prefers-reduced-motion:reduce/)
  assert.match(css,/pointer-events:none/);assert.match(css,/pointer:fine/)
  assert.match(ui,/role="img" aria-label="Учебный маршрут/)
  assert.match(reader,/prefers-reduced-motion:reduce/)

@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Share2, Snowflake } from 'lucide-react'
+import { Check, Share2, Snowflake } from 'lucide-react'
 import { animate, motion, useMotionValue, useTransform } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { api, errorText } from '../../lib/api'
@@ -135,43 +135,28 @@ export function DailyCard() {
 export function StreakCard() {
   const me = useStore((s) => s.me)!
   const filled = me.streak > 0 ? ((me.streak - 1) % 7) + 1 : 0
+  const freezeHint = me.freezes >= 2
+    ? 'Запас заморозок полон'
+    : filled === 7
+      ? 'Неделя закрыта'
+      : `${days(7 - filled)} до заморозки`
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="rounded-[22px] border border-line bg-card/80 px-4 py-3">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <Check size={20} className="shrink-0 text-violet" aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">Отметка за сегодня получена</p>
           <p className="mt-0.5 text-xs text-mute">Стрик {days(me.streak)} · завтра +{dailyReward(me.streak + 1)} XP</p>
         </div>
+        <Tap onClick={() => useStore.setState({ share: streakCard(me) })} aria-label="Поделиться стриком" className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-mute"><Share2 size={16}/></Tap>
       </div>
-      <details className="group mt-1">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-xs text-mute [&::-webkit-details-marker]:hidden">Серия и заморозки<ChevronDown size={15} className="transition-transform group-open:rotate-180" aria-hidden="true"/></summary>
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-mute">
-          <span>Рекорд: {me.best_streak}</span>
-          {me.freezes > 0 && <span className="flex items-center gap-1"><Snowflake size={14} aria-hidden="true"/>{me.freezes} в запасе</span>}
-          <Tap onClick={() => useStore.setState({ share: streakCard(me) })} aria-label="Поделиться стриком" className="flex min-h-11 items-center gap-1.5 text-xs text-violet"><Share2 size={15}/>Поделиться</Tap>
-        </div>
-      <div className="mt-3.5 flex gap-1.5">
-        {Array.from({ length: 7 }, (_, i) => (
-          <motion.div
-            key={i}
-            initial={{ scaleX: 0.4, opacity: 0 }}
-            animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ delay: 0.05 * i }}
-            className="h-2 flex-1 rounded-full"
-            style={{ background: i < filled ? 'var(--aurora)' : 'var(--track)' }}
-          />
-        ))}
+      <div className="mt-2 flex gap-1.5" role="meter" aria-label="Серия за неделю" aria-valuemin={0} aria-valuemax={7} aria-valuenow={filled} aria-valuetext={`${filled} из 7 дней`}>
+        {Array.from({ length: 7 }, (_, i) => <span key={i} aria-hidden="true" className="h-1.5 flex-1 rounded-full" style={{ background: i < filled ? 'var(--aurora)' : 'var(--track)' }}/>) }
       </div>
-      <p className="mt-2.5 text-[12px] leading-snug text-faint">
-        {/* Заморозок не бывает больше двух — при полном запасе не обещаем новую. */}
-        {me.freezes >= 2
-          ? 'Две заморозки в запасе — это максимум. Каждая спасёт стрик, если пропустишь день.'
-          : filled === 7
-            ? 'Неделя закрыта. Заморозка в запасе: она спасёт стрик, если пропустишь день.'
-            : `Ещё ${days(7 - filled)} до заморозки — она спасает стрик, если пропустишь день.`}
-      </p>
-      </details>
+      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px] leading-snug text-mute">
+        <span>{freezeHint}</span>
+        <span className="inline-flex items-center gap-1" aria-label={`Заморозок в запасе: ${me.freezes}`}><Snowflake size={12} aria-hidden="true"/>{me.freezes} в запасе</span>
+      </div>
     </motion.div>
   )
 }

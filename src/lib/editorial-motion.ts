@@ -33,7 +33,7 @@ export function bindEditorialReveal(root: HTMLElement) {
   return () => { stop(); media.removeEventListener('change', start); root.removeEventListener('focusin', focus) }
 }
 
-/** A finite illustration, never a fake live presence indicator. */
+/** A bounded looping illustration; CSS pauses its timeline outside the visible page. */
 export function bindLearningScene(root: HTMLElement) {
   const media = window.matchMedia('(prefers-reduced-motion: reduce)')
   let visible = false

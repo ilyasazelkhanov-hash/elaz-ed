@@ -41,7 +41,7 @@ test('home places one server XP target beside avatar and daily state replaces it
  assert.match(html,/1244/);assert.match(html,/Сохранённые · 1/)
 })
 
-test('confirmed daily card contains status and collapsible real streak details, never grants a second reward',async()=>{
+test('confirmed daily card shows inline weekly progress, never grants a second reward',async()=>{
  const state={me:{streak:7,best_streak:12,freezes:2}}
  const useStore=selector=>selector(state);useStore.setState=()=>{}
  const {StreakCard}=await load('screens/home/Daily.tsx',{
@@ -50,12 +50,42 @@ test('confirmed daily card contains status and collapsible real streak details, 
  })
  const html=renderToStaticMarkup(createElement(StreakCard))
  assert.match(html,/Отметка за сегодня получена/);assert.match(html,/Стрик 7 дней · завтра \+80 XP/)
- assert.match(html,/<details/);assert.doesNotMatch(html,/<details[^>]+open|Забрать бонус дня/)
- assert.match(html,/Рекорд: 12/);assert.match(html,/Две заморозки в запасе/);assert.match(html,/Поделиться стриком/)
+ assert.doesNotMatch(html,/<details|Серия и заморозки|Забрать бонус дня/)
+ assert.match(html,/role="meter"/);assert.match(html,/aria-valuenow="7"/);assert.match(html,/aria-valuetext="7 из 7 дней"/)
+ assert.match(html,/Запас заморозок полон/);assert.match(html,/Поделиться стриком/)
+ state.me={streak:1,best_streak:2,freezes:0}
+ const first=renderToStaticMarkup(createElement(StreakCard))
+ assert.match(first,/aria-valuenow="1"/);assert.match(first,/6 дней до заморозки/)
+ assert.match(first,/Заморозок в запасе: 0/)
 })
 
 test('profile retains XP and member card instead of duplicating a new home progress panel',async()=>{
  const source=await readFile(new URL('../src/screens/Profile.tsx',import.meta.url),'utf8')
  assert.match(source,/<HoloCard me={me}/)
  assert.match(source,/me\.xp.*<Counter value={me\.xp}/)
+ assert.match(source,/стрик · рекорд \$?\{me.best_streak\}/)
+})
+
+test('advent presents its real campaign title and one current state without a second generic heading',async()=>{
+ const state={advent:{today:3,days:24,today_open:false,opened:1,streak:1,title:'Зимний адвент',theme:'mint',start:'2026-11-01'},push(){}}
+ const {AdventBanner}=await load('screens/advent/Banner.tsx',{
+  useStore:selector=>selector(state),Tap:button,dayMonth:()=> '1 ноября',plural:(n,forms)=>forms[0],
+  themeOf:()=>({hero:'black',ink:'white',chip:'gray',id:'mint'}),ThemeScene:()=>null,
+ })
+ let html=renderToStaticMarkup(createElement(AdventBanner))
+ assert.match(html,/Зимний адвент/);assert.match(html,/Дверь №3 ждёт тебя/)
+ assert.doesNotMatch(html,/>Календарь<|Открой дверь дня|Скоро открытие/)
+ state.advent.today_open=true;html=renderToStaticMarkup(createElement(AdventBanner))
+ assert.match(html,/Дверь №3 открыта/);assert.doesNotMatch(html,/ждёт тебя/)
+ state.advent.today=0;html=renderToStaticMarkup(createElement(AdventBanner));assert.match(html,/Старт 1 ноября/)
+ state.advent.today=25;html=renderToStaticMarkup(createElement(AdventBanner));assert.match(html,/Можно догнать пропущенные/)
+})
+
+test('home courses combine the offer without hiding paid status or the introduction',async()=>{
+ const {MainCourses}=await load('screens/home/AcademyCourses.tsx',{
+  useStore:selector=>selector({push(){}}),Tap:button,ogPracticeCourses:[{lessons:[{},{}]},{lessons:[{}]}],
+ })
+ const html=renderToStaticMarkup(createElement(MainCourses))
+ assert.match(html,/2 платных программ · 3 уроков/);assert.match(html,/Первый урок для знакомства/)
+ assert.match(html,/Посмотреть программы/);assert.doesNotMatch(html,/Направления курсов|Хочешь освоить/)
 })

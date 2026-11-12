@@ -11,11 +11,11 @@ Checked 12 November 2026. These are original implementations inspired by interac
 
 ## Adapted, not copied
 
-1. Course overview: a bounded cursor illustration of “Запрос → Проверка → Проект”, labelled to assistive technology as a learning route. The decorative cursors are not real users or online agents. They never leave the illustration or cover controls. A single 4.6-second sequence starts in view, pauses offscreen/background, then settles.
+1. Course overview: a bounded cursor illustration of “Запрос → Проверка → Проект”, labelled to assistive technology as a learning route. The decorative cursors are not real users or online agents. They never leave the illustration or cover controls. A continuous seven-second sequence starts in view and pauses offscreen/background. The user can pause it independently; reduced motion stays static.
 2. Course list: subtle, one-time entry for newly displayed cards and fine-pointer lift. Content is never initially hidden, so a missing observer cannot hide courses. Focus cancels entry motion.
 3. News: quiet hover depth, focus border and directional link response. No animation changes content, order, reading state or navigation.
 
-No global cursor replacement, no copied BCC artwork, no new package, no background animation loop. Reduced motion produces a static composition; touch devices keep stable targets. The existing Dots character remains a separate implementation.
+No global cursor replacement, no copied BCC artwork, no new package, no animation work while offscreen or in the background. Reduced motion produces a static composition; touch devices keep stable targets. The existing Dots character remains a separate implementation.
 
 ## Validation
 

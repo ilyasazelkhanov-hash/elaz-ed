@@ -147,7 +147,7 @@ export function Profile() {
         </summary>
       <div className="mt-4 grid grid-cols-2 gap-2 px-5 min-[360px]:grid-cols-4" aria-label="Статистика профиля">
         <Stat emoji="⚡" value={me.xp} label="XP" />
-        <Stat emoji="🔥" value={me.streak} label="стрик" />
+        <Stat emoji="🔥" value={me.streak} label={`стрик · рекорд ${me.best_streak}`} />
         <Stat emoji="👥" value={me.invited} label="приглашено" />
         <Stat emoji="🏆" value={me.rank} label="место" />
       </div>
