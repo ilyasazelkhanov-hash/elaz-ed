@@ -111,7 +111,7 @@ test('recommendations stay separate from paid lessons, completion, and enrollmen
  assert.match(view, /<fieldset/)
  assert.match(view, /<ol/)
  const main = await readFile(new URL('../src/screens/home/OGPractice.tsx', import.meta.url), 'utf8')
- assert.match(main, /scope=\{`practice:\$\{user\}`\}/)
+ assert.match(main, /scope=\{learningScope\(user, isDemo\)\}/)
  const academy = await readFile(new URL('../src/screens/courses/Catalog.tsx', import.meta.url), 'utf8')
  assert.match(academy, /setQ\(''\);setTopic\('Все'\);setLevel\('all'\)/)
  assert.doesNotMatch(academy, /code\.endsWith\(/)

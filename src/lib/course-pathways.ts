@@ -46,13 +46,12 @@ function normalize(value: unknown): PathwayChoice {
  const candidate = value && typeof value === 'object' ? value as Partial<PathwayChoice> : {}
  return {audience: candidate.audience === 'experienced' ? 'experienced' : 'beginner', goal: typeof candidate.goal === 'string' && candidate.goal.length <= 64 ? candidate.goal : '', entry: candidate.entry === 'deep' ? 'deep' : 'practice'}
 }
-/** Session-only preferences, scoped by catalog and signed-in user; not evidence of competence. */
+/** Device-local preferences, scoped by catalog and signed-in user; not evidence of competence. */
 export function readPathwayChoice(scope: string, storage?: StorageRead): PathwayChoice {
  if (memory.has(scope)) return {...memory.get(scope)!}
- try {return normalize(JSON.parse((storage ?? sessionStorage).getItem(key(scope)) || 'null'))} catch {return {...defaultPathwayChoice}}
+ try {return normalize(JSON.parse((storage ?? localStorage).getItem(key(scope)) || 'null'))} catch {return {...defaultPathwayChoice}}
 }
 export function writePathwayChoice(scope: string, choice: PathwayChoice, storage?: StorageWrite) {
  const value = normalize(choice)
- memory.set(scope, value)
- try {(storage ?? sessionStorage).setItem(key(scope), JSON.stringify(value))} catch { /* Keep navigation usable if session storage is blocked. */ }
+ try {(storage ?? localStorage).setItem(key(scope), JSON.stringify(value)); memory.delete(scope)} catch { memory.set(scope, value) /* Keep navigation usable if storage is blocked. */ }
 }

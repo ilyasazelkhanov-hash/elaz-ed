@@ -1,3 +1,4 @@
+import {saveLastFreeGuide} from '../../lib/learning-next'
 import { ArrowLeft, ArrowRight, Check, CheckCheck, Clock3, Compass, Copy, FolderOpen, Image, MessageSquare, ShieldCheck, Sparkles } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { beginnerGlossary, beginnerGuides } from '../../lib/beginner-content'
@@ -39,6 +40,7 @@ function FreeStartSession({path,go,user}:FreeStartProps & {user:number}) {
   const key=user+':'+guide.id
   if (opened.current === key) return
   opened.current=key
+  saveLastFreeGuide(user, isDemo, guide.id)
   if (pendingNavigation?.id===guide.id) pendingNavigation=null
   const event=guideEvent('open',guide.id,source);if(event)track(event.name,event.props)
  },[guide,source,user])

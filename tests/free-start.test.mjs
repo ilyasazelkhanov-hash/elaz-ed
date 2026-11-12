@@ -39,11 +39,11 @@ test('free guides expose tool access conditions before practice and a safe concr
  const {guideEvent,parseGuideStartParam}=await import('../src/lib/discovery-events.ts')
  const file=new URL('../src/screens/home/FreeStart.tsx',import.meta.url)
  let code=(await transformWithOxc(await readFile(file,'utf8'),file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
- for(const [path,names]of Object.entries({'../../lib/beginner-content':'beginnerGlossary, beginnerGuides','../../lib/discovery-events':'guideEvent, parseGuideStartParam','../../lib/track':'track','../../lib/tg':'copyText, startParam','../../store':'useStore','../../lib/api':'isDemo','../../ui':'Tap'}))code=code.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.','\\.')}["'];?`,'g'),`const { ${names} } = globalThis.__freeStartHarness;`)
+ for(const [path,names]of Object.entries({'../../lib/learning-next':'saveLastFreeGuide','../../lib/beginner-content':'beginnerGlossary, beginnerGuides','../../lib/discovery-events':'guideEvent, parseGuideStartParam','../../lib/track':'track','../../lib/tg':'copyText, startParam','../../store':'useStore','../../lib/api':'isDemo','../../ui':'Tap'}))code=code.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.','\\.')}["'];?`,'g'),`const { ${names} } = globalThis.__freeStartHarness;`)
  code=code.replace(/import ["']\.\/free-start\.css["'];?/g,'')
  for(const name of ['react','react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
  const useStore=selector=>selector({me:{id:42}});useStore.getState=()=>({navigateTab(){}})
- globalThis.__freeStartHarness={beginnerGlossary,beginnerGuides,guideEvent,parseGuideStartParam,track(){},copyText:async()=>true,startParam:'',useStore,isDemo:false,Tap:({children,...props})=>createElement('button',props,children)}
+ globalThis.__freeStartHarness={saveLastFreeGuide(){},beginnerGlossary,beginnerGuides,guideEvent,parseGuideStartParam,track(){},copyText:async()=>true,startParam:'',useStore,isDemo:false,Tap:({children,...props})=>createElement('button',props,children)}
  try{
   const {FreeStart}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
   for(const guide of beginnerGuides){

@@ -1,3 +1,4 @@
+import { LearningNext } from './home/LearningNext'
 import { activeStories } from '../lib/highlights'
 import { AnimatePresence } from 'motion/react'
 import { ArrowRight, ArrowUpRight, Bookmark, ChevronRight, Compass, Sparkles, WandSparkles } from 'lucide-react'
@@ -46,6 +47,7 @@ export function Home() {
       <AnimatePresence mode="wait" initial={false}>{me.daily_claimed ? <StreakCard key="streak"/> : <DailyCard key="daily"/>}</AnimatePresence>
     </section>
     <AdventBanner/>
+    <LearningNext/>
 
     <section className="mt-7 px-5" aria-label="Последние новости">
       <div className="mb-4 flex items-end justify-between gap-2"><h2 className="reader-section-title">Новости</h2><Tap aria-label="Открыть все новости с выбранными фильтрами" className="flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-violet" onClick={() => setTab('blog')}>Все<ChevronRight size={17}/></Tap></div>
