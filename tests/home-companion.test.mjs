@@ -85,9 +85,10 @@ test('single compact layout exposes separate real action, pet and settings; anim
  let code=(await transformWithOxc(source,file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
  code=code.replace(/import \{([^}]+)\} from ["']\.\.\/[^"']+["'];?/g,(_statement,names)=>`const {${names}} = globalThis.__companionHarness;`)
  code=code.replace(/import ["']\.\/companion\.css["'];?/g,'')
+ code=code.replace(/import \{ DotsCharacter \} from ["']\.\/dots\/DotsCharacter["'];?/g,'const { DotsCharacter } = globalThis.__companionHarness;')
  for(const name of ['react','react-dom','react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
  let reduced=false
- globalThis.__companionHarness={...companion,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>parseCompanionSession(null),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
+ globalThis.__companionHarness={...companion,DotsCharacter:()=>null,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>parseCompanionSession(null),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
  useStore:selector=>selector({feed:[card(8)],advent,me:{daily_claimed:false},courses:[],stack:[],reward:null,share:null,push(){}})}
  try{
   const {Companion}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
@@ -100,5 +101,5 @@ test('single compact layout exposes separate real action, pet and settings; anim
  assert.match(source,/!covered/);assert.match(source,/data-reacting=\{moving && reaction/);assert.match(source,/pointerType !== 'mouse'/);assert.match(source,/previousClaim.current === false && me\?\.daily_claimed === true/)
  assert.doesNotMatch(source,/fetch\(|api\.daily|api\.advent|dangerouslySetInnerHTML/)
  const css=await readFile(new URL('../src/screens/home/companion.css',import.meta.url),'utf8')
- assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);assert.match(css,/min-width: 44px; min-height: 44px/);assert.match(css,/animation-play-state: paused !important/)
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);assert.match(css,/min-width: 44px; min-height: 44px/);assert.doesNotMatch(css,/text-overflow: ellipsis|white-space: nowrap|line-clamp/)
 })

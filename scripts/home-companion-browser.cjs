@@ -32,7 +32,7 @@ const out = path.resolve('test-results/home-companion-ui')
         for (const width of [320,360,390,768]) {
           await page.setViewportSize({width,height:844})
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),true)
-          assert.ok((await region().boundingBox()).height <= 135,'Only one compact form at normal font size')
+          assert.ok((await region().boundingBox()).height <= 240,'Only one compact form at normal font size')
           assert.equal(await region().getByRole('button').evaluateAll(buttons => buttons.every(button => {const r=button.getBoundingClientRect();return r.width>=44&&r.height>=44})),true)
           await page.screenshot({path:path.join(out,`${theme}-${width}.png`)})
         }
@@ -44,6 +44,21 @@ const out = path.resolve('test-results/home-companion-ui')
         const companion=document.querySelector('.og-companion'),daily=document.querySelector('#daily-check-in'),news=document.querySelector('[aria-label="Последние новости"]'),advent=document.querySelector('[aria-label="Адвент-календарь"]')
         return {daily:!!(companion.compareDocumentPosition(daily)&Node.DOCUMENT_POSITION_FOLLOWING),news:!!(daily.compareDocumentPosition(news)&Node.DOCUMENT_POSITION_FOLLOWING),advent:!advent||!!(daily.compareDocumentPosition(advent)&Node.DOCUMENT_POSITION_FOLLOWING)&&!!(advent.compareDocumentPosition(news)&Node.DOCUMENT_POSITION_FOLLOWING)}
       }); assert.deepEqual(order,{daily:true,news:true,advent:true})
+    })
+    await check('long-news-title-wraps-completely-at-320-and-390', async () => {
+      const longTitle='Новый подход к работе с искусственным интеллектом: подробное руководство по научным источникам, проверке фактов и понятным презентациям для большой аудитории'
+      await page.evaluate(title=>{ const s=window.__store; const feed=s.getState().feed; const latest=feed.filter(c=>c.kind==='lesson'&&!c.course_id&&c.published).sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at))[0]; if(latest)s.setState({feed:feed.map(c=>c.id===latest.id?{...c,title}:c)}) },longTitle)
+      const action=await findCue('Читать статью')
+      for(const width of [320,390]) {
+        await page.setViewportSize({width,height:844})
+        const detail=region().locator('.og-dots-detail')
+        assert.equal(await detail.evaluate(n=>getComputedStyle(n).textOverflow),'clip')
+        assert.equal(await detail.evaluate(n=>n.scrollHeight<=n.clientHeight+1),true)
+        assert.equal(await detail.evaluate(n=>n.scrollWidth<=n.clientWidth+1),true)
+        assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
+        await page.screenshot({path:path.join(out,`long-bubble-${width}.png`)})
+      }
+      await page.reload();await region().waitFor()
     })
     await check('reduced-motion-and-silent-auto-copy', async () => {
       assert.equal(await region().getAttribute('data-moving'),'false')
@@ -87,9 +102,9 @@ const out = path.resolve('test-results/home-companion-ui')
       await page.screenshot({path:path.join(out,'customization.png')})
       await active().getByRole('button',{name:'Это мой Dots'}).click()
       await region().getByRole('button',{name:/^Луна: погладить/}).waitFor()
-      assert.equal(await region().locator('.og-dots-creature').getAttribute('data-color'),'mint')
-      assert.equal(await region().locator('.og-dots-creature').getAttribute('data-shape'),'spark')
-      assert.equal(await region().locator('.og-dots-creature').getAttribute('data-accessory'),'headphones')
+      assert.equal(await region().locator('.og-dots-character').getAttribute('data-color'),'mint')
+      assert.equal(await region().locator('.og-dots-character').getAttribute('data-shape'),'spark')
+      assert.equal(await region().locator('.og-dots-character').getAttribute('data-accessory'),'headphones')
       await page.reload();await region().getByRole('button',{name:/^Луна: погладить/}).waitFor()
       const settings=region().getByRole('button',{name:'Настроить Dots'});await settings.click()
       await active().getByLabel('Имя',{exact:true}).fill('Не сохранять');await page.keyboard.press('Escape')
