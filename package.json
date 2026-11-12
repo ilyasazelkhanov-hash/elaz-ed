@@ -53,7 +53,8 @@
     "test:home-hierarchy": "node --experimental-strip-types --test tests/home-hierarchy.test.mjs tests/learning-next.test.mjs",
     "test:highlights": "node --experimental-strip-types --test tests/highlights-reading.test.mjs tests/story-interaction.test.mjs",
     "test:plain-dashes": "node --experimental-strip-types --test tests/plain-dashes.test.mjs",
-    "test:practice-artifact": "node --experimental-strip-types --test tests/practice-artifact.test.mjs tests/saved-practice.test.mjs"
+    "test:practice-artifact": "node --experimental-strip-types --test tests/practice-artifact.test.mjs tests/saved-practice.test.mjs",
+    "test:learner-accessibility": "node --test tests/learner-accessibility.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.3.1",

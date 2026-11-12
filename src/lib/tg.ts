@@ -34,7 +34,8 @@ export function initTelegram() {
   if (supports('7.7')) safe(() => wa.disableVerticalSwipes())
   if (supports('8.0') && ['android', 'ios'].includes(wa.platform)) {
     safe(() => wa.requestFullscreen())
-    safe(() => wa.lockOrientation())
+    // Respect the device orientation and user accessibility settings.
+    // No global orientation lock: lessons and practice work in either layout.
   }
 }
 
