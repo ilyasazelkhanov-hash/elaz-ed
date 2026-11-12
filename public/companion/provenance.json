@@ -37,6 +37,41 @@
       "height": 1024,
       "columns": 3,
       "rows": 2
+    },
+    {
+      "file": "puppet-fur-v2.webp",
+      "bytes": 211270,
+      "sha256": "b2741756fcab185a579ebe42a75f31073f588a32fca0dd7b3480bfd20dc9e396",
+      "width": 1536,
+      "height": 1024,
+      "columns": 3,
+      "rows": 2,
+      "parts": [
+        "soft torso",
+        "round torso",
+        "spark torso",
+        "arm",
+        "foot",
+        "lid patch"
+      ]
+    },
+    {
+      "file": "puppet-props-v2.webp",
+      "bytes": 168284,
+      "sha256": "325651007d1725718d1456362c96f90573f8454e64be2fa1c1c75e57bb76696e",
+      "width": 1536,
+      "height": 1024,
+      "columns": 3,
+      "rows": 2,
+      "parts": [
+        "tortoiseshell glasses",
+        "padded headphones",
+        "sprout",
+        "lantern",
+        "eye",
+        "eye"
+      ]
     }
-  ]
+  ],
+  "v2_note": "Original generated rig parts, not animation frames. V1 is retained only as a static load/error fallback."
 }

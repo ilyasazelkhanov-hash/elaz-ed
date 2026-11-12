@@ -65,23 +65,14 @@
 
 
 
-/* The artwork is a genuinely furry rendered image, identical with or without WebGL. */
-.og-dots-raster-stage { position: absolute; left: -3%; top: 50%; width: 106%; aspect-ratio: 1; transform: translateY(-50%); }
-.og-dots-raster-tilt, .og-dots-raster-breath, .og-dots-raster-touch, .og-dots-fur-tint, .og-dots-raster-frame, .og-dots-raster-blink, .og-dots-props { position: absolute; inset: 0; display: block; }
-.og-dots-raster-frame { overflow: hidden; }
-.og-dots-raster-frame img { position: absolute; display: block; width: 300%; height: 200%; max-width: none; user-select: none; }
-.og-dots-raster-blink { opacity: 0; transition: opacity 45ms linear; }
-.og-dots-raster-blink[data-closed='true'] { opacity: 1; }
-.og-dots-props { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 1px 1px rgb(42 24 54 / .16)); }
-.og-dots-character[data-color='mint'] .og-dots-fur-tint { filter: hue-rotate(245deg) saturate(.83); }
-.og-dots-character[data-color='peach'] .og-dots-fur-tint { filter: hue-rotate(105deg) saturate(1.2); }
-.og-dots-character[data-color='sky'] .og-dots-fur-tint { filter: hue-rotate(305deg) saturate(.9); }
-.og-dots-character[data-active='true'][data-motion='true'][data-ready='true'] .og-dots-raster-breath { animation: og-dots-plush-breathe 5.8s ease-in-out infinite; }
-.og-dots-character[data-motion='true'] .og-dots-raster-tilt { transform: perspective(420px) rotateX(calc(var(--dots-tilt-x, 0deg) + var(--dots-look-y, 0deg))) rotateY(calc(var(--dots-tilt-y, 0deg) + var(--dots-look-x, 0deg))); transition: transform 180ms ease-out; }
+/* A layered game puppet: native Canvas2D works when WebGL is disabled. */
+.og-dots-puppet-stage { position: absolute; inset: 0; display: grid; place-items: center; }
+.og-dots-puppet-canvas { display: block; width: 106%; max-width: none; height: auto; aspect-ratio: 5 / 6; opacity: 0; }
+.og-dots-puppet-canvas[data-visible='true'] { opacity: 1; }
+.og-dots-static-fallback { position: absolute; width: 106%; aspect-ratio: 1; overflow: hidden; }
+.og-dots-static-fallback img { position: absolute; display: block; width: 300%; height: 200%; max-width: none; user-select: none; }
+.og-dots-character[data-color='mint'] .og-dots-static-fallback { filter: hue-rotate(245deg) saturate(.83); }
+.og-dots-character[data-color='peach'] .og-dots-static-fallback { filter: hue-rotate(105deg) saturate(1.2); }
+.og-dots-character[data-color='sky'] .og-dots-static-fallback { filter: hue-rotate(305deg) saturate(.9); }
 .og-dots-image-unavailable { position: absolute; inset: 0; display: grid; place-items: center; color: var(--color-violet); font-size: 40px; }
-@keyframes og-dots-plush-breathe { 0%, 100% { transform: translateY(0) rotate(-.7deg) scale(1); } 50% { transform: translateY(-1.5px) rotate(.7deg) scale(1.006,1.012); } }
-@media (prefers-reduced-motion: reduce) { .og-dots-raster-breath, .og-dots-raster-tilt, .og-dots-raster-touch { animation: none !important; transform: none !important; transition: none !important; } .og-dots-raster-blink { transition: none !important; } }
-
-.og-dots-raster-enter { animation: og-dots-expression-in 160ms ease-out both; }
-@keyframes og-dots-expression-in { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .og-dots-raster-enter { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .og-dots-puppet-stage { animation: none !important; transform: none !important; transition: none !important; } }
