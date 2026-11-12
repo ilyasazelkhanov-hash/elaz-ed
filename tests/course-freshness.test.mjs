@@ -10,8 +10,9 @@ import {courseMaterials} from '../scripts/course-materials.mjs'
 import {courseBookFiles} from '../scripts/academy-books.mjs'
 const root=fileURLToPath(new URL('../',import.meta.url))
 const read=async file=>JSON.parse(await readFile(path.join(root,file),'utf8'))
+const assertBookCurrent=(actual,expected)=>assert.equal(actual.replace(/\r\n/g,'\n'),expected.replace(/\r\n/g,'\n'))
 
-// Parse the stored ZIP independently of the writer, then compare original bytes.
+// Parse the stored ZIP independently of the writer, then compare canonical text bytes.
 function unpack(buffer){
  const entries=[];let offset=0
  while(buffer.readUInt32LE(offset)===0x04034b50){
@@ -29,7 +30,7 @@ function unpack(buffer){
  return entries
 }
 
-test('both downloadable labs are deterministic complete source copies',async()=>{
+test('both downloadable labs are deterministic complete source copies with canonical LF',async()=>{
  for(const name of freshnessLabs){
   const source=await readLabEntries(path.join(root,'content/ai-academy/projects',name)),archive=await readFile(path.join(root,'public/learning/academy',name+'.zip'))
   assert.ok(archive.equals(storedZip(source)),name+' archive is stale')
@@ -40,6 +41,47 @@ test('both downloadable labs are deterministic complete source copies',async()=>
   assert.match(documentation,/https:\/\/github\.com\//)
   assert.doesNotMatch(source.map(e=>e.name).join('\n'),/node_modules|\.env|\.sqlite/)
  }
+})
+
+test('LF and CRLF source checkouts produce the same archives without hiding content changes',async t=>{
+ const base=await mkdtemp(path.join(tmpdir(),'course-newlines-'));t.after(()=>rm(base,{recursive:true,force:true}))
+ for(const name of freshnessLabs){
+  const source=await readLabEntries(path.join(root,'content/ai-academy/projects',name))
+  const expected=await readFile(path.join(root,'public/learning/academy',name+'.zip'))
+  for(const [style,newline]of [['lf','\n'],['crlf','\r\n']]){
+   const folder=path.join(base,style,'content/ai-academy/projects',name)
+   for(const entry of source){
+    const file=path.join(folder,entry.name);await mkdir(path.dirname(file),{recursive:true})
+    await writeFile(file,entry.data.toString('utf8').replace(/\n/g,newline))
+   }
+   assert.deepEqual(await readLabEntries(folder),source,`${name}: ${style} canonical source bytes`)
+   assert.ok(storedZip(await readLabEntries(folder)).equals(expected),`${name}: ${style} archive bytes`)
+  }
+ }
+ for(const style of ['lf','crlf']){
+  await writeFreshnessLabs(path.join(base,style))
+  for(const name of freshnessLabs)assert.deepEqual(await readFile(path.join(base,style,'public/learning/academy',name+'.zip')),await readFile(path.join(root,'public/learning/academy',name+'.zip')))
+ }
+ const folder=path.join(base,'crlf','content/ai-academy/projects',freshnessLabs[0])
+ const file=path.join(folder,'README.md'),before=storedZip(await readLabEntries(folder))
+ await writeFile(file,(await readFile(file,'utf8'))+'\r\nChanged teaching content.\r\n')
+ assert.ok(!storedZip(await readLabEntries(folder)).equals(before),'a real source change must change the ZIP')
+ await writeFile(file,Buffer.from([0xff]))
+ await assert.rejects(readLabEntries(folder),{code:'ERR_ENCODING_INVALID_ENCODED_DATA'})
+})
+
+test('text canonicalization preserves BOMs, lone CRs, spaces and substantive book differences',async t=>{
+ const base=await mkdtemp(path.join(tmpdir(),'course-text-'));t.after(()=>rm(base,{recursive:true,force:true}))
+ await writeFile(path.join(base,'README.md'),'\ufeffУчебный текст  \r\nnext\rvalue\r\n')
+ await writeFile(path.join(base,'SOURCES.md'),'source\r\n')
+ const entry=(await readLabEntries(base)).find(e=>e.name==='README.md')
+ assert.deepEqual(entry.data,Buffer.from('\ufeffУчебный текст  \nnext\rvalue\n'))
+ const book='# Практика\n\nKeep  two spaces.\n'
+ for(const actual of [book,book.replace(/\n/g,'\r\n')]){
+  assertBookCurrent(actual,book)
+  assertBookCurrent(actual,book.replace(/\n/g,'\r\n'))
+ }
+ for(const changed of [book.replace('Практика','Wrong lesson'),book.replace('  ',' '),book.replace('\n\n','\n'),book.slice(0,-1),book.replace('two','two\r')])assert.throws(()=>assertBookCurrent(changed,book),{code:'ERR_ASSERTION'})
 })
 
 test('archive writer rejects path traversal and unexpected files, stays repeatable',async t=>{
@@ -92,7 +134,7 @@ test('published reading files and course books contain the extensions and no ans
   assert.doesNotMatch(JSON.stringify(book),/"assessment"|"answer"|"questions"/)
   assert.ok(book.sources.some(s=>s.checked_at==='2026-11-12'))
   const page=await readFile(path.join(root,'docs/ai-academy/courses',code,'M2.md'),'utf8')
-  assert.equal(page,pages.get('courses/'+code+'/M2.md'))
+  assertBookCurrent(page,pages.get('courses/'+code+'/M2.md'))
   assert.match(page,/authorization-lab|confirmation-lab/)
  }
 })

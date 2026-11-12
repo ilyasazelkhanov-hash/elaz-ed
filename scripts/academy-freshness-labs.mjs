@@ -4,6 +4,10 @@ import {fileURLToPath,pathToFileURL} from 'node:url'
 
 export const freshnessLabs = ['mcp-authorization-lab','voice-confirmation-lab']
 const root=fileURLToPath(new URL('../',import.meta.url))
+// Git may check text files out as CRLF on Windows. Ship one canonical LF form,
+// preserving every other character (including BOMs, lone CRs and whitespace).
+const utf8=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true})
+const archiveText=bytes=>Buffer.from(utf8.decode(bytes).replace(/\r\n/g,'\n'),'utf8')
 const crc32=buffer=>{
  let crc=0xffffffff
  for(const byte of buffer){crc^=byte;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0)}
@@ -42,7 +46,7 @@ export async function readLabEntries(folder){
    if(stat.isDirectory()){if(name==='node_modules'||name.startsWith('.'))throw Error('Unexpected teaching archive directory');await walk(local)}
    else if(stat.isFile()){
     if(!/\.(?:mjs|md|json)$/.test(name)||name.startsWith('.'))throw Error('Unexpected teaching archive file')
-    entries.push({name:local,data:await readFile(file)})
+    entries.push({name:local,data:archiveText(await readFile(file))})
    }else throw Error('Unexpected teaching archive entry')
   }
  }
