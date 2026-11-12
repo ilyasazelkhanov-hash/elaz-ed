@@ -20,6 +20,13 @@
 @keyframes learning-author { 0%,100%{transform:translate(0,0) rotate(0)} 24%{transform:translate(18px,-4px) rotate(3deg)} 48%{transform:translate(5px,2px) rotate(-3deg)} 70%{transform:translate(-7px,-2px)} }
 @keyframes learning-review { 0%,100%{transform:translate(0,0) rotate(0)} 28%{transform:translate(-12px,-3px) rotate(-4deg)} 55%{transform:translate(7px,2px) rotate(3deg)} 78%{transform:translate(-4px,-1px)} }
 @keyframes learning-result { 0%,100%{transform:scale(1);opacity:.65} 55%{transform:scale(1);opacity:.65} 70%{transform:scale(1.15);opacity:1} 85%{transform:scale(1);opacity:1} }
+/* Reserve separate motion lanes at the 320px layout, including each loop's travel. */
+@media(max-width:359px) {
+ .learning-scene-cursor-author { left:4%; }
+ .learning-scene-cursor-review { left:36%; }
+ .learning-scene-cursor b { padding:2px 3px; }
+ .learning-scene-result { right:46px; }
+}
 .editorial-card { transition:border-color 180ms ease,box-shadow 180ms ease,transform 240ms cubic-bezier(.2,.7,.2,1); }
 .editorial-card[data-reveal='enter'] { animation:editorial-enter 420ms cubic-bezier(.2,.7,.2,1); }
 .editorial-card:focus-within { border-color:var(--color-violet); }
