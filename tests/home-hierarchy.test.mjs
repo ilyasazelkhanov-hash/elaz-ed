@@ -26,7 +26,7 @@ test('home places one server XP target beside avatar and daily state replaces it
   activeStories,useStore:selector=>selector(state),useSavedPosts:()=>saved,useFollowedTopics:()=>[],knowledgeTopics:[],
   Avatar:()=>createElement('span',{'data-avatar':true}),Odometer:({value})=>value,Tap:button,
   Companion:()=>createElement('span',{'data-companion':true}),DailyCard:()=>createElement('span',null,'REWARD_AVAILABLE'),StreakCard:()=>createElement('span',null,'REWARD_CLAIMED'),
-  LearningNext:()=>null,AdventBanner:()=>null,MainCourses:()=>null,Feed:()=>null,StoryBubble:({card})=>createElement('span',{'data-story-id':card.id}),openBlogLibrary(){},
+  HomeAssembly:()=>null,LearningNext:()=>null,AdventBanner:()=>null,MainCourses:()=>null,Feed:()=>null,StoryBubble:({card})=>createElement('span',{'data-story-id':card.id}),openBlogLibrary(){},
  })
  let html=renderToStaticMarkup(createElement(Home))
  assert.equal((html.match(/id="xp-pill"/g)||[]).length,1)

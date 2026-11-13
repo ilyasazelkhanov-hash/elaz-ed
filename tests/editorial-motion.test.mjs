@@ -79,7 +79,7 @@ test('scene starts in view, pauses offscreen/background and cleans up on repeate
 test('motion loops inside a bounded scene and exposes pause plus an accessible static description',async()=>{
  const [css,ui,reader]=await Promise.all(['src/screens/home/learning-motion.css','src/screens/home/LearningMotion.tsx','src/screens/home/free-first.css'].map(path=>readFile(new URL('../'+path,import.meta.url),'utf8')))
  assert.doesNotMatch(css,/cursor\s*:\s*none/)
- assert.equal((css.match(/7s [^;]+ infinite/g)||[]).length,3)
+ assert.equal((css.match(/8s [^;]+ infinite/g)||[]).length,3)
  assert.match(css,/data-user-paused='true'/)
  assert.match(ui,/Приостановить анимацию маршрута/);assert.match(ui,/aria-pressed=\{paused\}/)
  assert.match(ui,/setPaused\(value => !value\)/);
@@ -92,10 +92,20 @@ assert.match(css,/prefers-reduced-motion:reduce/)
 test('narrow scenes reserve separate cursor and result lanes without shrinking text or pause target',async()=>{
  const css=await readFile(new URL('../src/screens/home/learning-motion.css',import.meta.url),'utf8')
  const narrow=css.slice(css.indexOf('@media(max-width:359px)'),css.indexOf('.editorial-card {'))
- assert.match(narrow,/cursor-author \{ left:4%;/)
- assert.match(narrow,/cursor-review \{ left:36%;/)
+ assert.match(narrow,/inset-inline:12px; gap:8px/)
  assert.match(narrow,/padding:2px 3px/)
- assert.match(narrow,/result \{ right:46px;/)
+ assert.match(css,/cursor-finish \{ right:12px; left:auto;/)
  assert.doesNotMatch(narrow,/font-size|learning-scene-toggle/)
  assert.match(css,/learning-scene-toggle[^}]*width:44px; height:44px/)
+})
+
+
+test('assembly module palettes use the same custom property consumed by their borders and parts',async()=>{
+ const css=await readFile(new URL('../src/screens/home/learning-motion.css',import.meta.url),'utf8')
+ assert.match(css,/learning-scene-module-build \{ --assembly-color:#6ee7cf;/)
+ assert.match(css,/learning-scene-module-result \{ --assembly-color:#ffca8a;/)
+ assert.doesNotMatch(css,/--assembly---/)
+ // Cursor's maximum +12px travel is reserved at the right edge at every viewport.
+ assert.match(css,/cursor-finish \{ right:12px; left:auto;/)
+ assert.match(css,/24%\{transform:translate\(12px,-17px\)/)
 })

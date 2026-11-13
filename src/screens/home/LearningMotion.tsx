@@ -10,11 +10,14 @@ export function LearningScene() {
  useEffect(() => ref.current ? bindLearningScene(ref.current) : undefined, [])
  return <div className="learning-scene-shell">
  <div ref={ref} data-user-paused={paused} className="learning-scene" role="img" aria-label="Учебный маршрут: сформулировать запрос, проверить ответ, собрать свой проект">
-  <div aria-hidden="true" className="learning-scene-track"><span>Запрос</span><i/><span>Проверка</span><i/><span>Проект</span></div>
-  <div aria-hidden="true" className="learning-scene-cursors">
-   <span className="learning-scene-cursor learning-scene-cursor-author"><Cursor/><b>ты</b></span>
-   <span className="learning-scene-cursor learning-scene-cursor-review"><Cursor/><b>проверка</b></span>
-   <span className="learning-scene-result">✓</span>
+  <div aria-hidden="true" className="learning-scene-board">
+   <div className="learning-scene-guide"/>
+   <div className="learning-scene-module learning-scene-module-idea"><span className="learning-scene-kicker">Идея</span><div className="learning-scene-wire"><i/><i/><i/></div></div>
+   <div className="learning-scene-module learning-scene-module-build"><span className="learning-scene-kicker">Практика</span><div className="learning-scene-tiles"><i/><i/><i/><i/></div></div>
+   <div className="learning-scene-module learning-scene-module-result"><span className="learning-scene-kicker">Результат</span><div className="learning-scene-output"><i/><span>✓</span><i/></div></div>
+   <span className="learning-scene-cursor learning-scene-cursor-author"><Cursor/><b>идея</b></span>
+   <span className="learning-scene-cursor learning-scene-cursor-review"><Cursor/><b>сборка</b></span>
+   <span className="learning-scene-cursor learning-scene-cursor-finish"><Cursor/><b>готово</b></span>
   </div>
  </div>
  <button type="button" className="learning-scene-toggle" aria-label={paused ? 'Продолжить анимацию маршрута' : 'Приостановить анимацию маршрута'} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{paused ? <Play size={14} aria-hidden="true"/> : <Pause size={14} aria-hidden="true"/>}</button>

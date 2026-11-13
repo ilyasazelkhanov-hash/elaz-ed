@@ -1,3 +1,4 @@
+import { HomeAssembly } from './home/HomeAssembly'
 import { LearningNext } from './home/LearningNext'
 import { activeStories } from '../lib/highlights'
 import { AnimatePresence } from 'motion/react'
@@ -32,7 +33,8 @@ export function Home() {
   const followed = useFollowedTopics(me.id)
   const stories = useMemo(() => activeStories(feed), [feed])
 
-  return <div ref={scroller} data-tab-scroll className="scroll h-full" style={{ paddingBottom: 'calc(110px + var(--bottom))' }}>
+  return <div ref={scroller} data-tab-scroll className="scroll h-full relative" style={{ paddingBottom: 'calc(110px + var(--bottom))' }}>
+    <HomeAssembly scroller={scroller}/>
     <header className="flex items-center justify-between gap-3 px-5 pb-5" style={{ paddingTop: 'calc(var(--top) + 18px)' }}>
       <div className="min-w-0"><h1 className="font-display text-[17px] font-bold tracking-tight">OG CRE8R<span className="text-violet">²</span></h1><p className="mt-1 text-xs text-mute">Твоя берлога знаний об ИИ</p></div>
       <Tap feedback="soft" onClick={() => setTab('profile')} aria-label={`Профиль, ${me.xp} XP`} className="flex min-h-11 shrink-0 items-center gap-2 rounded-full py-1 pl-2 pr-1">

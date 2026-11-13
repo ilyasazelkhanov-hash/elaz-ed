@@ -1,31 +1,47 @@
-/* Bounded looping motion; pauses offscreen, in background, or on user request. */
+/* Original, bounded course assembly illustration. No live agents or content overlays. */
 .learning-scene-shell { position:relative; }
-.learning-scene-toggle { position:absolute; right:1px; bottom:4px; display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:12px; background:transparent; color:var(--color-mute); cursor:pointer; }
+.learning-scene-toggle { position:absolute; right:0; top:0; display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:12px; background:transparent; color:var(--color-mute); cursor:pointer; }
 .learning-scene-toggle:focus-visible { outline:2px solid var(--color-violet); outline-offset:-3px; }
-.learning-scene { position:relative; isolation:isolate; margin-top:0; height:92px; overflow:hidden; border-radius:18px; background:radial-gradient(ellipse at 20% 100%,color-mix(in srgb,var(--color-violet) 8%,transparent),transparent 65%),var(--color-card); border:1px solid var(--color-line); }
-.learning-scene-track { position:absolute; inset:9px 12px auto; display:flex; align-items:center; gap:4px; font-size:10px; font-weight:650; color:var(--color-mute); }
-.learning-scene-track span { padding:4px 5px; border-radius:9px; background:var(--color-bg); }
-.learning-scene-track i { flex:1; min-width:6px; height:1px; background:var(--color-line); }
-.learning-scene-cursors { position:absolute; inset:0; pointer-events:none; }
-.learning-scene-cursor { position:absolute; top:48px; display:flex; align-items:flex-start; --cursor-color:var(--color-violet); color:var(--cursor-color); }
-.learning-scene-cursor svg { width:17px; height:21px; flex:none; }
-.learning-scene-cursor b { margin-top:9px; padding:2px 6px; border-radius:0 7px 7px; background:var(--cursor-color); color:var(--color-on-violet,#fff); font-size:10px; line-height:1.4; font-weight:600; }
-.learning-scene-cursor-author { left:13%; }
-.learning-scene-cursor-review { left:46%; --cursor-color:var(--color-success,#237965); }
-.learning-scene-result { position:absolute; right:51px; top:53px; width:21px; height:21px; display:grid; place-items:center; border-radius:50%; background:color-mix(in srgb,var(--color-mint) 18%,var(--color-card)); color:var(--color-success); font-size:14px; }
-.learning-scene[data-scene='play'] .learning-scene-cursor-author { animation:learning-author 7s cubic-bezier(.22,.68,.22,1) infinite; }
-.learning-scene[data-scene='play'] .learning-scene-cursor-review { animation:learning-review 7s cubic-bezier(.22,.68,.22,1) infinite; }
-.learning-scene[data-scene='play'] .learning-scene-result { animation:learning-result 7s ease infinite; }
+.learning-scene { position:relative; isolation:isolate; height:146px; overflow:hidden; border-radius:24px; background:var(--color-card); border:1px solid var(--color-line); }
+.learning-scene::before { content:""; position:absolute; inset:0; opacity:.3; background-image:radial-gradient(var(--color-line) 1px,transparent 1px); background-size:16px 16px; mask-image:linear-gradient(transparent,black); }
+.learning-scene-board { position:absolute; inset:36px 16px 20px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; pointer-events:none; }
+.learning-scene-guide { position:absolute; inset:23px -6px 20px; border-block:1px dashed var(--color-line); }
+.learning-scene-module { position:relative; min-width:0; height:70px; border:1px solid color-mix(in srgb,var(--assembly-color) 45%,var(--color-line)); border-radius:10px; background:var(--color-card); --assembly-color:#b6a1ff; }
+.learning-scene-module-build { --assembly-color:#6ee7cf; }
+.learning-scene-module-result { --assembly-color:#ffca8a; }
+.learning-scene-kicker { position:absolute; inset:8px 8px auto; color:var(--color-mute); font-size:10px; white-space:nowrap; font-weight:600; }
+.learning-scene-wire { display:grid; gap:4px; padding:28px 10px 8px; }
+.learning-scene-wire i { display:block; height:4px; border-radius:3px; background:color-mix(in srgb,var(--assembly-color) 55%,var(--color-card)); }
+.learning-scene-wire i:nth-child(2) { width:70%; }
+.learning-scene-wire i:last-child { width:85%; }
+.learning-scene-tiles { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:28px 10px 8px; }
+.learning-scene-tiles i { height:13px; border:1px solid color-mix(in srgb,var(--assembly-color) 50%,var(--color-line)); border-radius:4px; background:color-mix(in srgb,var(--assembly-color) 10%,var(--color-card)); }
+.learning-scene-output { display:flex; align-items:center; justify-content:center; gap:5px; height:100%; padding-top:18px; box-sizing:border-box; }
+.learning-scene-output i { width:10%; height:19px; border-radius:4px; background:color-mix(in srgb,var(--assembly-color) 35%,var(--color-card)); }
+.learning-scene-output span { display:grid; place-items:center; width:30px; height:30px; border:1px solid var(--assembly-color); border-radius:8px; color:var(--color-fg); }
+.learning-scene-cursor { position:absolute; top:49px; display:flex; align-items:flex-start; --cursor-color:#b6a1ff; color:var(--cursor-color); filter:drop-shadow(0 2px 3px #0002); }
+.learning-scene-cursor svg { width:16px; height:20px; flex:none; }
+.learning-scene-cursor b { margin-top:12px; padding:2px 5px; border-radius:0 5px 5px; background:var(--cursor-color); color:#191727; font-size:10px; line-height:1.4; }
+.learning-scene-cursor-author { left:10%; }
+.learning-scene-cursor-review { left:43%; --cursor-color:#6ee7cf; }
+.learning-scene-cursor-finish { right:12px; left:auto; --cursor-color:#ffca8a; }
+.learning-scene[data-scene='play'] .learning-scene-cursor { animation:learning-tool 8s cubic-bezier(.22,.68,.22,1) infinite; }
+.learning-scene[data-scene='play'] .learning-scene-cursor-review { animation-delay:-5.4s; }
+.learning-scene[data-scene='play'] .learning-scene-cursor-finish { animation-delay:-2.8s; }
+.learning-scene[data-scene='play'] .learning-scene-module { animation:learning-assemble 8s cubic-bezier(.22,.68,.22,1) infinite; }
+.learning-scene[data-scene='play'] .learning-scene-module-build { animation-delay:-5.4s; }
+.learning-scene[data-scene='play'] .learning-scene-module-result { animation-delay:-2.8s; }
+.learning-scene[data-scene='play'] .learning-scene-wire i, .learning-scene[data-scene='play'] .learning-scene-tiles i { animation:learning-piece 8s ease infinite; transform-origin:left; }
+.learning-scene[data-scene='play'] .learning-scene-wire i:nth-child(2), .learning-scene[data-scene='play'] .learning-scene-tiles i:nth-child(2) { animation-delay:.2s; }
+.learning-scene[data-scene='play'] .learning-scene-wire i:nth-child(3), .learning-scene[data-scene='play'] .learning-scene-tiles i:nth-child(3) { animation-delay:.4s; }
 .learning-scene[data-paused='true'] *, .learning-scene[data-user-paused='true'] * { animation-play-state:paused!important; }
-@keyframes learning-author { 0%,100%{transform:translate(0,0) rotate(0)} 24%{transform:translate(18px,-4px) rotate(3deg)} 48%{transform:translate(5px,2px) rotate(-3deg)} 70%{transform:translate(-7px,-2px)} }
-@keyframes learning-review { 0%,100%{transform:translate(0,0) rotate(0)} 28%{transform:translate(-12px,-3px) rotate(-4deg)} 55%{transform:translate(7px,2px) rotate(3deg)} 78%{transform:translate(-4px,-1px)} }
-@keyframes learning-result { 0%,100%{transform:scale(1);opacity:.65} 55%{transform:scale(1);opacity:.65} 70%{transform:scale(1.15);opacity:1} 85%{transform:scale(1);opacity:1} }
-/* Reserve separate motion lanes at the 320px layout, including each loop's travel. */
+@keyframes learning-tool { 0%,100%{transform:translate(0,0)} 12%{transform:translate(-8px,-37px)} 24%{transform:translate(12px,-17px)} 38%{transform:translate(4px,-7px)} 54%,85%{transform:translate(0,0)} }
+@keyframes learning-assemble { 0%,100%{transform:translateY(0);opacity:1} 8%{transform:translateY(5px) scale(.96);opacity:.45} 28%,90%{transform:translateY(0);opacity:1} }
+@keyframes learning-piece { 0%,100%{transform:scaleX(1);opacity:1} 8%{transform:scaleX(.3);opacity:.3} 30%,90%{transform:scaleX(1);opacity:1} }
+/* Narrow viewport preserves the 44px control and three bounded assembly lanes. */
 @media(max-width:359px) {
- .learning-scene-cursor-author { left:4%; }
- .learning-scene-cursor-review { left:36%; }
+ .learning-scene-board { inset-inline:12px; gap:8px; }
  .learning-scene-cursor b { padding:2px 3px; }
- .learning-scene-result { right:46px; }
 }
 .editorial-card { transition:border-color 180ms ease,box-shadow 180ms ease,transform 240ms cubic-bezier(.2,.7,.2,1); }
 .editorial-card[data-reveal='enter'] { animation:editorial-enter 420ms cubic-bezier(.2,.7,.2,1); }
@@ -38,6 +54,3 @@
  .learning-scene-toggle { display:none; }
  .learning-scene *, .editorial-card { animation:none!important; transition:none!important; transform:none!important; }
 }
-
-/* Local editorial canvas, not simulated online collaborators. No content overlays. */
-.learning-scene::before { content:""; position:absolute; inset:0; opacity:.35; pointer-events:none; background-image:radial-gradient(var(--color-line) .8px,transparent .8px); background-size:12px 12px; mask-image:linear-gradient(transparent,black); }
