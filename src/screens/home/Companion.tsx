@@ -156,6 +156,7 @@ function CompanionSettingsForm({ userId }: { userId: number }) {
   const closeSettings = useStore(s => s.pop)
   const toast = useStore(s => s.toast)
   const [draft, setDraft] = useState(() => readCompanionPreferences(userId))
+  const initialDraft = useRef(JSON.stringify(draft))
   const [session, setSession] = useState(() => readCompanionSession(userId))
   const reduce = usePrefersReducedMotion()
   const inputId = useId()
@@ -182,9 +183,9 @@ function CompanionSettingsForm({ userId }: { userId: number }) {
     changed(); closeSettings()
     toast(persisted ? `${value.name}: образ сохранён в этом браузере` : 'Образ изменён до перезагрузки: браузер не разрешил сохранение')
   }
-  return <div className="og-dots-modal">
+  return <div className="og-dots-modal" data-navigation-dirty={JSON.stringify(draft) !== initialDraft.current || undefined}>
       <div className="og-dots-backdrop" onClick={closeSettings}/>
-      <form className="og-dots-editor" onSubmit={event => { event.preventDefault(); save() }}>
+      <form data-navigation-scroll className="og-dots-editor" onSubmit={event => { event.preventDefault(); save() }}>
         <div className="og-dots-editor-heading"><div><p>МАЛЕНЬКИЙ, НО ТВОЙ</p><h2>Знакомься, {companionName(draft.name)}</h2></div><button type="button" onClick={closeSettings} aria-label="Закрыть настройки Dots"><X size={21}/></button></div>
         <div className="og-dots-preview" data-mood="happy" data-moving="false"><DotsCharacter look={draft} mood="happy" active={documentVisible} motion={!reduce && !session.paused} lantern={device.lantern}/><p>Коснись меня на главной.<br/>Покажу другую идею.</p></div>
 

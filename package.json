@@ -45,7 +45,7 @@
     "test:review-resilience": "node --experimental-strip-types --test tests/boot-refresh.test.mjs tests/story-browser-bindings.test.mjs tests/api-deadlines.test.mjs tests/platform-operations-loading.test.mjs tests/platform-upload-story.test.mjs tests/platform-industry-links.test.mjs",
     "test:news-reader": "node --experimental-strip-types --test tests/news-reader.test.mjs",
     "test:news-categories": "node --experimental-strip-types --test tests/news-categories.test.mjs tests/home-news-filters.test.mjs",
-    "test:app-navigation": "node --experimental-strip-types --test tests/app-navigation.test.mjs",
+    "test:app-navigation": "node --experimental-strip-types --test tests/app-navigation.test.mjs tests/navigation-scroll.test.mjs",
     "test:companion": "node --experimental-strip-types --test tests/home-companion.test.mjs tests/dots-scene.test.mjs tests/dots-puppet-motion.test.mjs tests/companion-motion.test.mjs tests/companion-device.test.mjs",
     "academy:labs": "node scripts/academy-freshness-labs.mjs",
     "test:course-freshness": "node --test tests/course-freshness.test.mjs content/ai-academy/projects/mcp-authorization-lab/policy.test.mjs content/ai-academy/projects/voice-confirmation-lab/confirmation.test.mjs",

@@ -173,7 +173,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
     )
 
   return (
-    <motion.div {...sheet} className="absolute inset-0 z-[31] bg-bg">
+    <motion.div {...sheet} className="absolute inset-0 z-[31] bg-bg" data-navigation-busy={!!busy || undefined}>
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(130px + var(--bottom))' }}>
         <Header
           title={story ? (d.id?'Редактирование сторис':'Новая сторис') : post ? (d.id?'Редактирование публикации':'Новая публикация') : 'Архивный урок'}

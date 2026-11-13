@@ -148,7 +148,7 @@ function GrantTicket({ onDone }: { onDone: () => void }) {
     }
   }
   return (
-    <div className="mt-4">
+    <div data-navigation-busy={busy || undefined} className="mt-4">
       <p className="mb-1.5 text-[12.5px] font-semibold text-mute">Выдать билет вручную</p>
       <div className="flex gap-2">
         <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="@username" autoCapitalize="none" autoCorrect="off" className={field} />
@@ -280,7 +280,7 @@ function PointForm({ initial, onDone }: { initial: { id?: number; name: string }
     }
   }
   return (
-    <div>
+    <div data-navigation-busy={!!busy || undefined}>
       <div className="flex items-center justify-between">
         <p className="font-display text-[18px] font-semibold">{initial.id ? 'Касса' : 'Новая касса'}</p>
         {initial.id && (

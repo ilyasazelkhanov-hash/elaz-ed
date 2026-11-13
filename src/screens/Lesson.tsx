@@ -154,7 +154,7 @@ function LessonSession({ id, from, post = false }: { id: number; from?: Inset; p
 
   return (
     <motion.div
-      className="absolute inset-0 z-30 bg-bg"
+      className="absolute inset-0 z-30 bg-bg" data-navigation-busy={busy || undefined}
       initial={from ? { clipPath: clip(from, 26), opacity: 0.6 } : { y: '100%' }}
       animate={from ? { clipPath: clip(OPEN, 0), opacity: 1 } : { y: 0 }}
       exit={from ? { clipPath: clip(from, 26), opacity: 0 } : { y: '100%' }}
@@ -384,7 +384,7 @@ function Quiz({ lessonId, topic, onReviewLesson, quiz: initialQuiz, practice, on
   )
 
   return (
-    <div className="rounded-[26px] border border-line bg-card p-4">
+    <div data-navigation-busy={submitting || undefined} className="rounded-[26px] border border-line bg-card p-4">
       <div className="flex items-center gap-2.5">
         <Emoji char="🕹️" size={22} />
         <p className="font-display text-[15px] font-semibold">Квиз</p>

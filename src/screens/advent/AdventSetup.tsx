@@ -143,7 +143,7 @@ export function RewardsEditor({ list, onChanged }: { list: AdminReward[]; onChan
   }
   return (
     <>
-      <div className="mt-3 overflow-hidden rounded-[20px] border border-line bg-card">
+      <div data-navigation-busy={drawing !== null || undefined} className="mt-3 overflow-hidden rounded-[20px] border border-line bg-card">
         {list.map((r) => (
           <Tap key={r.id} onClick={() => setEdit({ ...r, payload: { ...r.payload } })} className="flex w-full items-center gap-3 border-b border-line px-4 py-3 text-left last:border-b-0">
             <Emoji char={r.emoji} size={26} />
@@ -229,7 +229,7 @@ function RewardForm({ initial, onDone }: { initial: AdminReward; onDone: () => v
   }
 
   return (
-    <div className="scroll max-h-[70vh] pb-2">
+    <div data-navigation-busy={!!busy || undefined} className="scroll max-h-[70vh] pb-2">
       <div className="flex items-center justify-between">
         <p className="font-display text-[18px] font-semibold">{r.id ? 'Приз' : 'Новый приз'}</p>
         {r.id && (
@@ -439,7 +439,7 @@ function DoorForm({ initial, exists, onDone }: { initial: AdminDoor; exists: boo
   }
 
   return (
-    <div className="scroll max-h-[72vh] pb-2">
+    <div data-navigation-busy={!!busy || undefined} className="scroll max-h-[72vh] pb-2">
       <div className="flex items-center justify-between">
         <p className="font-display text-[18px] font-semibold">Дверь {d.day}</p>
         {exists && (

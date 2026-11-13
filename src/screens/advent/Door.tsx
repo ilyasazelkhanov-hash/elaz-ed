@@ -84,7 +84,7 @@ export function DoorScreen({ day }: { day: number }) {
   const theme = themeOf(themeId)
   const themed = theme.id !== 'standard'
   return (
-    <motion.div {...slide} className={`absolute inset-0 z-[32] bg-bg ${theme.className}`}>
+    <motion.div {...slide} data-navigation-busy={busy || undefined} data-navigation-dirty={!!playing || undefined} className={`absolute inset-0 z-[32] bg-bg ${theme.className}`}>
       <div className="scroll h-full" style={{ paddingBottom: 'calc(48px + var(--bottom))' }}>
         <div className={`relative overflow-hidden px-5 text-center ${themed ? 'pb-16' : 'pb-12'}`} style={{ background: themed ? theme.hero : look.g.css, color: themed ? theme.ink : look.g.ink, paddingTop: 'calc(var(--top) + 54px)' }}>
           {themed ? <ThemeScene theme={theme.id} /> : <Pattern name={look.name} full />}
@@ -237,7 +237,7 @@ function QuizForm({ door, busy, onSubmit }: { door: DoorView; busy: boolean; onS
     setAnswers(next)
   }
   return (
-    <div className="rounded-[26px] border border-line bg-card p-4">
+    <div data-navigation-dirty={answers.length > 0 || undefined} className="rounded-[26px] border border-line bg-card p-4">
       <div className="flex gap-1.5">
         {door.quiz.map((_, i) => (
           <div key={i} className="h-1.5 flex-1 rounded-full" style={{ background: i < step || answers[i] !== undefined ? 'var(--color-violet)' : 'var(--track)' }} />

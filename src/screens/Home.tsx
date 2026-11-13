@@ -33,7 +33,7 @@ export function Home() {
   const followed = useFollowedTopics(me.id)
   const stories = useMemo(() => activeStories(feed), [feed])
 
-  return <div ref={scroller} data-tab-scroll className="scroll h-full relative" style={{ paddingBottom: 'calc(110px + var(--bottom))' }}>
+  return <div ref={scroller} data-tab-scroll className="scroll h-full relative" style={{ paddingBottom: 'calc(32px + var(--bottom))' }}>
     <HomeAssembly scroller={scroller}/>
     <header className="flex items-center justify-between gap-3 px-5 pb-5" style={{ paddingTop: 'calc(var(--top) + 18px)' }}>
       <div className="min-w-0"><h1 className="font-display text-[17px] font-bold tracking-tight">OG CRE8R<span className="text-violet">²</span></h1><p className="mt-1 text-xs text-mute">Твоя берлога знаний об ИИ</p></div>

@@ -57,7 +57,7 @@ export function AdventAdminScreen() {
   const peak = Math.max(1, ...(data?.by_day.map((d) => d.opens) ?? [1]))
 
   return (
-    <motion.div {...sheet} className="absolute inset-0 z-[31] bg-bg">
+    <motion.div {...sheet} data-navigation-busy={!!saving || undefined} className="absolute inset-0 z-[31] bg-bg">
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(40px + var(--bottom))' }}>
         <Header title="Адвент" />
         {!data ? (

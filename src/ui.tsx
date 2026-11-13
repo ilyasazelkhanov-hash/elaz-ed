@@ -324,6 +324,7 @@ export function Cta({ tone = 'aurora', busy = false, className = '', onClick, ch
     <button
       type="button"
       className={`cta cta-${tone} ${className}`}
+      data-navigation-busy={busy || undefined}
       disabled={disabled || busy}
       onClick={(e) => {
         haptic.heavy()

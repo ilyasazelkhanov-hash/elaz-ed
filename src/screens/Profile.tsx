@@ -56,7 +56,7 @@ export function Profile() {
   }
 
   return (
-    <div data-tab-scroll className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 18px)', paddingBottom: 'calc(120px + var(--bottom))' }}>
+    <div data-tab-scroll className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 18px)', paddingBottom: 'calc(32px + var(--bottom))' }}>
       <section className="mb-6 px-5" aria-label="Мой профиль">
         <header className="flex items-center justify-between gap-3"><h1 className="font-display text-[27px] font-semibold">Профиль</h1>{me.is_admin && <Tap aria-label="Открыть админку" onClick={() => push({ type: 'admin' })} className="flex min-h-11 items-center gap-2 rounded-xl border border-line px-3 text-sm font-semibold"><Settings2 size={16} aria-hidden="true"/>Админка</Tap>}</header>
         <section className="mt-5" aria-label="Моя карточка участника">

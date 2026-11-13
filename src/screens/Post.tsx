@@ -1,4 +1,3 @@
-import { MainNav } from '../MainNav'
 import { CoverImage } from '../CoverImage'
 import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, Heart, Lightbulb, Send } from 'lucide-react'
 import { useEffect } from 'react'
@@ -70,6 +69,5 @@ export function PostScreen({ id, post, preview, error, retry, like, share }: { i
         </section>
       </>}
     </article>
-    <MainNav inPost />
   </section>
 }

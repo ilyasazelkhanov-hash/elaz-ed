@@ -149,7 +149,7 @@ export function Stories({ startId }: { startId: number }) {
           </Tap>
         </div>
 
-        <div ref={contentRef} className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto py-4" style={{ touchAction: 'pan-y' }} onPointerDown={(event) => { event.stopPropagation(); setHolding(true) }} onPointerUp={() => setHolding(false)} onPointerCancel={() => setHolding(false)} onPointerLeave={() => setHolding(false)} onFocusCapture={() => setHolding(true)} onBlurCapture={() => setHolding(false)}>
+        <div ref={contentRef} data-navigation-scroll className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-y-auto py-4" style={{ touchAction: 'pan-y' }} onPointerDown={(event) => { event.stopPropagation(); setHolding(true) }} onPointerUp={() => setHolding(false)} onPointerCancel={() => setHolding(false)} onPointerLeave={() => setHolding(false)} onFocusCapture={() => setHolding(true)} onBlurCapture={() => setHolding(false)}>
           <AnimatePresence mode="wait">
             <motion.div
               key={`${si}-${pi}`}

@@ -24,7 +24,8 @@ import { Stories } from './screens/Stories'
 import { Top } from './screens/Top'
 import { useStore, type Overlay } from './store'
 import { enableSparks, Toasts } from './ui'
-import { MainNav } from './MainNav'
+import { NavigationFrame } from './NavigationFrame'
+import { navigationTab } from './lib/navigation-context'
 import { bindAppNavigation, navigationFromHash } from './lib/app-navigation'
 
 // Админку видит один человек — незачем грузить её всем.
@@ -103,6 +104,7 @@ function Shell() {
   const reward = useStore((s) => s.reward)
   const share = useStore((s) => s.share)
   const pop = useStore((s) => s.pop)
+  const feed = useStore((s) => s.feed)
 
   useEffect(() => bindBack(stack.length > 0 ? () => {
     if (stack[stack.length - 1]?.type === 'learning') window.dispatchEvent(new Event('og:courses-back'))
@@ -148,6 +150,7 @@ function Shell() {
   return (
     <motion.div className="relative z-10 h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
       <div className="h-full" inert={stack.length > 0 || !!reward || !!share}>
+      <NavigationFrame active={!stack.length && !reward && !share} routeKey={tab} currentTab={tab}>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={tab} onScrollCapture={onScroll} className="h-full" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
           {tab === 'home' && <Home />}
@@ -159,13 +162,15 @@ function Shell() {
       </AnimatePresence>
 
       <div ref={scrim} className="glass top-scrim pointer-events-none absolute inset-x-0 top-0 z-20" />
-      <MainNav />
+      </NavigationFrame>
       </div>
 
       <AnimatePresence>
         {stack.map((o, i) => (
           <FocusLayer key={overlayKey(o, i)} active={i === stack.length - 1 && !reward && !share} label={o.type === 'companion-settings' ? 'Настроить своего Dots' : o.type === 'lesson' ? 'Публикация' : 'Экран приложения'} onClose={o.type === 'companion-settings' ? pop : undefined}>
-            <OverlayView overlay={o} />
+            <NavigationFrame active={i === stack.length - 1 && !reward && !share} routeKey={JSON.stringify(o)} currentTab={navigationTab(tab, o, feed)} overlay>
+              <OverlayView overlay={o} />
+            </NavigationFrame>
             {i === stack.length - 1 && !reward && !share && <RefreshNotice />}
           </FocusLayer>
         ))}

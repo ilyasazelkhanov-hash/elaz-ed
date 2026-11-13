@@ -140,6 +140,48 @@
   overscroll-behavior: contain;
   scrollbar-width: none;
 }
+
+/* One primary dock per active screen. Its measured height protects sticky actions. */
+.navigation-frame {
+  --navigation-safe-bottom: max(calc(var(--tg-safe-area-inset-bottom, 0px) + var(--tg-content-safe-area-inset-bottom, 0px)), env(safe-area-inset-bottom, 0px));
+  --navigation-height: calc(80px + var(--navigation-safe-bottom));
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+.navigation-content {
+  position: absolute;
+  inset: 0 0 var(--navigation-height);
+  overflow: hidden;
+}
+.navigation-dock {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 45;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.navigation-frame[data-navigation-hidden='true'] > .navigation-content {
+  bottom: var(--navigation-safe-bottom);
+}
+.navigation-frame[data-navigation-hidden='true'] > .navigation-dock {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+/* Hidden by touch scrolling does not mean hidden from keyboard or assistive tech. */
+.navigation-dock:has(:focus-visible) {
+  transform: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+/* A local sheet must never be bypassed through the sibling primary dock. */
+.navigation-frame:has(.navigation-content [data-focus-layer][aria-modal='true'], .navigation-content dialog[open]) > .navigation-dock {
+  visibility: hidden;
+  pointer-events: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .navigation-dock { transition: none; }
+}
 .scroll::-webkit-scrollbar,
 .no-bar::-webkit-scrollbar {
   display: none;

@@ -21,7 +21,7 @@ const Library=lazy(()=>import('./academy/Catalog').then(module=>({default:module
 
 export function MainCoursesTab(){
  const push=useStore(s=>s.push)
- return <LearningProvider demo={false}><div className="scroll h-full px-5" data-tab-scroll style={{paddingTop:'calc(var(--top) + 20px)',paddingBottom:'calc(110px + var(--bottom))'}}><OGPractice path="/og-practice" go={path=>push({type:'learning',path})}/></div></LearningProvider>
+ return <LearningProvider demo={false}><div className="scroll h-full px-5" data-tab-scroll style={{paddingTop:'calc(var(--top) + 20px)',paddingBottom:'calc(32px + var(--bottom))'}}><OGPractice path="/og-practice" go={path=>push({type:'learning',path})}/></div></LearningProvider>
 }
 export function CoursesScreen({path}:{path?:string}){return <LearningProvider demo={false}><CourseWindow initialPath={path}/></LearningProvider>}
 function CourseWindow({initialPath}:{initialPath?:string}){

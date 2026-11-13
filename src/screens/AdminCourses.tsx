@@ -127,7 +127,7 @@ export function CoursesAdminScreen() {
   const title = (id: number) => courses?.find((c) => c.id === id)?.title ?? 'Курс'
 
   return (
-    <motion.div {...sheet} className="absolute inset-0 z-[31] bg-bg">
+    <motion.div {...sheet} className="absolute inset-0 z-[31] bg-bg" data-navigation-busy={refunding !== null || deciding !== null || undefined}>
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(40px + var(--bottom))' }}>
         <Header title="Архив и доступы" />
 
@@ -302,7 +302,7 @@ export function CourseEditorScreen({ course }: { course: AdminCourse | null }) {
   }
 
   return (
-    <motion.div {...sheet} className="absolute inset-0 z-[32] bg-bg">
+    <motion.div {...sheet} className="absolute inset-0 z-[32] bg-bg" data-navigation-busy={!!busy || undefined}>
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(130px + var(--bottom))' }}>
         <Header
           title={d.id ? 'Курс' : 'Новый курс'}

@@ -31,7 +31,7 @@
 @keyframes og-dots-copy-in { from { opacity: .55; } to { opacity: 1; } }
 .og-dots-modal { position: absolute; inset: 0; z-index: 70; display: flex; align-items: end; justify-content: center; color: var(--color-ink); }
 .og-dots-backdrop { position: absolute; inset: 0; background: #08041399; }
-.og-dots-editor { position: relative; width: min(100%, 480px); max-height: calc(100dvh - var(--top) - 12px); overflow: auto; overscroll-behavior: contain; border-radius: 28px 28px 0 0; background: var(--color-card); border: 1px solid var(--color-line); padding: 20px 22px calc(24px + var(--bottom)); }
+.og-dots-editor { position: relative; width: min(100%, 480px); max-height: calc(100% - var(--top) - 12px); overflow: auto; overscroll-behavior: contain; border-radius: 28px 28px 0 0; background: var(--color-card); border: 1px solid var(--color-line); padding: 20px 22px calc(24px + var(--bottom)); }
 .og-dots-editor-heading { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
 .og-dots-editor-heading p { margin: 0 0 6px; font-size: 9px; letter-spacing: .13em; color: var(--color-mute); }
 .og-dots-editor-heading h2 { margin: 0; font-size: 21px; line-height: 1.25; font-weight: 700; overflow-wrap: anywhere; }
