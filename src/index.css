@@ -13,7 +13,7 @@
   --color-line: rgb(255 255 255 / 0.08);
   --color-ink: #f3f1ff;
   --color-mute: #a39fbf;
-  --color-faint: #827e9f;
+  --color-faint: #8884a5;
   /* Вуаль — полупрозрачные подложки и дорожки: светлая на тёмном фоне, тёмная на светлом. */
   --color-veil: #ffffff;
   /* Контрастная кнопка: белая в тёмной теме, чернильная в светлой. */
@@ -62,7 +62,7 @@
   --color-line: rgb(26 20 51 / 0.1);
   --color-ink: #16122b;
   --color-mute: #5d5878;
-  --color-faint: #77728f;
+  --color-faint: #68617e;
   --color-veil: #1a1433;
   --color-inverse: #16122b;
   --color-on-inverse: #ffffff;
@@ -70,12 +70,12 @@
   --color-violet: #6a4df0;
   --color-on-violet: #ffffff;
   --color-success: #087552;
-  --color-pink: #dc3d96;
-  --color-peach: #d9722f;
-  --color-mint: #0c9a6d;
-  --color-sky: #1787cc;
-  --color-amber: #b3720a;
-  --color-rose: #e03a59;
+  --color-pink: #b32376;
+  --color-peach: #9e4811;
+  --color-mint: #076c4c;
+  --color-sky: #09689e;
+  --color-amber: #8a5700;
+  --color-rose: #bf2444;
   --color-on-mint: #ffffff;
   --color-on-rose: #ffffff;
 

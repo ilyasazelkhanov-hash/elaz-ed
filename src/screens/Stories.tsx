@@ -80,7 +80,7 @@ export function Stories({ startId }: { startId: number }) {
     if (contentRef.current) contentRef.current.scrollTop = 0
   }, [si, pi])
 
-  if (!story) return <section className="absolute inset-0 z-40 grid place-content-center gap-4 bg-bg p-6 text-center" aria-label="История недоступна"><h2 className="text-xl font-semibold">Эта история больше не доступна</h2><p className="text-mute">Условия могли измениться. Вернись к актуальной подборке.</p><Tap onClick={pop} className="min-h-11 rounded-xl bg-violet px-4 text-white">Закрыть</Tap></section>
+  if (!story) return <section className="absolute inset-0 z-40 grid place-content-center gap-4 bg-bg p-6 text-center" aria-label="История недоступна"><h2 className="text-xl font-semibold">Эта история больше не доступна</h2><p className="text-mute">Условия могли измениться. Вернись к актуальной подборке.</p><Tap onClick={pop} className="min-h-11 rounded-xl bg-violet px-4 text-on-violet">Закрыть</Tap></section>
   const g = GRADIENTS[story.gradient] ?? GRADIENTS.aurora
 
   return (

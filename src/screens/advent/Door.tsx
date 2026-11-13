@@ -259,7 +259,7 @@ function QuizForm({ door, busy, onSubmit }: { door: DoorView; busy: boolean; onS
                   onClick={() => pick(i)}
                   className={`flex w-full items-center gap-3 rounded-[18px] border p-3.5 text-left text-[15px] font-medium ${on ? 'border-violet/60 bg-violet/15' : 'border-line bg-card2'}`}
                 >
-                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full font-display text-[11px] font-bold ${on ? 'bg-violet text-white' : 'bg-veil/8 text-mute'}`}>{'АБВГ'[i]}</span>
+                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full font-display text-[11px] font-bold ${on ? 'bg-violet text-on-violet' : 'bg-veil/8 text-mute'}`}>{'АБВГ'[i]}</span>
                   <span className="flex-1">{opt}</span>
                 </Tap>
               )

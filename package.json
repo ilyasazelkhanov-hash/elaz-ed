@@ -58,6 +58,7 @@
     "test:admin-usability": "node --experimental-strip-types --test tests/admin-usability.test.mjs",
     "test:guide-interactions": "node --experimental-strip-types --test tests/guide-interactions.test.mjs",
     "test:og-lesson-interactions": "node --experimental-strip-types --test tests/og-lesson-interactions.test.mjs tests/og-academy-bridge-draft.test.mjs",
+    "test:theme-contrast": "node --test tests/theme-contrast.test.mjs",
     "test:home-assembly": "node --experimental-strip-types --test tests/home-assembly.test.mjs"
   },
   "dependencies": {

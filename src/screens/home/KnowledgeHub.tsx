@@ -26,7 +26,7 @@ export function KnowledgeHub({posts}:{posts:Card[]}){
    <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-violet"><Sparkles size={16}/>OG · Берлога знаний</p>
    <h2 className="font-display text-[26px] font-semibold leading-tight">Разобраться. Попробовать.<br/>Сделать своё.</h2>
    <p className="mt-3 max-w-lg text-sm leading-relaxed text-mute">Приёмы, разборы и курсы по ИИ. Зайди за идеей на сегодня - останься, чтобы освоить навык.</p>
-   <div className="mt-5 flex flex-wrap gap-2" aria-label="Как изучать базу">{([['beginner','Я начинаю'],['practitioner','Уже практикую']] as const).map(([id,label])=><Tap key={id} aria-pressed={audience===id} onClick={()=>setAudience(id)} className={`min-h-11 rounded-full border px-4 text-sm font-semibold ${audience===id?'border-violet bg-violet text-white':'border-line bg-card text-ink'}`}>{label}</Tap>)}</div>
+   <div className="mt-5 flex flex-wrap gap-2" aria-label="Как изучать базу">{([['beginner','Я начинаю'],['practitioner','Уже практикую']] as const).map(([id,label])=><Tap key={id} aria-pressed={audience===id} onClick={()=>setAudience(id)} className={`min-h-11 rounded-full border px-4 text-sm font-semibold ${audience===id?'border-violet bg-violet text-on-violet':'border-line bg-card text-ink'}`}>{label}</Tap>)}</div>
   </div></div>
   <div className="relative border-t border-line bg-card/70 p-5">
    <div className="no-bar flex gap-2 overflow-x-auto pb-3" aria-label="Темы базы знаний">{knowledgeTopics.map(t=><Tap key={t.id} aria-pressed={topic===t.id} onClick={()=>setTopic(t.id)} className={`min-h-11 shrink-0 rounded-full border px-3 text-xs font-semibold ${topic===t.id?'border-violet bg-violet/10 text-violet':'border-line text-mute'}`}>{t.label}</Tap>)}</div>

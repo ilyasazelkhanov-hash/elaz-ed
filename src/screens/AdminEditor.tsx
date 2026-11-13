@@ -380,7 +380,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             <Tap onClick={() => save(false)} disabled={!!busy} className="h-[54px] shrink-0 rounded-[20px] border border-line bg-card2 px-4 text-[14px] font-semibold text-mute">
               Снять
             </Tap>
-            <Tap onClick={() => save()} disabled={!!busy} className="flex h-[54px] flex-1 items-center justify-center rounded-[20px] font-display text-[14px] font-semibold text-white" style={{ background: 'var(--aurora)' }}>
+            <Tap onClick={() => save()} disabled={!!busy} className="flex h-[54px] flex-1 items-center justify-center rounded-[20px] font-display text-[14px] font-semibold text-[#12091c]" style={{ background: 'var(--aurora)' }}>
               {busy === 'save' ? <Spinner size={20} /> : 'Сохранить'}
             </Tap>
           </>
@@ -389,7 +389,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             <Tap onClick={() => save()} disabled={!!busy} className="h-[54px] shrink-0 rounded-[20px] border border-line bg-card2 px-4 text-[14px] font-semibold">
               Черновик
             </Tap>
-            <Tap onClick={() => save(true)} disabled={!!busy} className="flex h-[54px] flex-1 items-center justify-center rounded-[20px] font-display text-[14px] font-semibold text-white" style={{ background: 'var(--aurora)' }}>
+            <Tap onClick={() => save(true)} disabled={!!busy} className="flex h-[54px] flex-1 items-center justify-center rounded-[20px] font-display text-[14px] font-semibold text-[#12091c]" style={{ background: 'var(--aurora)' }}>
               {busy === 'save' ? <Spinner size={20} /> : 'Опубликовать'}
             </Tap>
           </>

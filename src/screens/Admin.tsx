@@ -60,7 +60,7 @@ export function AdminScreen({scope}:{scope?:AdminContentScope}) {
   <Header title={info?.title??'Управление'}/>
   {!scope?<>
    <section aria-label="Быстрые действия" className="mt-5 grid grid-cols-2 gap-2 px-5">
-    <Tap onClick={()=>push({type:'editor',lesson:null,kind:'lesson'})} className="min-h-12 rounded-2xl bg-violet px-3 py-3 text-sm font-semibold text-white"><Plus size={16} className="mr-1 inline"/>Публикация</Tap>
+    <Tap onClick={()=>push({type:'editor',lesson:null,kind:'lesson'})} className="min-h-12 rounded-2xl bg-violet px-3 py-3 text-sm font-semibold text-on-violet"><Plus size={16} className="mr-1 inline"/>Публикация</Tap>
     <Tap onClick={()=>push({type:'editor',lesson:null,kind:'story'})} className="min-h-12 rounded-2xl border border-line bg-card px-3 py-3 text-sm font-semibold"><Plus size={16} className="mr-1 inline"/>Сторис</Tap>
    </section>
    <section aria-label="Разделы контента" className="mt-5 space-y-3 px-5">
@@ -73,7 +73,7 @@ export function AdminScreen({scope}:{scope?:AdminContentScope}) {
    <details className="mx-5 mt-5 rounded-2xl border border-line"><summary tabIndex={0} className="min-h-12 cursor-pointer px-4 py-3 text-sm font-semibold">Архивные курсы и доступы</summary><section aria-label="Архив" className="space-y-2 p-3"><AdminLink title="Архив курсов и заявки" hint="Старые программы, оплаты и выданные доступы" icon={LibraryBig} onClick={()=>push({type:'courses-admin'})}/><AdminLink title="Архивные уроки" hint="Редактирование материалов старых курсов" icon={LibraryBig} onClick={()=>push({type:'admin-content',scope:'legacy'})}/></section></details>
   </>:<section aria-label={`${info!.title}: управление`} className="mt-4 px-5">
    <p className="text-sm leading-relaxed text-mute">{info!.hint}</p>
-   {scope!=='legacy'&&<Tap onClick={()=>push({type:'editor',lesson:null,kind:scope==='stories'?'story':'lesson'})} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] bg-violet px-4 text-sm font-semibold text-white"><Plus size={18}/>{info!.create}</Tap>}
+   {scope!=='legacy'&&<Tap onClick={()=>push({type:'editor',lesson:null,kind:scope==='stories'?'story':'lesson'})} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-[18px] bg-violet px-4 text-sm font-semibold text-on-violet"><Plus size={18}/>{info!.create}</Tap>}
    <label className="mt-4 flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-card px-4"><Search size={18} className="shrink-0 text-mute"/><input aria-label="Поиск по заголовку" maxLength={120} placeholder="Поиск по заголовку во всём разделе" value={query} onChange={e=>setQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent py-3 text-base outline-none"/></label>
    <div aria-label="Статус материалов" className="mt-3 flex flex-wrap gap-2">{([['all','Все'],['draft','Черновики'],['published','Опубликованные']] as const).map(([value,label])=><Tap key={value} aria-pressed={publication===value} onClick={()=>setPublication(value)} className={`min-h-11 rounded-xl border px-3 text-sm ${publication===value?'border-violet bg-violet/10 font-semibold':'border-line text-mute'}`}>{label}</Tap>)}</div>
    <p role="status" className="mb-3 mt-3 text-xs text-mute">Показано {visibleLessons.length} из {lessons.length} загруженных. Фильтры статуса и проверки действуют только на загруженные материалы.</p>
