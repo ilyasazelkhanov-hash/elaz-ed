@@ -1,3 +1,4 @@
+import {ogCodingInteraction} from './og-coding-interactions.ts'
 import type {GuideChallenge} from './guide-interactions'
 
 /** Original, public formative examples. Never imports or embeds the paid lesson payload. */
@@ -10,6 +11,7 @@ const choose=(prompt:string,correct:number,options:[string,string][]):GuideChall
  type:'choice',prompt,correct,options:options.map(([text,why])=>({text,why}))
 })
 export const ogLessonInteractions:Record<string,OGLessonInteraction>={
+ 'coding/block-7':ogCodingInteraction,
  'foundations/block-1':{
   id:'og-foundations-block-1-v1',
   steps:[
@@ -60,7 +62,7 @@ export const ogLessonInteractions:Record<string,OGLessonInteraction>={
 
 // Exact UTF-8 SHA-256 of reviewed source bodies. Deliberately no whitespace normalization.
 // This guard checks compatibility, NOT authorization: Reader still receives gated bodies.
-export const reviewedLessonHashes:Record<string,string>={"foundations/block-1": "4b3c5aa9ac6b296644917221b2eb0f625fc97b6735ad05bbe34f73bc944ba452", "foundations/foundations-context": "b36aaeba2044100fa3ecff2218b8040496535a2a2d38c518b5fc4bd396ebf11a"}
+export const reviewedLessonHashes:Record<string,string>={"coding/block-7":"376d9707d656f6f118dabd957196b3f7a3cf3c7a0ec06da484df12f6ec19a738","foundations/block-1": "4b3c5aa9ac6b296644917221b2eb0f625fc97b6735ad05bbe34f73bc944ba452", "foundations/foundations-context": "b36aaeba2044100fa3ecff2218b8040496535a2a2d38c518b5fc4bd396ebf11a"}
 export async function ogLessonInteraction(course:string,lesson:string,body?:string):Promise<OGLessonInteraction|undefined>{
  const key=course+'/'+lesson, expected=reviewedLessonHashes[key]
  if(!expected||!body||!globalThis.crypto?.subtle)return undefined

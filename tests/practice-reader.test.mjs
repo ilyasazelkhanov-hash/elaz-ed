@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck} from '../src/lib/practice-reader.ts'
+import {practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck, practiceReadingPages} from '../src/lib/practice-reader.ts'
 
 test('a self-check hides the real answer while preserving every source character', () => {
  const source = '## Проверь себя\n\nПочему?\n\n```md\n## Разбор ответа\nЭто пример разметки.\n```\n\n## Разбор ответа\n\nЭто ответ.\n'
@@ -44,7 +44,7 @@ test('reader exposes primary sections and an explicit menu for other sections', 
  const {renderToStaticMarkup} = await import('react-dom/server')
  const file = new URL('../src/screens/home/PracticeReader.tsx', import.meta.url)
  let code = (await transformWithOxc(await readFile(file, 'utf8'), file.pathname, {lang:'tsx', jsx:{runtime:'automatic'}})).code
- for (const [path, names] of Object.entries({'./GuideJourney':'GuideJourney','../../lib/og-lesson-interactions':'ogLessonInteraction','./PracticeArtifact':'PracticeArtifact','../../Markdown':'Markdown', '../../lib/og-practice':'practiceSections', '../../lib/practice-reader':'practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck', '../../ui':'Tap'})) {
+ for (const [path, names] of Object.entries({'./GuideJourney':'GuideJourney','../../lib/og-lesson-interactions':'ogLessonInteraction','./PracticeArtifact':'PracticeArtifact','../../Markdown':'Markdown', '../../lib/og-practice':'practiceSections', '../../lib/practice-reader':'practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck, practiceReadingPages', '../../ui':'Tap'})) {
   code = code.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.', '\\.')}["'];?`, 'g'), `const { ${names} } = globalThis.__readerHarness;`)
  }
  code = code.replace(/import ["']\.\/practice\.css["'];?/g, '')
@@ -54,7 +54,7 @@ test('reader exposes primary sections and an explicit menu for other sections', 
   GuideJourney:({children})=>children,
   ogLessonInteraction:async()=>undefined,
   PracticeArtifact:()=>null,
-  practiceSections, practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck,
+  practiceSections, practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck, practiceReadingPages,
   Markdown: ({text}) => createElement('div', null, text),
   Tap: ({children, ...props}) => createElement('button', props, children),
  }
@@ -79,14 +79,15 @@ test('actual reader blocks stale hashes and unmounted results while preserving s
  const file=new URL('../src/screens/home/PracticeReader.tsx',import.meta.url)
  let code=(await transformWithOxc(await readFile(file,'utf8'),file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
  code=code.replace(/import[^;\n]*from ["']react["'];?/g,'const {useState,useEffect,useMemo,useRef,useId}=globalThis.__readerLife;')
- for(const [path,names]of Object.entries({'./GuideJourney':'GuideJourney','../../lib/og-lesson-interactions':'ogLessonInteraction','./PracticeArtifact':'PracticeArtifact','../../Markdown':'Markdown','../../lib/og-practice':'practiceSections','../../lib/practice-reader':'practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck','../../ui':'Tap'}))code=code.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.','\\.')}["'];?`,'g'),`const {${names}}=globalThis.__readerLife;`)
+ for(const [path,names]of Object.entries({'./GuideJourney':'GuideJourney','../../lib/og-lesson-interactions':'ogLessonInteraction','./PracticeArtifact':'PracticeArtifact','../../Markdown':'Markdown','../../lib/og-practice':'practiceSections','../../lib/practice-reader':'practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck, practiceReadingPages','../../ui':'Tap'}))code=code.replace(new RegExp(`import[^;\\n]*from ["']${path.replaceAll('.','\\.')}["'];?`,'g'),`const {${names}}=globalThis.__readerLife;`)
  code=code.replace(/import ["']\.\/practice\.css["'];?/g,'')
  for(const name of ['react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
  const states=[],effects=[],queued=[],pending=[];let si=0,ei=0,writes=0
  const Journey=()=>null,Markdown=()=>null
- const previous=globalThis.document
+ const previous=globalThis.document,previousFrame=globalThis.requestAnimationFrame
+ globalThis.requestAnimationFrame=fn=>fn()
  globalThis.document={addEventListener(){},removeEventListener(){}}
- globalThis.__readerLife={GuideJourney:Journey,Markdown,Tap:()=>null,PracticeArtifact:()=>null,practiceSections,practiceReaderStorageKey,readPracticeReaderDraft,splitPracticeCheck,
+ globalThis.__readerLife={GuideJourney:Journey,Markdown,Tap:()=>null,PracticeArtifact:()=>null,practiceSections,practiceReaderStorageKey,readPracticeReaderDraft,splitPracticeCheck,practiceReadingPages,
   useState:init=>{const i=si++;if(!(i in states))states[i]=typeof init==='function'?init():init;return[states[i],v=>{writes++;states[i]=typeof v==='function'?v(states[i]):v}]},
   useEffect:(fn,deps)=>{const i=ei++,old=effects[i];if(!old||deps.some((v,n)=>v!==old.deps[n]))queued.push(()=>{old?.cleanup?.();effects[i]={deps,cleanup:fn()}})},
   useMemo:fn=>fn(),useRef:()=>({current:null}),useId:()=>':test:',
@@ -106,10 +107,46 @@ test('actual reader blocks stale hashes and unmounted results while preserving s
   pending[0].resolve(flow);await settle();assertSource(render(),'B')
   pending[1].resolve(flow);await settle();let tree=render()
   assert.ok(nodes(tree).some(n=>n.type===Journey));assert.ok(nodes(tree).some(n=>n.type===Markdown&&n.props.text.includes('B')))
+  nodes(tree).find(n=>n.props?.['aria-label']==='Читать: Объяснение').props.onClick()
+  tree=render();assertSource(tree,'B')
+  nodes(tree).find(n=>[n.props?.children].flat().includes('Попробовать на примере')).props.onClick()
+  tree=render();assert.ok(nodes(tree).some(n=>n.type===Journey),'return to verified training is explicit after choosing source reading')
   props.lesson={...props.lesson,body:body('C')};assertSource(render(),'C') // before effect cleanup too
   flush();pending[2].resolve(undefined);await settle();assertSource(render(),'C')
   props.lesson={...props.lesson,body:body('D')};render();flush()
   for(const effect of effects)effect?.cleanup?.()
   const before=writes;pending[3].resolve(flow);await settle();assert.equal(writes,before,'unmounted hash must not set state')
- }finally{delete globalThis.__readerLife;if(previous===undefined)delete globalThis.document;else globalThis.document=previous}
+ }finally{globalThis.requestAnimationFrame=previousFrame;delete globalThis.__readerLife;if(previous===undefined)delete globalThis.document;else globalThis.document=previous}
+})
+
+
+test('reading pages are lossless and keep Markdown atomic blocks intact',()=>{
+ const code='```md\n## heading inside fence\n\n- not a real list\n```'
+ const table='| Name | Value |\n| --- | --- |\n| one | two |'
+ const indented='    code A\n\n    code B'
+ const list='1. First\n\n   Continued paragraph\n\n2. Second'
+ const source=['# Title\n\n'+('First paragraph. '.repeat(18)),code,table,list,indented,'## Next\n\n'+('Last paragraph. '.repeat(18))].join('\n\n')
+ const pages=practiceReadingPages(source,180)
+ assert.equal(pages.join(''),source)
+ assert.ok(pages.length>2)
+ for(const block of [code,table,list,indented])assert.ok(pages.some(page=>page.includes(block)))
+ assert.ok(pages.some(page=>page.includes('## Next\n\nLast paragraph.')))
+ assert.deepEqual(practiceReadingPages(''),[''])
+ const reference='Read [the brief][b].\n\nSecond paragraph.\n\n[b]: https://example.com'
+ assert.deepEqual(practiceReadingPages(reference,12),[reference],'reference definitions retain document scope')
+ const unfinished='Before\n\n~~~text\n\n## still code\n\ntext'
+ assert.equal(practiceReadingPages(unfinished,8).join(''),unfinished)
+ assert.ok(practiceReadingPages(unfinished,8).some(page=>page.includes('~~~text\n\n## still code\n\ntext')))
+ const crlf=source.replaceAll('\n','\r\n');assert.equal(practiceReadingPages(crlf,180).join(''),crlf)
+})
+
+test('every local course reading body roundtrips without data or entitlement changes',async()=>{
+ const {readFile}=await import('node:fs/promises')
+ const {practiceSections}=await import('../src/lib/og-practice.ts')
+ const data=JSON.parse(await readFile(new URL('../content/ai-practice-2026-10-25/paths.json',import.meta.url),'utf8'))
+ for(const course of data.courses)for(const lesson of course.lessons){
+  const reading=practiceSections(lesson.body).reading,pages=practiceReadingPages(reading)
+  assert.equal(pages.join(''),reading,course.key+'/'+lesson.key)
+  assert.ok(pages.every(page=>page.length>0)||!reading)
+ }
 })

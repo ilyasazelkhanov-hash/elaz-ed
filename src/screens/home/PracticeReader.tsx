@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight, ChevronDown, Clock3, ListChecks } from 'lucide-r
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Markdown } from '../../Markdown'
 import { practiceSections } from '../../lib/og-practice'
-import { practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck, type PracticeReaderView } from '../../lib/practice-reader'
+import { practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck, practiceReadingPages, type PracticeReaderView } from '../../lib/practice-reader'
 import { Tap } from '../../ui'
 import './practice.css'
 import { GuideJourney } from './GuideJourney'
@@ -21,6 +21,7 @@ export type PracticeReaderProps = {
  children?: ReactNode
 }
 
+const READER_NAV_INSET = 76
 const sections = [
  {key: 'reading', label: 'Объяснение', short: 'Читать'},
  {key: 'practice', label: 'Практика', short: 'Практика'},
@@ -47,6 +48,11 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
   return ()=>{active=false}
  },[course.key,lesson.key,lesson.body,interactionKey])
  const content = useMemo(() => practiceSections(lesson.body), [lesson.body])
+ const pages = useMemo(() => practiceReadingPages(content.reading), [content.reading])
+ const [position,setPosition] = useState({body:lesson.body,index:0})
+ const page = position.body === lesson.body ? Math.min(position.index,pages.length-1) : 0
+ const [readingBody,setReadingBody] = useState<string|null>(null)
+ const training = readingBody !== lesson.body && !!interaction
  const check = useMemo(() => splitPracticeCheck(content.check), [content.check])
  const storageKey = practiceReaderStorageKey(userId, course.key, lesson.key)
  const [draft, setDraft] = useState(() => readPracticeReaderDraft(storageKey))
@@ -72,6 +78,7 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
   } catch { setSaveState('unavailable') }
  }
  const select = (next: PracticeReaderView, focusContent = false) => {
+  if(next==='reading')setReadingBody(lesson.body)
   updateDraft({...draft, view: next})
   if (menu.current?.open) {
    menu.current.open = false
@@ -80,29 +87,32 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
   // Keep the newly selected section visible below the sticky navigation, including
   // when the learner moves to practice from the bottom of a long explanation.
   requestAnimationFrame(() => {
-   contentRef.current?.scrollIntoView({block: 'start', behavior: 'instant'})
+   const content=contentRef.current,scroller=content?.closest<HTMLElement>('.scroll')
+   if(content&&scroller)scroller.scrollTo({top:Math.max(0,scroller.scrollTop+content.getBoundingClientRect().top-scroller.getBoundingClientRect().top-READER_NAV_INSET),behavior:'instant'})
    if (focusContent) contentRef.current?.focus({preventScroll: true})
   })
  }
+ const movePage=(next:number)=>{setPosition({body:lesson.body,index:Math.max(0,Math.min(next,pages.length-1))});focusReading()}
+ const focusReading=()=>requestAnimationFrame(()=>{const content=contentRef.current,scroller=content?.closest<HTMLElement>('.scroll');content?.focus({preventScroll:true});if(content&&scroller)scroller.scrollTo({top:Math.max(0,scroller.scrollTop+content.getBoundingClientRect().top-scroller.getBoundingClientRect().top-READER_NAV_INSET),behavior:'instant'})})
+ const startTraining=()=>{setReadingBody(null);focusReading()}
  return <article className="og-reader" data-og-lesson>
   <Tap onClick={onBack} className="og-reader-back"><ArrowLeft size={17}/>К программе</Tap>
   <header className="og-reader-heading">
-   <p className="og-reader-eyebrow">{course.title}</p>
-   <h1>{lesson.title.replace(/^\d+\.\s*/, '')}</h1>
    <div className="og-reader-meta"><span>Урок {index + 1} из {total}</span><span><Clock3 size={14}/>{lesson.minutes} мин с практикой</span></div>
-   {lesson.subtitle && <p className="og-reader-outcome"><span>Твой результат</span>{lesson.subtitle}</p>}
+   <h1>{lesson.title.replace(/^\d+\.\s*/, '')}</h1>
+   {lesson.subtitle && <details className="og-reader-outcome"><summary tabIndex={0}>Что получится в конце урока<ChevronDown size={14} aria-hidden="true"/></summary><p>{lesson.subtitle}</p></details>}
   </header>
   <nav className="og-reader-nav" aria-label="Разделы урока">
    {sections.slice(0, 3).filter(section => section.key !== 'all' && content[section.key]).map(({key, label, short}) => <Tap key={key} aria-label={short === label ? label : `${short}: ${label}`} aria-controls={contentId} aria-pressed={view === key} onClick={() => select(key)} className="og-reader-section">{short}</Tap>)}
    <details ref={menu} className="og-reader-more" onBlur={event => {if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false}} onKeyDown={event => {if (event.key === 'Escape' && menu.current?.open) {event.preventDefault(); event.stopPropagation(); menu.current.open = false; menu.current.querySelector('summary')?.focus()}}}>
-    <summary aria-label={view === 'resources' || view === 'all' ? `Ещё, выбран раздел: ${activeSection.label}` : 'Ещё разделы'} className={'og-reader-section' + (view === 'resources' || view === 'all' ? ' is-active' : '')}>Ещё<ChevronDown size={14}/></summary>
+    <summary tabIndex={0} aria-label={view === 'resources' || view === 'all' ? `Ещё, выбран раздел: ${activeSection.label}` : 'Ещё разделы'} className={'og-reader-section' + (view === 'resources' || view === 'all' ? ' is-active' : '')}>Ещё<ChevronDown size={14}/></summary>
     <div className="og-reader-menu">
      {sections.slice(3).filter(section => section.key === 'all' || content[section.key]).map(({key, label}) => <Tap key={key} aria-controls={contentId} aria-pressed={view === key} onClick={() => select(key)}>{label}</Tap>)}
     </div>
    </details>
   </nav>
   <div ref={contentRef} id={contentId} tabIndex={-1} className="og-reader-content" data-og-content data-section={view}>
-   <p className="og-reader-section-label">{activeSection.label}</p>
+   <p className="og-reader-section-label">{view==='reading'?training?'Учебный пример':'Читаем и разбираемся':activeSection.label}</p>
    {view === 'check' ? <>
     <Markdown text={check.question}/>
     <div className="og-reader-draft">
@@ -115,14 +125,28 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
      <Tap aria-expanded={showAnswer} aria-controls={answerId} onClick={() => setShowAnswer(current => !current)}><ListChecks size={18}/><span>{showAnswer ? 'Скрыть разбор' : 'Показать разбор'}</span><ChevronDown size={17} className={showAnswer ? 'is-open' : ''}/></Tap>
      <div id={answerId} hidden={!showAnswer}>{showAnswer && <Markdown text={check.answer}/>}</div>
     </div>}
-   </> : view === 'reading' && interaction ? <><Markdown text={content.reading}/><GuideJourney scope={String(userId ?? 'demo')} guide={interaction} challenges={interaction.challenges}>
-    <p>Теперь выполни самостоятельную работу из урока. Ответы в тренировке не подтверждают навык.</p>
-    <Tap onClick={() => select('practice', true)}>Открыть задание и сохранить свою работу</Tap>
-   </GuideJourney></> : <Markdown key={view} text={view === 'all' ? lesson.body : content[view]}/>}
+   </> : view === 'reading' ? training && interaction ? <>
+    <GuideJourney scrollInset={READER_NAV_INSET} scope={String(userId ?? 'demo')} guide={interaction} challenges={interaction.challenges}>
+     <p className="og-reader-training-note">Теперь выполни самостоятельную работу из урока. Ответы в тренировке не подтверждают навык.</p>
+     <Tap className="og-reader-page-primary" onClick={() => select('practice', true)}>Открыть задание и сохранить свою работу<ArrowRight size={17} aria-hidden="true"/></Tap>
+    </GuideJourney>
+    <details className="og-reader-source"><summary tabIndex={0}>Исходный материал урока</summary><Markdown text={content.reading}/></details>
+    <Tap className="og-reader-return" onClick={()=>{setReadingBody(lesson.body);focusReading()}}>Вернуться к чтению</Tap>
+   </> : <>
+    <div className="og-reader-page-top"><span>Фрагмент {page+1} из {pages.length}</span><Tap onClick={()=>select('all',true)}>Весь текст</Tap></div>
+    <progress className="og-reader-progress" max={pages.length} value={page+1} aria-label="Место в тексте, не оценка навыка"/>
+    <div key={page} className="og-reader-page"><Markdown text={pages[page]}/></div>
+    <div className="og-reader-page-actions">
+     <Tap className="og-reader-page-back" aria-label="Предыдущий фрагмент" disabled={page===0} onClick={()=>movePage(page-1)}><ArrowLeft size={18} aria-hidden="true"/></Tap>
+     {page<pages.length-1?<Tap className="og-reader-page-primary" onClick={()=>movePage(page+1)}>Дальше<ArrowRight size={18} aria-hidden="true"/></Tap>:interaction?<Tap className="og-reader-page-primary" onClick={startTraining}>Попробовать на примере<ArrowRight size={18} aria-hidden="true"/></Tap>:content.practice?<Tap className="og-reader-page-primary" onClick={()=>select('practice',true)}>К своей практике<ArrowRight size={18} aria-hidden="true"/></Tap>:content.check?<Tap className="og-reader-page-primary" onClick={()=>select('check',true)}>К самопроверке<ArrowRight size={18} aria-hidden="true"/></Tap>:<Tap className="og-reader-page-primary" onClick={onBack}>К программе<ArrowRight size={18} aria-hidden="true"/></Tap>}
+    </div>
+    {interaction&&page<pages.length-1&&<Tap className="og-reader-return" onClick={startTraining}>Сразу к учебному примеру</Tap>}
+   </> : <Markdown key={view} text={view === 'all' ? lesson.body : content[view]}/>}
+
   </div>
   {content.practice && <div hidden={view !== 'practice'}><PracticeArtifact scope={userId} course={course.key} lesson={lesson.key} title={lesson.title} task={lesson.subtitle || 'Выполни задание выше. Сохрани результат и объясни способ его проверки.'} criteria={['Результат отвечает заданию и его ограничениям.','Факты и источники проверены, неподтверждённое отмечено.','Я могу объяснить своё решение и повторить его на другом примере.']}/></div>}
-  {view === 'reading' && content.practice && <Tap onClick={() => select('practice', true)} className="og-reader-to-practice"><span><span>Теперь попробуй сам</span><b>Перейти к практике</b></span><ArrowRight size={19}/></Tap>}
-  {children && <div className="og-reader-completion">{children}</div>}
+
+  {children && <details className="og-reader-completion"><summary tabIndex={0}>Отметки и доступ к курсу<ChevronDown size={16} aria-hidden="true"/></summary>{children}</details>}
   <footer className="og-reader-footer">
    {onPrevious && <Tap onClick={onPrevious}><ArrowLeft size={16}/><span>Предыдущий</span></Tap>}
    {onNext ? <Tap onClick={onNext} className="is-next"><span>Следующий урок</span><ArrowRight size={16}/></Tap> : <Tap onClick={onBack} className="is-next"><span>К программе</span><ArrowRight size={16}/></Tap>}

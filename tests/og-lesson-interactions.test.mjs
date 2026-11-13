@@ -3,10 +3,10 @@ import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {ogLessonInteractions,ogLessonInteraction} from '../src/lib/og-lesson-interactions.ts'
 import {evaluateGuideAnswer,initialGuideAnswer} from '../src/lib/guide-interactions.ts'
-test('second package targets two real lessons, six authored checks, not the full catalogue',async()=>{
+test('three reviewed lessons include an original Academy-informed coding slice',async()=>{
  const paths=JSON.parse(readFileSync(new URL('../content/ai-practice-2026-10-25/paths.json',import.meta.url)))
  assert.equal(paths.courses.flatMap(c=>c.lessons).length,33)
- assert.equal(Object.keys(ogLessonInteractions).length,2)
+ assert.equal(Object.keys(ogLessonInteractions).length,3)
  for(const [key,flow] of Object.entries(ogLessonInteractions)){
   const [course,lesson]=key.split('/')
   const source=paths.courses.find(c=>c.key===course)?.lessons.find(l=>l.key===lesson)
@@ -35,7 +35,7 @@ test('no paid content import, backend grading, or persistent writes in public fo
  const source=readFileSync(new URL('../src/lib/og-lesson-interactions.ts',import.meta.url),'utf8')
  assert.doesNotMatch(source,/paths.json|fetch\(|localStorage|supabase/)
  const reader=readFileSync(new URL('../src/screens/home/PracticeReader.tsx',import.meta.url),'utf8')
- assert.match(reader,/view === 'reading' && interaction/)
+ assert.match(reader,/view === 'reading'.*training && interaction/)
  assert.match(reader,/challenges=\{interaction.challenges\}/)
  assert.match(reader,/select\('practice', true\)/)
 })
@@ -45,7 +45,8 @@ test('reader keeps source visible and never bypasses an entitlement boundary',()
  assert.match(reader,/verified\?\.body===lesson.body/)
  assert.match(reader,/verified.key===interactionKey/)
  assert.match(reader,/if\(active&&value\)/)
- assert.match(reader,/<><Markdown text=\{content.reading\}\/><GuideJourney/)
+ assert.match(reader,/<details className="og-reader-source"><summary tabIndex=\{0\}>Исходный материал урока<\/summary><Markdown text=\{content.reading\}\//)
+ assert.match(reader,/const training = readingBody !== lesson.body && !!interaction/)
  assert.doesNotMatch(reader,/paths.json|fetch\(|supabase/)
  const journey=readFileSync(new URL('../src/screens/home/GuideJourney.tsx',import.meta.url),'utf8')
  assert.match(journey,/initialPractice/)

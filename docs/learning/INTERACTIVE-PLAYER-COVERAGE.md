@@ -33,7 +33,7 @@
 | Семейство | Объём | Текущий движок | Изменено здесь |
 | --- | --- | --- | --- |
 | Бесплатный старт | 5 разборов | FreeStart | 5 пошаговых уроков, 15 упражнений, final artifact |
-| OG Practice | 5 курсов, 33 урока в paths.json | PracticeReader: разделы/разбор ответа/работа | 2 reviewed candidates / 6 упражнений с exact-body guard; активный live-охват не подтверждён |
+| OG Practice | 5 курсов, 33 урока в paths.json | PracticeReader: разделы/разбор ответа/работа | 3 reviewed candidates / 9 упражнений с exact-body guard; активный live-охват не подтверждён |
 | AI Academy | 28 курсов, 448 lesson и 448 assessment в catalog.learning.json | LessonReading/Quiz/Assignment/versioned review | Не мигрированы; существующий server grading сохранён |
 | Legacy lessons | Динамические данные БД | Lesson/Quiz | Не менялись, production охват не проверен |
 
@@ -103,3 +103,19 @@ unknown key, preserved work intent/scoped scrolling, and source-visible fallback
 structure. The OG test command is registered for scripts/test-all.mjs discovery.
 Live database hashes and browser behavior remain unverified, so effective live
 interactive coverage may be zero of these two lessons until matching is checked.
+
+
+### 13 November source integration: compact Reader and coding slice
+
+The current integrated source adds `coding/block-7` to the two foundations
+candidates: 3 of 33 reviewed candidates, 9 formative checks. The coding slice
+uses an original fictional scenario, not copied Academy paid bodies. Its exact
+authorized body must match the reviewed SHA-256; no additional access is granted.
+Live eligibility is unknown and may be zero. The 30 remaining OG source lessons
+and 448 Academy lessons are not represented as migrated.
+
+The Reader now offers lossless reading fragments and the full original text,
+compact teaching steps, optional explanation details and existing artifact work.
+The three lessons in `content/og-academy-bridge` remain inactive editorial drafts:
+zero runtime imports, DB imports, entitlement changes or automatic activation.
+The old Package 2 counts above describe that historical two-candidate slice only.
