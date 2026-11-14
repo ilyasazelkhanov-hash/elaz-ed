@@ -65,3 +65,29 @@ export function practiceReadingPages(markdown: string, target = 600): string[] {
  if(page)pages.push(page)
  return pages.length?pages:[markdown]
 }
+
+
+export type PracticeReaderBookmark = {revision:string; page:number; mode:'reading'|'training'}
+
+/** Local bookmark invalidation only, NOT an entitlement or content-authenticity hash.
+ * Store no lesson text, only two checksums plus its length. */
+export function practiceReaderRevision(body:string):string {
+ let first=2166136261,second=5381
+ for(let i=0;i<body.length;i++) {
+  first=Math.imul(first^body.charCodeAt(i),16777619)
+  second=Math.imul(second,33)^body.charCodeAt(i)
+ }
+ return `reading-v1:${body.length}:${first>>>0}:${second>>>0}`
+}
+
+export function readPracticeReaderBookmark(key:string|null,revision:string,storage?:Pick<Storage,'getItem'>):PracticeReaderBookmark {
+ const fallback:PracticeReaderBookmark={revision,page:0,mode:'reading'}
+ if(!key)return fallback
+ try {
+  const value:unknown=JSON.parse((storage??localStorage).getItem(key+':bookmark')||'null')
+  if(!value||typeof value!=='object')return fallback
+  const saved=value as Record<string,unknown>
+  if(saved.revision!==revision)return fallback
+  return {revision,page:typeof saved.page==='number'&&Number.isSafeInteger(saved.page)&&saved.page>=0?saved.page:0,mode:saved.mode==='training'?'training':'reading'}
+ }catch{return fallback}
+}

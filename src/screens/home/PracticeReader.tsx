@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight, ChevronDown, Clock3, ListChecks } from 'lucide-r
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Markdown } from '../../Markdown'
 import { practiceSections } from '../../lib/og-practice'
-import { practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck, practiceReadingPages, type PracticeReaderView } from '../../lib/practice-reader'
+import { practiceReaderStorageKey, readPracticeReaderDraft, splitPracticeCheck, practiceReadingPages, practiceReaderRevision, readPracticeReaderBookmark, type PracticeReaderView } from '../../lib/practice-reader'
 import { Tap } from '../../ui'
 import './practice.css'
 import { GuideJourney } from './GuideJourney'
@@ -49,12 +49,14 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
  },[course.key,lesson.key,lesson.body,interactionKey])
  const content = useMemo(() => practiceSections(lesson.body), [lesson.body])
  const pages = useMemo(() => practiceReadingPages(content.reading), [content.reading])
- const [position,setPosition] = useState({body:lesson.body,index:0})
- const page = position.body === lesson.body ? Math.min(position.index,pages.length-1) : 0
- const [readingBody,setReadingBody] = useState<string|null>(null)
- const training = readingBody !== lesson.body && !!interaction
- const check = useMemo(() => splitPracticeCheck(content.check), [content.check])
  const storageKey = practiceReaderStorageKey(userId, course.key, lesson.key)
+ const revision = useMemo(() => practiceReaderRevision(lesson.body), [lesson.body])
+ const [bookmark,setBookmark] = useState(() => readPracticeReaderBookmark(storageKey, revision))
+ const currentBookmark = bookmark.revision === revision ? bookmark : {revision, page:0, mode:'reading' as const}
+ const page = Math.min(currentBookmark.page,pages.length-1)
+ // Verification may offer a training, but must not replace a page the learner is reading.
+ const training = currentBookmark.mode === 'training' && !!interaction
+ const check = useMemo(() => splitPracticeCheck(content.check), [content.check])
  const [draft, setDraft] = useState(() => readPracticeReaderDraft(storageKey))
  const [saveState, setSaveState] = useState<'saved' | 'unavailable'>(storageKey ? 'saved' : 'unavailable')
  const [showAnswer, setShowAnswer] = useState(false)
@@ -77,8 +79,13 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
    setSaveState('saved')
   } catch { setSaveState('unavailable') }
  }
+ const updateBookmark = (next: typeof bookmark) => {
+  setBookmark(next)
+  if (!storageKey) return
+  try { localStorage.setItem(storageKey + ':bookmark', JSON.stringify(next)) } catch { /* Reading remains usable when storage is blocked. */ }
+ }
  const select = (next: PracticeReaderView, focusContent = false) => {
-  if(next==='reading')setReadingBody(lesson.body)
+  if(next==='reading')updateBookmark({...currentBookmark, mode:'reading'})
   updateDraft({...draft, view: next})
   if (menu.current?.open) {
    menu.current.open = false
@@ -92,9 +99,9 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
    if (focusContent) contentRef.current?.focus({preventScroll: true})
   })
  }
- const movePage=(next:number)=>{setPosition({body:lesson.body,index:Math.max(0,Math.min(next,pages.length-1))});focusReading()}
+ const movePage=(next:number)=>{updateBookmark({...currentBookmark,page:Math.max(0,Math.min(next,pages.length-1))});focusReading()}
  const focusReading=()=>requestAnimationFrame(()=>{const content=contentRef.current,scroller=content?.closest<HTMLElement>('.scroll');content?.focus({preventScroll:true});if(content&&scroller)scroller.scrollTo({top:Math.max(0,scroller.scrollTop+content.getBoundingClientRect().top-scroller.getBoundingClientRect().top-READER_NAV_INSET),behavior:'instant'})})
- const startTraining=()=>{setReadingBody(null);focusReading()}
+ const startTraining=()=>{updateBookmark({...currentBookmark,mode:'training'});focusReading()}
  return <article className="og-reader" data-og-lesson>
   <Tap onClick={onBack} className="og-reader-back"><ArrowLeft size={17}/>К программе</Tap>
   <header className="og-reader-heading">
@@ -131,7 +138,7 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
      <Tap className="og-reader-page-primary" onClick={() => select('practice', true)}>Открыть задание и сохранить свою работу<ArrowRight size={17} aria-hidden="true"/></Tap>
     </GuideJourney>
     <details className="og-reader-source"><summary tabIndex={0}>Исходный материал урока</summary><Markdown text={content.reading}/></details>
-    <Tap className="og-reader-return" onClick={()=>{setReadingBody(lesson.body);focusReading()}}>Вернуться к чтению</Tap>
+    <Tap className="og-reader-return" onClick={()=>{updateBookmark({...currentBookmark,mode:'reading'});focusReading()}}>Вернуться к чтению</Tap>
    </> : <>
     <div className="og-reader-page-top"><span>Фрагмент {page+1} из {pages.length}</span><Tap onClick={()=>select('all',true)}>Весь текст</Tap></div>
     <progress className="og-reader-progress" max={pages.length} value={page+1} aria-label="Место в тексте, не оценка навыка"/>
