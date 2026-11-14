@@ -139,7 +139,7 @@ export function AdventScreen() {
         </div>
 
         <div className="relative -mt-7 rounded-t-[30px] bg-bg px-5 pt-6">
-          {failed && !data && <p className="py-10 text-center text-[15px] text-mute">Календарь не загрузился. Закрой и открой ещё раз.</p>}
+          {failed && !data && <p className="py-10 text-center text-[15px] text-mute">Не удалось получить календарь с сервера. Он может быть выключен или временно недоступен. Закрой и открой ещё раз.</p>}
           {!data && !failed && (
             <div className="grid grid-cols-4 gap-2.5">
               {Array.from({ length: 12 }, (_, i) => (

@@ -15,7 +15,10 @@ export const doorsWord = (n: number) => plural(n, ['дверь', 'двери', '
 export function AdventBanner() {
   const advent = useStore((s) => s.advent)
   const push = useStore((s) => s.push)
-  if (!advent) return null
+  if (!advent) return <Tap aria-label="Адвент-календарь" feedback="soft" onClick={() => push({ type: 'advent' })} className="mx-5 mt-5 flex min-h-[104px] w-[calc(100%-40px)] flex-col justify-center rounded-[26px] border border-line bg-card p-4 text-left">
+    <p className="font-display text-[17px] font-semibold">Адвент-календарь</p>
+    <p className="mt-1 text-[13px] leading-snug text-mute">Сведения о календаре сейчас недоступны. Открыть и проверить.</p>
+  </Tap>
   const before = advent.today < 1
   const over = advent.today > advent.days
   const line = before

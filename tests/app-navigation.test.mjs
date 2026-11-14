@@ -120,7 +120,7 @@ test('zoom is enabled, daily rituals follow Dots, and profile groups optional de
   const html=await readFile(new URL('../index.html',import.meta.url),'utf8')
   assert.doesNotMatch(html,/maximum-scale|user-scalable/); assert.match(html,/viewport-fit=cover/)
   const home=await readFile(new URL('../src/screens/Home.tsx',import.meta.url),'utf8')
-  assert.ok(home.indexOf('<Companion')<home.indexOf('aria-label="Бонус дня и стрик"') && home.indexOf('aria-label="Бонус дня и стрик"')<home.indexOf('<SeasonBanner') && home.indexOf('<SeasonBanner')<home.indexOf('aria-label="Последние новости"'))
+  assert.ok(home.indexOf('<Companion')<home.indexOf('aria-label="Бонус дня и стрик"') && home.indexOf('aria-label="Бонус дня и стрик"')<home.indexOf('<AdventBanner') && home.indexOf('<AdventBanner')<home.indexOf('aria-label="Последние новости"'))
   const profile=await readFile(new URL('../src/screens/Profile.tsx',import.meta.url),'utf8')
   assert.ok(profile.indexOf('Моё обучение')<profile.indexOf('Настройки'))
   assert.ok(profile.indexOf('<HoloCard')<profile.indexOf('Моё обучение'))

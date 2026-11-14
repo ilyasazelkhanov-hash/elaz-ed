@@ -26,7 +26,7 @@ test('home places one server XP target beside avatar and daily state replaces it
   activeStories,useStore:selector=>selector(state),useSavedPosts:()=>saved,useFollowedTopics:()=>[],knowledgeTopics:[],
   Avatar:()=>createElement('span',{'data-avatar':true}),Odometer:({value})=>value,Tap:button,
   Companion:()=>createElement('span',{'data-companion':true}),DailyCard:()=>createElement('span',null,'REWARD_AVAILABLE'),StreakCard:()=>createElement('span',null,'REWARD_CLAIMED'),
-  HomeAssembly:()=>null,LearningNext:()=>null,SeasonBanner:()=>null,MainCourses:()=>null,Feed:()=>null,StoryBubble:({card})=>createElement('span',{'data-story-id':card.id}),openBlogLibrary(){},
+  HomeAssembly:()=>null,LearningNext:()=>null,AdventBanner:()=>null,MainCourses:()=>null,Feed:()=>null,StoryBubble:({card})=>createElement('span',{'data-story-id':card.id}),openBlogLibrary(){},
  })
  let html=renderToStaticMarkup(createElement(Home))
  assert.equal((html.match(/id="xp-pill"/g)||[]).length,1)
@@ -82,6 +82,7 @@ test('advent presents its real campaign title and one current state without a se
  assert.match(html,/Дверь №3 открыта/);assert.doesNotMatch(html,/ждёт тебя/)
  state.advent.today=0;html=renderToStaticMarkup(createElement(AdventBanner));assert.match(html,/Старт 1 ноября/)
  state.advent.today=25;html=renderToStaticMarkup(createElement(AdventBanner));assert.match(html,/Можно догнать пропущенные/)
+ state.advent=null;html=renderToStaticMarkup(createElement(AdventBanner));assert.match(html,/Сведения о календаре сейчас недоступны/);assert.doesNotMatch(html,/Дверь №|открыто|билетов|XP/)
 })
 
 test('home courses combine the offer without hiding paid status or the introduction',async()=>{

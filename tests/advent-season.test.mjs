@@ -26,7 +26,9 @@ test('local self-checks are bounded, isolated and honest when storage fails',()=
 })
 test('public calendar route roundtrips without exposing progress or replacing server rewards',()=>{
  const state={tab:'home',stack:[{type:'advent-season'}]}
- assert.equal(navigationHash(state),'#/advent');assert.deepEqual(navigationFromHash('#/advent'),state)
+ assert.equal(navigationHash(state),'#/ai-practice-season');assert.deepEqual(navigationFromHash('#/ai-practice-season'),state)
+ assert.deepEqual(navigationFromHash('#/advent'),{tab:'home',stack:[{type:'advent'}]})
+ assert.equal(navigationHash({tab:'home',stack:[{type:'advent'}]}),'#/advent')
 })
 test('each day has an original useful task, beginner and advanced route and an artifact',async()=>{
  const missions=JSON.parse(await readFile(new URL('../content/advent/ai-winter-2026.json',import.meta.url),'utf8'))
@@ -39,7 +41,7 @@ test('season shell has no reward/API write, exposes local limits and retains old
  assert.match(source,/<AdventBanner\/>/);assert.match(source,/Отметки хранятся на этом устройстве/);assert.match(source,/не дают XP/)
  assert.match(source,/if \(!available\) return/);assert.match(source,/!available \?/)
  const home=await readFile(new URL('../src/screens/Home.tsx',import.meta.url),'utf8')
- assert.ok(home.indexOf('<Companion')<home.indexOf('<SeasonBanner'));assert.ok(home.indexOf('<SeasonBanner')<home.indexOf('<LearningNext'))
+ assert.ok(home.indexOf('<Companion')<home.indexOf('<AdventBanner'));assert.ok(home.indexOf('<AdventBanner')<home.indexOf('<LearningNext'))
  const banner=await readFile(new URL('../src/screens/advent/SeasonBanner.tsx',import.meta.url),'utf8')
  assert.doesNotMatch(banner,/if \(!advent\) return null/);assert.match(banner,/type: 'advent-season'/)
 })
@@ -77,4 +79,14 @@ test('actual seasonal components render without a backend calendar and hide futu
   const before=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(!before.includes(missions[0].body[0]));assert.match(before,/ещё закрыто/)
   today='2027-01-06';const after=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(!after.includes(missions.at(-1).body[0]));assert.ok(after.includes(missions.at(-1).title))
  }finally{delete globalThis.__seasonHarness;delete globalThis.__seasonMissions}
+})
+
+
+test('historical advent is the primary home entry and never replaced by local practice',async()=>{
+ const home=await readFile(new URL('../src/screens/Home.tsx',import.meta.url),'utf8')
+ assert.match(home,/<AdventBanner\/>/);assert.doesNotMatch(home,/<SeasonBanner/);assert.match(home,/53 AI-практики/)
+ const app=await readFile(new URL('../src/App.tsx',import.meta.url),'utf8')
+ assert.doesNotMatch(app,/type: useStore.getState\(\).advent \? 'advent' : 'advent-season'/)
+ const original=await readFile(new URL('../src/screens/advent/Advent.tsx',import.meta.url),'utf8')
+ assert.match(original,/api\s*\.advent\(\)/);assert.match(original,/type: 'door'/);assert.match(original,/<CatchupSheet/);assert.match(original,/data.rewards.map/)
 })

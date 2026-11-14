@@ -8,7 +8,7 @@ import { useFollowedTopics, useSavedPosts } from '../lib/blog-library'
 import { knowledgeTopics } from '../lib/knowledge'
 import { useStore } from '../store'
 import { Avatar, Odometer, Tap } from '../ui'
-import { SeasonBanner } from './advent/SeasonBanner'
+import { AdventBanner } from './advent/Banner'
 import { MainCourses } from './home/AcademyCourses'
 import { Companion } from './home/Companion'
 import { openBlogLibrary } from './home/blog-view'
@@ -48,7 +48,10 @@ export function Home() {
     <section id="daily-check-in" tabIndex={-1} className="mx-5 mt-4 scroll-mt-4" aria-label="Бонус дня и стрик">
       <AnimatePresence mode="wait" initial={false}>{me.daily_claimed ? <StreakCard key="streak"/> : <DailyCard key="daily"/>}</AnimatePresence>
     </section>
-    <SeasonBanner/>
+    <AdventBanner/>
+    <Tap onClick={() => useStore.getState().push({ type: 'advent-season' })} className="mx-5 mt-2 flex min-h-11 w-[calc(100%-40px)] items-center justify-between rounded-xl border border-line px-4 py-3 text-left text-sm">
+      <span>53 AI-практики</span><span className="text-xs text-mute">14 ноября - 5 января</span>
+    </Tap>
     <LearningNext/>
 
     <section className="mt-7 px-5" aria-label="Последние новости">

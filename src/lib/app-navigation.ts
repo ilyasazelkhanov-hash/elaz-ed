@@ -22,7 +22,8 @@ function learningRoute(path = '', academy = false) {
 /** Only public route identifiers belong in a URL, never editor drafts or user data. */
 export function navigationHash(state: NavigationSnapshot): string {
   for (const overlay of [...state.stack].reverse()) {
-    if (overlay.type === 'advent-season') return '#/advent'
+    if (overlay.type === 'advent') return '#/advent'
+    if (overlay.type === 'advent-season') return '#/ai-practice-season'
     if (overlay.type === 'learning') return `#${learningRoute(overlay.path || '/og-practice')}`
     if (overlay.type === 'academy') return `#${learningRoute(overlay.path, true)}`
     if (overlay.type === 'lesson' && overlay.post) return `#/blog/${overlay.id}`
@@ -33,7 +34,8 @@ export function navigationHash(state: NavigationSnapshot): string {
 /** A new hash replaces the visible route, including any stale reader/overlay. */
 export function navigationFromHash(hash: string): NavigationSnapshot {
   const route = hash.replace(/\/+$/, '')
-  if (route === '#/advent') return { tab: 'home', stack: [{ type: 'advent-season' }] }
+  if (route === '#/advent') return { tab: 'home', stack: [{ type: 'advent' }] }
+  if (route === '#/ai-practice-season') return { tab: 'home', stack: [{ type: 'advent-season' }] }
   const tab = /^#\/(blog|profile|top|courses)$/.exec(route)?.[1] as Tab | undefined
   if (tab) return { tab, stack: [] }
   const post = /^#\/blog\/([1-9]\d*)$/.exec(route)

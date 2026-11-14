@@ -29,8 +29,8 @@ export function companionCues(feed: Card[], advent: AdventSummary | null, readId
   })
   const seasonDay = adventToday(new Date(now))
   if (seasonDay >= ADVENT_START && seasonDay <= ADVENT_END) cues.push({
-    id: `season:${seasonDay}`, tone: 'advent', line: 'Одна дверь. Одна новая суперсила.',
-    detail: 'Сегодняшняя практика AI-адвента уже доступна.', action: 'В AI-адвент', target: { type: 'advent-season' },
+    id: `season:${seasonDay}`, tone: 'advent', line: 'Есть десять минут на практику?',
+    detail: 'Отдельная подборка: 53 AI-практики до 5 января.', action: 'К AI-практикам', target: { type: 'advent-season' },
   })
   const posts = newestPosts(feed, now)
   const post = posts.find(item => !readIds.includes(item.id)) ?? posts[0]

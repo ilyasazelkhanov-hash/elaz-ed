@@ -140,7 +140,7 @@ function Shell() {
       else if (course) useStore.getState().push({ type: 'course', id: course })
       else if (startParam === 'certifications') useStore.getState().push({ type: 'certifications' })
       // Кнопка из напоминания бота: t.me/бот?startapp=advent
-      else if (/(?:^|_)advent(?:_|$)/.test(startParam)) useStore.getState().push({ type: useStore.getState().advent ? 'advent' : 'advent-season' })
+      else if (/(?:^|_)advent(?:_|$)/.test(startParam)) useStore.getState().push({ type: 'advent' })
     }
     preloadMarkdown()
     return bindAppNavigation(useStore)
