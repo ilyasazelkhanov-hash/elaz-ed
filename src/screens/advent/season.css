@@ -15,3 +15,14 @@
 @keyframes season-breathe{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.06)}}
 @media(prefers-reduced-motion:reduce){.season-orbit{animation:none}}
 @media(max-width:360px){.season-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.season-hero{padding:20px}.season-banner{gap:10px}.season-orbit{width:36px;height:36px}}
+/* Reuse the product's original New Year scene and gift-door components. */
+.season-banner{min-height:132px;padding:20px}.season-banner:after{display:none}.season-banner-copy{padding-right:52px}.season-banner>svg{position:relative}
+.season-hero{position:relative;overflow:hidden;isolation:isolate;min-height:290px;padding:26px 24px 76px}.season-hero-copy{position:relative;z-index:1;max-width:78%}.season-hero-copy p{max-width:250px}
+.season-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.season-date{position:relative;isolation:isolate;aspect-ratio:1;min-height:64px;border:0;border-radius:12px;background:transparent;transition:transform .2s}.season-date:active{transform:scale(.95)}.season-gift-number{position:relative;font-family:var(--font-display);font-size:24px;font-weight:750;text-shadow:0 1px 3px #0005}.season-gift-state{position:relative;display:grid;place-items:center;font-size:9px;font-weight:700;min-height:16px;padding:2px 5px;border-radius:8px;background:#071630b8;color:white}.season-date.is-selected{outline-color:#dba83d}
+.season-unwrapped{scroll-margin-top:20px}.season-opening{position:relative;width:62px;height:62px;margin:12px auto 24px;border-radius:12px}.season-opening-lid{position:absolute;inset:0;animation:season-unbox .6s ease-out both}.season-unwrapped>.season-panel{animation:season-reveal .35s ease-out both}
+@keyframes season-unbox{from{transform:translateY(0) rotate(0);opacity:1}to{transform:translateY(-25px) rotate(-16deg);opacity:0}}
+@keyframes season-reveal{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(max-width:360px){.season-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.season-hero{padding:22px 18px 76px}.season-hero-copy{max-width:85%}.season-banner-copy{padding-right:40px}}
+@media(prefers-reduced-motion:reduce){.season-opening-lid,.season-unwrapped>.season-panel{animation:none}.season-opening-lid{display:none}.season-date{transition:none}}
+
+.season-gift-number{display:grid;place-items:center;min-width:32px;min-height:30px;padding:1px 5px;border-radius:7px;background:#fff8e7;color:#762316;text-shadow:none;box-shadow:0 1px 4px #0002}

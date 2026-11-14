@@ -53,9 +53,11 @@ test('actual seasonal components render without a backend calendar and hide futu
  const button=({children,feedback,...props})=>createElement('button',props,children)
  globalThis.__seasonHarness={...model,useStore:store,Tap:button,isDemo:false,AdventBanner:()=>null,useSeasonToday:()=>today}
  globalThis.__seasonMissions=missions
- async function load(name){
+ async function load(name, revealed=false){
   const path=new URL(`../src/screens/advent/${name}.tsx`,import.meta.url)
-  let code=(await transformWithOxc(await readFile(path,'utf8'),path.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
+  let source=await readFile(path,'utf8')
+  if(revealed) source=source.replace('const [revealed, setRevealed] = useState(false)', 'const [revealed, setRevealed] = useState(true)')
+  let code=(await transformWithOxc(source,path.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
   code=code.replace(/import \{([^}]+)\} from ["'](\.\.?\/[^"']+)["'];?/g,(_,names)=>`const {${names}}=globalThis.__seasonHarness;`)
   code=code.replace(/import missionsData from ["'][^"']+["'];?/g,'const missionsData=globalThis.__seasonMissions;')
   code=code.replace(/import ["'][^"']+\.css["'];?/g,'')
@@ -63,12 +65,16 @@ test('actual seasonal components render without a backend calendar and hide futu
   return import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
  }
  try{
+  Object.assign(globalThis.__seasonHarness, await load('themes'))
   const {SeasonBanner}=await load('SeasonBanner')
   const banner=renderToStaticMarkup(createElement(SeasonBanner));assert.match(banner,/День 1 из 53/);assert.match(banner,/AI-адвент/)
   const {AdventSeasonScreen}=await load('Season')
   const html=renderToStaticMarkup(createElement(AdventSeasonScreen))
-  assert.ok(html.includes(missions[0].body[0]));assert.match(html,/aria-pressed="false"/);assert.match(html,/Отметки хранятся на этом устройстве/)
-  today='2026-11-13';const before=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(!before.includes(missions[0].body[0]));assert.match(before,/Откроется/)
-  today='2027-01-06';const after=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(after.includes(missions.at(-1).body[0]))
+  assert.ok(!html.includes(missions[0].body[0]));assert.match(html,/aria-pressed="false"/);assert.match(html,/Выбери свой подарок/);assert.match(html,/advent-newyear/)
+  const OpenSeason=(await load('Season',true)).AdventSeasonScreen
+  const opened=renderToStaticMarkup(createElement(OpenSeason));assert.ok(opened.includes(missions[0].body[0]));assert.match(opened,/Отметки хранятся на этом устройстве/);assert.match(opened,/season-opening/)
+  today='2026-11-13';const locked=renderToStaticMarkup(createElement(OpenSeason));assert.ok(!locked.includes(missions[0].body[0]));assert.match(locked,/Откроется/)
+  const before=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(!before.includes(missions[0].body[0]));assert.match(before,/ещё закрыто/)
+  today='2027-01-06';const after=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(!after.includes(missions.at(-1).body[0]));assert.ok(after.includes(missions.at(-1).title))
  }finally{delete globalThis.__seasonHarness;delete globalThis.__seasonMissions}
 })
