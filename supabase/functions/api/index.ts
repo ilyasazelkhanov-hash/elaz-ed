@@ -1038,9 +1038,10 @@ async function adminCourseSave(body: Row) {
 
 async function adminCourseDelete(body: Row) {
   await member(body, true)
-  const { error } = await db.from('courses').delete().eq('id', Number(body.id))
-  if (error) throw new HttpError(500, 'db')
-  return { ok: true }
+  // Hard deletion detaches lessons/payments through ON DELETE SET NULL and
+  // can turn a paid lesson into a standalone public material. Keep all links.
+  // The editor can unpublish the course without destroying purchases/access.
+  throw new HttpError(409, 'course_delete_disabled')
 }
 
 async function adminRequest(body: Row) {

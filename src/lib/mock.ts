@@ -435,11 +435,9 @@ export const mockApi: Api = {
     return saved
   },
 
-  async adminCourseDelete(id) {
+  async adminCourseDelete(_id) {
     await wait()
-    state.courses = state.courses.filter((c) => c.id !== id)
-    state.lessons = state.lessons.map((l) => (l.course_id === id ? { ...l, course_id: null } : l))
-    save()
+    throw new ApiError('course_delete_disabled', 409)
   },
 
   async adminRequest() {

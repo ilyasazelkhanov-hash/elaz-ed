@@ -200,6 +200,8 @@ export function errorText(e: unknown) {
       return 'Сначала опубликуй урок'
     case 'news_only':
       return 'В группу отправляются только новости. Уроки остаются в курсах'
+    case 'course_delete_disabled':
+      return 'Удаление курса отключено. Сохрани его как черновик: уроки, покупки и доступы сохранятся'
     case 'course_locked':
       return 'Урок откроется вместе с курсом'
     case 'user_not_found':

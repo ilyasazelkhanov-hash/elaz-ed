@@ -1333,9 +1333,32 @@ test('failed access request write sends no notification',async()=>{
  assert.equal((await call('course_request',{id:2},BUYER)).status,500)
  assert.equal(sent('sendMessage').length,before)
 })
+test('course hard-delete is disabled and keeps paid lesson and purchase links', async()=>{
+ await everyoneBoots()
+ state.tables.payments.push({id:1,user_id:BUYER,course_id:1,stars:500,charge_id:'keep-me'})
+ state.tables.course_access.push({user_id:BUYER,course_id:1})
+ const before=JSON.stringify({courses:state.tables.courses,lessons:state.tables.lessons,payments:state.tables.payments,access:state.tables.course_access})
+ for(const id of [1,999,null]) assert.deepEqual(await call('admin_course_delete',{id},ADMIN), {status:409,body:{error:'course_delete_disabled'}})
+ assert.equal(JSON.stringify({courses:state.tables.courses,lessons:state.tables.lessons,payments:state.tables.payments,access:state.tables.course_access}),before)
+ assert.equal((await call('lesson',{id:10},OTHER)).status,403)
+ assert.equal((await call('lesson',{id:10},BUYER)).status,200)
+ assert.equal((await call('lesson',{id:11},OTHER)).status,200)
+})
+test('course can be hidden and restored without detaching paid lessons or access', async()=>{
+ await everyoneBoots()
+ state.tables.course_access.push({user_id:BUYER,course_id:1})
+ for(const published of [false,true]) {
+  const result=await call('admin_course_save',{course:{...state.tables.courses.find(c=>c.id===1),published}},ADMIN)
+  assert.equal(result.status,200)
+  assert.equal(state.tables.courses.find(c=>c.id===1).published,published)
+  assert.equal(state.tables.lessons.find(l=>l.id===10).course_id,1)
+  assert.equal((await call('lesson',{id:10},OTHER)).status,403)
+  assert.equal((await call('lesson',{id:10},BUYER)).status,200)
+ }
+})
 test('admin deletes report failed writes',async()=>{
  await everyoneBoots()
- for(const [route,table,body] of [['admin_course_delete','courses',{id:1}],['admin_delete','lessons',{id:1}],['admin_advent_door_delete','advent_doors',{day:1}],['admin_advent_point_delete','advent_points',{id:1}],['admin_advent_reward_delete','advent_rewards',{id:1}]]){
+ for(const [route,table,body] of [['admin_delete','lessons',{id:1}],['admin_advent_door_delete','advent_doors',{day:1}],['admin_advent_point_delete','advent_points',{id:1}],['admin_advent_reward_delete','advent_rewards',{id:1}]]){
  state.failNext={table,op:'delete'}
  assert.equal((await call(route,body,ADMIN)).status,500,route)
  }

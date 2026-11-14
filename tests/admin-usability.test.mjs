@@ -80,3 +80,11 @@ test('course request failure has retry instead of endless loading',async()=>{
  assert.match(html,/role="alert"/);assert.match(html,/Повторить загрузку/)
  assert.doesNotMatch(html,/Загружаем заявки/)
 })
+
+test('course editor cannot hard-delete purchases and offers reversible hiding',async()=>{
+ const {CourseEditorScreen}=await load('AdminCourses')
+ const html=renderToStaticMarkup(createElement(CourseEditorScreen,{course:{id:1,title:'Paid',published:true,price_stars:500,invite_unlock:0,emoji:'🎓',gradient:'aurora'}}))
+ assert.doesNotMatch(html,/Удалить курс/)
+ assert.match(html,/сохрани его как черновик/)
+ assert.match(html,/покупки и выданные доступы сохранятся/)
+})

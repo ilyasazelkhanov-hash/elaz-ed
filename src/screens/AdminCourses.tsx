@@ -1,4 +1,4 @@
-import { Check, Plus, Star, Trash2, Undo2, UserPlus, X } from 'lucide-react'
+import { Check, Plus, Star, Undo2, UserPlus, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { api, ApiError, errorText } from '../lib/api'
@@ -245,7 +245,7 @@ function blank(): CourseDraft {
 }
 
 export function CourseEditorScreen({ course }: { course: AdminCourse | null }) {
-  const { pop, toast, guard, boot } = useStore.getState()
+  const { toast, guard, boot } = useStore.getState()
   const [d, setD] = useState<CourseDraft>(() => (course ? { ...course } : blank()))
   const [username, setUsername] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
@@ -287,35 +287,13 @@ export function CourseEditorScreen({ course }: { course: AdminCourse | null }) {
     }
   }
 
-  const remove = async () => {
-    if (!d.id || !(await confirmDialog(`Удалить курс «${d.title}»? Уроки останутся, но выйдут из курса, а доступы пропадут.`))) return
-    setBusy('delete')
-    try {
-      await api.adminCourseDelete(d.id)
-      toast('Курс удалён')
-      void boot()
-      pop()
-    } catch (e) {
-      toast(errorText(e))
-      setBusy(null)
-    }
-  }
-
   return (
     <motion.div {...sheet} className="absolute inset-0 z-[32] bg-bg">
       <div className="scroll h-full" style={{ paddingTop: 'calc(var(--top) + 16px)', paddingBottom: 'calc(130px + var(--bottom))' }}>
-        <Header
-          title={d.id ? 'Курс' : 'Новый курс'}
-          right={
-            d.id ? (
-              <Tap onClick={remove} aria-label="Удалить курс" className="grid h-10 w-10 place-items-center rounded-full border border-line bg-card text-rose">
-                {busy === 'delete' ? <Spinner size={18} /> : <Trash2 size={18} />}
-              </Tap>
-            ) : undefined
-          }
-        />
+        <Header title={d.id ? 'Курс' : 'Новый курс'} />
 
         <div className="px-5">
+          {d.id && <p className="mt-4 text-sm text-mute">Чтобы убрать курс из каталога, сохрани его как черновик. Уроки, покупки и выданные доступы сохранятся.</p>}
           <div className="mt-5 flex items-center gap-3.5">
             <EmojiTile emoji={d.emoji || '🎓'} gradient={d.gradient} size={68} radius={22} />
             <div className="min-w-0 flex-1">
