@@ -49,11 +49,44 @@ export function evaluateGuideAnswer(question:GuideChallenge,answer:GuideAnswer):
  return{correct:JSON.stringify(answer)===JSON.stringify(question.answer),explanation:question.explanation}
 }
 export function moveGuideItem(items:number[],index:number,direction:-1|1):number[]{const target=index+direction;if(!Number.isInteger(index)||index<0||index>=items.length||target<0||target>=items.length)return [...items];const next=[...items];[next[index],next[target]]=[next[target],next[index]];return next}
-export type GuideJourneyState={step:number;answers:GuideAnswer[];checked:boolean[]}
+export type GuideJourneyState={step:number;answers:GuideAnswer[];checked:boolean[];phase?:'concept'|'question'}
 const journeys=new Map<string,GuideJourneyState>()
-export const guideJourneyKey=(scope:string,id:string)=>JSON.stringify([scope,id,'v1'])
-export function readGuideJourney(key:string,questions:GuideChallenge[]):GuideJourneyState{
- const saved=journeys.get(key)
- return saved?structuredClone(saved):{step:0,answers:questions.map(initialGuideAnswer),checked:questions.map(()=>false)}
+const JOURNEY_STORE='og:guide-journeys:v2',MAX_ENTRIES=40,MAX_BYTES=1000000
+/** Exact public exercise content, not a short hash: changed questions/steps never reuse answers. */
+export const guideJourneyKey=(scope:string,id:string,revision:unknown='v1')=>JSON.stringify([scope,id,revision])
+function emptyJourney(questions:GuideChallenge[]):GuideJourneyState{return {step:0,answers:questions.map(initialGuideAnswer),checked:questions.map(()=>false)}}
+function safeJourney(value:unknown,questions:GuideChallenge[]):GuideJourneyState|null{
+ if(!value||typeof value!=='object')return null
+ const v=value as GuideJourneyState
+ if(!Number.isInteger(v.step)||v.step<0||v.step>questions.length||!Array.isArray(v.answers)||v.answers.length!==questions.length||!Array.isArray(v.checked)||v.checked.length!==questions.length)return null
+ const answers=questions.map((q,i)=>{
+  const a=v.answers[i]
+  if(a===null)return initialGuideAnswer(q)
+  if(q.type==='number')return typeof a==='string'&&a.length<=24&&/^-?\d*(?:[.,]\d*)?$/.test(a)?a:null
+  return guideAnswerPresent(q,a)?a:initialGuideAnswer(q)
+ })
+ return {step:v.step,phase:v.phase==='question'?'question':'concept',answers,checked:v.checked.map((checked,i)=>checked===true&&guideAnswerPresent(questions[i],v.answers[i])&&JSON.stringify(v.answers[i])===JSON.stringify(answers[i]))}
 }
-export function saveGuideJourney(key:string,value:GuideJourneyState){journeys.delete(key);journeys.set(key,structuredClone(value));while(journeys.size>20)journeys.delete(journeys.keys().next().value!)}
+function storedJourneys():[string,GuideJourneyState][]{
+ const raw=globalThis.localStorage?.getItem(JOURNEY_STORE)
+ if(!raw||raw.length>MAX_BYTES)return []
+ let rows:unknown;try{rows=JSON.parse(raw)}catch{return []}
+ return Array.isArray(rows)?rows.slice(-MAX_ENTRIES).filter(row=>Array.isArray(row)&&row.length===2&&typeof row[0]==='string'&&row[0].length<=32000):[]
+}
+export function readGuideJourney(key:string,questions:GuideChallenge[]):GuideJourneyState{
+ let saved=journeys.get(key)
+ try{saved=saved??storedJourneys().find(row=>row[0]===key)?.[1]}catch{/* denied/corrupt storage: memory only */}
+ return structuredClone(safeJourney(saved,questions)??emptyJourney(questions))
+}
+/** Returns whether this attempt was saved durably in this browser, never a server completion. */
+export function saveGuideJourney(key:string,value:GuideJourneyState,questions?:GuideChallenge[]):boolean{
+ const safe=questions?safeJourney(value,questions):value
+ if(!safe||key.length>32000)return false
+ journeys.delete(key);journeys.set(key,structuredClone(safe));while(journeys.size>MAX_ENTRIES)journeys.delete(journeys.keys().next().value!)
+ try{
+  const rows=storedJourneys().filter(row=>row[0]!==key);rows.push([key,safe])
+  while(rows.length>MAX_ENTRIES||JSON.stringify(rows).length>MAX_BYTES)rows.shift()
+  if(!rows.length||!globalThis.localStorage)return false
+  globalThis.localStorage.setItem(JOURNEY_STORE,JSON.stringify(rows));return true
+ }catch{return false}
+}

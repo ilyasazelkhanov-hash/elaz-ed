@@ -9,19 +9,20 @@ export function GuideStepEvidence({visual}:{visual?:GuideStepVisual}) {
  if(!visual)return null
  return <div className="guide-journey-evidence"><table><caption>{visual.caption}</caption><thead><tr>{visual.columns.map((column,index)=><th key={index} scope="col">{column}</th>)}</tr></thead><tbody>{visual.rows.map((row,index)=><tr key={index}>{row.map((cell,column)=><td key={column}>{cell}</td>)}</tr>)}</tbody></table></div>
 }
-export function GuideJourney(props:Props){return <Journey key={`${guideJourneyKey(props.scope,props.guide.id)}:${props.initialPractice ? 'work' : 'lesson'}`} {...props}/>}
+export function GuideJourney(props:Props){return <Journey key={`${guideJourneyKey(props.scope,props.guide.id,[props.guide.steps,props.challenges??guideInteractions[props.guide.id]])}:${props.initialPractice ? 'work' : 'lesson'}`} {...props}/>}
 function Journey({scope,guide,children,challenges,initialPractice=false,scrollInset=12}:Props){
- const questions=challenges??guideInteractions[guide.id],key=guideJourneyKey(scope,guide.id),id=useId(),heading=useRef<HTMLHeadingElement>(null)
+ const questions=challenges??guideInteractions[guide.id],key=guideJourneyKey(scope,guide.id,[guide.steps,questions]),id=useId(),heading=useRef<HTMLHeadingElement>(null)
  const [state,setState]=useState(()=>{const saved=readGuideJourney(key,questions||[]);return initialPractice ? {...saved,step:guide.steps.length} : saved}),[all,setAll]=useState(false)
- const [phase,setPhase]=useState<'concept'|'question'>(()=>state.checked[state.step]||(questions?.[state.step]?.type!=='order'&&state.answers[state.step]!=null)?'question':'concept')
+ const [durable,setDurable]=useState<boolean|null>(null)
+ const [phase,setPhase]=useState<'concept'|'question'>(()=>state.phase??(state.checked[state.step]||(questions?.[state.step]?.type!=='order'&&state.answers[state.step]!=null)?'question':'concept'))
  if(!questions||questions.length!==guide.steps.length)return <>{guide.steps.map(step=><section key={step.title}><h2>{step.title}</h2><p>{step.text}</p><GuideStepEvidence visual={step.visual}/></section>)}{children}</>
- const update=(next:GuideJourneyState)=>{saveGuideJourney(key,next);setState(next)}
+ const update=(next:GuideJourneyState)=>{setDurable(saveGuideJourney(key,next,questions));setState(next)}
  const step=Math.min(state.step,guide.steps.length),practice=step===guide.steps.length,question=questions[step],answer=state.answers[step]
  const result=!practice&&state.checked[step]?evaluateGuideAnswer(question,answer):null
  const change=(value:GuideAnswer)=>update({...state,answers:state.answers.map((old,i)=>i===step?value:old),checked:state.checked.map((old,i)=>i===step?false:old)})
  const focusStep=()=>requestAnimationFrame(()=>{const title=heading.current;if(!title)return;title.focus({preventScroll:true});const scroller=title.closest<HTMLElement>('.scroll');if(scroller)scroller.scrollTo({top:Math.max(0,scroller.scrollTop+title.getBoundingClientRect().top-scroller.getBoundingClientRect().top-scrollInset),behavior:'instant'})})
- const go=(next:number)=>{const target=Math.max(0,Math.min(next,guide.steps.length));update({...state,step:target});setPhase(state.checked[target]||(questions?.[target]?.type!=='order'&&state.answers[target]!=null)?'question':'concept');focusStep()}
- const ask=()=>{setPhase('question');focusStep()}
+ const go=(next:number)=>{const target=Math.max(0,Math.min(next,guide.steps.length));const nextPhase=state.checked[target]||(questions?.[target]?.type!=='order'&&state.answers[target]!=null)?'question':'concept';update({...state,step:target,phase:nextPhase});setPhase(nextPhase);focusStep()}
+ const ask=()=>{update({...state,phase:'question'});setPhase('question');focusStep()}
  const retry=()=>{update({...state,checked:state.checked.map((old,i)=>i===step?false:old)});focusStep()}
  return <section className="guide-journey" aria-label="Пошаговый урок" data-phase={practice?'practice':phase}>
   <div className="guide-journey-top"><span><span className="guide-journey-kicker">{practice?'Своя работа':'Тренировка'}</span><b>Шаг {step+1} <span>из {guide.steps.length+1}</span></b></span><Tap onClick={()=>setAll(v=>!v)} aria-pressed={all}><BookOpen size={16} aria-hidden="true"/>{all?'Вернуться к шагам':'Весь материал'}</Tap></div>
@@ -44,11 +45,11 @@ function Journey({scope,guide,children,challenges,initialPractice=false,scrollIn
     {practice&&<p className="guide-journey-concept">Сделай свой вариант, проверь его по критериям и сохрани результат. Ответы в тренировке не подтверждают освоение навыка.</p>}
    </div>
    <div className="guide-journey-nav">
-    <Tap className="guide-journey-back" disabled={step===0&&phase==='concept'} aria-label={!practice&&phase==='question'?'К объяснению':'Предыдущий шаг'} onClick={()=>{if(!practice&&phase==='question'){setPhase('concept');focusStep()}else go(step-1)}}><ArrowLeft size={18} aria-hidden="true"/><span>Назад</span></Tap>
+    <Tap className="guide-journey-back" disabled={step===0&&phase==='concept'} aria-label={!practice&&phase==='question'?'К объяснению':'Предыдущий шаг'} onClick={()=>{if(!practice&&phase==='question'){update({...state,phase:'concept'});setPhase('concept');focusStep()}else go(step-1)}}><ArrowLeft size={18} aria-hidden="true"/><span>Назад</span></Tap>
     {!practice&&(phase==='concept'?<Tap className="guide-journey-primary" onClick={ask}>К вопросу<ArrowRight size={18} aria-hidden="true"/></Tap>:result?.correct?<Tap className="guide-journey-primary" onClick={()=>go(step+1)}>{step===guide.steps.length-1?'К своей практике':'Дальше'}<ArrowRight size={18} aria-hidden="true"/></Tap>:result?<Tap className="guide-journey-primary" onClick={retry}>Попробовать ещё<RotateCcw size={17} aria-hidden="true"/></Tap>:<Tap className="guide-journey-primary" disabled={!guideAnswerPresent(question,answer)} onClick={()=>update({...state,checked:state.checked.map((old,i)=>i===step?true:old)})}>Проверить ответ<Check size={18} aria-hidden="true"/></Tap>)}
    </div>
   </>}
   <div hidden={!practice&&!all}>{children}</div>
-  <details className="guide-journey-boundary"><summary tabIndex={0}>Тренировка без оценки · как сохраняются шаги</summary><p>Учебная тренировка без баллов. Шаги сохраняются в памяти до перезагрузки; это не зачёт курса. Своя работа сохраняется отдельно по кнопке в задании.</p></details>
+  <details className="guide-journey-boundary"><summary tabIndex={0}>Тренировка без оценки · как сохраняются шаги</summary><p>Учебная тренировка без баллов. {durable===false?'Браузер не сохранил шаги: сейчас они доступны только до перезагрузки.':durable===true?'Шаги сохранены в этом браузере для текущего аккаунта и версии урока.':'После ответа шаги сохраняются в этом браузере, если его настройки это разрешают.'} Это не зачёт курса и не синхронизация между устройствами. Своя работа сохраняется отдельно по кнопке в задании.</p></details>
  </section>
 }
