@@ -69,20 +69,16 @@ test('profile retains XP and member card instead of duplicating a new home progr
  assert.match(source,/стрик · рекорд \$?\{me.best_streak\}/)
 })
 
-test('advent presents its real campaign title and one current state without a second generic heading',async()=>{
- const state={advent:{today:3,days:24,today_open:false,opened:1,streak:1,title:'Зимний адвент',theme:'mint',start:'2026-11-01'},push(){}}
+test('advent banner uses original compact layout with honest local season label',async()=>{
  const {AdventBanner}=await load('screens/advent/Banner.tsx',{
-  useStore:selector=>selector(state),Tap:button,dayMonth:()=> '1 ноября',plural:(n,forms)=>forms[0],
-  themeOf:()=>({hero:'black',ink:'white',chip:'gray',id:'mint'}),ThemeScene:()=>null,
+  useStore:selector=>selector({push(){}}),Tap:button,dayMonth:()=> '14 ноября',plural:(n,forms)=>forms[0],
+  ADVENT_START:'2026-11-14',seasonDates:()=>['2026-11-14'],useSeasonToday:()=> '2026-11-14',
+  themeOf:()=>({hero:'black',ink:'white',chip:'gray',id:'newyear'}),ThemeScene:()=>null,
  })
- let html=renderToStaticMarkup(createElement(AdventBanner))
- assert.match(html,/Зимний адвент/);assert.match(html,/Дверь №3 ждёт тебя/)
- assert.doesNotMatch(html,/>Календарь<|Открой дверь дня|Скоро открытие/)
- state.advent.today_open=true;html=renderToStaticMarkup(createElement(AdventBanner))
- assert.match(html,/Дверь №3 открыта/);assert.doesNotMatch(html,/ждёт тебя/)
- state.advent.today=0;html=renderToStaticMarkup(createElement(AdventBanner));assert.match(html,/Старт 1 ноября/)
- state.advent.today=25;html=renderToStaticMarkup(createElement(AdventBanner));assert.match(html,/Можно догнать пропущенные/)
- state.advent=null;html=renderToStaticMarkup(createElement(AdventBanner));assert.match(html,/Сведения о календаре сейчас недоступны/);assert.doesNotMatch(html,/Дверь №|открыто|билетов|XP/)
+ const html=renderToStaticMarkup(createElement(AdventBanner))
+ assert.match(html,/Новогодний AI-адвент/);assert.match(html,/Практика дня 1/)
+ assert.doesNotMatch(html,/ждёт тебя|открыта|XP|билетов|Сведения о календаре/)
+ assert.match(html,/min-h-\[88px\]/)
 })
 
 test('home courses combine the offer without hiding paid status or the introduction',async()=>{

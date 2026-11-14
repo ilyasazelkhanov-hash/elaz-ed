@@ -49,9 +49,6 @@ export function Home() {
       <AnimatePresence mode="wait" initial={false}>{me.daily_claimed ? <StreakCard key="streak"/> : <DailyCard key="daily"/>}</AnimatePresence>
     </section>
     <AdventBanner/>
-    <Tap onClick={() => useStore.getState().push({ type: 'advent-season' })} className="mx-5 mt-2 flex min-h-11 w-[calc(100%-40px)] items-center justify-between rounded-xl border border-line px-4 py-3 text-left text-sm">
-      <span>53 AI-практики</span><span className="text-xs text-mute">14 ноября - 5 января</span>
-    </Tap>
     <LearningNext/>
 
     <section className="mt-7 px-5" aria-label="Последние новости">
@@ -74,3 +71,4 @@ export function Home() {
 
   </div>
 }
+

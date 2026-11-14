@@ -1,3 +1,4 @@
+import { AdventSeasonScreen } from './Season'
 import { Check, ChevronLeft, Lock } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
@@ -28,10 +29,12 @@ export const slide = {
 }
 
 /** Календарь: сетка дверей, серия, путь до следующей награды и выданные коды. */
-export function AdventScreen() {
+export function AdventScreen() { return <AdventSeasonScreen/> }
+
+export function LegacyAdventScreen() {
   const { pop, push, guard, toast, setAdvent } = useStore.getState()
   // Перечитываем календарь, когда снова оказываемся сверху — например, после закрытия двери.
-  const onTop = useStore((s) => s.stack.at(-1)?.type === 'advent')
+  const onTop = useStore((s) => ['advent', 'advent-season'].includes(s.stack.at(-1)?.type ?? ''))
   const [data, setData] = useState<AdventState | null>(null)
   const [failed, setFailed] = useState(false)
   const [catchup, setCatchup] = useState(false)
@@ -251,6 +254,7 @@ function ThemePicker({ value, onPick }: { value: AdventThemeId; onPick: (id: Adv
 
 /** Дверь в календаре. Открытие — короткая анимация (створка или крышка), потом экран двери. */
 interface DoorCellProps {
+  completedLabel?: string
   cell: AdventCell
   index: number
   theme: AdventThemeId
@@ -261,7 +265,7 @@ interface DoorCellProps {
   onLocked: () => void
 }
 
-function DoorCell({ cell, index, theme, needTicket, onNeedTicket, onOpen, onLocked }: DoorCellProps) {
+export function DoorCell({ cell, index, theme, needTicket, onNeedTicket, onOpen, onLocked, completedLabel }: DoorCellProps) {
   const [opening, setOpening] = useState(false)
   const [nudge, setNudge] = useState(0)
   const t = themeOf(theme)
@@ -338,7 +342,7 @@ function DoorCell({ cell, index, theme, needTicket, onNeedTicket, onOpen, onLock
         <span className="relative z-[1] flex flex-col items-center">
           <Emoji char={cell.emoji ?? (theme === 'halloween' ? '🎃' : '🎁')} size={30} animated={cell.state === 'today'} />
           <span className={`mt-1 text-[10px] font-extrabold uppercase tracking-wide ${theme === 'newyear' && cell.state !== 'today' ? 'rounded-full bg-black/35 px-1.5' : ''}`} style={{ color: ink ?? (cell.state === 'late' ? 'var(--color-amber)' : 'var(--color-mute)') }}>
-            {cell.state === 'today' ? t.todayLabel : cell.state === 'late' ? 'Догнать' : cell.state === 'open' ? `+${cell.xp ?? 0}` : KIND_LABEL[cell.kind]}
+            {cell.state === 'today' ? t.todayLabel : cell.state === 'late' ? 'Догнать' : cell.state === 'open' ? (completedLabel ?? `+${cell.xp ?? 0}`) : KIND_LABEL[cell.kind]}
           </span>
         </span>
       )}
@@ -417,3 +421,4 @@ function RewardRow({ reward, opened }: { reward: AdventReward; opened: number })
     </div>
   )
 }
+

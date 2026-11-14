@@ -38,8 +38,8 @@ test('each day has an original useful task, beginner and advanced route and an a
 test('season shell has no reward/API write, exposes local limits and retains old calendar',async()=>{
  const source=await readFile(new URL('../src/screens/advent/Season.tsx',import.meta.url),'utf8')
  assert.doesNotMatch(source,/api\.|setAdvent\(|setMe\(|\.adventOpen\(/)
- assert.match(source,/<AdventBanner\/>/);assert.match(source,/Отметки хранятся на этом устройстве/);assert.match(source,/не дают XP/)
- assert.match(source,/if \(!available\) return/);assert.match(source,/!available \?/)
+ assert.match(source,/<LegacyAdventScreen\/>/);assert.match(source,/Отметки только на этом устройстве/);assert.match(source,/без синхронизации и начисления XP/)
+ assert.match(source,/!missionAvailable\(selected, today\)/);assert.match(source,/m.date === selected && missionAvailable/)
  const home=await readFile(new URL('../src/screens/Home.tsx',import.meta.url),'utf8')
  assert.ok(home.indexOf('<Companion')<home.indexOf('<AdventBanner'));assert.ok(home.indexOf('<AdventBanner')<home.indexOf('<LearningNext'))
  const banner=await readFile(new URL('../src/screens/advent/SeasonBanner.tsx',import.meta.url),'utf8')
@@ -53,17 +53,17 @@ test('actual seasonal components render without a backend calendar and hide futu
  let today='2026-11-14'
  const store=selector=>selector({me:{id:7},pop(){},push(){},advent:null})
  const button=({children,feedback,...props})=>createElement('button',props,children)
- globalThis.__seasonHarness={...model,useStore:store,Tap:button,isDemo:false,AdventBanner:()=>null,useSeasonToday:()=>today}
+ globalThis.__seasonHarness={...model,useStore:store,Tap:button,isDemo:false,AdventBanner:()=>null,useSeasonToday:()=>today,slide:{className:'absolute'},LegacyAdventScreen:()=>null,DoorCell:({cell})=>createElement('button',{'data-door':cell.day,'data-state':cell.state},String(cell.day))}
  globalThis.__seasonMissions=missions
  async function load(name, revealed=false){
   const path=new URL(`../src/screens/advent/${name}.tsx`,import.meta.url)
   let source=await readFile(path,'utf8')
-  if(revealed) source=source.replace('const [revealed, setRevealed] = useState(false)', 'const [revealed, setRevealed] = useState(true)')
+  if(revealed) source=source.replace('useState<string | null>(null)', "useState<string | null>('2026-11-14')")
   let code=(await transformWithOxc(source,path.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
   code=code.replace(/import \{([^}]+)\} from ["'](\.\.?\/[^"']+)["'];?/g,(_,names)=>`const {${names}}=globalThis.__seasonHarness;`)
   code=code.replace(/import missionsData from ["'][^"']+["'];?/g,'const missionsData=globalThis.__seasonMissions;')
   code=code.replace(/import ["'][^"']+\.css["'];?/g,'')
-  for(const name of ['react','react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
+  for(const name of ['react','react/jsx-runtime','lucide-react','motion/react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
   return import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
  }
  try{
@@ -72,19 +72,19 @@ test('actual seasonal components render without a backend calendar and hide futu
   const banner=renderToStaticMarkup(createElement(SeasonBanner));assert.match(banner,/День 1 из 53/);assert.match(banner,/AI-адвент/)
   const {AdventSeasonScreen}=await load('Season')
   const html=renderToStaticMarkup(createElement(AdventSeasonScreen))
-  assert.ok(!html.includes(missions[0].body[0]));assert.match(html,/aria-pressed="false"/);assert.match(html,/Выбери свой подарок/);assert.match(html,/advent-newyear/)
+  assert.ok(!html.includes(missions[0].body[0]));assert.equal((html.match(/data-door=/g)||[]).length,53);assert.match(html,/Новогодний AI-адвент/);assert.match(html,/advent-newyear/)
   const OpenSeason=(await load('Season',true)).AdventSeasonScreen
-  const opened=renderToStaticMarkup(createElement(OpenSeason));assert.ok(opened.includes(missions[0].body[0]));assert.match(opened,/Отметки хранятся на этом устройстве/);assert.match(opened,/season-opening/)
-  today='2026-11-13';const locked=renderToStaticMarkup(createElement(OpenSeason));assert.ok(!locked.includes(missions[0].body[0]));assert.match(locked,/Откроется/)
-  const before=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(!before.includes(missions[0].body[0]));assert.match(before,/ещё закрыто/)
-  today='2027-01-06';const after=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(!after.includes(missions.at(-1).body[0]));assert.ok(after.includes(missions.at(-1).title))
+  const opened=renderToStaticMarkup(createElement(OpenSeason));assert.ok(opened.includes(missions[0].body[0]));assert.match(opened,/Отметки только на этом устройстве/);assert.match(opened,/Твой результат/)
+  today='2026-11-13';const locked=renderToStaticMarkup(createElement(OpenSeason));assert.ok(!locked.includes(missions[0].body[0]));assert.match(locked,/Старт 14 ноября/)
+  const before=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(!before.includes(missions[0].body[0]));assert.match(before,/data-state="locked"/)
+  today='2027-01-06';const after=renderToStaticMarkup(createElement(AdventSeasonScreen));assert.ok(!after.includes(missions.at(-1).body[0]));assert.equal((after.match(/data-door=/g)||[]).length,53)
  }finally{delete globalThis.__seasonHarness;delete globalThis.__seasonMissions}
 })
 
 
-test('historical advent is the primary home entry and never replaced by local practice',async()=>{
+test('original calendar entry shows isolated new season and retains legacy archive',async()=>{
  const home=await readFile(new URL('../src/screens/Home.tsx',import.meta.url),'utf8')
- assert.match(home,/<AdventBanner\/>/);assert.doesNotMatch(home,/<SeasonBanner/);assert.match(home,/53 AI-практики/)
+ assert.match(home,/<AdventBanner\/>/);assert.doesNotMatch(home,/<SeasonBanner/);assert.doesNotMatch(home,/53 AI-практики/)
  const app=await readFile(new URL('../src/App.tsx',import.meta.url),'utf8')
  assert.doesNotMatch(app,/type: useStore.getState\(\).advent \? 'advent' : 'advent-season'/)
  const original=await readFile(new URL('../src/screens/advent/Advent.tsx',import.meta.url),'utf8')

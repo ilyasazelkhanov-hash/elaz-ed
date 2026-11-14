@@ -1,3 +1,5 @@
+import { ADVENT_START, seasonDates } from '../../lib/advent-season'
+import { useSeasonToday } from './useSeason'
 import { Lock } from 'lucide-react'
 import { motion } from 'motion/react'
 import { dayMonth } from '../../lib/advent'
@@ -13,22 +15,19 @@ export const doorsWord = (n: number) => plural(n, ['дверь', 'двери', '
 
 /** Карточка на главной: что сегодня с календарём. */
 export function AdventBanner() {
-  const advent = useStore((s) => s.advent)
+  const today = useSeasonToday()
+  const dates = seasonDates()
+  const day = today < ADVENT_START ? 0 : dates.indexOf(today) === -1 ? 54 : dates.indexOf(today) + 1
+  const advent = { title: 'Новогодний AI-адвент', theme: 'newyear' as const, start: ADVENT_START, days: 53, today: day, opened: 0, today_open: false, streak: 0 }
   const push = useStore((s) => s.push)
-  if (!advent) return <Tap aria-label="Адвент-календарь" feedback="soft" onClick={() => push({ type: 'advent' })} className="mx-5 mt-5 flex min-h-[104px] w-[calc(100%-40px)] flex-col justify-center rounded-[26px] border border-line bg-card p-4 text-left">
-    <p className="font-display text-[17px] font-semibold">Адвент-календарь</p>
-    <p className="mt-1 text-[13px] leading-snug text-mute">Сведения о календаре сейчас недоступны. Открыть и проверить.</p>
-  </Tap>
   const before = advent.today < 1
   const over = advent.today > advent.days
   const line = before
     ? `Старт ${dayMonth(advent.start)} · ${advent.days} ${doorsWord(advent.days)}`
     : over
-      ? `Можно догнать пропущенные · открыто ${advent.opened} из ${advent.days}`
-      : advent.today_open
-        ? `Дверь №${advent.today} открыта${advent.streak > 1 ? ` · серия ${advent.streak}` : ''}. Завтра новая`
-        : `Дверь №${advent.today} ждёт тебя${advent.streak > 0 ? ` · серия ${advent.streak}` : ''}`
-  const hot = !before && !over && !advent.today_open
+      ? '53 AI-практики · все подарки доступны'
+      : `Практика дня ${advent.today} · подарок с AI-задачей`
+  const hot = !before && !over
   const theme = themeOf(advent.theme)
   return (
     <Tap
@@ -54,3 +53,4 @@ export function AdventBanner() {
     </Tap>
   )
 }
+
