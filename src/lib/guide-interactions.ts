@@ -1,3 +1,6 @@
+/** Small authored evidence tables, rendered as text cells, never arbitrary HTML. */
+export type GuideStepVisual = {caption:string;columns:string[];rows:string[][]}
+export type GuideStep = {title:string;text:string;visual?:GuideStepVisual}
 /** Authored formative exercises. Client answers are public; this is not a graded assessment. */
 export type GuideChallenge =
  | {type:'choice';prompt:string;options:{text:string;why:string}[];correct:number}

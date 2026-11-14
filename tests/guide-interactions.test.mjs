@@ -61,7 +61,13 @@ test('actual player explains errors, permits retry, preserves answer and support
  globalThis.__guide={...model,Tap(){},useRef:()=>({current:heading}),useId:()=>':guide:',useState(init){const i=index++;if(!(i in states))states[i]=typeof init==='function'?init():init;return[states[i],next=>{states[i]=typeof next==='function'?next(states[i]):next}]}}
  const nodes=t=>!t||typeof t!=='object'?[]:[t,...[t.props?.children].flat(Infinity).flatMap(nodes)],label=n=>[n.props?.children].flat(Infinity).filter(x=>typeof x==='string').join('')
  try{
-  const {GuideJourney}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
+  const {GuideJourney,GuideStepEvidence}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
+  const visual={caption:'Учебный журнал',columns:['Вход','Результат'],rows:[['A','B'],['C','D']]}
+  const evidence=GuideStepEvidence({visual})
+  assert.equal(nodes(evidence).find(n=>n.type==='caption').props.children,'Учебный журнал')
+  assert.equal(nodes(evidence).filter(n=>n.type==='th'&&n.props.scope==='col').length,2)
+  assert.equal(nodes(evidence).filter(n=>n.type==='td').length,4)
+  assert.equal(GuideStepEvidence({}),null)
   const props={scope:'test:handler',guide:beginnerGuides[0],children:'Практическая работа'}
   const render=()=>{index=0;const element=GuideJourney(props);return element.type(element.props)}
   let tree=render()
