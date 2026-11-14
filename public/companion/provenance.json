@@ -89,8 +89,19 @@
         "static drop with face"
       ],
       "generation_note": "Original image_gen artwork; no hands, arms, legs or feet. Upper row is continuous mesh texture, lower row only load/error poster. No branded OpenAI assets used."
+    },
+    {
+      "file": "abstract-plush-v6.webp",
+      "bytes": 168708,
+      "sha256": "7c3a87c9972475003542626d9fd435a595d8213a9ed0980b3c85637caf6c3e39",
+      "width": 1536,
+      "height": 1024,
+      "columns": 3,
+      "rows": 2,
+      "generation_note": "Original imagegen reconstruction from preserved v4 reference GIF after owner rejected v5. Pale lavender with white highlights, no cream belly or purple cap. Not byte-identical recovery."
     }
   ],
   "v2_note": "Historical rig parts. V2 fur and V1 pose atlases are retained for history, not referenced by the active renderer or fallback.",
-  "v3_note": "Limbless abstract forms in the live Canvas2D mesh and every fallback. Reuses V2 accessory/eye parts, not V2 anatomy. No animation frame swaps."
+  "v3_note": "Historical limbless atlas retained for rollback; active renderer and fallback use v6.",
+  "v6_note": "Original soft lavender artwork used by the continuous limbless Canvas rig; body motion, gaze, blinking and touch reactions are computed, not frame swaps."
 }

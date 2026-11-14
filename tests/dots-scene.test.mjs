@@ -106,7 +106,7 @@ test('SSR provides a real local poster and decorative canvas for every look, ind
  const {DotsCharacter}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
  for(const color of ['violet','mint','peach','sky'])for(const shape of ['soft','round','spark'])for(const accessory of ['none','glasses','sprout','headphones']){
   const html=renderToStaticMarkup(createElement(DotsCharacter,{look:{name:'Dots',color,shape,accessory},mood:'happy',active:true,motion:false,lantern:true}))
-  assert.match(html,/src="\/companion\/abstract-forms-v3.webp"/);assert.match(html,/data-motion="false"/);assert.match(html,/<canvas/);assert.match(html,/data-renderer="poster"/)
+  assert.match(html,/src="\/companion\/abstract-plush-v6.webp"/);assert.match(html,/data-motion="false"/);assert.match(html,/<canvas/);assert.match(html,/data-renderer="poster"/)
   assert.doesNotMatch(html,/<script|src="http|<svg|plush-.*-v1|puppet-fur-v2/)
  }
 })
@@ -124,5 +124,20 @@ test('palette baking keeps alpha and transparent pixels, without depending on op
   const pixels=new Uint8ClampedArray([178,146,202,254,1,2,3,0]);tintPuppetPixels(pixels,color)
   assert.equal(pixels[3],254);assert.deepEqual([...pixels.slice(4)],[1,2,3,0])
   if(color==='violet')assert.deepEqual([...pixels.slice(0,3)],[178,146,202]);else assert.notDeepEqual([...pixels.slice(0,3)],[178,146,202])
+ }
+})
+
+test('lavender preview v6 provenance matches bytes and fallback shares the live texture', async () => {
+ const { createHash } = await import('node:crypto')
+ const provenance = JSON.parse(await readFile(new URL('../public/companion/provenance.json', import.meta.url), 'utf8'))
+ const entry = provenance.files.find(item => item.file === 'abstract-plush-v6.webp')
+ assert.ok(entry)
+ const data = await readFile(new URL(`../public${PUPPET_ASSETS.fur}`, import.meta.url))
+ assert.equal(entry.bytes, data.length)
+ assert.equal(entry.sha256, createHash('sha256').update(data).digest('hex'))
+ for (const shape of ['soft', 'round', 'spark']) {
+  assert.equal(DOTS_ART[shape], PUPPET_ASSETS.fur)
+  const crop = PUPPET_CROPS[shape]
+  assert.ok(crop.y + crop.h < 512, 'mesh never samples the fallback face row')
  }
 })

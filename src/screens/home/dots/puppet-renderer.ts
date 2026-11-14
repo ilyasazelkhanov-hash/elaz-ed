@@ -1,7 +1,7 @@
 import type { CompanionPreferences } from '../../../lib/home-companion'
 import type { PuppetPose } from './puppet-motion'
 
-export const PUPPET_ASSETS = { fur: '/companion/abstract-forms-v3.webp', props: '/companion/puppet-props-v2.webp' } as const
+export const PUPPET_ASSETS = { fur: '/companion/abstract-plush-v6.webp', props: '/companion/puppet-props-v2.webp' } as const
 // Four extra units above the model keep a sprout inside the canvas during extreme gaze.
 export const PUPPET_VIEWBOX = { minX: -4, minY: -8, maxX: 104, maxY: 121.6, width: 108 } as const
 export type PuppetImages = { fur: CanvasImageSource; props: CanvasImageSource }
@@ -9,12 +9,12 @@ type Rect = { x: number; y: number; w: number; h: number }
 type Point = { x: number; y: number }
 // Crops include the soft furry edge. All are parts, never animation frames.
 export const PUPPET_CROPS = {
-  soft: { x: 29, y: 106, w: 460, h: 332 }, round: { x: 573, y: 75, w: 393, h: 378 }, spark: { x: 1078, y: 52, w: 397, h: 423 },
+  soft: { x: 38, y: 132, w: 439, h: 342 }, round: { x: 565, y: 99, w: 401, h: 387 }, spark: { x: 1078, y: 54, w: 410, h: 427 },
   glasses: { x: 24, y: 182, w: 470, h: 183 }, headphones: { x: 514, y: 14, w: 500, h: 478 },
   sprout: { x: 1072, y: 108, w: 434, h: 348 }, eye: { x: 660, y: 637, w: 206, h: 264 },
 } as const
 export const PUPPET_LAYOUT = {
-  soft: { width: 90, top: 31, height: 64, faceX: 52, eyeY: 58, eyeGap: 9.5, crown: 31, crownX: 50, wearWidth: 68 },
+  soft: { width: 90, top: 26, height: 70, faceX: 52, eyeY: 58, eyeGap: 9.5, crown: 26, crownX: 50, wearWidth: 68 },
   round: { width: 80, top: 20, height: 77, faceX: 50.5, eyeY: 54, eyeGap: 10.5, crown: 20, crownX: 57, wearWidth: 80 },
   spark: { width: 81, top: 10, height: 86, faceX: 48, eyeY: 58, eyeGap: 10, crown: 12, crownX: 74, wearWidth: 68 },
 } as const
@@ -47,12 +47,12 @@ function surface(ctx: CanvasRenderingContext2D, pose: PuppetPose, x: number, y: 
 }
 function eye(ctx: CanvasRenderingContext2D, props: CanvasImageSource, x: number, y: number, openness: number, pose: PuppetPose) {
   // The upper lid travels across a fixed-size eye. It is not a vertically squashed eye sprite.
-  const w = 5.1, h = 6.7, top = y - h / 2 + (1 - openness) * h * .94
+  const w = 7.6, h = 10, top = y - h / 2 + (1 - openness) * h * .94
   ctx.save(); ctx.beginPath(); ctx.moveTo(x - w / 2 - .5, top)
   ctx.quadraticCurveTo(x, top - .8 * openness, x + w / 2 + .5, top)
   ctx.lineTo(x + w / 2 + .5, y + h / 2 + 1); ctx.lineTo(x - w / 2 - .5, y + h / 2 + 1); ctx.closePath(); ctx.clip()
   sprite(ctx, props, PUPPET_CROPS.eye, x - w / 2 + pose.gazeX * .8, y - h / 2 + pose.gazeY * .45, w, h); ctx.restore()
-  if (openness < .38) { ctx.strokeStyle = '#35253d'; ctx.lineWidth = .6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - 2.25, top); ctx.quadraticCurveTo(x, top + .7, x + 2.25, top); ctx.stroke() }
+  if (openness < .38) { ctx.strokeStyle = '#35253d'; ctx.lineWidth = .6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - 3.4, top); ctx.quadraticCurveTo(x, top + .7, x + 3.4, top); ctx.stroke() }
 }
 export type PuppetPainter = { paint(pose: PuppetPose, look: CompanionPreferences, lantern?: boolean): void; dispose(): void; triangles: number }
 /** Native Canvas2D, 96 skinned triangles. Limbless artwork in every state. No WebGL, third-party runtime, sensor or animation loop. */
@@ -98,7 +98,7 @@ export function createPuppetPainter(ctx: CanvasRenderingContext2D, images: Puppe
       ctx.save(); surface(ctx, pose, layout.faceX, layout.eyeY)
       eye(ctx, images.props, layout.faceX - layout.eyeGap, layout.eyeY, pose.eyeLeft, pose)
       eye(ctx, images.props, layout.faceX + layout.eyeGap, layout.eyeY, pose.eyeRight, pose)
-      const mouthY = layout.eyeY + 8, smile = pose.smile, mouthX = layout.faceX
+      const mouthY = layout.eyeY + 9, smile = pose.smile, mouthX = layout.faceX
       ctx.lineWidth = .85; ctx.lineCap = 'round'; ctx.strokeStyle = '#4a2d43'; ctx.fillStyle = '#442735'; ctx.beginPath()
       ctx.moveTo(mouthX - 3.5, mouthY); ctx.quadraticCurveTo(mouthX, mouthY + (smile > .65 ? .5 : 3.2) * smile, mouthX + 3.5, mouthY)
       if (pose.open > .05 || smile > .65) { ctx.quadraticCurveTo(mouthX, mouthY + 5 * smile + pose.open * 6, mouthX - 3.5, mouthY); ctx.fill() } else ctx.stroke()

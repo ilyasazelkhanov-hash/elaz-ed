@@ -2,9 +2,9 @@ import type { CompanionPreferences } from '../../../lib/home-companion'
 
 /** Generated original artwork, not OpenAI's characters. The lower row is the same limbless shape with a static face, not an animation. */
 export const DOTS_ART = {
-  soft: '/companion/abstract-forms-v3.webp',
-  round: '/companion/abstract-forms-v3.webp',
-  spark: '/companion/abstract-forms-v3.webp',
+  soft: '/companion/abstract-plush-v6.webp',
+  round: '/companion/abstract-plush-v6.webp',
+  spark: '/companion/abstract-plush-v6.webp',
 } as const
 export const dotsArt = (shape: CompanionPreferences['shape']) => DOTS_ART[shape] ?? DOTS_ART.soft
 export const posterCell = (shape: CompanionPreferences['shape']) => shape === 'round' ? 4 : shape === 'spark' ? 5 : 3
