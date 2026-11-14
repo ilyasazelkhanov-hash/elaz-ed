@@ -8,7 +8,7 @@ import { useFollowedTopics, useSavedPosts } from '../lib/blog-library'
 import { knowledgeTopics } from '../lib/knowledge'
 import { useStore } from '../store'
 import { Avatar, Odometer, Tap } from '../ui'
-import { AdventBanner } from './advent/Banner'
+import { SeasonBanner } from './advent/SeasonBanner'
 import { MainCourses } from './home/AcademyCourses'
 import { Companion } from './home/Companion'
 import { openBlogLibrary } from './home/blog-view'
@@ -48,7 +48,7 @@ export function Home() {
     <section id="daily-check-in" tabIndex={-1} className="mx-5 mt-4 scroll-mt-4" aria-label="Бонус дня и стрик">
       <AnimatePresence mode="wait" initial={false}>{me.daily_claimed ? <StreakCard key="streak"/> : <DailyCard key="daily"/>}</AnimatePresence>
     </section>
-    <AdventBanner/>
+    <SeasonBanner/>
     <LearningNext/>
 
     <section className="mt-7 px-5" aria-label="Последние новости">

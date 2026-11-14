@@ -1,3 +1,4 @@
+import { adventToday, ADVENT_START, ADVENT_END } from './advent-season.ts'
 import type { AdventSummary, Card, Course, Me } from './types'
 import { newestPosts } from './discovery.ts'
 
@@ -7,7 +8,7 @@ export type CompanionCue = {
   line: string
   detail: string
   action: string
-  target: { type: 'learning'; path: '/start' | '/og-practice' } | { type: 'lesson'; id: number; post: true } | { type: 'advent' } | { type: 'course'; id: number } | { type: 'daily' }
+  target: { type: 'learning'; path: '/start' | '/og-practice' } | { type: 'lesson'; id: number; post: true } | { type: 'advent' | 'advent-season' } | { type: 'course'; id: number } | { type: 'daily' }
 }
 type CompanionContext = { me?: Pick<Me, 'daily_claimed'> | null; courses?: Course[]; fresh?: boolean }
 
@@ -25,6 +26,11 @@ export function companionCues(feed: Card[], advent: AdventSummary | null, readId
   if (context.fresh !== false && advent && Number.isInteger(advent.today) && advent.today >= 1 && advent.today <= advent.days && !advent.today_open) cues.push({
     id: `advent:${advent.start}:${advent.today}`, tone: 'advent', line: 'Псс. В адвенте дверь для тебя.',
     detail: `Доступна дверь №${advent.today}. Заглянем?`, action: 'Открыть адвент', target: { type: 'advent' },
+  })
+  const seasonDay = adventToday(new Date(now))
+  if (seasonDay >= ADVENT_START && seasonDay <= ADVENT_END) cues.push({
+    id: `season:${seasonDay}`, tone: 'advent', line: 'Одна дверь. Одна новая суперсила.',
+    detail: 'Сегодняшняя практика AI-адвента уже доступна.', action: 'В AI-адвент', target: { type: 'advent-season' },
   })
   const posts = newestPosts(feed, now)
   const post = posts.find(item => !readIds.includes(item.id)) ?? posts[0]

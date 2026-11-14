@@ -1,0 +1,17 @@
+.season-banner{position:relative;display:flex;align-items:center;gap:14px;width:calc(100% - 40px);min-height:104px;padding:16px;border-radius:24px;color:#f5f3ff;background:radial-gradient(ellipse at 0 0,#6548ad,transparent 70%),#241c3a;isolation:isolate;overflow:hidden}
+.season-banner:after{content:'';position:absolute;inset:-80% -25%;z-index:-1;border:1px solid #d4c2ff44;border-radius:50%;transform:rotate(-22deg);pointer-events:none}
+.season-orbit{display:grid;place-items:center;flex-shrink:0;width:44px;height:44px;border:1px solid #e9dfff66;border-radius:40% 60% 55% 45%;background:#e9dfff19;animation:season-breathe 5s ease-in-out infinite}
+.season-eyebrow{display:block;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px;opacity:.8}
+.season-hero{padding:24px;border-radius:28px;background:radial-gradient(ellipse at top right,#7965b8 0,transparent 70%),#251d38;color:#faf7ff}
+.season-progress{display:block;width:100%;height:4px;border:0;border-radius:4px;overflow:hidden;appearance:none;background:#ffffff30;color:#c8efaa}
+.season-progress::-webkit-progress-bar{background:#ffffff30}.season-progress::-webkit-progress-value{background:#c8efaa}.season-progress::-moz-progress-bar{background:#c8efaa}
+.season-panel{padding:18px;border:1px solid var(--color-line);border-radius:22px;background:var(--color-card);overflow-wrap:anywhere}
+.season-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--color-mute)}
+.season-step{display:grid;place-items:center;width:23px;height:23px;flex-shrink:0;border-radius:8px;background:var(--color-violet);color:var(--color-on-violet);font-size:11px;margin-top:3px}
+.season-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+.season-date{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;min-width:0;border:1px solid var(--color-line);border-radius:12px;font-size:13px;background:var(--color-card)}
+.season-date.is-selected{outline:2px solid var(--color-violet);outline-offset:1px}.season-date.is-future{color:var(--color-mute)}
+.season-date:focus-visible,.season-banner:focus-visible{outline:3px solid var(--color-violet);outline-offset:3px}
+@keyframes season-breathe{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.06)}}
+@media(prefers-reduced-motion:reduce){.season-orbit{animation:none}}
+@media(max-width:360px){.season-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.season-hero{padding:20px}.season-banner{gap:10px}.season-orbit{width:36px;height:36px}}

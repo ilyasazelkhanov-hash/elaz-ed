@@ -37,6 +37,7 @@ export type Overlay =
   | { type: 'course-editor'; course: AdminCourse | null }
   | { type: 'editor'; lesson: Lesson | null; kind: Kind }
   | { type: 'advent' }
+  | { type: 'advent-season' }
   | { type: 'certifications'; focusId?: string }
   | { type: 'door'; day: number }
   | { type: 'advent-admin' }

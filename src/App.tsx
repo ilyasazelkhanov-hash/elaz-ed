@@ -41,6 +41,7 @@ const CoursesScreen = lazy(() => import('./screens/Courses').then((m) => ({ defa
 const MainCoursesTab = lazy(() => import('./screens/Courses').then(m=>({default:m.MainCoursesTab})))
 const AcademyScreen = lazy(() => import('./screens/Academy').then((m) => ({ default: m.AcademyScreen })))
 // Адвент нужен только в сезон — грузим экраны календаря, игр и кассы по требованию.
+const AdventSeasonScreen = lazy(() => import('./screens/advent/Season').then(m => ({ default: m.AdventSeasonScreen })))
 const AdventScreen = lazy(() => import('./screens/advent/Advent').then((m) => ({ default: m.AdventScreen })))
 const CertificationsScreen = lazy(() => import('./screens/Certifications').then((m) => ({ default: m.CertificationsScreen })))
 const DoorScreen = lazy(() => import('./screens/advent/Door').then((m) => ({ default: m.DoorScreen })))
@@ -139,7 +140,7 @@ function Shell() {
       else if (course) useStore.getState().push({ type: 'course', id: course })
       else if (startParam === 'certifications') useStore.getState().push({ type: 'certifications' })
       // Кнопка из напоминания бота: t.me/бот?startapp=advent
-      else if (/(?:^|_)advent(?:_|$)/.test(startParam) && useStore.getState().advent) useStore.getState().push({ type: 'advent' })
+      else if (/(?:^|_)advent(?:_|$)/.test(startParam)) useStore.getState().push({ type: useStore.getState().advent ? 'advent' : 'advent-season' })
     }
     preloadMarkdown()
     return bindAppNavigation(useStore)
@@ -252,6 +253,8 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
           <EditorScreen lesson={overlay.lesson} kind={overlay.kind} />
         </Suspense>
       )
+    case 'advent-season':
+      return <Suspense fallback={null}><AdventSeasonScreen /></Suspense>
     case 'advent':
       return (
         <Suspense fallback={null}>

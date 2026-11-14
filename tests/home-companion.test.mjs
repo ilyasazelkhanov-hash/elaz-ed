@@ -88,9 +88,9 @@ test('single compact layout exposes separate real action, pet and settings; anim
  code=code.replace(/import \{ DotsCharacter \} from ["']\.\/dots\/DotsCharacter["'];?/g,'const { DotsCharacter } = globalThis.__companionHarness;')
  code=code.replace(/import \{ useDotsInteractions \} from ["']\.\/dots\/useInteractions["'];?/g,'const { useDotsInteractions } = globalThis.__companionHarness;')
  for(const name of ['react','react-dom','react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
- let reduced=false, paused=false, voice=false, moment=''
+ let reduced=false, paused=false, voice=false, moment='', selectedCue=''
  let state={feed:[card(8)],advent,me:{daily_claimed:false},courses:[],stack:[],reward:null,share:null,push(){}}
- globalThis.__companionHarness={...companion,useDotsInteractions:()=>({preferences:{voice,lantern:false},voiceState:'idle',motionStatus:'off',moment,readAloud(){}}),DotsCharacter:()=>null,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>({...parseCompanionSession(null),paused}),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
+ globalThis.__companionHarness={...companion,useDotsInteractions:()=>({preferences:{voice,lantern:false},voiceState:'idle',motionStatus:'off',moment,readAloud(){}}),DotsCharacter:()=>null,FocusLayer:()=>null,readCompanionPreferences:()=>({name:'Луна',color:'mint',shape:'soft',accessory:'none'}),readCompanionSession:()=>({...parseCompanionSession(null),paused,cueId:selectedCue}),saveCompanionSession(){},useReadPosts:()=>[],useDocumentVisible:()=>true,useElementVisible:()=>true,usePrefersReducedMotion:()=>reduced,
  useStore:selector=>selector(state)}
  try{
   const {Companion}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
@@ -112,6 +112,7 @@ test('single compact layout exposes separate real action, pet and settings; anim
   paused=false;state={...state,stack:[{type:'companion-settings'}]};html=renderToStaticMarkup(createElement(Companion,{userId:1}));assert.match(html,/data-moving="false"/)
   const title='Длинный заголовок про ИИ и его возможности '.repeat(9)+'ОченьДлинноеСловоБезПробелов'.repeat(8)
   state={...state,stack:[],me:null,advent:null,feed:[card(8,{title})]};voice=true
+  selectedCue='post:8'
   html=renderToStaticMarkup(createElement(Companion,{userId:1}))
   assert.ok(html.includes(`<span class="og-dots-detail">${title}</span>`));assert.match(html,/Прочитать реплику/)
   assert.equal((html.match(/<button/g)||[]).length,4);assert.match(html,/Читать статью/)
@@ -137,4 +138,10 @@ test('compact thought surface keeps full wrapping without stacked ornaments or a
  assert.match(css,/\.og-dots-heading \{[^}]*min-width: 0[^}]*min-height: 44px/)
  assert.match(css,/\.og-dots-settings \{[^}]*margin-block: 0;/)
  assert.match(css,/\.og-dots-name \{[^}]*color: var\(--color-violet\)/)
+})
+
+test('public seasonal practice is available without a backend reward campaign',()=>{
+ const cue=companionCues([],null,[],Date.parse('2026-11-13T19:00:00Z')).find(c=>c.id==='season:2026-11-14')
+ assert.deepEqual(cue.target,{type:'advent-season'})
+ assert.equal(companionCues([],null,[],Date.parse('2027-01-05T19:00:00Z')).some(c=>c.id.startsWith('season:')),false)
 })
