@@ -847,13 +847,16 @@ async function shareMessage(body: Row) {
 async function courseRequest(body: Row) {
   const row = await member(body)
   const id = Number(body.id)
-  const { data: course } = await db.from('courses').select('id,title,published,price_stars').eq('id', id).maybeSingle()
+  const { data: course, error: courseError } = await db.from('courses').select('id,title,published,price_stars').eq('id', id).maybeSingle()
+  if (courseError) throw new HttpError(500, 'db')
   if (!course?.published) throw new HttpError(404, 'not_found')
   if (await hasAccess(row.id, id)) return { request: 'approved' }
   // У курса с ценой бесплатной заявки нет: он открывается оплатой. Вручную доступ по-прежнему выдаёт автор.
   if (course.price_stars > 0) throw new HttpError(400, 'paid_only')
   // Пока заявка ждёт ответа, повторное нажатие ничего не шлёт: иначе админов можно завалить сообщениями.
-  const { data: prev } = await db.from('access_requests').select('status').eq('user_id', row.id).eq('course_id', id).maybeSingle()
+  const { data: prev, error: prevError } = await db.from('access_requests').select('status').eq('user_id', row.id).eq('course_id', id).maybeSingle()
+  // Иначе при сбое чтения повторное нажатие отправило бы админам вторую заявку.
+  if (prevError) throw new HttpError(500, 'db')
   if (prev?.status === 'pending') return { request: 'pending' }
   const { error } = await db.from('access_requests').upsert({ user_id: row.id, course_id: id, status: 'pending', created_at: new Date().toISOString(), decided_at: null })
   if (error) throw new HttpError(500, 'db')
@@ -881,7 +884,9 @@ async function courseRequest(body: Row) {
 async function courseInvoice(body: Row) {
   const row = await member(body)
   const id = Number(body.id)
-  const { data: c } = await db.from('courses').select('*').eq('id', id).maybeSingle()
+  const { data: c, error: courseError } = await db.from('courses').select('*').eq('id', id).maybeSingle()
+  // Сбой чтения не должен выглядеть как «курс не продаётся».
+  if (courseError) throw new HttpError(500, 'db')
   if (!c?.published || c.price_stars <= 0) throw new HttpError(400, 'not_for_sale')
   if (row.is_admin || (await hasAccess(row.id, id))) throw new HttpError(400, 'already_open')
   const { data: intent, error } = await db.rpc('course_purchase_intent', { p_user: row.id, p_course: id })
@@ -2020,7 +2025,9 @@ async function redeem(body: Row) {
   const p = await cashierPoint(body)
   const code = normCode(body.code)
   if (body.check) {
-    const { data: c } = await db.from('reward_codes').select('status,redeemed_at,advent_rewards(title,emoji)').eq('code', code).maybeSingle()
+    const { data: c, error: codeError } = await db.from('reward_codes').select('status,redeemed_at,advent_rewards(title,emoji)').eq('code', code).maybeSingle()
+    // Кассир не должен услышать «кода нет», если база просто не ответила.
+    if (codeError) throw new HttpError(500, 'db')
     if (!c) throw new HttpError(404, 'code_not_found')
     // deno-lint-ignore no-explicit-any
     const r: any = c.advent_rewards

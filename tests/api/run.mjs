@@ -724,6 +724,26 @@ test('сбой чтения доступа, урока или прогресса
   assert.equal((await call('boot', {}, BUYER)).status, 200)
 })
 
+test('сбой чтения курса или заявки не выглядит как отказ и не создаёт повторную заявку', async () => {
+  await everyoneBoots()
+  const paid = state.tables.courses.find((c) => c.published && c.price_stars > 0)
+  assert.ok(paid)
+  state.failNext = { table: 'courses', op: 'select' }
+  assert.deepEqual(await call('course_invoice', { id: paid.id }, OTHER), { status: 500, body: { error: 'db' } })
+  state.failNext = { table: 'courses', op: 'select' }
+  assert.deepEqual(await call('course_request', { id: paid.id }, OTHER), { status: 500, body: { error: 'db' } })
+  const open = state.tables.courses.find((c) => c.published && !(c.price_stars > 0))
+  assert.ok(open)
+  state.tables.access_requests.push({ user_id: OTHER, course_id: open.id, status: 'pending' })
+  const before = state.tables.access_requests.length
+  const messagesBefore = sent('sendMessage').length
+  state.failNext = { table: 'access_requests', op: 'select' }
+  assert.deepEqual(await call('course_request', { id: open.id }, OTHER), { status: 500, body: { error: 'db' } })
+  assert.equal(state.tables.access_requests.length, before)
+  assert.equal(sent('sendMessage').length, messagesBefore)
+  state.failNext = null
+})
+
 // ---------- Адвент: сезоны ----------
 
 const SEASON = 'ai-winter-2026'
@@ -988,6 +1008,18 @@ test('точка погашения: PIN хранится хешем, по но�
   // Погашение делает SQL-функция redeem_code — здесь проверяем, что PIN принят.
   state.tables.reward_codes[0].status = 'issued'
   assert.notEqual(await cashier('482913'), 403)
+})
+
+test('касса сообщает о сбое базы при проверке кода, не погашая его', async () => {
+  await everyoneBoots()
+  state.tables.advent_points = []
+  const { body: point } = await call('admin_advent_point_save', { name: 'Касса', pin: '482913' }, ADMIN)
+  state.tables.reward_codes = [{ code: 'AAAA-AAAA', user_id: BUYER, reward_id: 1, status: 'issued' }]
+  const check = { point: point.id, pin: '482913', code: 'AAAA-AAAA', check: true }
+  state.failNext = { table: 'reward_codes', op: 'select' }
+  assert.deepEqual(await call('redeem', check), { status: 500, body: { error: 'db' } })
+  assert.equal(state.tables.reward_codes[0].status, 'issued')
+  assert.deepEqual(await call('redeem', { ...check, code: 'BBBB-BBBB' }), { status: 404, body: { error: 'code_not_found' } })
 })
 
 test('точку с погашениями удалить нельзя, пустую — можно', async () => {
