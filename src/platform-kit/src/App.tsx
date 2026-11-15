@@ -1,3 +1,4 @@
+import UncertainActions from './components/UncertainActions.tsx'
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import {
@@ -334,6 +335,7 @@ export default function App({
             </aside>
             {menu && <div className="az-menu-scrim" onClick={() => setMenu(false)} />}
             <main className="az-main">
+              <UncertainActions />
               <header className="az-header">
                 {embedded && (
                   <IconButton

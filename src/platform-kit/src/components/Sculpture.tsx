@@ -1,3 +1,4 @@
+import { bindSculptureMotion } from './sculpture-motion.ts'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
@@ -126,29 +127,31 @@ export default function Sculpture({
     const observer = new ResizeObserver(resize)
     observer.observe(host)
     resize()
-    const reduced = forcedReduced || matchMedia('(prefers-reduced-motion: reduce)').matches
+    const media = matchMedia('(prefers-reduced-motion: reduce)')
     const start = performance.now()
-    let visible = true
-    const intersection = new IntersectionObserver((entries) => (visible = entries[0].isIntersecting))
-    intersection.observe(host)
     const scrollRoot = host.closest('.az-app')
-    if (reduced) {
-      group.rotation.y = 0.25
-      group.rotation.x = -0.18
+    const animate = () => {
+      const t = (performance.now() - start) / 1000
+      const scroll = Number((scrollRoot as HTMLElement | null)?.scrollTop ?? 0) * 0.0007
+      group.rotation.y = t * 0.18 + pointer.x * 0.7 + scroll
+      group.rotation.x = -0.18 + pointer.y * 0.3 - scroll * 0.4
+      group.rotation.z = Math.sin(t * 0.4) * 0.09
+      group.position.y = Math.sin(t * 0.9) * 0.1
       renderer.render(scene, camera)
-    } else
-      renderer.setAnimationLoop(() => {
-        if (!visible) return
-        const t = (performance.now() - start) / 1000,
-          scroll = reduced ? 0 : Number((scrollRoot as HTMLElement | null)?.scrollTop ?? 0) * 0.0007
-        group.rotation.y = (reduced ? 0.25 : t * 0.18) + pointer.x * 0.7 + scroll
-        group.rotation.x = -0.18 + pointer.y * 0.3 - scroll * 0.4
-        group.rotation.z = Math.sin(t * 0.4) * 0.09
-        group.position.y = reduced ? 0 : Math.sin(t * 0.9) * 0.1
+    }
+    const motion = bindSculptureMotion(media, document, forcedReduced,
+      (callback) => renderer.setAnimationLoop(callback), animate, () => {
+        group.rotation.set(-0.18, 0.25, 0)
+        group.position.y = 0
         renderer.render(scene, camera)
       })
+    const intersection = new IntersectionObserver((entries) => {
+      motion.setVisible(entries[0]?.isIntersecting ?? false)
+    })
+    intersection.observe(host)
     return () => {
       renderer.setAnimationLoop(null)
+      motion.dispose()
       observer.disconnect()
       intersection.disconnect()
       host.removeEventListener('pointermove', move)
