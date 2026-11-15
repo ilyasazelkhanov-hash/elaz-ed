@@ -151,7 +151,7 @@ function Reader({course, lesson, index, total, userId, onBack, onPrevious, onNex
    </> : <Markdown key={view} text={view === 'all' ? lesson.body : content[view]}/>}
 
   </div>
-  {content.practice && <div hidden={view !== 'practice'}><PracticeArtifact scope={userId} course={course.key} lesson={lesson.key} title={lesson.title} task={lesson.subtitle || 'Выполни задание выше. Сохрани результат и объясни способ его проверки.'} criteria={['Результат отвечает заданию и его ограничениям.','Факты и источники проверены, неподтверждённое отмечено.','Я могу объяснить своё решение и повторить его на другом примере.']}/></div>}
+  {content.practice && <div hidden={view !== 'practice'}><PracticeArtifact scope={userId} course={course.key} lesson={lesson.key} title={lesson.title} taskRevision={revision} task={lesson.subtitle || 'Выполни задание выше. Сохрани результат и объясни способ его проверки.'} criteria={['Результат отвечает заданию и его ограничениям.','Факты и источники проверены, неподтверждённое отмечено.','Я могу объяснить своё решение и повторить его на другом примере.']}/></div>}
 
   {children && <details className="og-reader-completion"><summary tabIndex={0}>Отметки и доступ к курсу<ChevronDown size={16} aria-hidden="true"/></summary>{children}</details>}
   <footer className="og-reader-footer">
