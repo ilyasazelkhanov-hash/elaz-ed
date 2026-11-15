@@ -38,7 +38,7 @@ test('each day has an original useful task, beginner and advanced route and an a
 test('season shell has no reward/API write, exposes local limits and retains old calendar',async()=>{
  const source=await readFile(new URL('../src/screens/advent/Season.tsx',import.meta.url),'utf8')
  assert.doesNotMatch(source,/api\.|setAdvent\(|setMe\(|\.adventOpen\(/)
- assert.match(source,/<LegacyAdventScreen\/>/);assert.match(source,/Отметки только на этом устройстве/);assert.match(source,/без синхронизации и начисления XP/)
+ assert.match(source,/<AdventScreen\/>/);assert.match(source,/Отметки только на этом устройстве/);assert.match(source,/без синхронизации и начисления XP/)
  assert.match(source,/!missionAvailable\(selected, today\)/);assert.match(source,/m.date === selected && missionAvailable/)
  const home=await readFile(new URL('../src/screens/Home.tsx',import.meta.url),'utf8')
  assert.ok(home.indexOf('<Companion')<home.indexOf('<AdventBanner'));assert.ok(home.indexOf('<AdventBanner')<home.indexOf('<LearningNext'))
@@ -53,7 +53,7 @@ test('actual seasonal components render without a backend calendar and hide futu
  let today='2026-11-14'
  const store=selector=>selector({me:{id:7},pop(){},push(){},advent:null})
  const button=({children,feedback,...props})=>createElement('button',props,children)
- globalThis.__seasonHarness={...model,useStore:store,Tap:button,isDemo:false,AdventBanner:()=>null,useSeasonToday:()=>today,slide:{className:'absolute'},LegacyAdventScreen:()=>null,DoorCell:({cell})=>createElement('button',{'data-door':cell.day,'data-state':cell.state},String(cell.day))}
+ globalThis.__seasonHarness={...model,useStore:store,Tap:button,isDemo:false,AdventBanner:()=>null,useSeasonToday:()=>today,slide:{className:'absolute'},AdventScreen:()=>null,DoorCell:({cell})=>createElement('button',{'data-door':cell.day,'data-state':cell.state},String(cell.day))}
  globalThis.__seasonMissions=missions
  async function load(name, revealed=false){
   const path=new URL(`../src/screens/advent/${name}.tsx`,import.meta.url)
@@ -86,7 +86,7 @@ test('original calendar entry shows isolated new season and retains legacy archi
  const home=await readFile(new URL('../src/screens/Home.tsx',import.meta.url),'utf8')
  assert.match(home,/<AdventBanner\/>/);assert.doesNotMatch(home,/<SeasonBanner/);assert.doesNotMatch(home,/53 AI-практики/)
  const app=await readFile(new URL('../src/App.tsx',import.meta.url),'utf8')
- assert.doesNotMatch(app,/type: useStore.getState\(\).advent \? 'advent' : 'advent-season'/)
+ assert.match(app,/type: useStore.getState\(\).advent \? 'advent' : 'advent-season'/)
  const original=await readFile(new URL('../src/screens/advent/Advent.tsx',import.meta.url),'utf8')
- assert.match(original,/api\s*\.advent\(\)/);assert.match(original,/type: 'door'/);assert.match(original,/<CatchupSheet/);assert.match(original,/data.rewards.map/)
+ assert.match(original,/api\s*\.advent\(season\)/);assert.match(original,/type: 'door'/);assert.match(original,/<CatchupSheet/);assert.match(original,/data.rewards.map/)
 })

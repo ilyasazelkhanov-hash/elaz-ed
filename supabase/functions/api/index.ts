@@ -332,7 +332,9 @@ async function freshMe(id: number) {
 // Авторизованный и подписанный пользователь — для всего, кроме boot.
 async function member(body: Row, admin = false): Promise<Row> {
   const tu = await verifyInitData(body.auth)
-  const { data } = await db.from('users').select('*').eq('id', tu.id).maybeSingle()
+  const { data, error } = await db.from('users').select('*').eq('id', tu.id).maybeSingle()
+  // Сбой базы не должен выглядеть как «пользователя нет»: клиент повторит запрос, а не сбросит сессию.
+  if (error) throw new HttpError(500, 'db')
   if (!data) throw new HttpError(401, 'no_user')
   const row = await refreshSub(data, await getSettings(), false)
   if (!row.subscribed) throw new HttpError(403, 'locked')
@@ -354,7 +356,9 @@ async function grantAccess(userId: number, courseId: number, source: 'stars' | '
 }
 
 async function hasAccess(userId: number, courseId: number) {
-  const { data } = await db.from('course_access').select('course_id').eq('user_id', userId).eq('course_id', courseId).maybeSingle()
+  const { data, error } = await db.from('course_access').select('course_id').eq('user_id', userId).eq('course_id', courseId).maybeSingle()
+  // Ошибка чтения не равна отсутствию доступа: купивший курс не должен увидеть «закрыто» из-за сбоя.
+  if (error) throw new HttpError(500, 'db')
   return !!data
 }
 
@@ -362,7 +366,8 @@ async function hasAccess(userId: number, courseId: number) {
 async function canRead(row: Row, les: Row): Promise<boolean> {
   if (!les.course_id || les.free_preview || row.is_admin) return true
   if (await hasAccess(row.id, les.course_id)) return true
-  const { data } = await db.from('lesson_access').select('lesson_id').eq('user_id', row.id).eq('lesson_id', les.id).maybeSingle()
+  const { data, error } = await db.from('lesson_access').select('lesson_id').eq('user_id', row.id).eq('lesson_id', les.id).maybeSingle()
+  if (error) throw new HttpError(500, 'db')
   return !!data
 }
 
@@ -373,6 +378,8 @@ async function buildCourses(row: Row, feed: Row[]) {
     db.from('access_requests').select('course_id,status').eq('user_id', row.id),
     getSettings(),
   ])
+  // Сбой чтения не должен показать купленный курс закрытым или каталог пустым.
+  if (courses.error || access.error || requests.error) throw new HttpError(500, 'db')
   // The import receipt is the identity source; titles, positions and numeric ID ranges are not.
   const receipt = settings['content_revision:ai-practice-paths-2026-11-01-v5']
   const courseMap = receipt?.courses && typeof receipt.courses === 'object' && !Array.isArray(receipt.courses) ? receipt.courses : {}
@@ -613,7 +620,8 @@ async function blogFeed(body: Row) {
 async function lesson(body: Row) {
   const row = await member(body)
   const id = Number(body.id)
-  const { data } = await db.from('lessons').select('*').eq('id', id).maybeSingle()
+  const { data, error } = await db.from('lessons').select('*').eq('id', id).maybeSingle()
+  if (error) throw new HttpError(500, 'db')
   if (!data || (!data.published && !row.is_admin)) throw new HttpError(404, 'not_found')
   if (!(await canRead(row, data))) throw new HttpError(403, 'course_locked')
   const [p, l] = await Promise.all([
@@ -622,6 +630,8 @@ async function lesson(body: Row) {
     db.rpc('bump_views', { p_lesson: id }),
     logEvent(row.id, 'lesson_open', id),
   ])
+  // Без этой проверки сбой чтения показал бы пройденный урок как непройденный.
+  if (p.error || l.error) throw new HttpError(500, 'db')
   return {
     ...data,
     // Keys stay private even for completed lessons/practice and an admin's member view.
@@ -647,7 +657,8 @@ function quizDbError(error: { message?: string } | null) {
 async function quizStart(body: Row) {
   const row = await member(body)
   const id = Number(body.id)
-  const { data: les } = await db.from('lessons').select('id,quiz,published,course_id,free_preview').eq('id', id).maybeSingle()
+  const { data: les, error: lessonError } = await db.from('lessons').select('id,quiz,published,course_id,free_preview').eq('id', id).maybeSingle()
+  if (lessonError) throw new HttpError(500, 'db')
   if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
   if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
   const { data, error } = await db.rpc('start_lesson_quiz', { p_user: row.id, p_lesson: id })
@@ -663,7 +674,8 @@ async function quizAnswer(body: Row) {
   const { data: attempt, error: lookupError } = await db.from('lesson_quiz_attempts').select('lesson_id').eq('id', body.attemptId).eq('user_id', row.id).maybeSingle()
   if (lookupError) throw new HttpError(500, 'db')
   if (!attempt) throw new HttpError(404, 'quiz_not_found')
-  const { data: les } = await db.from('lessons').select('id,published,course_id,free_preview').eq('id', attempt.lesson_id).maybeSingle()
+  const { data: les, error: lessonError } = await db.from('lessons').select('id,published,course_id,free_preview').eq('id', attempt.lesson_id).maybeSingle()
+  if (lessonError) throw new HttpError(500, 'db')
   if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
   if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
   const { data, error } = await db.rpc('answer_lesson_quiz', { p_user: row.id, p_attempt: body.attemptId, p_index: body.index, p_answer: body.answer })
@@ -675,7 +687,8 @@ async function quizAnswer(body: Row) {
 async function complete(body: Row) {
   const row = await member(body)
   const id = Number(body.id)
-  const { data: les } = await db.from('lessons').select('id,kind,xp,quiz,published,course_id,free_preview').eq('id', id).maybeSingle()
+  const { data: les, error: lessonError } = await db.from('lessons').select('id,kind,xp,quiz,published,course_id,free_preview').eq('id', id).maybeSingle()
+  if (lessonError) throw new HttpError(500, 'db')
   if (!les || (!les.published && !row.is_admin)) throw new HttpError(404, 'not_found')
   if (!(await canRead(row, les))) throw new HttpError(403, 'course_locked')
   const { data: previous, error: progressError } = await db.from('progress').select('score,total').eq('user_id', row.id).eq('lesson_id', id).maybeSingle()
@@ -955,6 +968,7 @@ function cleanLesson(input: Row) {
     })
     .filter((q: { q: string; options: string[] }) => q.q && q.options.length >= 2)
   if(Object.hasOwn(input,'news_eligible') && typeof input.news_eligible!=='boolean')throw new HttpError(400,'bad_news_eligibility')
+  if(Object.hasOwn(input,'telegram_publish') && typeof input.telegram_publish!=='boolean')throw new HttpError(400,'bad_telegram_publish')
   let editorial
   if(Object.hasOwn(input,'editorial')) {
     try { editorial=normalizeEditorial(input.editorial,{requireUpdateReview:!!input.published}) }
@@ -962,6 +976,8 @@ function cleanLesson(input: Row) {
   }
   return {
     ...(Object.hasOwn(input,'news_eligible') ? {news_eligible:input.news_eligible} : {}),
+    // Только Mini App: очередь канала такую новость не берёт (см. claim_news_post).
+    ...(Object.hasOwn(input,'telegram_publish') ? {telegram_publish:input.telegram_publish} : {}),
     ...(editorial!==undefined ? {editorial} : {}),
     kind: input.kind === 'story' ? 'story' : 'lesson',
     title,
@@ -1180,6 +1196,7 @@ async function adminAnnounce(body: Row) {
   const { data: les } = await db.from('lessons').select('*').eq('id', Number(body.id)).maybeSingle()
   if (!les || !les.published) throw new HttpError(400, 'not_published')
   if (les.course_id || les.kind !== 'lesson' || les.news_eligible===false) throw new HttpError(400, 'news_only')
+  if (les.telegram_publish === false) throw new HttpError(400, 'miniapp_only')
   if (!s.channel?.id || !s.bot?.username) throw new HttpError(400, 'not_ready')
   // The durable queue owns news delivery; manual clicks must not duplicate it.
   if (s.news_publishing?.enabled && les.kind === 'lesson' && !les.course_id) return { ok: true, queued: true }
@@ -1528,6 +1545,8 @@ function catchupCfg(c: Row | undefined): CatchupCfg {
 }
 
 interface AdventCfg {
+  /** Сезон кампании. Все двери, открытия, билеты и призы читаются и пишутся только в его пределах. */
+  season: string
   title: string
   theme: string
   catchup: CatchupCfg
@@ -1538,10 +1557,21 @@ interface AdventCfg {
   push_hour: number
 }
 
+const SEASON_RE = /^[a-z0-9][a-z0-9-]{0,39}$/
+/** Сезон из настроек. Кампании до появления сезонов живут под меткой legacy. */
+const seasonOf = (a: Row | null | undefined) => (typeof a?.season === 'string' && SEASON_RE.test(a.season) ? a.season : 'legacy')
+/** Ключ билета. В новых сезонах он начинается с id сезона: то же действие в другой кампании даёт свой билет. */
+const ticketRef = (season: string, ref: string) => (season === 'legacy' ? ref : `${season}:${ref}`)
+
 function adventCfg(s: Settings): AdventCfg | null {
-  const a = s.advent
-  if (!a?.enabled || typeof a.start !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(a.start)) return null
+  return s.advent?.enabled ? parseAdvent(s.advent) : null
+}
+
+/** Настройки кампании без учёта флага enabled: так читается и идущий сезон, и снимок архивного. */
+function parseAdvent(a: Row | null | undefined): AdventCfg | null {
+  if (!a || typeof a.start !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(a.start)) return null
   return {
+    season: seasonOf(a),
     title: str(a.title, 60) || 'Адвент-календарь',
     theme: ADVENT_THEMES.includes(a.theme) ? a.theme : 'standard',
     catchup: catchupCfg(a.catchup),
@@ -1585,9 +1615,10 @@ async function adventSummary(row: Row, s: Settings) {
   if (!cfg) return null
   const today = adventToday(cfg)
   if (adventClosed(cfg, today)) return null
-  const { data } = await db.from('advent_opens').select('day,late').eq('user_id', row.id)
+  const { data } = await db.from('advent_opens').select('day,late').eq('user_id', row.id).eq('season', cfg.season)
   const opens = data ?? []
   return {
+    season: cfg.season,
     title: cfg.title,
     theme: cfg.theme,
     start: cfg.start,
@@ -1608,18 +1639,18 @@ async function syncTickets(row: Row, cfg: AdventCfg) {
   const fresh: Row[] = []
   if (cfg.catchup.methods.includes('quiz')) {
     const { data } = await db.from('progress').select('lesson_id,score,total').eq('user_id', row.id).gte('completed_at', since)
-    for (const p of data ?? []) if (p.total > 0 && p.score === p.total) fresh.push({ user_id: row.id, source: 'quiz', ref: `quiz:${row.id}:${p.lesson_id}` })
+    for (const p of data ?? []) if (p.total > 0 && p.score === p.total) fresh.push({ user_id: row.id, season: cfg.season, source: 'quiz', ref: ticketRef(cfg.season, `quiz:${row.id}:${p.lesson_id}`) })
   }
   if (cfg.catchup.methods.includes('invite')) {
     // Друг засчитывается, только когда прошёл проверку подписки (ref_rewarded) и пришёл во время кампании.
     const { data } = await db.from('users').select('id').eq('referred_by', row.id).eq('ref_rewarded', true).gte('created_at', since)
-    for (const u of data ?? []) fresh.push({ user_id: row.id, source: 'invite', ref: `invite:${u.id}` })
+    for (const u of data ?? []) fresh.push({ user_id: row.id, season: cfg.season, source: 'invite', ref: ticketRef(cfg.season, `invite:${u.id}`) })
   }
   if (fresh.length) await db.from('advent_tickets').upsert(fresh, { onConflict: 'ref', ignoreDuplicates: true })
 }
 
-async function ticketStats(userId: number) {
-  const { data } = await db.from('advent_tickets').select('source,used_at,revoked_at').eq('user_id', userId)
+async function ticketStats(userId: number, season: string) {
+  const { data } = await db.from('advent_tickets').select('source,used_at,revoked_at').eq('user_id', userId).eq('season', season)
   const live = (data ?? []).filter((t) => !t.revoked_at)
   const earned: Record<string, number> = { quiz: 0, invite: 0, story: 0, stars: 0, admin: 0 }
   for (const t of live) earned[t.source] = (earned[t.source] ?? 0) + 1
@@ -1631,9 +1662,9 @@ async function storyVisit(ownerId: number, visitorId: number, s: Settings) {
   const cfg = adventCfg(s)
   if (!cfg || !cfg.catchup.methods.includes('story') || ownerId === visitorId) return
   if (adventClosed(cfg, adventToday(cfg))) return
-  const { count } = await db.from('advent_tickets').select('id', { count: 'exact', head: true }).eq('user_id', ownerId).eq('source', 'story')
+  const { count } = await db.from('advent_tickets').select('id', { count: 'exact', head: true }).eq('user_id', ownerId).eq('season', cfg.season).eq('source', 'story')
   if ((count ?? 0) >= STORY_TICKETS) return
-  const { error } = await db.from('advent_tickets').insert({ user_id: ownerId, source: 'story', ref: `story:${ownerId}:${visitorId}` })
+  const { error } = await db.from('advent_tickets').insert({ user_id: ownerId, season: cfg.season, source: 'story', ref: ticketRef(cfg.season, `story:${ownerId}:${visitorId}`) })
   if (!error) await tg('sendMessage', { chat_id: ownerId, text: '🎟 По ссылке из твоей сторис зашёл человек — у тебя билет, чтобы догнать пропущенную дверь календаря.' })
 }
 
@@ -1643,21 +1674,67 @@ function needAdvent(s: Settings) {
   return cfg
 }
 
+interface AdventCtx {
+  cfg: AdventCfg
+  today: number
+  /** Завершённый сезон из архива: только просмотр, без открытий, билетов и новых призов. */
+  archived: boolean
+}
+
+/**
+ * Какой сезон запрошен. Без body.season - идущая кампания. Другой сезон открывается только как архив
+ * по снимку настроек из advent_seasons: день считается «после закрытия», поэтому открыть в нём ничего нельзя.
+ */
+async function adventContext(body: Row, s: Settings): Promise<AdventCtx> {
+  const active = adventCfg(s)
+  const want = typeof body.season === 'string' ? body.season : ''
+  if (!want || want === active?.season) {
+    const cfg = needAdvent(s)
+    return { cfg, today: adventToday(cfg), archived: false }
+  }
+  if (!SEASON_RE.test(want)) throw new HttpError(404, 'advent_off')
+  const { data, error } = await db.from('advent_seasons').select('id,config').eq('id', want).maybeSingle()
+  if (error) throw new HttpError(500, 'db')
+  const cfg = data ? parseAdvent({ ...(data.config ?? {}), season: data.id }) : null
+  if (!cfg) throw new HttpError(404, 'advent_off')
+  return { cfg, today: cfg.days + cfg.grace + 1, archived: true }
+}
+
+/** Прежние сезоны, где у человека остались открытые двери или выданные призы: их показываем в архиве. */
+async function userArchives(userId: number, current: string) {
+  const [seasons, opens, codes, rewards] = await Promise.all([
+    db.from('advent_seasons').select('id,config'),
+    db.from('advent_opens').select('season').eq('user_id', userId),
+    db.from('reward_codes').select('reward_id').eq('user_id', userId),
+    db.from('advent_rewards').select('id,season'),
+  ])
+  if (seasons.error || opens.error || codes.error || rewards.error) throw new HttpError(500, 'db')
+  const mine = new Set((opens.data ?? []).map((o) => o.season ?? 'legacy'))
+  const owned = new Set((codes.data ?? []).map((c) => c.reward_id))
+  for (const r of rewards.data ?? []) if (owned.has(r.id)) mine.add(r.season ?? 'legacy')
+  return (seasons.data ?? [])
+    .filter((x) => x.id !== current && mine.has(x.id) && parseAdvent({ ...(x.config ?? {}), season: x.id }))
+    .map((x) => ({ id: x.id, title: str(x.config?.title, 60) || 'Адвент-календарь' }))
+}
+
 async function advent(body: Row) {
   const row = await member(body)
-  const cfg = needAdvent(await getSettings())
-  const today = adventToday(cfg)
-  const closed = adventClosed(cfg, today)
-  await syncTickets(row, cfg)
-  await runDueDraws(cfg, today, await getSettings())
-  const [doors, opens, rewards, codes, tickets] = await Promise.all([
-    db.from('advent_doors').select('day,kind,title,emoji').lte('day', cfg.days).order('day'),
-    db.from('advent_opens').select('day,score,total,xp,late').eq('user_id', row.id),
-    db.from('advent_rewards').select('id,doors,title,description,emoji,stock,kind,payload,mode,day_from,day_to,drawn_at').order('doors').order('position'),
+  const s = await getSettings()
+  const { cfg, today, archived } = await adventContext(body, s)
+  const closed = archived || adventClosed(cfg, today)
+  if (!archived) {
+    await syncTickets(row, cfg)
+    await runDueDraws(cfg, today, s)
+  }
+  const [doors, opens, rewards, codes, tickets, archives] = await Promise.all([
+    db.from('advent_doors').select('day,kind,title,emoji').eq('season', cfg.season).lte('day', cfg.days).order('day'),
+    db.from('advent_opens').select('day,score,total,xp,late').eq('user_id', row.id).eq('season', cfg.season),
+    db.from('advent_rewards').select('id,doors,title,description,emoji,stock,kind,payload,mode,day_from,day_to,drawn_at').eq('season', cfg.season).order('doors').order('position'),
     db.from('reward_codes').select('code,reward_id,status,redeemed_at').eq('user_id', row.id),
-    ticketStats(row.id),
+    ticketStats(row.id, cfg.season),
+    archived ? Promise.resolve([]) : userArchives(row.id, cfg.season),
   ])
-  if (doors.error || rewards.error) throw new HttpError(500, 'db')
+  if (doors.error || opens.error || rewards.error || codes.error) throw new HttpError(500, 'db')
   const opened = new Map((opens.data ?? []).map((o) => [o.day, o]))
   const mine = new Map((codes.data ?? []).map((c) => [c.reward_id, c]))
   // Сколько осталось у призов с лимитом — показываем в календаре: «осталось 9 из 13».
@@ -1671,6 +1748,9 @@ async function advent(body: Row) {
       }),
   )
   return {
+    season: cfg.season,
+    archived,
+    archives,
     title: cfg.title,
     theme: cfg.theme,
     start: cfg.start,
@@ -1678,7 +1758,7 @@ async function advent(body: Row) {
     today,
     closed,
     opened: opened.size,
-    streak: adventStreak(opens.data ?? [], today),
+    streak: archived ? 0 : adventStreak(opens.data ?? [], today),
     // Будущие двери — сюрприз: тему и иконку не показываем, пока не наступил день.
     doors: (doors.data ?? []).map((d) => {
       const o = opened.get(d.day)
@@ -1727,21 +1807,21 @@ function rewardContent(kind: string, payload: Row | null) {
 /** Дверь, человек и день кампании. Будущую дверь не отдаём даже по прямому запросу. */
 async function loadDoor(body: Row) {
   const row = await member(body)
-  const cfg = needAdvent(await getSettings())
-  const today = adventToday(cfg)
+  const { cfg, today, archived } = await adventContext(body, await getSettings())
   const day = int(body.day, 1, 60, 0)
   if (!day || day > cfg.days) throw new HttpError(404, 'not_found')
   if (day > today) throw new HttpError(403, 'door_locked')
   const [door, open] = await Promise.all([
-    db.from('advent_doors').select('*').eq('day', day).maybeSingle(),
-    db.from('advent_opens').select('score,total,xp,late').eq('user_id', row.id).eq('day', day).maybeSingle(),
+    db.from('advent_doors').select('*').eq('season', cfg.season).eq('day', day).maybeSingle(),
+    db.from('advent_opens').select('score,total,xp,late').eq('user_id', row.id).eq('season', cfg.season).eq('day', day).maybeSingle(),
   ])
+  if (door.error || open.error) throw new HttpError(500, 'db')
   if (!door.data) throw new HttpError(404, 'not_found')
-  return { row, cfg, today, door: door.data as Row, open: open.data as Row | null }
+  return { row, cfg, today, archived, door: door.data as Row, open: open.data as Row | null }
 }
 
 /** Что видно на двери. До открытия — без правильных ответов, текста и приза: их нельзя подсмотреть в запросе. */
-function doorView(door: Row, open: Row | null, cfg: AdventCfg, today: number) {
+function doorView(door: Row, open: Row | null, cfg: AdventCfg, today: number, archived = false) {
   const quiz: Row[] = Array.isArray(door.quiz) ? door.quiz : []
   return {
     day: door.day,
@@ -1751,7 +1831,7 @@ function doorView(door: Row, open: Row | null, cfg: AdventCfg, today: number) {
     emoji: door.emoji,
     xp: door.xp,
     late: !open && door.day < today,
-    closed: !open && adventClosed(cfg, today),
+    closed: !open && (archived || adventClosed(cfg, today)),
     opened: open ? { score: open.score, total: open.total, xp: open.xp, late: open.late } : null,
     quiz: quiz.map((q) => ({ q: q.q, options: q.options, ...(open ? { correct: q.correct, explain: q.explain ?? '' } : {}) })),
     arcade: door.kind === 'arcade' ? { seconds: arcadeSeconds(door), cap: arcadeCap(door) } : null,
@@ -1761,9 +1841,9 @@ function doorView(door: Row, open: Row | null, cfg: AdventCfg, today: number) {
 }
 
 async function adventDoor(body: Row) {
-  const { row, cfg, today, door, open } = await loadDoor(body)
-  if (open) await recoverDoorRewards(row, door.day, today, await getSettings())
-  return doorView(door, open, cfg, today)
+  const { row, cfg, today, archived, door, open } = await loadDoor(body)
+  if (open && !archived) await recoverDoorRewards(row, cfg.season, door.day, today, await getSettings())
+  return doorView(door, open, cfg, today, archived)
 }
 
 // Коды генерирует база (advent_grant): без похожих символов 0/O, 1/I/L — кассиру проще прочитать с экрана.
@@ -1787,16 +1867,16 @@ async function instantChance(r: Row, today: number, left: number) {
   const to = r.day_to ?? 60
   const span = to - from + 1
   const elapsed = Math.min(Math.max(today - from + 1, 1), span)
-  const { count } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).gte('day', from).lte('day', to)
+  const { count } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).eq('season', r.season ?? 'legacy').gte('day', from).lte('day', to)
   const rate = (count ?? 0) / elapsed
   const expected = rate * (span - elapsed) + 1
   return Math.min(1, left / expected)
 }
 
 /** Призы, которые можно получить этим открытием двери: за N дверей, подарок дня, мгновенный выигрыш. */
-async function awardOnOpen(row: Row, opened: number, day: number, today: number, s: Settings) {
+async function awardOnOpen(row: Row, season: string, opened: number, day: number, today: number, s: Settings) {
   const [rewards, mine] = await Promise.all([
-    db.from('advent_rewards').select('*').order('doors').order('position'),
+    db.from('advent_rewards').select('*').eq('season', season).order('doors').order('position'),
     db.from('reward_codes').select('reward_id').eq('user_id', row.id),
   ])
   if (rewards.error || mine.error) throw new HttpError(500, 'db')
@@ -1856,27 +1936,28 @@ async function runDraw(reward: Row, s: Settings) {
 
 /** Розыгрыши, у которых окно уже закончилось, проводятся при первом же обращении к календарю. */
 async function runDueDraws(cfg: AdventCfg, today: number, s: Settings) {
-  const { data } = await db.from('advent_rewards').select('*').eq('mode', 'draw').is('drawn_at', null)
+  const { data } = await db.from('advent_rewards').select('*').eq('season', cfg.season).eq('mode', 'draw').is('drawn_at', null)
   for (const r of data ?? []) {
     const end = Math.min(r.day_to ?? cfg.days, cfg.days)
     if (today > end) await runDraw(r, s)
   }
 }
 
-async function recoverDoorRewards(row: Row, day: number, today: number, s: Settings) {
-  const { count, error } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).eq('user_id', row.id)
+async function recoverDoorRewards(row: Row, season: string, day: number, today: number, s: Settings) {
+  const { count, error } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).eq('user_id', row.id).eq('season', season)
   if (error) throw new HttpError(500, 'db')
-  return awardOnOpen(row, count ?? 0, day, today, s)
+  return awardOnOpen(row, season, count ?? 0, day, today, s)
 }
 
 async function adventOpen(body: Row) {
-  const { row, cfg, today, door, open } = await loadDoor(body)
+  const { row, cfg, today, archived, door, open } = await loadDoor(body)
   const s = await getSettings()
   if (open) {
-    const recovered = await recoverDoorRewards(row, door.day, today, s)
-    return { already: true, gained: 0, score: open.score, total: open.total, opened: null, new_codes: recovered, door: doorView(door, open, cfg, today), me: await buildMe(row) }
+    // Архивный сезон только показывает уже открытое: новые призы и XP в нём не выдаются.
+    const recovered = archived ? [] : await recoverDoorRewards(row, cfg.season, door.day, today, s)
+    return { already: true, gained: 0, score: open.score, total: open.total, opened: null, new_codes: recovered, door: doorView(door, open, cfg, today, archived), me: await buildMe(row) }
   }
-  if (adventClosed(cfg, today)) throw new HttpError(403, 'advent_closed')
+  if (archived || adventClosed(cfg, today)) throw new HttpError(403, 'advent_closed')
   const late = door.day < today
   let score = 0
   let total = 0
@@ -1894,14 +1975,14 @@ async function adventOpen(body: Row) {
   // Пропущенная дверь открывается только за билет; билет списывается в той же транзакции.
   if (late) await syncTickets(row, cfg)
   const { data, error } = late
-    ? await db.rpc('advent_open_late', { p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp })
-    : await db.rpc('advent_open', { p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp, p_late: false })
+    ? await db.rpc('advent_open_late', { p_season: cfg.season, p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp })
+    : await db.rpc('advent_open', { p_season: cfg.season, p_user: row.id, p_day: door.day, p_score: score, p_total: total, p_xp: xp, p_late: false })
   if (error) throw new HttpError(500, 'db')
   const res = Array.isArray(data) ? data[0] : data
   if (late && res && !res.ticket) throw new HttpError(402, 'need_ticket')
   const inserted = !!res?.inserted
-  const newCodes = await awardOnOpen(row, res.opened, door.day, today, s)
-  if (inserted) await logEvent(row.id, 'advent_open', null, { day: door.day, kind: door.kind, score, late })
+  const newCodes = await awardOnOpen(row, cfg.season, res.opened, door.day, today, s)
+  if (inserted) await logEvent(row.id, 'advent_open', null, { season: cfg.season, day: door.day, kind: door.kind, score, late })
   const after = { score, total, xp, late }
   return {
     already: !inserted,
@@ -1953,18 +2034,21 @@ async function redeem(body: Row) {
 
 async function adminAdvent(body: Row) {
   await member(body, true)
-  const { data, error } = await db.rpc('advent_summary')
-  if (error) throw new HttpError(500, 'db')
   const s = await getSettings()
   const a = s.advent ?? {}
+  const season = seasonOf(a)
+  const { data, error } = await db.rpc('advent_summary', { p_season: season })
+  if (error) throw new HttpError(500, 'db')
   const [full, doors] = await Promise.all([
-    db.from('advent_rewards').select('*').order('doors').order('position'),
-    db.from('advent_doors').select('day', { count: 'exact', head: true }),
+    db.from('advent_rewards').select('*').eq('season', season).order('doors').order('position'),
+    db.from('advent_doors').select('day', { count: 'exact', head: true }).eq('season', season),
   ])
   return {
     ...data,
+    season,
     theme: ADVENT_THEMES.includes(a.theme) ? a.theme : 'standard',
     settings: {
+      season,
       enabled: !!a.enabled,
       title: str(a.title, 60) || 'Адвент-календарь',
       start: typeof a.start === 'string' ? a.start : '',
@@ -1984,16 +2068,34 @@ async function adminAdventSave(body: Row) {
   const prev = s.advent ?? { enabled: false }
   const start = str(input.start, 10)
   if (start && !/^\d{4}-\d{2}-\d{2}$/.test(start)) throw new HttpError(400, 'bad_date')
+  // Смена сезона: настройки идущей кампании сохраняются снимком в advent_seasons (по нему строится архив),
+  // её двери, открытия, билеты и призы остаются под прежним id. Возврат к архивному сезону поднимает его снимок.
+  const prevSeason = seasonOf(prev)
+  const season = input.season == null ? prevSeason : String(input.season)
+  if (!SEASON_RE.test(season)) throw new HttpError(400, 'bad_season')
+  let base: Row = prev
+  if (season !== prevSeason) {
+    const saved = await db.from('advent_seasons').select('config').eq('id', season).maybeSingle()
+    if (saved.error) throw new HttpError(500, 'db')
+    const kept = await db.from('advent_seasons').upsert({ id: prevSeason, config: prev, archived_at: new Date().toISOString() }, { onConflict: 'id' })
+    if (kept.error) throw new HttpError(500, 'db')
+    if (!saved.data) {
+      const made = await db.from('advent_seasons').upsert({ id: season, config: {} }, { onConflict: 'id', ignoreDuplicates: true })
+      if (made.error) throw new HttpError(500, 'db')
+    }
+    base = parseAdvent(saved.data?.config) ? { ...saved.data!.config } : { ...prev }
+  }
   const next = {
-    ...prev,
-    title: str(input.title, 60) || prev.title || 'Адвент-календарь',
-    start: start || prev.start,
-    days: int(input.days, 1, 60, prev.days ?? 24),
-    enabled: input.enabled == null ? !!prev.enabled : !!input.enabled,
-    catchup: catchupCfg(input.catchup ?? prev.catchup),
+    ...base,
+    season,
+    title: str(input.title, 60) || base.title || 'Адвент-календарь',
+    start: start || base.start,
+    days: int(input.days, 1, 60, base.days ?? 24),
+    enabled: input.enabled == null ? !!base.enabled : !!input.enabled,
+    catchup: catchupCfg(input.catchup ?? base.catchup),
   }
   await setSetting('advent', next)
-  return { ok: true }
+  return { ok: true, season }
 }
 
 // Приз: вид и содержимое проверяем до записи — пустую ссылку или несуществующий курс сохранить нельзя.
@@ -2052,7 +2154,8 @@ async function adminAdventRewardSave(body: Row) {
   const input = body.reward ?? {}
   const clean = await cleanReward(input)
   const id = Number(input.id)
-  const query = id ? db.from('advent_rewards').update(clean).eq('id', id) : db.from('advent_rewards').insert(clean)
+  // Новый приз принадлежит идущему сезону; у существующего сезон не меняется.
+  const query = id ? db.from('advent_rewards').update(clean).eq('id', id) : db.from('advent_rewards').insert({ ...clean, season: seasonOf((await getSettings(true)).advent) })
   const { data, error } = await query.select('*').single()
   if (error) throw new HttpError(500, 'db')
   return data
@@ -2102,15 +2205,15 @@ function cleanDoor(input: Row) {
 
 async function adminAdventDoors(body: Row) {
   await member(body, true)
-  const { data, error } = await db.from('advent_doors').select('*').order('day')
+  const { data, error } = await db.from('advent_doors').select('*').eq('season', seasonOf((await getSettings(true)).advent)).order('day')
   if (error) throw new HttpError(500, 'db')
   return { doors: data ?? [] }
 }
 
 async function adminAdventDoorSave(body: Row) {
   await member(body, true)
-  const clean = cleanDoor(body.door ?? {})
-  const { data, error } = await db.from('advent_doors').upsert(clean, { onConflict: 'day' }).select('*').single()
+  const clean = { ...cleanDoor(body.door ?? {}), season: seasonOf((await getSettings(true)).advent) }
+  const { data, error } = await db.from('advent_doors').upsert(clean, { onConflict: 'season,day' }).select('*').single()
   if (error) throw new HttpError(500, 'db')
   return data
 }
@@ -2119,9 +2222,11 @@ async function adminAdventDoorSave(body: Row) {
 async function adminAdventDoorDelete(body: Row) {
   await member(body, true)
   const day = Number(body.day)
-  const { count } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).eq('day', day)
+  const season = seasonOf((await getSettings(true)).advent)
+  const { count, error: counted } = await db.from('advent_opens').select('day', { count: 'exact', head: true }).eq('season', season).eq('day', day)
+  if (counted) throw new HttpError(500, 'db')
   if ((count ?? 0) > 0) throw new HttpError(409, 'door_opened')
-  const { error } = await db.from('advent_doors').delete().eq('day', day)
+  const { error } = await db.from('advent_doors').delete().eq('season', season).eq('day', day)
   if (error) throw new HttpError(500, 'db')
   return { ok: true }
 }
@@ -2139,10 +2244,11 @@ async function adminAdventPulse(body: Row) {
   const a = s.advent ?? {}
   const days = int(a.days, 1, 60, 24)
   const today = cfg ? adventToday(cfg) : 0
+  const season = seasonOf(a)
   const [tickets, events, rewards, codes] = await Promise.all([
-    db.from('advent_tickets').select('source,used_at,revoked_at'),
+    db.from('advent_tickets').select('source,used_at,revoked_at').eq('season', season),
     db.from('events').select('user_id,props').eq('name', 'catchup').limit(5000),
-    db.from('advent_rewards').select('id,title,emoji,mode,stock,day_from,day_to,drawn_at').order('id'),
+    db.from('advent_rewards').select('id,title,emoji,mode,stock,day_from,day_to,drawn_at').eq('season', season).order('id'),
     db.from('reward_codes').select('reward_id,status'),
   ])
   const bySource: Record<string, { earned: number; used: number; revoked: number }> = {}
@@ -2197,9 +2303,14 @@ async function adminAdventPulse(body: Row) {
 /** Кто что получил: приз, человек, код, погашение. Последние 500 — с фильтром по призу. */
 async function adminAdventWinners(body: Row) {
   await member(body, true)
+  // Журнал идущего сезона. Коды прежних кампаний остаются в базе и по-прежнему гасятся на кассе.
+  const season = seasonOf((await getSettings()).advent)
+  const own = await db.from('advent_rewards').select('id').eq('season', season)
+  if (own.error) throw new HttpError(500, 'db')
   let q = db
     .from('reward_codes')
     .select('code,status,issued_at,redeemed_at,reward_id,users(id,first_name,username),advent_rewards(title,emoji,kind),advent_points(name)')
+    .in('reward_id', (own.data ?? []).map((r) => r.id))
     .order('issued_at', { ascending: false })
     .limit(500)
   if (Number(body.reward_id) > 0) q = q.eq('reward_id', Number(body.reward_id))
@@ -2233,7 +2344,8 @@ async function adminAdventTicketGrant(body: Row) {
   const { data: user } = await db.from('users').select('id,first_name').ilike('username', username.replace(/[\\%_]/g, '\\$&')).maybeSingle()
   if (!user) throw new HttpError(404, 'user_not_found')
   const stamp = Date.now()
-  const rows = Array.from({ length: count }, (_, i) => ({ user_id: user.id, source: 'admin', ref: `admin:${user.id}:${stamp}:${i}` }))
+  const season = seasonOf((await getSettings(true)).advent)
+  const rows = Array.from({ length: count }, (_, i) => ({ user_id: user.id, season, source: 'admin', ref: ticketRef(season, `admin:${user.id}:${stamp}:${i}`) }))
   const { error } = await db.from('advent_tickets').insert(rows)
   if (error) throw new HttpError(500, 'db')
   const s = await getSettings()
@@ -2357,8 +2469,8 @@ async function adventPush(req: Request) {
   const cursor = Number(state.cursor) || 0
 
   const [door, done, usersRes] = await Promise.all([
-    db.from('advent_doors').select('title,emoji,kind,xp').eq('day', today).maybeSingle(),
-    db.from('advent_opens').select('user_id').eq('day', today),
+    db.from('advent_doors').select('title,emoji,kind,xp').eq('season', cfg.season).eq('day', today).maybeSingle(),
+    db.from('advent_opens').select('user_id').eq('season', cfg.season).eq('day', today),
     db.from('users').select('id').eq('subscribed', true).gt('id', cursor).order('id').limit(PUSH_BATCH),
   ])
 

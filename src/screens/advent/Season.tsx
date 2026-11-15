@@ -7,7 +7,7 @@ import { isDemo } from '../../lib/api'
 import type { AdventCell } from '../../lib/types'
 import { useStore } from '../../store'
 import { Tap } from '../../ui'
-import { DoorCell, LegacyAdventScreen, slide } from './Advent'
+import { AdventScreen, DoorCell, slide } from './Advent'
 import { useSeasonToday } from './useSeason'
 import { ThemeScene, themeOf } from './themes'
 
@@ -51,7 +51,7 @@ function Season({ userId }: { userId: number }) {
     setMemoryOnly(!saved)
     setFeedback(saved ? 'Отметка сохранена на этом устройстве.' : 'Хранилище недоступно. Отметка сохранена только до закрытия экрана.')
   }
-  if (archive) return <><LegacyAdventScreen/><Tap onClick={() => setArchive(false)} className="absolute right-4 z-40 rounded-full bg-card px-4 py-3 text-sm" style={{ top: 'calc(var(--top) + 10px)' }}>Новый сезон</Tap></>
+  if (archive) return <><AdventScreen/><Tap onClick={() => setArchive(false)} className="absolute right-4 z-40 rounded-full bg-card px-4 py-3 text-sm" style={{ top: 'calc(var(--top) + 10px)' }}>Новый сезон</Tap></>
   const cells: AdventCell[] = missions.map((m, i) => ({ day: i + 1, title: m.title, xp: 0, kind: 'story', emoji: '🎁', state: !missionAvailable(m.date, today) ? 'locked' : done.includes(m.date) ? 'open' : m.date === today ? 'today' : 'late' }))
   return <motion.div {...slide} className={`${slide.className} ${theme.className}`}>
     <div ref={scroller} className="scroll h-full" style={{ paddingBottom: 'calc(48px + var(--bottom))' }}>

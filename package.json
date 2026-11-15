@@ -19,7 +19,7 @@
     "test:discovery": "node --experimental-strip-types --test tests/discovery.test.mjs tests/free-start.test.mjs tests/practice-reader.test.mjs tests/og-course-access.test.mjs tests/home-news-filters.test.mjs tests/blog-feed-compat.test.mjs tests/course-pathways.test.mjs",
     "test:course-payment": "node --experimental-strip-types --test tests/course-checkout.test.mjs tests/course-payment-state.test.mjs tests/course-payment-ui.test.mjs",
     "test:legacy-course": "node --experimental-strip-types --test tests/legacy-course.test.mjs",
-    "test:news": "node --experimental-strip-types --test tests/news-summary.test.mjs tests/news-database.test.mjs tests/news-worker.test.mjs tests/news-refresh.test.mjs tests/news-boundaries.test.mjs tests/news-policy.test.mjs tests/news-publish.test.mjs tests/gif-image.test.mjs tests/cover-media.test.mjs tests/cover-image.test.mjs",
+    "test:news": "node --experimental-strip-types --test tests/news-summary.test.mjs tests/news-database.test.mjs tests/news-worker.test.mjs tests/news-refresh.test.mjs tests/news-boundaries.test.mjs tests/news-policy.test.mjs tests/news-publish.test.mjs tests/news-telegram-optout.test.mjs tests/gif-image.test.mjs tests/cover-media.test.mjs tests/cover-image.test.mjs",
     "test:content-revision": "node --test tests/content-revision.test.mjs tests/editorial-presentation.test.mjs tests/plain-dashes.test.mjs",
     "test:training": "node --test tests/training-course.test.mjs",
     "test:lesson-animations": "node --experimental-strip-types --test tests/lesson-animations.test.mjs",
@@ -60,7 +60,7 @@
     "test:og-lesson-interactions": "node --experimental-strip-types --test tests/og-lesson-interactions.test.mjs tests/og-academy-bridge-draft.test.mjs",
     "test:theme-contrast": "node --test tests/theme-contrast.test.mjs",
     "test:home-assembly": "node --experimental-strip-types --test tests/home-assembly.test.mjs",
-    "test:advent-season": "node --experimental-strip-types --test tests/advent-season.test.mjs",
+    "test:advent-season": "node --experimental-strip-types --test tests/advent-season.test.mjs tests/advent-isolation.test.mjs tests/advent-seasons-database.test.mjs tests/advent-server-season.test.mjs",
     "test:platform-safety": "node --experimental-strip-types --test tests/platform-uncertain-action.test.mjs tests/platform-sculpture-motion.test.mjs"
   },
   "dependencies": {

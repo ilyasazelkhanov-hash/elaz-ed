@@ -36,10 +36,10 @@ export type Overlay =
   | { type: 'courses-admin' }
   | { type: 'course-editor'; course: AdminCourse | null }
   | { type: 'editor'; lesson: Lesson | null; kind: Kind }
-  | { type: 'advent' }
+  | { type: 'advent'; season?: string }
   | { type: 'advent-season' }
   | { type: 'certifications'; focusId?: string }
-  | { type: 'door'; day: number }
+  | { type: 'door'; day: number; season?: string }
   | { type: 'advent-admin' }
 
 export interface Reward {

@@ -1,4 +1,3 @@
-import { AdventSeasonScreen } from './Season'
 import { Check, ChevronLeft, Lock } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
@@ -6,7 +5,7 @@ import { dayMonth, KIND_LABEL } from '../../lib/advent'
 import { api, isDemo } from '../../lib/api'
 import { plural } from '../../lib/game'
 import { haptic, inTelegram } from '../../lib/tg'
-import type { AdventCell, AdventReward, AdventState, AdventThemeId } from '../../lib/types'
+import type { AdventCell, AdventReward, AdventState, AdventSummary, AdventThemeId } from '../../lib/types'
 import { useStore } from '../../store'
 import { Bar, Emoji, Tap } from '../../ui'
 import { doorsWord } from './Banner'
@@ -29,12 +28,16 @@ export const slide = {
 }
 
 /** Календарь: сетка дверей, серия, путь до следующей награды и выданные коды. */
-export function AdventScreen() { return <AdventSeasonScreen/> }
-
-export function LegacyAdventScreen() {
-  const { pop, push, guard, toast, setAdvent } = useStore.getState()
+/** season задаётся только для архива прежнего сезона; без него открывается идущая кампания. */
+export function AdventScreen({ season }: { season?: string }) {
+  const { pop, push, guard, toast } = useStore.getState()
+  // Архив не должен подменять сводку идущего календаря на главной.
+  const setAdvent = (summary: AdventSummary | null) => { if (!season) useStore.getState().setAdvent(summary) }
   // Перечитываем календарь, когда снова оказываемся сверху — например, после закрытия двери.
-  const onTop = useStore((s) => ['advent', 'advent-season'].includes(s.stack.at(-1)?.type ?? ''))
+  const onTop = useStore((s) => {
+    const top = s.stack.at(-1)
+    return top?.type === 'advent-season' || (top?.type === 'advent' && top.season === season)
+  })
   const [data, setData] = useState<AdventState | null>(null)
   const [failed, setFailed] = useState(false)
   const [catchup, setCatchup] = useState(false)
@@ -43,6 +46,7 @@ export function LegacyAdventScreen() {
     setData(d)
     setFailed(false)
     setAdvent({
+      season: d.season,
       title: d.title,
       theme: d.theme,
       start: d.start,
@@ -56,7 +60,7 @@ export function LegacyAdventScreen() {
   // Перечитать после покупки билета: шторка ждёт, пока сервер его выдаст.
   const reload = () =>
     api
-      .advent()
+      .advent(season)
       .then((d) => {
         apply(d)
         return d
@@ -67,12 +71,13 @@ export function LegacyAdventScreen() {
     if (!onTop) return
     let alive = true
     api
-      .advent()
+      .advent(season)
       .then((d) => {
         if (!alive) return
         setData(d)
         setFailed(false)
         setAdvent({
+          season: d.season,
           title: d.title,
           theme: d.theme,
           start: d.start,
@@ -90,7 +95,7 @@ export function LegacyAdventScreen() {
     return () => {
       alive = false
     }
-  }, [onTop, guard, setAdvent])
+  }, [onTop, guard, season])
 
   const next = useMemo(() => data?.rewards.find((r) => !r.code && r.doors > data.opened) ?? null, [data])
 
@@ -120,18 +125,20 @@ export function LegacyAdventScreen() {
           <ThemeScene key={themeId} theme={themeId} />
           <div className="relative">
             <p className="w-fit rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider" style={{ background: theme.chip }}>
-              {!data ? 'Календарь' : data.today < 1 ? `Старт ${dayMonth(data.start)}` : data.today > data.days ? 'Финал' : `День ${data.today} из ${data.days}`}
+              {!data ? 'Календарь' : data.archived ? 'Архив сезона' : data.today < 1 ? `Старт ${dayMonth(data.start)}` : data.today > data.days ? 'Финал' : `День ${data.today} из ${data.days}`}
             </p>
             <h1 className="mt-3 max-w-[70%] font-display text-[27px] font-semibold leading-[1.1] drop-shadow-[0_2px_10px_rgb(0_0_0_/_0.35)]">{data?.title ?? 'Адвент-календарь'}</h1>
             {data && (
               <div className="mt-4 flex flex-wrap gap-2 text-[13px] font-semibold">
-                <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-sm" style={{ background: theme.chip }}>
-                  <Emoji char={themeId === 'halloween' ? '🕯️' : '🔥'} size={16} /> серия {data.streak}
-                </span>
+                {!data.archived && (
+                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-sm" style={{ background: theme.chip }}>
+                    <Emoji char={themeId === 'halloween' ? '🕯️' : '🔥'} size={16} /> серия {data.streak}
+                  </span>
+                )}
                 <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-sm" style={{ background: theme.chip }}>
                   <Emoji char={themeId === 'newyear' ? '🎁' : themeId === 'halloween' ? '🦇' : '🚪'} size={16} /> открыто {data.opened} из {data.days}
                 </span>
-                {data.catchup && data.catchup.methods.length > 0 && (
+                {!data.archived && data.catchup && data.catchup.methods.length > 0 && (
                   <Tap feedback="soft" onClick={() => setCatchup(true)} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 backdrop-blur-sm" style={{ background: theme.chip }}>
                     <Emoji char="🎟" size={16} /> билетов {data.catchup.tickets}
                   </Tap>
@@ -153,8 +160,8 @@ export function LegacyAdventScreen() {
 
           {data && (
             <>
-              {isDemo && <ThemePicker value={themeId} onPick={pick} />}
-              {next && (
+              {isDemo && !data.archived && <ThemePicker value={themeId} onPick={pick} />}
+              {next && !data.archived && (
                 <div className="mb-5 rounded-[22px] border border-line bg-card p-4">
                   <div className="flex items-center gap-3">
                     <Emoji char={next.emoji} size={30} />
@@ -184,19 +191,23 @@ export function LegacyAdventScreen() {
                       haptic.error()
                       setCatchup(true)
                     }}
-                    onOpen={() => push({ type: 'door', day: cell.day })}
+                    onOpen={() => push({ type: 'door', day: cell.day, season })}
                     onLocked={() => locked(cell)}
                   />
                 ))}
               </div>
-              <p className="mt-3 text-center text-[12.5px] leading-snug text-faint">
-                Пропущенную дверь можно догнать за билет - за половину XP. Серия растёт, только если открывать в свой день.{' '}
-                {data.catchup && data.catchup.methods.length > 0 && (
-                  <button type="button" onClick={() => setCatchup(true)} className="font-semibold text-ink underline underline-offset-2">
-                    Как получить билет
-                  </button>
-                )}
-              </p>
+              {data.archived ? (
+                <p className="mt-3 text-center text-[12.5px] leading-snug text-faint">Сезон завершён. Открытые двери и полученные награды сохранены, новые двери здесь не открываются.</p>
+              ) : (
+                <p className="mt-3 text-center text-[12.5px] leading-snug text-faint">
+                  Пропущенную дверь можно догнать за билет - за половину XP. Серия растёт, только если открывать в свой день.{' '}
+                  {data.catchup && data.catchup.methods.length > 0 && (
+                    <button type="button" onClick={() => setCatchup(true)} className="font-semibold text-ink underline underline-offset-2">
+                      Как получить билет
+                    </button>
+                  )}
+                </p>
+              )}
 
               {data.rewards.length > 0 && (
                 <>
@@ -208,12 +219,18 @@ export function LegacyAdventScreen() {
                   </div>
                 </>
               )}
+
+              {(data.archives ?? []).map((a) => (
+                <Tap key={a.id} onClick={() => push({ type: 'advent', season: a.id })} className="mt-6 flex min-h-12 w-full items-center justify-center rounded-2xl border border-line px-4 text-center text-[14px] font-semibold">
+                  Прошлый сезон: {a.title}. Двери и награды
+                </Tap>
+              ))}
             </>
           )}
         </div>
       </div>
 
-      {data && <CatchupSheet open={catchup} onClose={() => setCatchup(false)} data={data} reload={reload} />}
+      {data && !data.archived && <CatchupSheet open={catchup} onClose={() => setCatchup(false)} data={data} reload={reload} />}
 
       {!inTelegram && (
         <Tap onClick={pop} aria-label="Назад" className="absolute left-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-black/30 text-white backdrop-blur-md" style={{ top: 'calc(var(--top) + 10px)' }}>

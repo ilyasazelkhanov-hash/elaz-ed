@@ -36,6 +36,8 @@ export interface Card {
   published: boolean
   /** False keeps an archived/shared course reference out of news, while its direct link remains valid. */
   news_eligible?: boolean
+  /** False: новость выходит только в Mini App, очередь канала её пропускает. Поле есть только в админских данных. */
+  telegram_publish?: boolean
   published_at: string | null
   /** Missing on older material; never infer verification from publication date. */
   editorial?: EditorialMetadata | null
@@ -169,6 +171,8 @@ export type AdventThemeId = 'standard' | 'halloween' | 'newyear'
 
 /** Короткая сводка для главной: есть ли календарь, какой сегодня день, открыта ли дверь. */
 export interface AdventSummary {
+  /** Сезон кампании. Старый сервер поле не присылает: тогда это прежний календарь. */
+  season?: string
   title: string
   /** Старый сервер тему не присылает — тогда стандартная. */
   theme?: AdventThemeId
@@ -250,6 +254,11 @@ export interface AdventCatchup {
 }
 
 export interface AdventState {
+  season?: string
+  /** Архив завершённого сезона: только просмотр открытых дверей и полученных призов. */
+  archived?: boolean
+  /** Прежние сезоны, где у человека остались двери или призы. */
+  archives?: { id: string; title: string }[]
   title: string
   theme?: AdventThemeId
   start: string
@@ -534,10 +543,10 @@ export interface Api {
   adminSave(lesson: LessonDraft): Promise<Lesson>
   adminDelete(id: number): Promise<void>
   adminAnnounce(id: number): Promise<{ queued?: boolean } | void>
-  advent(): Promise<AdventState>
-  adventDoor(day: number): Promise<DoorView>
+  advent(season?: string): Promise<AdventState>
+  adventDoor(day: number, season?: string): Promise<DoorView>
   /** answers — для квиза, score — для аркады; скретч и сторис открываются без данных. */
-  adventOpen(day: number, input?: { answers?: number[]; score?: number }): Promise<DoorResult>
+  adventOpen(day: number, input?: { answers?: number[]; score?: number }, season?: string): Promise<DoorResult>
   adminAdvent(): Promise<AdventAdmin>
   /** Меняет оформление календаря у всех участников. */
   adminAdventTheme(theme: AdventThemeId): Promise<void>

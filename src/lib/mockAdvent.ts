@@ -1,15 +1,18 @@
 // Адвент в демо-режиме: те же правила, что на сервере, данные — в localStorage.
 // Кампания в демо всегда «идёт седьмой день», чтобы было что открыть, догнать и что ждёт впереди.
+// Двери берутся из сезона «Новогодний AI-адвент» (те же, что загружаются на сервер); призы остаются демонстрационными.
 import seed from './adventSeed.json'
+import season from './adventSeasonSeed.json'
 import { adventStreak, doorXp } from './advent'
 import { ApiError } from './errors'
 import type { AdminDoor, AdminReward, AdventAdmin, AdventSettings, AdventThemeId, AdventState, AdventSummary, Api, DoorKind, DoorView, Me, NewCode, RedeemCheck, RedeemPoint } from './types'
 
-const KEY = 'elaz-ed-demo-advent-v1'
+// v2: двери нового сезона. Прогресс демо прежнего набора дверей остаётся под старым ключом и не переносится на другие двери.
+const KEY = 'elaz-ed-demo-advent-v2'
 const DEMO_DAY = 7
-const DAYS = 24
+const DAYS = season.days
 const GRACE = 3
-const TITLE = 'Адвент вайбкодера'
+const TITLE = season.title
 const DEMO_POINT: RedeemPoint = { id: 1, name: 'Демо-касса' }
 const DEMO_PIN = '1234'
 
@@ -47,7 +50,7 @@ interface AdventDemo {
   codes: Record<number, { code: string; redeemed: boolean }>
 }
 
-const SEED_DOORS = seed.doors as Door[]
+const SEED_DOORS = season.doors as Door[]
 // Призы демо показывают разные виды: промокод, сообщение, видео.
 const DEMO_KINDS: Pick<AdminReward, 'kind' | 'payload'>[] = [
   { kind: 'message', payload: { text: 'Промпт-пак: «Ты - редактор. Сократи текст на треть, сохрани факты и голос автора».' } },
@@ -148,8 +151,9 @@ function issue(lastDay: number): NewCode[] {
 
 export function adventSummaryDemo(): AdventSummary {
   return {
+    season: season.season,
     title: TITLE,
-    theme: state.theme ?? 'halloween',
+    theme: state.theme ?? 'newyear',
     start: start(),
     days: DAYS,
     today: DEMO_DAY,
@@ -379,7 +383,7 @@ export function makeAdventMock(me: () => Me, addXp: (n: number) => void): Advent
     async adminAdvent(): Promise<AdventAdmin> {
       await wait()
       return {
-        theme: state.theme ?? 'halloween',
+        theme: state.theme ?? 'newyear',
         participants: 312,
         opens: 2140 + Object.keys(state.opens).length,
         by_day: doors().filter((d) => d.day <= DEMO_DAY).map((d) => ({ day: d.day, title: d.title, kind: d.kind, opens: Math.max(40, 300 - d.day * 22), late: 6 + d.day })),

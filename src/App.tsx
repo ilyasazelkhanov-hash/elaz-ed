@@ -140,7 +140,8 @@ function Shell() {
       else if (course) useStore.getState().push({ type: 'course', id: course })
       else if (startParam === 'certifications') useStore.getState().push({ type: 'certifications' })
       // Кнопка из напоминания бота: t.me/бот?startapp=advent
-      else if (/(?:^|_)advent(?:_|$)/.test(startParam)) useStore.getState().push({ type: 'advent' })
+      // Пока сервер не включил сезон, открывается локальный календарь практик, а не пустой экран.
+      else if (/(?:^|_)advent(?:_|$)/.test(startParam)) useStore.getState().push({ type: useStore.getState().advent ? 'advent' : 'advent-season' })
     }
     preloadMarkdown()
     return bindAppNavigation(useStore)
@@ -258,13 +259,13 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
     case 'advent':
       return (
         <Suspense fallback={null}>
-          <AdventScreen />
+          <AdventScreen season={overlay.season} />
         </Suspense>
       )
     case 'door':
       return (
         <Suspense fallback={null}>
-          <DoorScreen day={overlay.day} />
+          <DoorScreen day={overlay.day} season={overlay.season} />
         </Suspense>
       )
     case 'advent-admin':

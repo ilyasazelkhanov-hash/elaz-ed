@@ -113,9 +113,9 @@ const httpApi: Api = {
   adminAnnounce: async (id) => {
     return await call<{ queued?: boolean }>('admin_announce', { id })
   },
-  advent: () => call('advent'),
-  adventDoor: (day) => call('advent_door', { day }),
-  adventOpen: (day, input) => call('advent_open', { day, ...input }),
+  advent: (season) => call('advent', season ? { season } : {}),
+  adventDoor: (day, season) => call('advent_door', { day, ...(season ? { season } : {}) }),
+  adventOpen: (day, input, season) => call('advent_open', { day, ...input, ...(season ? { season } : {}) }),
   adminAdvent: () => call('admin_advent'),
   adminAdventTheme: async (theme) => {
     await call('admin_advent_theme', { theme })
@@ -200,6 +200,8 @@ export function errorText(e: unknown) {
       return 'Сначала опубликуй урок'
     case 'news_only':
       return 'В группу отправляются только новости. Уроки остаются в курсах'
+    case 'miniapp_only':
+      return 'Эта новость отмечена «только в приложении» и в канал не отправляется'
     case 'course_delete_disabled':
       return 'Удаление курса отключено. Сохрани его как черновик: уроки, покупки и доступы сохранятся'
     case 'course_locked':

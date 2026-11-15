@@ -26,7 +26,7 @@ const LOOK: Record<DoorKind, { g: Gradient; name: 'candy' | 'aurora' | 'sunset' 
 type Input = { answers?: number[]; score?: number }
 
 /** Дверь календаря. Что внутри и сколько XP — решает сервер; экран только показывает и собирает ответы. */
-export function DoorScreen({ day }: { day: number }) {
+export function DoorScreen({ day, season }: { day: number; season?: string }) {
   const { pop, guard, toast, setMe } = useStore.getState()
   const themeId = useStore((s) => s.advent?.theme)
   const [door, setDoor] = useState<DoorView | null>(null)
@@ -40,7 +40,7 @@ export function DoorScreen({ day }: { day: number }) {
   useEffect(() => {
     let alive = true
     api
-      .adventDoor(day)
+      .adventDoor(day, season)
       .then((d) => alive && setDoor(d))
       .catch((e) => {
         guard(e)
@@ -49,13 +49,13 @@ export function DoorScreen({ day }: { day: number }) {
     return () => {
       alive = false
     }
-  }, [day, guard])
+  }, [day, season, guard])
 
   const open = async (input?: Input) => {
     if (busy) return null
     setBusy(true)
     try {
-      const r = await api.adventOpen(day, input)
+      const r = await api.adventOpen(day, input, season)
       setDoor(r.door)
       setMe(r.me)
       if (!r.already) {
@@ -128,7 +128,20 @@ export function DoorScreen({ day }: { day: number }) {
               <Scratch prize={door.prize} onStart={() => void open()} onRevealed={() => burst(document.getElementById('door-body'))} />
             ))}
 
-          {door?.kind === 'story' && !door.opened && (
+          {door?.kind === 'scratch' && door.opened && door.prize && (
+            <Tap
+              onClick={() => {
+                navigator.clipboard?.writeText(door.prize ?? '').then(() => toast('Скопировано', '📋'), () => toast('Выдели текст и скопируй вручную'))
+              }}
+              className="mt-3 flex min-h-11 w-full items-center justify-center rounded-2xl border border-line bg-card px-4 text-[14px] font-semibold"
+            >
+              Скопировать текст
+            </Tap>
+          )}
+
+          {door?.closed && !door.opened && <p className="py-6 text-center text-[15px] text-mute">Сезон завершён. Эта дверь осталась закрытой.</p>}
+
+          {door?.kind === 'story' && !door.opened && !door.closed && (
             <Cta className="w-full" busy={busy} onClick={() => open()}>
               Открыть дверь
             </Cta>

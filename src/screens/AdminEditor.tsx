@@ -278,6 +278,7 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
             )}
           </div>
 
+          {post && <Check label="Публиковать в канале" hint="Выключи, чтобы новость вышла только в приложении. В ленте и блоге она останется." on={d.telegram_publish !== false} onChange={(v) => set('telegram_publish', v)} />}
           {post && <Check label="Продвигать" hint="Показывать в начале блога и ленты на главной. Среди продвигаемых сначала новые." on={d.pinned} onChange={(v) => set('pinned', v)} />}
 
           {!story && !post && (

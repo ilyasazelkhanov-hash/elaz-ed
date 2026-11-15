@@ -677,6 +677,199 @@ test('админ: настройки календаря — дни, способ
   assert.deepEqual(await call('admin_advent_save', { settings: { start: '14.10.2026' } }, ADMIN), { status: 400, body: { error: 'bad_date' } })
 })
 
+// ---------- Новость только для Mini App ----------
+
+test('новость «только в приложении»: отметка сохраняется, ручной анонс в канал отклоняется', async () => {
+  await everyoneBoots()
+  const post = { kind: 'lesson', title: 'Swarm', subtitle: 'Только здесь', category: 'Блог', emoji: '✨', gradient: 'aurora', body: 'Текст новости для приложения.', quiz: [], minutes: 1, xp: 0, pinned: false, published: true, course_id: null, position: 0, free_preview: false }
+  assert.deepEqual(await call('admin_save', { lesson: { ...post, telegram_publish: 'no' } }, ADMIN), { status: 400, body: { error: 'bad_telegram_publish' } })
+  const saved = await call('admin_save', { lesson: { ...post, telegram_publish: false } }, ADMIN)
+  assert.equal(saved.status, 200)
+  const stored = state.tables.lessons.find((l) => l.id === saved.body.id)
+  assert.equal(stored.telegram_publish, false)
+  assert.notEqual(stored.news_eligible, false)
+  assert.deepEqual(await call('admin_announce', { id: stored.id }, ADMIN), { status: 400, body: { error: 'miniapp_only' } })
+  // Правка без поля отметку не сбрасывает.
+  assert.equal((await call('admin_save', { lesson: { ...post, id: stored.id, title: 'Swarm 2' } }, ADMIN)).status, 200)
+  assert.equal(state.tables.lessons.find((l) => l.id === stored.id).telegram_publish, false)
+})
+
+// ---------- Сбой базы не маскируется под отказ в доступе ----------
+
+test('сбой чтения доступа, урока или прогресса даёт 500, а не «закрыто», «не найдено» или «не пройдено»', async () => {
+  await everyoneBoots()
+  const paid = state.tables.lessons.find((l) => l.course_id && !l.free_preview && l.published)
+  assert.ok(paid)
+  state.tables.course_access.push({ user_id: BUYER, course_id: paid.course_id, source: 'stars' })
+  assert.equal((await call('lesson', { id: paid.id }, BUYER)).status, 200)
+  for (const table of ['course_access', 'lessons', 'progress', 'likes', 'users']) {
+    state.failNext = { table, op: 'select' }
+    assert.deepEqual(await call('lesson', { id: paid.id }, BUYER), { status: 500, body: { error: 'db' } }, table)
+    state.failNext = null
+  }
+  // Без купленного курса и без сбоя ответ остаётся прежним отказом.
+  assert.deepEqual(await call('lesson', { id: paid.id }, OTHER), { status: 403, body: { error: 'course_locked' } })
+  state.failNext = { table: 'lesson_access', op: 'select' }
+  assert.deepEqual(await call('lesson', { id: paid.id }, OTHER), { status: 500, body: { error: 'db' } })
+  for (const route of ['quiz_start', 'complete']) {
+    state.failNext = { table: 'lessons', op: 'select' }
+    assert.deepEqual(await call(route, { id: paid.id }, BUYER), { status: 500, body: { error: 'db' } }, route)
+  }
+  state.failNext = null
+  for (const table of ['courses', 'course_access', 'access_requests']) {
+    state.failNext = { table, op: 'select' }
+    assert.equal((await call('boot', {}, BUYER)).status, 500, table)
+    state.failNext = null
+  }
+  assert.equal((await call('boot', {}, BUYER)).status, 200)
+})
+
+// ---------- Адвент: сезоны ----------
+
+const SEASON = 'ai-winter-2026'
+const legacyStart = () => new Date(Date.now() - 40 * DAY).toISOString().slice(0, 10)
+/** Идёт новый сезон (сегодня пятый день); прежняя кампания закончена, её данные лежат рядом под меткой legacy. */
+function seasonOn(extra = {}) {
+  adventOn({ season: SEASON, title: 'Новогодний AI-адвент', theme: 'newyear', ...extra })
+  const legacyDoors = state.tables.advent_doors.map((d) => ({ ...d, title: `Старая ${d.day}`, body: 'старый текст' }))
+  const freshDoors = state.tables.advent_doors.map((d) => ({ ...d, season: SEASON, title: `Новая ${d.day}`, body: 'новый текст', xp: 15 }))
+  state.tables.advent_doors = [...legacyDoors, ...freshDoors]
+  state.tables.advent_seasons = [
+    { id: 'legacy', config: { enabled: true, title: 'Creator Vault', theme: 'standard', start: legacyStart(), days: 10, tz: 300, grace: 3 } },
+    { id: SEASON, config: {} },
+  ]
+  state.tables.advent_opens = [1, 2, 3].map((day) => ({ user_id: BUYER, day, score: 0, total: 0, xp: 30, late: false }))
+  state.tables.advent_rewards = [reward({ id: 1, title: 'Старый приз', doors: 3 }), reward({ id: 2, season: SEASON, title: 'Новый приз', doors: 1 })]
+  state.tables.reward_codes = [{ code: 'OLDC-ODE2', user_id: BUYER, reward_id: 1, status: 'issued', redeemed_at: null }]
+}
+const xpOf = (id) => state.tables.users.find((u) => u.id === id).xp ?? 0
+
+test('новый сезон начинается с нуля: прежние открытия, призы и коды не смешиваются', async () => {
+  await everyoneBoots()
+  seasonOn()
+  const before = xpOf(BUYER)
+  const view = (await call('advent', {}, BUYER)).body
+  assert.equal(view.season, SEASON)
+  assert.equal(view.archived, false)
+  assert.equal(view.opened, 0)
+  assert.deepEqual(view.doors.slice(0, 5).map((d) => d.state), ['late', 'late', 'late', 'late', 'today'])
+  assert.equal(view.doors[4].title, 'Новая 5')
+  assert.deepEqual(view.rewards.map((r) => [r.id, r.issued]), [[2, false]])
+  assert.deepEqual(view.archives, [{ id: 'legacy', title: 'Creator Vault' }])
+  const boot = (await call('boot', {}, BUYER)).body.advent
+  assert.equal(boot.season, SEASON)
+  assert.equal(boot.opened, 0)
+
+  const opened = (await call('advent_open', { day: 5 }, BUYER)).body
+  assert.equal(opened.already, false)
+  assert.equal(opened.gained, 15)
+  assert.equal(opened.opened, 1)
+  assert.deepEqual(opened.new_codes.map((c) => c.reward_id), [2])
+  assert.equal(opened.me.xp, before + 15)
+  assert.equal(xpOf(BUYER), before + 15)
+  const again = (await call('advent_open', { day: 5 }, BUYER)).body
+  assert.equal(again.already, true)
+  assert.equal(again.gained, 0)
+  assert.equal(xpOf(BUYER), before + 15)
+  assert.deepEqual(state.tables.advent_opens.filter((o) => o.season === 'legacy').map((o) => o.day), [1, 2, 3])
+  assert.deepEqual(state.tables.advent_opens.filter((o) => o.season === SEASON).map((o) => o.day), [5])
+  assert.equal(state.tables.reward_codes.find((c) => c.code === 'OLDC-ODE2').status, 'issued')
+})
+
+test('архив прежнего сезона: двери и призы видны, открыть или получить XP нельзя', async () => {
+  await everyoneBoots()
+  seasonOn()
+  const before = xpOf(BUYER)
+  const archive = (await call('advent', { season: 'legacy' }, BUYER)).body
+  assert.equal(archive.archived, true)
+  assert.equal(archive.closed, true)
+  assert.equal(archive.title, 'Creator Vault')
+  assert.equal(archive.opened, 3)
+  assert.equal(archive.streak, 0)
+  assert.deepEqual(archive.doors.map((d) => d.state), ['open', 'open', 'open', ...Array(7).fill('missed')])
+  assert.deepEqual(archive.rewards.map((r) => [r.id, r.issued, r.code]), [[1, true, 'OLDC-ODE2']])
+  assert.deepEqual(archive.archives, [])
+  const door = (await call('advent_door', { day: 1, season: 'legacy' }, BUYER)).body
+  assert.equal(door.body, 'старый текст')
+  assert.equal(door.opened.xp, 30)
+  const missed = (await call('advent_door', { day: 4, season: 'legacy' }, BUYER)).body
+  assert.equal(missed.closed, true)
+  assert.equal(missed.body, null)
+  assert.deepEqual(await call('advent_open', { day: 4, season: 'legacy' }, BUYER), { status: 403, body: { error: 'advent_closed' } })
+  const replay = (await call('advent_open', { day: 1, season: 'legacy' }, BUYER)).body
+  assert.equal(replay.already, true)
+  assert.deepEqual(replay.new_codes, [])
+  assert.equal(xpOf(BUYER), before)
+  assert.equal(state.tables.advent_opens.length, 3)
+  assert.equal(state.tables.reward_codes.length, 1)
+  for (const season of ['nope', 'Bad Season!']) assert.deepEqual(await call('advent', { season }, BUYER), { status: 404, body: { error: 'advent_off' } })
+  // У человека без истории в прежнем сезоне архив не предлагается.
+  assert.deepEqual((await call('advent', {}, OTHER)).body.archives, [])
+})
+
+test('билеты действуют только в своём сезоне', async () => {
+  await everyoneBoots()
+  seasonOn()
+  state.tables.advent_tickets = [{ id: 1, user_id: BUYER, source: 'admin', ref: 'admin:old', used_at: null, revoked_at: null }]
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 0)
+  assert.deepEqual(await call('advent_open', { day: 2 }, BUYER), { status: 402, body: { error: 'need_ticket' } })
+  state.tables.progress.push({ user_id: BUYER, lesson_id: 11, score: 3, total: 3, completed_at: new Date().toISOString() })
+  assert.equal((await call('advent', {}, BUYER)).body.catchup.tickets, 1)
+  const fresh = state.tables.advent_tickets.find((t) => t.source === 'quiz')
+  assert.equal(fresh.season, SEASON)
+  assert.equal(fresh.ref, `${SEASON}:quiz:${BUYER}:11`)
+  assert.equal((await call('advent_open', { day: 2 }, BUYER)).status, 200)
+  assert.equal(state.tables.advent_tickets.find((t) => t.ref === 'admin:old').used_at, null)
+  assert.equal((await call('advent', { season: 'legacy' }, BUYER)).body.catchup.tickets, 1)
+  assert.equal((await call('admin_advent_ticket_grant', { username: 'ivan_p', count: 2 }, ADMIN)).status, 200)
+  const manual = state.tables.advent_tickets.filter((t) => t.source === 'admin' && t.season === SEASON)
+  assert.equal(manual.length, 2)
+  assert.ok(manual.every((t) => t.ref.startsWith(`${SEASON}:admin:`)))
+})
+
+test('админ правит двери и призы только идущего сезона', async () => {
+  await everyoneBoots()
+  seasonOn()
+  const list = (await call('admin_advent_doors', {}, ADMIN)).body.doors
+  assert.equal(list.length, 10)
+  assert.ok(list.every((d) => d.season === SEASON))
+  const saved = await call('admin_advent_door_save', { door: { day: 1, kind: 'story', title: 'Правка', xp: 15 } }, ADMIN)
+  assert.equal(saved.status, 200)
+  assert.equal(state.tables.advent_doors.find((d) => d.season === 'legacy' && d.day === 1).title, 'Старая 1')
+  assert.equal(state.tables.advent_doors.find((d) => d.season === SEASON && d.day === 1).title, 'Правка')
+  // У дня 1 есть открытия только в прежнем сезоне: дверь нового сезона удаляется, прежняя остаётся.
+  assert.equal((await call('admin_advent_door_delete', { day: 1 }, ADMIN)).status, 200)
+  assert.equal(state.tables.advent_doors.filter((d) => d.day === 1).length, 1)
+  assert.equal(state.tables.advent_opens.length, 3)
+  const prize = await call('admin_advent_reward_save', { reward: { title: 'Ещё приз', kind: 'promo', doors: 2 } }, ADMIN)
+  assert.equal(prize.body.season, SEASON)
+  const admin = (await call('admin_advent', {}, ADMIN)).body
+  assert.equal(admin.season, SEASON)
+  assert.equal(admin.doors_defined, 9)
+  assert.deepEqual(admin.reward_list.map((r) => r.title).sort(), ['Ещё приз', 'Новый приз'])
+})
+
+test('смена сезона сохраняет снимок прежних настроек и умеет вернуться к нему', async () => {
+  await everyoneBoots()
+  adventOn({ title: 'Первый', theme: 'halloween' })
+  state.tables.advent_seasons = []
+  const first = campaignStart()
+  assert.deepEqual(await call('admin_advent_save', { settings: { season: 'Не id' } }, ADMIN), { status: 400, body: { error: 'bad_season' } })
+  assert.deepEqual(await call('admin_advent_save', { settings: { season: SEASON } }, BUYER), { status: 403, body: { error: 'forbidden' } })
+  const moved = await call('admin_advent_save', { settings: { season: SEASON, title: 'Второй', start: '2026-11-14', days: 53 } }, ADMIN)
+  assert.deepEqual(moved, { status: 200, body: { ok: true, season: SEASON } })
+  const now = () => state.tables.settings.find((s) => s.key === 'advent').value
+  assert.deepEqual([now().season, now().title, now().start, now().days], [SEASON, 'Второй', '2026-11-14', 53])
+  const kept = state.tables.advent_seasons.find((x) => x.id === 'legacy')
+  assert.deepEqual([kept.config.title, kept.config.start, kept.config.days], ['Первый', first, 10])
+  assert.ok(kept.archived_at)
+  assert.ok(state.tables.advent_seasons.some((x) => x.id === SEASON))
+  skew += 20_000
+  assert.equal((await call('admin_advent_save', { settings: { season: 'legacy' } }, ADMIN)).status, 200)
+  assert.deepEqual([now().season, now().title, now().start, now().days], ['legacy', 'Первый', first, 10])
+  assert.equal(state.tables.advent_seasons.find((x) => x.id === SEASON).config.start, '2026-11-14')
+})
+
 // ---------- Адвент: режимы выдачи призов и двери ----------
 
 const reward = (over) => ({ id: 1, doors: 1, title: 'Приз', description: '', emoji: '🎁', stock: null, position: 0, kind: 'promo', payload: {}, mode: 'threshold', day_from: null, day_to: null, drawn_at: null, ...over })

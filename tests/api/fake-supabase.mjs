@@ -9,9 +9,10 @@ const KEYS = {
   progress: ['user_id', 'lesson_id'],
   likes: ['user_id', 'lesson_id'],
   lesson_access: ['user_id', 'lesson_id'],
-  advent_opens: ['user_id', 'day'],
+  advent_opens: ['user_id', 'season', 'day'],
   advent_tickets: ['ref'],
-  advent_doors: ['day'],
+  advent_doors: ['season', 'day'],
+  advent_seasons: ['id'],
   reward_codes: ['code'],
   lesson_quiz_attempts: ['id'],
   certification_progress: ['user_id', 'certification_id'],
@@ -36,7 +37,18 @@ export function reset(tables) {
   state.academyReply = null
 }
 
-const table = (name) => (state.tables[name === 'feed_cards' ? 'lessons' : name] ??= [])
+// Сезоны адвента, как в миграции 20261115120000: строки без метки относятся к прежней кампании (legacy),
+// а вставка без явного сезона получает активный сезон из settings.advent.
+const SEASONED = ['advent_doors', 'advent_opens', 'advent_rewards', 'advent_tickets']
+const activeSeason = () => {
+  const season = (state.tables.settings ?? []).find((x) => x.key === 'advent')?.value?.season
+  return typeof season === 'string' && /^[a-z0-9][a-z0-9-]{0,39}$/.test(season) ? season : 'legacy'
+}
+const table = (name) => {
+  const rows = (state.tables[name === 'feed_cards' ? 'lessons' : name] ??= [])
+  if (SEASONED.includes(name)) for (const row of rows) row.season ??= 'legacy'
+  return rows
+}
 
 function likeToRegex(pattern) {
   let out = ''
@@ -192,6 +204,7 @@ class Query {
       case 'insert': {
         const rows = (Array.isArray(this.payload) ? this.payload : [this.payload]).map((r) => ({ ...r }))
         for (const row of rows) {
+          if (SEASONED.includes(this.name)) row.season ??= activeSeason()
           for (const k of UNIQUE[this.name] ?? []) if (t.some((x) => x[k] === row[k])) return { data: null, error: { code: '23505' } }
           const pk = KEYS[this.name]
           if (pk && t.some((x) => pk.every((k) => x[k] === row[k]))) return { data: null, error: { code: '23505' } }
@@ -206,6 +219,7 @@ class Query {
         const pk = KEYS[this.name]
         const touched = []
         for (const row of rows) {
+          if (SEASONED.includes(this.name)) row.season ??= activeSeason()
           const found = t.find((x) => pk.every((k) => x[k] === row[k]))
           if (found) {
             if (!this.upsertOpts.ignoreDuplicates) Object.assign(found, row)
@@ -463,6 +477,7 @@ export function createClient() {
         if (!r || r.mode !== 'draw' || r.drawn_at) return { data: [], error: null }
         const counts = new Map()
         for (const o of table('advent_opens')) {
+          if (o.season !== r.season) continue
           if (o.day < (r.day_from ?? 1) || o.day > (r.day_to ?? 60)) continue
           if (table('reward_codes').some((c) => c.reward_id === r.id && c.user_id === o.user_id)) continue
           counts.set(o.user_id, (counts.get(o.user_id) ?? 0) + 1)
@@ -480,15 +495,16 @@ export function createClient() {
       // Двери календаря: та же логика, что в SQL-функциях advent_open и advent_open_late.
       if (name === 'advent_open' || name === 'advent_open_late') {
         const opens = table('advent_opens')
-        const count = () => table('advent_opens').filter((o) => o.user_id === args.p_user).length
-        if (opens.some((o) => o.user_id === args.p_user && o.day === args.p_day)) return { data: [{ inserted: false, opened: count(), ticket: true }], error: null }
+        const season = args.p_season ?? activeSeason()
+        const count = () => table('advent_opens').filter((o) => o.user_id === args.p_user && o.season === season).length
+        if (opens.some((o) => o.user_id === args.p_user && o.season === season && o.day === args.p_day)) return { data: [{ inserted: false, opened: count(), ticket: true }], error: null }
         if (name === 'advent_open_late') {
-          const t = table('advent_tickets').find((x) => x.user_id === args.p_user && !x.used_at && !x.revoked_at)
+          const t = table('advent_tickets').find((x) => x.user_id === args.p_user && x.season === season && !x.used_at && !x.revoked_at)
           if (!t) return { data: [{ inserted: false, opened: count(), ticket: false }], error: null }
           t.used_at = new Date().toISOString()
           t.used_day = args.p_day
         }
-        opens.push({ user_id: args.p_user, day: args.p_day, score: args.p_score, total: args.p_total, xp: args.p_xp, late: name === 'advent_open_late' })
+        opens.push({ user_id: args.p_user, season, day: args.p_day, score: args.p_score, total: args.p_total, xp: args.p_xp, late: name === 'advent_open_late' })
         const u = table('users').find((x) => x.id === args.p_user)
         if (u) u.xp = (u.xp ?? 0) + args.p_xp
         return { data: [{ inserted: true, opened: count(), ticket: true }], error: null }
