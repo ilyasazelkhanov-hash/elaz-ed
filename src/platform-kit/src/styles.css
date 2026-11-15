@@ -5130,3 +5130,9 @@ body:has(.az-app) {
     color: inherit !important;
   }
 }
+
+.az-uncertain { margin: 12px; padding: 16px; }
+.az-uncertain p { margin: 8px 0; }
+
+.az-uncertain fieldset { margin-top: 12px; padding: 12px; }
+.az-uncertain label { display: block; margin: 12px 0; overflow-wrap: anywhere; }

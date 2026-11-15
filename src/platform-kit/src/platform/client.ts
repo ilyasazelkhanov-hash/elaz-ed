@@ -1,3 +1,4 @@
+import { UnknownOutcomeError } from './uncertain-action.ts'
 import type { AppConfig, Data, PlatformApi, Snapshot } from './contracts.ts'
 import type { DemoApi } from './demo.ts'
 interface TelegramWindow {
@@ -36,6 +37,7 @@ const errors: Record<string, string> = {
   invalid_file: 'Проверьте формат и размер файла; имя должно быть не длиннее 200 символов.',
   access_denied: 'Ваш доступ ожидает подтверждения организатором.',
   invalid_brief: 'Заполните обязательные поля заявки и проверьте выбранные варианты.',
+  request_conflict: 'Этот номер запроса уже использован для другого подарка. Проверьте историю.',
   idempotency_conflict: 'Заказ с этим номером уже создан. Проверьте историю заказов.',
   authentication_required: 'Откройте приложение в Telegram или войдите как менеджер.',
   expired_auth: 'Сессия Telegram истекла. Закройте приложение и откройте снова.',
@@ -62,7 +64,7 @@ const errors: Record<string, string> = {
   internal_error: 'Не удалось выполнить действие. Попробуйте позже.',
 }
 export const demoMode = () =>
-  import.meta.env.DEV || import.meta.env.VITE_DEMO === 'true' || new URLSearchParams(location.search).has('demo')
+  import.meta.env?.DEV || import.meta.env?.VITE_DEMO === 'true' || new URLSearchParams(location.search).has('demo')
 export function haptic(kind: 'tap' | 'success' = 'tap') {
   try {
     if (kind === 'success') telegram()?.HapticFeedback?.notificationOccurred('success')
@@ -76,7 +78,7 @@ export async function createApi(config: AppConfig, base?: string): Promise<Platf
     const { DemoApi } = await import('./demo.ts')
     return new DemoApi(config.preset, localStorage, config) as DemoApi
   }
-  const endpoint = (base ?? import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '')
+  const endpoint = (base ?? import.meta.env?.VITE_API_URL ?? '/api').replace(/\/$/, '')
   let csrfToken = ''
   if (!telegram()?.initData) {
     const session = await fetch(`${endpoint}/v1/auth/session`, {
@@ -86,6 +88,7 @@ export async function createApi(config: AppConfig, base?: string): Promise<Platf
     if (session?.ok) csrfToken = String((await session.json()).csrf ?? '')
   }
   const dispatch = async (action: string, payload: Data = {}) => {
+    const mutation = !['bootstrap', 'admin.analytics', 'admin.payments', 'queue.list', 'admin.queue.list', 'admin.entity.get'].includes(action)
     const csrf =
       csrfToken ||
       document.cookie
@@ -101,13 +104,22 @@ export async function createApi(config: AppConfig, base?: string): Promise<Platf
       body: JSON.stringify({ auth: telegram()?.initData ?? '', action, payload }),
       signal: AbortSignal.timeout(20000),
     }).catch(() => {
-      throw new Error('Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.')
+      if (mutation) throw new UnknownOutcomeError()
+      throw new Error('Нет связи с сервером. Проверьте интернет и обновите данные.')
     })
-    const body = await res.json().catch(() => ({ error: 'Сервер вернул непонятный ответ' }))
+    if (mutation && res.status >= 500) throw new UnknownOutcomeError()
+    const body = await res.json().catch(() => {
+      if (mutation) throw new UnknownOutcomeError()
+      throw new Error('Не удалось прочитать данные сервера.')
+    })
     if (!res.ok)
       throw new Error(
         errors[String(body.error)] ?? 'Не удалось выполнить действие. Обновите страницу или попробуйте позже.',
       )
+    if (!body?.snapshot?.me) {
+      if (mutation) throw new UnknownOutcomeError()
+      throw new Error('Сервер вернул неполные данные.')
+    }
     return body
   }
   return { bootstrap: async () => (await dispatch('bootstrap')).snapshot as Snapshot, dispatch }
