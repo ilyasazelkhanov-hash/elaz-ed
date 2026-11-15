@@ -1,22 +1,30 @@
 /** Local evidence is a learner's self-report, never a graded or verified skill. */
 export const PRACTICE_LIMIT = 12000
-export type PracticeArtifact = {result: string; evidence: string; revision: string; checks: boolean[]}
+export type PracticeArtifact = {result: string; evidence: string; revision: string; checks: boolean[]; taskRevision?: string; stale?: boolean}
 export const emptyArtifact = (count: number): PracticeArtifact => ({result:'', evidence:'', revision:'', checks:Array.from({length:count},()=>false)})
 export function artifactKey(scope: string | number | undefined, course: string, lesson: string) {
  return scope === undefined ? null : `og-artifact-v1:${[String(scope),course,lesson].map(encodeURIComponent).join(':')}`
 }
 export function artifactStatus(value: PracticeArtifact): 'empty' | 'draft' | 'self_checked' {
+ if (value.stale) return 'draft'
  if (!value.result.trim() && !value.evidence.trim() && !value.revision.trim()) return 'empty'
  return value.result.trim() && value.evidence.trim() && value.revision.trim() && value.checks.length > 0 && value.checks.every(Boolean) ? 'self_checked' : 'draft'
 }
-export function readArtifact(key: string | null, count: number, rubric: string, storage?: Pick<Storage,'getItem'>): PracticeArtifact {
+/** Keep learner-authored text, never carry old self-checks into a changed assignment. */
+export function reconcileArtifact(value: PracticeArtifact, taskRevision?: string): PracticeArtifact {
+ if(taskRevision===undefined)return value
+ const hasWork=!!(value.result.trim()||value.evidence.trim()||value.revision.trim())
+ const stale=hasWork&&(value.stale===true||value.taskRevision!==taskRevision)
+ return {...value,taskRevision:hasWork?value.taskRevision:taskRevision,stale,checks:stale?value.checks.map(()=>false):value.checks}
+}
+export function readArtifact(key: string | null, count: number, rubric: string, storage?: Pick<Storage,'getItem'>, taskRevision?: string): PracticeArtifact {
  if (!key) return emptyArtifact(count)
  try {
   const raw = JSON.parse((storage ?? localStorage).getItem(key) || 'null')
   if (!raw || raw.version !== 1 || typeof raw.value !== 'object' || !raw.value) return emptyArtifact(count)
   const value = raw.value
   const text = (field:string) => typeof value[field] === 'string' ? value[field].slice(0,PRACTICE_LIMIT) : ''
-  return {result:text('result'),evidence:text('evidence'),revision:text('revision'),checks:Array.from({length:count},(_,i)=>raw.rubric===rubric && value.checks?.[i]===true)}
+  return reconcileArtifact({result:text('result'),evidence:text('evidence'),revision:text('revision'),...(typeof value.taskRevision==='string'?{taskRevision:value.taskRevision.slice(0,256)}:{}),...(value.stale===true?{stale:true}:{}),checks:Array.from({length:count},(_,i)=>raw.rubric===rubric && value.checks?.[i]===true)},taskRevision)
  } catch {return emptyArtifact(count)}
 }
 export function saveArtifact(key: string | null, value: PracticeArtifact, rubric: string, storage?: Pick<Storage,'setItem'>): boolean {
@@ -32,7 +40,7 @@ export function artifactFeedback(value: PracticeArtifact, criteria: readonly str
  ]
 }
 export function exportArtifact(title: string, task: string, value: PracticeArtifact, criteria: readonly string[]) {
- return `${title}\n\nЗадание\n${task}\n\nМой результат\n${value.result}\n\nКак проверил\n${value.evidence}\n\nЧто исправил\n${value.revision}\n\nСамопроверка\n${criteria.map((text,i)=>`${value.checks[i]?'[x]':'[ ]'} ${text}`).join('\n')}\n\nСтатус: ${artifactStatus(value)==='self_checked'?'самопроверка выполнена':'черновик'}. Это не оценка преподавателя и не подтверждение навыка.\n`
+ return `${title}\n${value.stale?"Работа для прошлой версии задания. Требуется повторная самопроверка.\n":""}\nЗадание\n${task}\n\nМой результат\n${value.result}\n\nКак проверил\n${value.evidence}\n\nЧто исправил\n${value.revision}\n\nСамопроверка\n${criteria.map((text,i)=>`${value.checks[i]?'[x]':'[ ]'} ${text}`).join('\n')}\n\nСтатус: ${artifactStatus(value)==='self_checked'?'самопроверка выполнена':'черновик'}. Это не оценка преподавателя и не подтверждение навыка.\n`
 }
 
 export function removeArtifact(key: string | null, storage?: Pick<Storage,'removeItem'>): boolean {
@@ -47,7 +55,7 @@ export type ArtifactSession = {value: PracticeArtifact; dirty: boolean}
 export function createArtifactRecovery() {
  const entries = new Map<string,{rubric:string;session:ArtifactSession}>()
  const copy = (value:PracticeArtifact,count=value.checks.length):PracticeArtifact => ({
-  result:value.result.slice(0,PRACTICE_LIMIT),evidence:value.evidence.slice(0,PRACTICE_LIMIT),revision:value.revision.slice(0,PRACTICE_LIMIT),
+  ...value, result:value.result.slice(0,PRACTICE_LIMIT),evidence:value.evidence.slice(0,PRACTICE_LIMIT),revision:value.revision.slice(0,PRACTICE_LIMIT),
   checks:Array.from({length:Math.min(count,RECOVERY_CHECK_LIMIT)},(_,i)=>value.checks[i]===true),
  })
  return {
@@ -72,6 +80,7 @@ export const artifactRecovery = createArtifactRecovery()
 export function artifactRecoveryKey(scope:string|number|undefined,course:string,lesson:string) {
  return JSON.stringify([scope===undefined?'guest':'account',scope??null,course,lesson])
 }
-export function readArtifactSession(recoveryKey:string,key:string|null,count:number,rubric:string):ArtifactSession {
- return artifactRecovery.get(recoveryKey,rubric,count) ?? {value:readArtifact(key,count,rubric),dirty:false}
+export function readArtifactSession(recoveryKey:string,key:string|null,count:number,rubric:string,taskRevision?:string):ArtifactSession {
+ const session=artifactRecovery.get(recoveryKey,rubric,count) ?? {value:readArtifact(key,count,rubric),dirty:false}
+ return {...session,value:reconcileArtifact(session.value,taskRevision)}
 }

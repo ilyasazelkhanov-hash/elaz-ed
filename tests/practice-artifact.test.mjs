@@ -1,3 +1,5 @@
+import {practiceReaderRevision} from '../src/lib/practice-reader.ts'
+import {reconcileArtifact} from '../src/lib/practice-artifact.ts'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {artifactKey,emptyArtifact,artifactStatus,readArtifact,saveArtifact,artifactFeedback,exportArtifact,PRACTICE_LIMIT,removeArtifact,artifactRecovery,artifactRecoveryKey,readArtifactSession,createArtifactRecovery,ARTIFACT_RECOVERY_LIMIT} from '../src/lib/practice-artifact.ts'
@@ -42,9 +44,10 @@ test('actual artifact UI states local privacy and assessment limitations',async(
  let code=(await transformWithOxc(source,file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
  code=code.replace(/import[^;\n]*from ["']\.\.\/\.\.\/lib\/practice-artifact["'];?/g,'const {artifactFeedback,artifactKey,artifactStatus,exportArtifact,PRACTICE_LIMIT,readArtifact,saveArtifact,emptyArtifact,removeArtifact,artifactRecovery,artifactRecoveryKey,readArtifactSession}=globalThis.__artifact;')
  code=code.replace(/import[^;\n]*from ["']\.\.\/\.\.\/ui["'];?/g,'const {Tap}=globalThis.__artifact;')
+ code=code.replace(/import[^;\n]*from ["']\.\.\/\.\.\/lib\/practice-reader["'];?/g,'const {practiceReaderRevision}=globalThis.__artifactHandlers || globalThis.__artifact;')
  code=code.replace(/import ["']\.\/practice-artifact\.css["'];?/g,'')
  for(const name of ['react','react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
- globalThis.__artifact={artifactFeedback,artifactKey,artifactStatus,exportArtifact,PRACTICE_LIMIT,readArtifact,saveArtifact,emptyArtifact,removeArtifact,artifactRecovery,artifactRecoveryKey,readArtifactSession,Tap:({children,...props})=>createElement('button',props,children)}
+ globalThis.__artifact={practiceReaderRevision,artifactFeedback,artifactKey,artifactStatus,exportArtifact,PRACTICE_LIMIT,readArtifact,saveArtifact,emptyArtifact,removeArtifact,artifactRecovery,artifactRecoveryKey,readArtifactSession,Tap:({children,...props})=>createElement('button',props,children)}
  try{
   const {PracticeArtifact}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
   const html=renderToStaticMarkup(createElement(PracticeArtifact,{course:'free',lesson:'a',title:'Урок',task:'Сделай пример',criteria}))
@@ -99,13 +102,14 @@ test('real field/save/delete handlers recover unsaved work across SPA unmount wi
  code=code.replace(/import[^;\n]*from ["']react["'];?/g,'const {useEffect,useId,useState}=globalThis.__artifactHandlers;')
  code=code.replace(/import[^;\n]*from ["']\.\.\/\.\.\/lib\/practice-artifact["'];?/g,'const {artifactFeedback,artifactKey,artifactStatus,exportArtifact,PRACTICE_LIMIT,readArtifact,saveArtifact,emptyArtifact,removeArtifact,artifactRecovery,artifactRecoveryKey,readArtifactSession}=globalThis.__artifactHandlers;')
  code=code.replace(/import[^;\n]*from ["']\.\.\/\.\.\/ui["'];?/g,'const {Tap}=globalThis.__artifactHandlers;')
+ code=code.replace(/import[^;\n]*from ["']\.\.\/\.\.\/lib\/practice-reader["'];?/g,'const {practiceReaderRevision}=globalThis.__artifactHandlers || globalThis.__artifact;')
  code=code.replace(/import ["']\.\/practice-artifact\.css["'];?/g,'')
  for(const name of ['react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
  let states=[],index=0,writes=0
  const storage=new Map(),previous=globalThis.localStorage
  globalThis.localStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>{writes++;storage.set(k,v)},removeItem:k=>storage.delete(k)}
- globalThis.__artifactHandlers={artifactFeedback,artifactKey,artifactStatus,exportArtifact,PRACTICE_LIMIT,readArtifact,saveArtifact,emptyArtifact,removeArtifact,artifactRecovery,artifactRecoveryKey,readArtifactSession,Tap(){},useId:()=>':artifact:',useEffect(){},useState(initial){const i=index++;if(!(i in states))states[i]=typeof initial==='function'?initial():initial;return[states[i],next=>{states[i]=typeof next==='function'?next(states[i]):next}]}}
- const props={scope:'live:handler-test',course:'free',lesson:'one',title:'Урок',task:'Практика',criteria}
+ globalThis.__artifactHandlers={practiceReaderRevision,artifactFeedback,artifactKey,artifactStatus,exportArtifact,PRACTICE_LIMIT,readArtifact,saveArtifact,emptyArtifact,removeArtifact,artifactRecovery,artifactRecoveryKey,readArtifactSession,Tap(){},useId:()=>':artifact:',useEffect(){},useState(initial){const i=index++;if(!(i in states))states[i]=typeof initial==='function'?initial():initial;return[states[i],next=>{states[i]=typeof next==='function'?next(states[i]):next}]}}
+ const props={taskRevision:'same-body',scope:'live:handler-test',course:'free',lesson:'one',title:'Урок',task:'Практика',criteria}
  const nodes=tree=>{if(!tree||typeof tree!=='object')return[];return[tree,...[tree.props?.children].flat(Infinity).flatMap(nodes)]}
  const label=node=>[node?.props?.children].flat(Infinity).filter(x=>typeof x==='string').join('')
  try{
@@ -133,6 +137,20 @@ test('real field/save/delete handlers recover unsaved work across SPA unmount wi
   states=[];tree=render()
   assert.equal(nodes(tree).find(n=>n.type==='textarea').props.value,'')
   assert.equal(storage.size,0)
+  nodes(tree).find(n=>n.type==='textarea').props.onChange({target:{value:'retained draft'}})
+  states=[];tree=render()
+  assert.equal(nodes(tree).find(n=>n.type==='fieldset').props.disabled,false,'new work after clear keeps current revision')
+  states=[];tree=render({...props,task:'changed assignment'})
+  assert.equal(nodes(tree).find(n=>n.type==='textarea').props.value,'retained draft')
+  assert.equal(nodes(tree).find(n=>n.type==='fieldset').props.disabled,true)
+  const notice=nodes(tree).find(n=>n.type==='div'&&n.props.role==='status')
+  assert.ok(notice)
+  nodes(notice).find(n=>typeof n.props?.onClick==='function').props.onClick()
+  tree=render({...props,task:'changed assignment'})
+  assert.equal(nodes(tree).find(n=>n.type==='fieldset').props.disabled,false)
+  assert.ok(nodes(tree).filter(n=>n.type==='input').every(n=>!n.props.checked))
+  artifactRecovery.remove(artifactRecoveryKey(props.scope,props.course,props.lesson))
+
   assert.equal(artifactRecovery.get(artifactRecoveryKey(props.scope,props.course,props.lesson),rubric,2),null)
  }finally{globalThis.localStorage=previous;delete globalThis.__artifactHandlers}
 })
@@ -146,4 +164,22 @@ test('session read without recovery respects latest persistent deletion',()=>{
   globalThis.localStorage={getItem:()=>null}
   assert.equal(readArtifactSession(recoveryKey,key,2,rubric).value.result,'')
  }finally{globalThis.localStorage=old}
+})
+
+
+test('assignment revisions preserve text but invalidate stale and legacy checks',()=>{
+ const value={result:'result',evidence:'evidence',revision:'learner edits',checks:[true,true],taskRevision:'v1'}
+ assert.equal(artifactStatus(reconcileArtifact(value,'v1')),'self_checked')
+ const stale=reconcileArtifact(value,'v2')
+ assert.equal(stale.result,value.result);assert.equal(stale.evidence,value.evidence);assert.equal(stale.revision,value.revision)
+ assert.equal(stale.taskRevision,'v1');assert.equal(stale.stale,true);assert.deepEqual(stale.checks,[false,false]);assert.equal(artifactStatus(stale),'draft')
+ let stored
+ saveArtifact('key',stale,rubric,{setItem:(_,v)=>stored=v})
+ assert.equal(readArtifact('key',2,rubric,{getItem:()=>stored},'v2').stale,true,'saving a stale draft cannot certify it')
+ assert.equal(reconcileArtifact({...value,taskRevision:undefined},'v2').stale,true,'legacy work is preserved but requires review')
+ const renewed={...stale,taskRevision:'v2',stale:false,checks:[true,true]}
+ assert.equal(artifactStatus(reconcileArtifact(renewed,'v2')),'self_checked')
+ const memory=createArtifactRecovery();memory.put('x',rubric,{value,dirty:true})
+ assert.equal(reconcileArtifact(memory.get('x',rubric,2).value,'v2').stale,true)
+ assert.equal(reconcileArtifact(emptyArtifact(2),'v2').stale,false)
 })

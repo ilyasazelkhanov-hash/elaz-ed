@@ -84,7 +84,7 @@ export async function inventory(sourceRoot, skip = []) {
   async function visit(directory, relative = '') {
     if (relative && (await exists(path.join(directory, MANIFEST)))) return
     for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
-      if (excluded.test(entry.name) || secret.test(entry.name)) continue
+      if (excluded.test(entry.name) || secret.test(entry.name) || /^catalog\.(?:preview|backup-[a-f0-9]+)\.json$/.test(entry.name)) continue
       const rel = relative ? `${relative}/${entry.name}` : entry.name
       if (!relative && !roots.has(entry.name) && !rootFiles.has(entry.name)) continue
       const absolute = path.join(directory, entry.name)

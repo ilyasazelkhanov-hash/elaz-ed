@@ -54,7 +54,7 @@ const journeys=new Map<string,GuideJourneyState>()
 const JOURNEY_STORE='og:guide-journeys:v2',MAX_ENTRIES=40,MAX_BYTES=1000000
 /** Exact public exercise content, not a short hash: changed questions/steps never reuse answers. */
 export const guideJourneyKey=(scope:string,id:string,revision:unknown='v1')=>JSON.stringify([scope,id,revision])
-function emptyJourney(questions:GuideChallenge[]):GuideJourneyState{return {step:0,answers:questions.map(initialGuideAnswer),checked:questions.map(()=>false)}}
+export function emptyJourney(questions:GuideChallenge[]):GuideJourneyState{return {step:0,answers:questions.map(initialGuideAnswer),checked:questions.map(()=>false)}}
 function safeJourney(value:unknown,questions:GuideChallenge[]):GuideJourneyState|null{
  if(!value||typeof value!=='object')return null
  const v=value as GuideJourneyState

@@ -8,3 +8,6 @@ test-results/
 .client-baseline/
 *.log
 supabase/.temp/
+
+content/catalog.preview.json
+content/catalog.backup-*.json
