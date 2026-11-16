@@ -1,0 +1,56 @@
+[
+  {
+    "file": "chatgpt-wallet.gif",
+    "size_bytes": 83186,
+    "width": 960,
+    "height": 540,
+    "frames": 40,
+    "loop": 0,
+    "duration_ms": 3200
+  },
+  {
+    "file": "claude-manufacturing.gif",
+    "size_bytes": 78932,
+    "width": 960,
+    "height": 540,
+    "frames": 40,
+    "loop": 0,
+    "duration_ms": 3200
+  },
+  {
+    "file": "claude-meetings.gif",
+    "size_bytes": 114040,
+    "width": 960,
+    "height": 540,
+    "frames": 40,
+    "loop": 0,
+    "duration_ms": 3200
+  },
+  {
+    "file": "elevenlabs-routines.gif",
+    "size_bytes": 147674,
+    "width": 960,
+    "height": 540,
+    "frames": 40,
+    "loop": 0,
+    "duration_ms": 3200
+  },
+  {
+    "file": "gemini-decisions.gif",
+    "size_bytes": 69166,
+    "width": 960,
+    "height": 540,
+    "frames": 40,
+    "loop": 0,
+    "duration_ms": 3200
+  },
+  {
+    "file": "gemini-hydrogen.gif",
+    "size_bytes": 154974,
+    "width": 960,
+    "height": 540,
+    "frames": 40,
+    "loop": 0,
+    "duration_ms": 3200
+  }
+]
