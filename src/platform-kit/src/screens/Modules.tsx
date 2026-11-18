@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowRight, ArrowUpRight, Bookmark, Check, Gift, Heart, Search, Sparkles, Users, Zap } from 'lucide-react'
 import { motion } from 'motion/react'
 import { modules } from '../platform/config.ts'
@@ -6,6 +6,8 @@ import type { BrandConfig, Entity, ModuleId } from '../platform/contracts.ts'
 import { usePlatform } from '../platform/store.ts'
 import { Art, ArrowLink, Button, Empty, Meter, PageHeader, Pill, QR, SectionTitle } from '../components/ui.tsx'
 import { EntityCard, MemberCard } from './Home.tsx'
+import { couponDisplayStatus, stampProgress } from '../platform/wallet-display.ts'
+import { useCouponClock } from '../platform/use-coupon-clock.ts'
 
 export function ModulePage({ id }: { id: string }) {
   const s = usePlatform((v) => v.snapshot!),
@@ -550,6 +552,16 @@ export function Progress() {
 export function Wallet({ brand }: { brand: BrandConfig }) {
   const s = usePlatform((v) => v.snapshot!)
   const [open, setOpen] = useState<string | null>(null)
+  const [section, setSection] = useState<'available' | 'history'>('available')
+  const now = useCouponClock(s.coupons)
+  const stamps = stampProgress(s.me.stamps, s.config)
+  const ownCoupons = s.coupons.filter((c) => c.userId === s.me.id)
+  const available = ownCoupons.filter((c) => couponDisplayStatus(c, now) === 'issued')
+  const history = ownCoupons.filter((c) => couponDisplayStatus(c, now) !== 'issued')
+  const coupons = section === 'available' ? available : history
+  useEffect(() => {
+    if (open && !s.coupons.some((c) => c.id === open && c.userId === s.me.id && couponDisplayStatus(c, now) === 'issued')) setOpen(null)
+  }, [open, now, s.coupons, s.me.id])
   return (
     <>
       <PageHeader title="Хорошее возвращается" subtitle="Ваши баллы, подарки и особенные моменты." />
@@ -561,46 +573,61 @@ export function Wallet({ brand }: { brand: BrandConfig }) {
             <h3>Хорошие встречи складываются.</h3>
             <p>Подтверждённые визиты: {s.me.stamps}. Отметку добавляет сотрудник клуба.</p>
           </div>
-          <div className="az-stamps">
-            {Array.from({ length: 6 }, (_, i) => (
-              <span key={i} className={i < s.me.stamps % 6 ? 'is-stamped' : ''}>
-                {i === 5 ? <Gift size={24} /> : i < s.me.stamps % 6 ? '✳' : String(i + 1).padStart(2, '0')}
-              </span>
-            ))}
-          </div>
+          <p>В цикле: {stamps.filled} из {stamps.target}. Завершено циклов: {stamps.completed}.</p>
+          <p>Завершённый цикл не означает выдачу подарка. Выданные купоны находятся ниже.</p>
+          {stamps.target <= 24 ? (
+            <div className="az-stamps" role="img" aria-label={`Отметки в цикле: ${stamps.filled} из ${stamps.target}`}>
+              {Array.from({ length: stamps.target }, (_, i) => (
+                <span key={i} aria-hidden="true" className={i < stamps.filled ? 'is-stamped' : ''}>
+                  {i < stamps.filled ? '✳' : String(i + 1).padStart(2, '0')}
+                </span>
+              ))}
+            </div>
+          ) : <Meter value={stamps.filled} max={stamps.target} label={`Отметки в цикле: ${stamps.filled} из ${stamps.target}`} />}
         </div>
-        <SectionTitle title="Подарки уже ждут" />
-        {!s.coupons.filter((c) => c.userId === s.me.id).length ? (
+        <SectionTitle title="Ваши купоны" />
+        <div className="az-filter-row" role="group" aria-label="Раздел купонов">
+          <button className={`az-pill ${section === 'available' ? 'is-active' : ''}`} aria-pressed={section === 'available'} onClick={() => { setSection('available'); setOpen(null) }}>
+            Доступные ({available.length})
+          </button>
+          <button className={`az-pill ${section === 'history' ? 'is-active' : ''}`} aria-pressed={section === 'history'} onClick={() => { setSection('history'); setOpen(null) }}>
+            История ({history.length})
+          </button>
+        </div>
+        {!coupons.length ? (
           <Empty
-            title="Здесь появится что-то хорошее"
-            body="Обменяйте баллы на подарок - и ваш первый купон будет здесь."
+            title={section === 'available' ? 'Нет доступных купонов' : 'История пока пуста'}
+            body={section === 'available' ? 'Выданные действующие купоны появятся здесь. Использованные и просроченные сохранены в истории.' : 'Здесь будут использованные купоны и купоны с истёкшим сроком.'}
             icon={Gift}
           />
-        ) : (
-          s.coupons
-            .filter((c) => c.userId === s.me.id)
-            .map((c) => (
-              <button
-                className={`az-coupon ${c.status !== 'issued' ? 'is-used' : ''}`}
-                key={c.id}
-                onClick={() => setOpen(open === c.id ? null : c.id)}
-              >
-                <div>
-                  <span className="az-eyebrow">{c.status === 'issued' ? 'ВАШ ПОДАРОК' : 'ИСПОЛЬЗОВАН'}</span>
-                  <h3>{c.title}</h3>
-                  <code>{c.code}</code>
-                  <small>До {new Date(c.expiresAt).toLocaleDateString('ru')}</small>
-                </div>
-                <Gift size={32} />
-                {open === c.id && (
-                  <div className="az-qr">
-                    <QR value={c.code} />
-                    <p>Покажите код сотруднику на точке получения.</p>
-                  </div>
-                )}
-              </button>
-            ))
-        )}
+        ) : coupons.map((c) => {
+          const status = couponDisplayStatus(c, now)
+          const active = status === 'issued'
+          const expiry = Date.parse(c.expiresAt)
+          const details = <>
+            <div>
+              <span className="az-eyebrow">{{ issued: 'ДОСТУПЕН', redeemed: 'ИСПОЛЬЗОВАН', expired: 'СРОК ИСТЁК', unavailable: 'НЕДОСТУПЕН' }[status]}</span>
+              <h3>{c.title}</h3>
+              <code>{c.code}</code>
+              <small>{Number.isFinite(expiry) ? `Срок действия: до ${new Date(expiry).toLocaleString(s.config.locale)}` : 'Срок действия неизвестен. Уточните у организатора.'}</small>
+            </div>
+            <Gift size={32} aria-hidden="true" />
+          </>
+          return active ? (
+            <button
+              className="az-coupon"
+              key={c.id}
+              aria-expanded={open === c.id}
+              onClick={() => { if (couponDisplayStatus(c) === 'issued') setOpen(open === c.id ? null : c.id) }}
+            >
+              {details}
+              {open === c.id && <div className="az-qr">
+                <QR value={c.code} />
+                <p>Покажите код сотруднику на точке получения.</p>
+              </div>}
+            </button>
+          ) : <article className="az-coupon is-used" key={c.id}>{details}</article>
+        })}
         <SectionTitle title="История хороших действий" />
         <div className="az-ledger">
           {s.ledger

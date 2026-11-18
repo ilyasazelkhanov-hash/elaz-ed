@@ -244,7 +244,7 @@ export function validateConfig(config: AppConfig, brand: BrandConfig) {
       !Array.isArray(config.progression.levels) ||
       !config.progression.levels.length ||
       config.progression.levels.some((level) => typeof level !== 'string' || !level.trim()) ||
-      !Number.isInteger(config.progression.stampsPerReward) ||
+      !Number.isSafeInteger(config.progression.stampsPerReward) ||
       config.progression.stampsPerReward < 1)
   )
     throw new Error('Invalid progression display')

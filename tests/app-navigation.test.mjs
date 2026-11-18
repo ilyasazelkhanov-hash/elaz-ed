@@ -1,6 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { outsideEntryLinks, entryHashFromParam, publicEntryHash } from '../src/lib/outside-entry.ts'
+import directory from '../content/ai-practice-2026-10-25/course-directory.json' with {type:'json'}
 import { bindAppNavigation, backWithinApp, navigationFromHash, navigationHash } from '../src/lib/app-navigation.ts'
 
 function harness(initial = { tab: 'home', stack: [] }, href = 'https://app.test/?demo') {
@@ -141,4 +143,67 @@ test('Dots settings use one real navigation entry, Back/Forward, close and no pe
  const app=await readFile(new URL('../src/App.tsx',import.meta.url),'utf8')
  assert.match(app,/case 'companion-settings': return <CompanionSettings\/>/)
  assert.match(app,/onClose=\{o.type === 'companion-settings' \? pop : undefined\}/)
+})
+
+
+test('outside entry round-trips every OG practice lesson and public article through the existing bot transport', () => {
+  const routes = ['/blog', '/blog/42', '/courses', '/courses/start', '/courses/start/first-request', '/courses/og-practice', '/courses/VC-101', '/courses/courses/VC-101', '/academy', '/academy/courses/VC-101',
+    ...directory.flatMap(course => [`/courses/og-practice/${course.key}`, ...course.lessons.map(lesson => `/courses/og-practice/${course.key}/${lesson.key}`)])]
+  for (const route of routes) {
+    const links = outsideEntryLinks(new URL(`https://app.test/?auth=private#${route}`))
+    const param = new URL(links.telegram).searchParams.get('start')
+    assert.ok(param.length <= 64, route)
+    assert.match(param, /^[A-Za-z0-9_-]+$/)
+    assert.equal(entryHashFromParam(param), `#${route}`)
+    assert.equal(links.demo, `/?demo#${route}`)
+    const botButton = new URL(`https://app.test/?sp=${param}`)
+    assert.deepEqual(outsideEntryLinks(botButton), links)
+    assert.doesNotMatch(JSON.stringify(links), /private|auth/)
+  }
+})
+
+test('outside entry only retains known content; unknown, private and malformed destinations fall back safely', () => {
+  for (const hash of ['#/admin', '#/courses/admin', '#/academy/admin', '#/profile', '#/courses/projects/private', '#/blog/0', '#/blog/9007199254740993', '#/blog/42?token=secret', '#/blog/42/extra', '#/courses/start/unknown', '#/courses/og-practice/unknown', '#/courses/og-practice/text/block-1', '#/courses/og-practice/foundations/block-1/extra', '#/courses/../admin', '#//evil.test', '#/courses/%2e%2e/admin']) {
+    assert.equal(publicEntryHash(hash), null, hash)
+    const links = outsideEntryLinks(new URL(`https://app.test/?sp=l42&token=secret${hash}`))
+    assert.deepEqual(links, {telegram:'https://t.me/elazart_bot',demo:'/?demo'}, hash)
+  }
+  for (const param of ['open_courses_admin', 'open_blog_42_r123', 'open_blog_42%3Ftoken=secret', 'open_blog_42/extra', 'open_' + 'a'.repeat(60), 'other_blog_42']) assert.equal(entryHashFromParam(param), null, param)
+  assert.deepEqual(outsideEntryLinks(new URL('https://app.test/?sp=l42#/')), {telegram:'https://t.me/elazart_bot',demo:'/?demo'})
+})
+
+test('pathname and legacy sp content routes survive without relaying referrals or arbitrary queries', () => {
+  for (const [url, hash] of [
+    ['https://app.test/courses/start/first-request?token=secret', '#/courses/start/first-request'],
+    ['https://app.test/?sp=l42_r123', '#/blog/42'],
+    ['https://app.test/?sp=g_first-request', '#/courses/start/first-request'],
+    ['https://app.test/?sp=course_VC-101', '#/courses/VC-101'],
+    ['https://app.test/?sp=academy_VC-101', '#/academy/courses/VC-101'],
+    ['https://app.test/courses/start?sp=l42#/blog/43', '#/blog/43'],
+  ]) {
+    const links = outsideEntryLinks(new URL(url))
+    assert.equal(links.demo, `/?demo${hash}`)
+    assert.equal(entryHashFromParam(new URL(links.telegram).searchParams.get('start')), hash)
+    assert.doesNotMatch(JSON.stringify(links), /secret|r123/)
+  }
+})
+
+test('returned article is a real post route and direct-entry Back cannot reopen a stale reader', async () => {
+  const hash = entryHashFromParam('open_blog_42')
+  const h = harness(navigationFromHash(hash), 'https://app.test/?sp=open_blog_42')
+  assert.deepEqual(h.value, {tab:'blog',stack:[{type:'lesson',id:42,post:true}]})
+  h.pop(); await tick()
+  assert.deepEqual(h.value.stack, []); assert.equal(h.browser.location.hash, '#/blog')
+  assert.equal(h.records.length, 1)
+  h.close()
+  const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
+  assert.match(app, /const entryHash = location.hash \|\| entryHashFromParam\(startParam\)/)
+  assert.match(app, /if \(!initialRoute && !location.hash/)
+  const outside = await readFile(new URL('../src/screens/States.tsx', import.meta.url), 'utf8')
+  for (const event of ['hashchange', 'popstate']) {
+    assert.ok(outside.includes(`window.addEventListener('${event}', refresh)`))
+    assert.ok(outside.includes(`window.removeEventListener('${event}', refresh)`))
+  }
+  assert.match(outside, /href=\{links.telegram\}/)
+  assert.match(outside, /href=\{links.demo\}/)
 })

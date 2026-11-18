@@ -24,6 +24,10 @@ import { demoMode } from '../platform/client.ts'
 import type { BrandConfig } from '../platform/contracts.ts'
 import { ArrowLink, Button, Modal, PageHeader, QR, SectionTitle, money } from '../components/ui.tsx'
 import { MemberCard } from './Home.tsx'
+import { availableCoupons } from '../platform/wallet-display.ts'
+import { useCouponClock } from '../platform/use-coupon-clock.ts'
+
+const noCoupons: import('../platform/contracts.ts').Coupon[] = []
 
 export default function Profile({
   brand,
@@ -40,6 +44,7 @@ export default function Profile({
   useEffect(() => {
     if (s && s.me.role !== 'member') void import('./Admin.tsx').catch(() => {})
   }, [s?.me.role])
+  const now = useCouponClock(s?.coupons ?? noCoupons)
   if (!s) return null
   const has = (id: string) => s.config.modules.includes(id as never)
   const share = async () => {
@@ -126,8 +131,8 @@ export default function Profile({
           {has('loyalty') && (
             <button onClick={() => push({ type: 'wallet' })}>
               <Gift size={22} />
-              <strong>{s.coupons.filter((c) => c.userId === s.me.id).length}</strong>
-              <small>подарки и купоны</small>
+              <strong>{availableCoupons(s.coupons, s.me.id, now).length}</strong>
+              <small>доступные купоны</small>
             </button>
           )}
           {has('loyalty') && (
