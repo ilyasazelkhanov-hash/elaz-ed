@@ -2,11 +2,10 @@ import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { errorText } from '../lib/api'
 import { INSTAGRAM } from '../lib/install'
+import { outsideEntryLinks } from '../lib/outside-entry'
 import { haptic, openLink } from '../lib/tg'
 import { useStore } from '../store'
 import { Cta, Emoji, Spinner, Tap } from '../ui'
-
-const BOT = 'elazart_bot'
 
 export function Logo({ size = 30 }: { size?: number }) {
   return (
@@ -162,15 +161,25 @@ export function Setup() {
 
 /** Открыли ссылку в обычном браузере. */
 export function Outside() {
+  const [links, setLinks] = useState(() => outsideEntryLinks(location))
+  useEffect(() => {
+    const refresh = () => setLinks(outsideEntryLinks(location))
+    window.addEventListener('hashchange', refresh)
+    window.addEventListener('popstate', refresh)
+    return () => {
+      window.removeEventListener('hashchange', refresh)
+      window.removeEventListener('popstate', refresh)
+    }
+  }, [])
   return (
     <Frame>
       <Logo size={40} />
       <p className="mt-5 max-w-[300px] text-[16px] leading-snug text-mute">Уроки, туториалы и новости с XP, стриком и рейтингом. Работает внутри Telegram.</p>
       <div className="mt-8 w-full max-w-[320px] space-y-2.5">
-        <a href={`https://t.me/${BOT}`} className={primary}>
+        <a href={links.telegram} className={primary}>
           Открыть в Telegram
         </a>
-        <a href="?demo" className={secondary}>
+        <a href={links.demo} className={secondary}>
           Посмотреть демо
         </a>
       </div>

@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useRef, type UIEvent } from 'react'
 import { isDemo } from './lib/api'
 import { RefreshNotice } from './RefreshNotice'
 import { coursesEntry } from './lib/learning-entry'
+import { entryHashFromParam } from './lib/outside-entry'
 import { parseGuideStartParam } from './lib/discovery-events'
 import { track } from './lib/track'
 import { academyEntry } from './lib/academy-entry'
@@ -126,14 +127,15 @@ function Shell() {
     const freeGuide = parseGuideStartParam(location.hash ? '' : startParam)
     const academyPath = academyEntry(location.hash, location.hash ? '' : location.pathname, location.hash ? '' : startParam)
     const coursesPath = coursesEntry(location.hash, location.hash ? '' : location.pathname, location.hash ? '' : startParam)
-    const initialRoute = location.hash ? navigationFromHash(location.hash) : null
+    const entryHash = location.hash || entryHashFromParam(startParam)
+    const initialRoute = entryHash ? navigationFromHash(entryHash) : null
     const postId = initialRoute?.stack.find(overlay => overlay.type === 'lesson')?.id
     if (initialRoute) useStore.setState(initialRoute)
     else if (coursesPath) {useStore.getState().setTab('courses');if(coursesPath!=='/courses')useStore.getState().push({type:'learning',path:coursesPath})}
     else if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
     else if (freeGuide) {useStore.getState().setTab('courses');useStore.getState().push({type:'learning',path:'/courses/start/'+freeGuide.guideId})}
     track('discovery_open',{source:freeGuide?'telegram_guide':postId?'blog':/(?:^|_)l\d+(?:_|$)/.test(startParam)?'telegram_post':/(?:^|_)c\d+(?:_|$)/.test(startParam)?'telegram_course':'direct'})
-    if (!location.hash && !postId && !coursesPath && !academyPath && !freeGuide) {
+    if (!initialRoute && !location.hash && !postId && !coursesPath && !academyPath && !freeGuide) {
       const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
       const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
       if (id) useStore.getState().push({ type: 'lesson', id })

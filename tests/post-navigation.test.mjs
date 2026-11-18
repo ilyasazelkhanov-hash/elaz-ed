@@ -134,7 +134,7 @@ test('explicit article links and archive cards retain the reader while metadata 
   const lesson = await readFile(new URL('../src/screens/Lesson.tsx', import.meta.url), 'utf8')
   const feed = await readFile(new URL('../src/screens/home/Feed.tsx', import.meta.url), 'utf8')
   const focus = await readFile(new URL('../src/FocusLayer.tsx', import.meta.url), 'utf8')
-  assert.match(app, /navigationFromHash\(location.hash\)/)
+  assert.match(app, /navigationFromHash\(entryHash\)/)
   const navigation = await readFile(new URL('../src/lib/app-navigation.ts', import.meta.url), 'utf8')
   assert.match(navigation, /type: 'lesson', id: Number\(post\[1\]\), post: true/)
   assert.match(app, /post=\{overlay\.post\}/)

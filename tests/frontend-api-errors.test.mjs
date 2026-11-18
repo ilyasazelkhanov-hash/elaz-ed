@@ -35,6 +35,7 @@ const screenUrl = await compile('../src/screens/States.tsx', {
   '../store': stub(`import { useStore as store } from ${JSON.stringify(storeUrl)}; export const useStore = selector => selector(store.getState())`),
   'motion/react': stub('export const motion = { div: "div" }'),
   '../lib/install': stub('export const INSTAGRAM = {}'),
+  '../lib/outside-entry': new URL('../src/lib/outside-entry.ts', import.meta.url).href,
   '../lib/tg': stub('export const haptic = {}, openLink = () => {}'),
   '../ui': stub('export const Tap = "button", Cta = "button", Emoji = () => null, Spinner = () => null'),
 })
