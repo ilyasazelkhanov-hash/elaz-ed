@@ -27,4 +27,8 @@ Baseline: `c1f956983b6c5fbe8805d3877d8eeca3f61138d0`. Поручение вла�
 
 ## Выпуск
 
-Ожидается проверка exact remote commit, CI и публичного `release.json`. До такой квитанции этот документ не заявляет deployed.
+Выпущено через [PR #28](https://github.com/ilyasazelkhanov-hash/elaz-ed/pull/28). Feature commit `522a0403558a67329199ed5508dbee4777275c93`, main merge `b46f12f9287a41e83f12f25ccebbb0396cb19b6a`. Их Git tree `59787dfa8de2864028691c34ada6049a4b196016` совпадает с локально проверенной реализацией. [CI PR](https://github.com/ilyasazelkhanov-hash/elaz-ed/actions/runs/44238732932): verify, Master platform and client templates, Edge API and release tools, Edge API typecheck - success; Published release smoke - skipped.
+
+[Vercel production](https://vercel.com/elazbots/elaz-ed/6HpJ9tSeLmD59ZpgpeG5MWp5FKoW) - success. Публичный [release.json](https://elaz-ed.vercel.app/release.json) прочитан после deployment: commit `b46f12f9287a41e83f12f25ccebbb0396cb19b6a`, built_at `2026-11-18T04:42:48.685Z`, build_sha256 `0e34819eaec2ec8a1e9dc79de75df072dbda354fbecac5f9e157bf2ae5ec77e5`, file_count 578. Прежний `dirty:true` остаётся незакрытой диагностикой; наличие exact SHA не является browser/Telegram/backend QA.
+
+Этот последующий docs-only commit фиксирует квитанцию предыдущего выпуска. Не меняет продуктовый код и не объявляет свой будущий deployment проверенным.
