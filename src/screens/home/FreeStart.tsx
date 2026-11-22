@@ -85,6 +85,13 @@ function FreeStartSession({path,go,user}:FreeStartProps & {user:number}) {
   {done.length>0&&<p className="free-start-progress">{done.length} из {beginnerGuides.length} разборов попробовано</p>}
   <h2 className="free-start-section-title">Начни с того, что нужно сейчас</h2>
   <div className="free-start-grid">{beginnerGuides.map((item,index)=>{const Icon=icons[item.icon as keyof typeof icons];return <Tap key={item.id} className="free-start-card" onClick={()=>openGuide(item.id,'free_start')}><span className="free-start-card-icon"><Icon size={22}/></span><span><small>{item.eyebrow} · {item.minutes} мин</small><b>{item.title}</b><span>{item.result}</span></span><span className="free-start-card-tail">{done.includes(item.id)?<Check size={18}/>:<span>{index+1}</span>}</span></Tap>})}</div>
+  <section className="free-start-task" aria-labelledby="vibe-atlas-title">
+   <h2 id="vibe-atlas-title">VIBE ATLAS: справочник по вайбкодингу</h2>
+   <p>Бесплатная методичка: 302 инструмента, навыка и MCP, 12 практических сценариев, готовые стеки и глоссарий. Для тех, кто хочет создавать приложения с ИИ.</p>
+   <a className="free-start-link" href="/materials/vibe-atlas-2026-11-22.md" download="VIBE_ATLAS_2026.md">Скачать полную методичку (.md)<ArrowRight size={17} aria-hidden="true"/></a>
+   <a className="free-start-link" href="https://vibe-atlas-six.vercel.app/" target="_blank" rel="noopener noreferrer">Открыть каталог Vibe Atlas в новой вкладке<ArrowRight size={17} aria-hidden="true"/></a>
+   <p className="free-start-note">Редакция от 22 ноября 2026. Файл открывается в Markdown-редакторе, например Obsidian или VS Code. Команды и совместимость инструментов нужно сверять с их документацией; включение в каталог не означает проверку или установку.</p>
+  </section>
   <section className="free-start-glossary"><h2>По-человечески об ИИ</h2><p>Несколько слов, которые встретятся в публикациях.</p>{beginnerGlossary.map(([term,definition])=><details key={term}><summary>{term}<span aria-hidden="true">+</span></summary><p>{definition}</p></details>)}</section>
   <section className="free-start-further"><h2>Основа есть. Что дальше?</h2><p>В новостях - новые инструменты и полезные разборы. Если нужен полный маршрут с проектом, посмотри программу платных курсов.</p><Tap onClick={blog}>Читать новости<ArrowRight size={17}/></Tap><Tap onClick={()=>go('/og-practice')}>Посмотреть курсы<ArrowRight size={17}/></Tap></section>
  </section>
