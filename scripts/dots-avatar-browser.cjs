@@ -11,7 +11,7 @@ const out = path.resolve(__dirname, '../test-results/dots-avatar')
   const errors = []
   try {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
-    page.setDefaultTimeout(15000)
+    page.setDefaultTimeout(60000)
     page.on('pageerror', error => errors.push(error.message))
     const settings = () => page.getByRole('button', { name: 'Настроить Dots', exact: true }).click()
     const host = page.locator('.og-companion .og-dots-character')

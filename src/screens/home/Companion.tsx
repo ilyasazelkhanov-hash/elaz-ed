@@ -8,6 +8,7 @@ import { companionMotionStatus, companionVoiceAvailable, readCompanionDevice, re
 import { useDotsInteractions } from './dots/useInteractions'
 import { DotsCharacter } from './dots/DotsCharacter'
 import { avatarLabels, companionAvatar } from './dots/open-avatar'
+import type { DotsGaze } from './dots/open-bot-avatar'
 import './companion.css'
 
 const colorLabels = { violet: 'Лаванда', mint: 'Мята', peach: 'Персик', sky: 'Небо' }
@@ -31,7 +32,8 @@ export function Companion({ userId }: { userId: number }) {
   const [focused, setFocused] = useState(false)
   const [reaction, setReaction] = useState('')
   const [reactionId, setReactionId] = useState(0)
-  const gaze = useRef({ x: 0, y: 0 })
+  const gazeTarget = useRef<((value: DotsGaze) => void) | null>(null)
+  const setGaze = useCallback((value: DotsGaze) => { gazeTarget.current?.(value) }, [])
   const [announcement, setAnnouncement] = useState('')
   const region = useRef<HTMLElement>(null)
   const reactTimer = useRef<number>(0)
@@ -54,7 +56,7 @@ export function Companion({ userId }: { userId: number }) {
     reactTimer.current = window.setTimeout(() => setReaction(''), 1800)
   }, [])
 
-  const interactions = useDotsInteractions({ userId, active: visible && documentVisible && !covered, motion: !reduce && !session.paused, gaze, region, onReaction: react })
+  const interactions = useDotsInteractions({ userId, active: visible && documentVisible && !covered, motion: !reduce && !session.paused, setGaze, region, onReaction: react })
   const spoken = interactions.voiceState === 'speaking' || interactions.voiceState === 'starting'
   useEffect(() => {
     if (interactions.voiceState === 'error' || interactions.voiceState === 'unavailable') toast('Голос недоступен. Реплика остаётся текстом.')
@@ -117,10 +119,9 @@ export function Companion({ userId }: { userId: number }) {
         onPointerMove={event => {
           if (reduce || session.paused || event.pointerType !== 'mouse') return
           const box = event.currentTarget.getBoundingClientRect()
-          gaze.current.x = Math.max(-1, Math.min(1, (event.clientX - box.x) / box.width * 2 - 1))
-          gaze.current.y = Math.max(-1, Math.min(1, (event.clientY - box.y) / box.height * 2 - 1))
-        }} onPointerLeave={() => { gaze.current.x = 0; gaze.current.y = 0 }}>
-        <DotsCharacter look={look} mood={mood} active={visible && documentVisible && !covered} motion={!reduce && !session.paused} reaction={reactionId} gaze={gaze} lantern={interactions.preferences.lantern}/>
+          setGaze({ x: (event.clientX - box.x) / box.width * 2 - 1, y: (event.clientY - box.y) / box.height * 2 - 1 })
+        }} onPointerLeave={() => setGaze(null)}>
+        <DotsCharacter look={look} mood={mood} active={visible && documentVisible && !covered} motion={!reduce && !session.paused} reaction={reactionId} gazeTarget={gazeTarget} lantern={interactions.preferences.lantern}/>
       </button>
       <div className="og-dots-conversation">
         <div className="og-dots-heading"><span className="og-dots-name">{look.name} <span>твой спутник</span></span><span className="og-dots-heading-actions">{interactions.preferences.voice && <button type="button" className="og-dots-settings" onClick={() => interactions.readAloud(`${interactions.moment || cue.line} ${cue.detail}`)} aria-label={spoken ? 'Остановить чтение' : 'Прочитать реплику'} aria-pressed={spoken}>{spoken ? <Square size={15} aria-hidden="true"/> : <Volume2 size={17} aria-hidden="true"/>}</button>}<button type="button" className="og-dots-settings" onClick={() => push({ type: 'companion-settings' })} aria-label="Настроить Dots" title="Имя, образ и анимации"><SlidersHorizontal size={17} aria-hidden="true"/></button></span></div>
