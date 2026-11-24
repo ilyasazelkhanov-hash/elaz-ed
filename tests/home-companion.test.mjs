@@ -85,6 +85,7 @@ test('single compact layout exposes separate real action, pet and settings; anim
  let code=(await transformWithOxc(source,file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
  code=code.replace(/import \{([^}]+)\} from ["']\.\.\/[^"']+["'];?/g,(_statement,names)=>`const {${names}} = globalThis.__companionHarness;`)
  code=code.replace(/import ["']\.\/companion\.css["'];?/g,'')
+ code=code.replace(/import \{[^}]+\} from [\"']\.\/dots\/open-avatar[\"'];?/g, 'const avatarLabels = {}, companionAvatar = () => ({id: \"cloud\"});')
  code=code.replace(/import \{ DotsCharacter \} from ["']\.\/dots\/DotsCharacter["'];?/g,'const { DotsCharacter } = globalThis.__companionHarness;')
  code=code.replace(/import \{ useDotsInteractions \} from ["']\.\/dots\/useInteractions["'];?/g,'const { useDotsInteractions } = globalThis.__companionHarness;')
  for(const name of ['react','react-dom','react/jsx-runtime','lucide-react'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
@@ -144,4 +145,12 @@ test('public seasonal practice is available without a backend reward campaign',(
  const cue=companionCues([],null,[],Date.parse('2026-11-13T19:00:00Z')).find(c=>c.id==='season:2026-11-14')
  assert.deepEqual(cue.target,{type:'advent-season'})
  assert.equal(companionCues([],null,[],Date.parse('2027-01-05T19:00:00Z')).some(c=>c.id.startsWith('season:')),false)
+})
+
+test('Open Bot Avatar preferences survive storage and reject unknown values without losing old looks', () => {
+ const legacy = { name: 'Луна', color: 'mint', shape: 'round', accessory: 'sprout' }
+ const value = { ...legacy, avatar: 'cat', material: 'flat' }
+ assert.deepEqual(parseCompanionPreferences(JSON.stringify(value)), value)
+ assert.deepEqual(parseCompanionPreferences(JSON.stringify({ ...legacy, avatar: '<svg>', material: 'url(x)' })), legacy)
+ assert.deepEqual(parseCompanionPreferences(JSON.stringify(legacy)), legacy)
 })

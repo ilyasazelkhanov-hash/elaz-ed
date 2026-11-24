@@ -82,7 +82,8 @@ export function saveCompanionSession(userId: number, value: CompanionSession) {
 export const companionColors = ['violet', 'mint', 'peach', 'sky'] as const
 export const companionShapes = ['soft', 'round', 'spark'] as const
 export const companionAccessories = ['none', 'glasses', 'sprout', 'headphones'] as const
-export type CompanionPreferences = { name: string; color: typeof companionColors[number]; shape: typeof companionShapes[number]; accessory: typeof companionAccessories[number] }
+export const companionAvatars = ['cloud', 'ghost', 'cat', 'bunny', 'egg', 'star', 'brain', 'book', 'rocket', 'camera', 'magnifier', 'palette', 'paint-brush', 'shield', 'bull', 'witch-hat', 'controller', 'barbell', 'mug', 'lightbulb', 'chat', 'sprout', 'watering-can'] as const
+export type CompanionPreferences = { avatar?: typeof companionAvatars[number]; material?: 'flat' | 'fluffy'; name: string; color: typeof companionColors[number]; shape: typeof companionShapes[number]; accessory: typeof companionAccessories[number] }
 export const defaultCompanionPreferences: CompanionPreferences = { name: 'Dots', color: 'violet', shape: 'soft', accessory: 'none' }
 export function companionName(input: string): string {
   return Array.from(input.normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g, '').replace(/\s+/g, ' ').trim()).slice(0, 24).join('') || 'Dots'
@@ -94,7 +95,9 @@ export function parseCompanionPreferences(raw: string | null): CompanionPreferen
     return { name: typeof value.name === 'string' ? companionName(value.name) : 'Dots',
       color: companionColors.includes(value.color) ? value.color : 'violet',
       shape: companionShapes.includes(value.shape) ? value.shape : 'soft',
-      accessory: companionAccessories.includes(value.accessory) ? value.accessory : 'none' }
+      accessory: companionAccessories.includes(value.accessory) ? value.accessory : 'none',
+      ...(companionAvatars.includes(value.avatar) ? { avatar: value.avatar } : {}),
+      ...(['flat', 'fluffy'].includes(value.material) ? { material: value.material } : {}) }
   } catch { return { ...defaultCompanionPreferences } }
 }
 export const companionPreferencesKey = (userId: number) => `og:companion:look:v1:${userId}`

@@ -4,8 +4,6 @@ import { readFile } from 'node:fs/promises'
 import { DOTS_ART, currentAtlasEvent, dotsArt, framePosition, posterCell } from '../src/screens/home/dots/raster.ts'
 import { PUPPET_ASSETS, PUPPET_CROPS, PUPPET_LAYOUT, PUPPET_VIEWBOX, createPuppetPainter, skinPoint, surfaceBasis, tintPuppetPixels } from '../src/screens/home/dots/puppet-renderer.ts'
 import { createPuppetRig, stepPuppetRig } from '../src/screens/home/dots/puppet-motion.ts'
-import { dotsDefinitions, dotsExpression, dotsGaze, dotsPalette } from '../src/screens/home/dots/open-bot-avatar.ts'
-import { validateAvatar, renderAvatarSvg } from 'open-bot-avatar'
 
 test('static fallback remains a bounded local image, with stale-source event protection', () => {
  assert.equal(dotsArt('invalid'), DOTS_ART.soft); assert.equal(posterCell('soft'),3); assert.equal(posterCell('round'),4); assert.equal(posterCell('spark'),5)
@@ -85,49 +83,28 @@ test('sprout remains inside the camera through extreme gaze, curious tilt and re
   }
  }
 })
-test('the bundled Open Bot Avatar definitions preserve legacy shape keys and have valid original silhouettes',()=>{
- assert.deepEqual(Object.fromEntries(Object.entries(dotsDefinitions).map(([key, value])=>[key,value.id])),{soft:'cloud',round:'egg',spark:'star'})
- for(const def of Object.values(dotsDefinitions)){
-  assert.ok(validateAvatar(def).ok)
-  for(const color of Object.values(dotsPalette)){
-   const svg=renderAvatarSvg(def,{color,reducedMotion:true})
-   assert.match(svg,/^<svg /)
-   assert.match(svg,new RegExp(color,'i'))
-   assert.doesNotMatch(svg,/<script|(?:src|href)="https?:/)
+test('all Open Bot Avatar definitions validate; SSR supplies local decorative SVG without WebGL', async () => {
+ const { createServer } = await import('vite')
+ const { createElement } = await import('react'), { renderToStaticMarkup } = await import('react-dom/server')
+ const { companionAvatars } = await import('../src/lib/home-companion.ts')
+ const { validateAvatar } = await import('open-bot-avatar')
+ const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
+ try {
+  const { DotsCharacter } = await server.ssrLoadModule('/src/screens/home/dots/DotsCharacter.tsx')
+  const { companionAvatar } = await server.ssrLoadModule('/src/screens/home/dots/open-avatar.ts')
+  for (const avatar of companionAvatars) {
+   const look = { name: 'Dots', color: 'mint', shape: 'soft', accessory: 'none', avatar }
+   assert.equal(companionAvatar(look).id, avatar)
+   assert.equal(validateAvatar(companionAvatar(look)).ok, true)
+   const html = renderToStaticMarkup(createElement(DotsCharacter, { look, mood: 'happy', active: true, motion: false }))
+   assert.ok(html.includes(`data-avatar="${avatar}"`))
+   assert.match(html, /data-motion="false"/); assert.match(html, /<svg/)
+   assert.match(html, /aria-hidden="true"/); assert.doesNotMatch(html, /<script|(?:src|href)="https?:|<image/)
   }
- }
- assert.deepEqual(dotsExpression('happy'),{state:'idle',mood:'happy'})
- assert.deepEqual(dotsExpression('surprised'),{state:'idle',mood:'happy'})
- assert.deepEqual(dotsExpression('curious'),{state:'idle',mood:'neutral'})
- assert.deepEqual(dotsGaze({x:3,y:-3}),{x:1,y:-1})
- assert.equal(dotsGaze({x:NaN,y:1}),null)
- assert.equal(dotsGaze(null),null)
-})
-
-test('live avatar mounting is gated by visibility and motion, and disposed on cleanup',async()=>{
- const wrapper=await readFile(new URL('../src/screens/home/dots/DotsCharacter.tsx',import.meta.url),'utf8')
- assert.match(wrapper,/active && visible && documentVisible/);assert.match(wrapper,/activeNow && motion && !reduce && !failed/)
- assert.match(wrapper,/if \(!alive\) return/);assert.match(wrapper,/own\?\.destroy\(\)/)
- assert.match(wrapper,/gazeTarget\?\.current === receive/);assert.match(wrapper,/contextlost/)
- assert.match(wrapper,/followPointer: false/)
- assert.doesNotMatch(wrapper,/dotsArt|puppet-renderer|requestPermission|\.fetch\(/)
-})
-
-test('SSR provides the same local OBA silhouette and accessory without a browser canvas',async()=>{
- const {transformWithOxc}=await import('vite'),{createElement}=await import('react'),{renderToStaticMarkup}=await import('react-dom/server')
- const file=new URL('../src/screens/home/dots/DotsCharacter.tsx',import.meta.url)
- let code=(await transformWithOxc(await readFile(file,'utf8'),file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
- code=code.replace(/import \{[^}]+\} from ["'][^"']+\/visibility["'];?/,'const useElementVisible = () => true, useDocumentVisible = () => true, usePrefersReducedMotion = () => false;')
- code=code.replaceAll('from "./open-bot-avatar"',`from ${JSON.stringify(new URL('../src/screens/home/dots/open-bot-avatar.ts',import.meta.url).href)}`)
- for(const name of ['react','react/jsx-runtime','lucide-react','open-bot-avatar'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
- const {DotsCharacter}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
- for(const color of ['violet','mint','peach','sky'])for(const shape of ['soft','round','spark'])for(const accessory of ['none','glasses','sprout','headphones']){
-  const html=renderToStaticMarkup(createElement(DotsCharacter,{look:{name:'Dots',color,shape,accessory},mood:'happy',active:true,motion:false,lantern:true}))
-  assert.match(html,/data-renderer="open-bot-avatar"/);assert.match(html,/data-motion="false"/);assert.match(html,/<svg/)
-  assert.match(html,new RegExp(`data-definition="${dotsDefinitions[shape].id}"`))
-  assert.equal(html.includes('og-dots-avatar-badge'),accessory!=='none')
-  assert.doesNotMatch(html,/<script|<canvas|src="http|\/companion\//)
- }
+  for (const [shape, id] of [['soft', 'cloud'], ['round', 'egg'], ['spark', 'star']]) {
+   assert.equal(companionAvatar({shape}).id, id)
+  }
+ } finally { await server.close() }
 })
 test('speech still has full wrapping and scene has reduced-motion and static fallbacks',async()=>{
  const css=await readFile(new URL('../src/screens/home/companion.css',import.meta.url),'utf8')

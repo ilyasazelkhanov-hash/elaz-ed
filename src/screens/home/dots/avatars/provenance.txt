@@ -1,0 +1,71 @@
+{
+  "source": "https://github.com/DominikScholz/open-bot-avatar",
+  "commit": "323ce6ab8bc6b0bc9603a418ee3d91442e4996fc",
+  "license": "MIT",
+  "files": [
+    {
+      "file": "book.json",
+      "sha256": "cca8acef87439b53d19a9ddabc0d2e92fd21a078f967321635643e570adfaf65"
+    },
+    {
+      "file": "brain.json",
+      "sha256": "b23d071495e67cf694570edd368400e5074fd8ebf3554623c6f94bd02083c7b6"
+    },
+    {
+      "file": "bull.json",
+      "sha256": "42c08cc0bc6095827ef498f0688dd8fdc59cd83d27b3f31749224cb5b7981852"
+    },
+    {
+      "file": "bunny.json",
+      "sha256": "e43970b1464e0b1a79a266992d791572e6d6a46e981237ac908befa175ae4138"
+    },
+    {
+      "file": "camera.json",
+      "sha256": "b0100fe8a1c3506c9b975c24c2a5d5b545376fc2e0f6ce981635dd61f84c83fc"
+    },
+    {
+      "file": "cat.json",
+      "sha256": "e4c24d8bae43940deb299e58980776b68f36328bc9811b6440bc8a87cfaf079e"
+    },
+    {
+      "file": "cloud.json",
+      "sha256": "1d160bbe17dc1193fdb36405931bff614d3ab740276beb352fd3aa2a902445e5"
+    },
+    {
+      "file": "egg.json",
+      "sha256": "a7e5d857f83fd614c5043ff54be842dfaa5a0999ab87513b5a0e854c30fdb894"
+    },
+    {
+      "file": "ghost.json",
+      "sha256": "5f4c049f212438403ba95d499b6a6a743f88fd9097ef3bffdd6403c0ab0f31bf"
+    },
+    {
+      "file": "magnifier.json",
+      "sha256": "63e73cfd62ce30760c29a4058caa74713198c8a92f90b920bf1fef2f6a8ecd83"
+    },
+    {
+      "file": "paint-brush.json",
+      "sha256": "eee692ad1db8ed577890bb616beee5661eccbc58cc48c44770c0209c4200f598"
+    },
+    {
+      "file": "palette.json",
+      "sha256": "1d86a1b316e140401b82cbbff64b8164dccec18472a7f4c75c339abdbee56f84"
+    },
+    {
+      "file": "rocket.json",
+      "sha256": "824784997148ed179ebe9aeef76c209fde033d62c788831d81cc57dea9a98cd8"
+    },
+    {
+      "file": "shield.json",
+      "sha256": "1b5343758ef4f938dcdbccf6e85a3133af491d8ef109476a9832c0aa676b149b"
+    },
+    {
+      "file": "star.json",
+      "sha256": "70c7330d96dcfe63a537fc9723a656d8ac5be4dcffe6e3cbbe4d07597886de71"
+    },
+    {
+      "file": "witch-hat.json",
+      "sha256": "800f41441806970167129f881c3ad595ba1331eacb0e8621b546cd2105d89722"
+    }
+  ]
+}
