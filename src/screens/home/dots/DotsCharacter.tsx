@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { renderAvatarSvg } from 'open-bot-avatar'
 import { mountAvatar, type MountedAvatar } from 'open-bot-avatar/dom'
 import { useDocumentVisible, useElementVisible, usePrefersReducedMotion } from '../../../lib/visibility'
@@ -13,7 +13,8 @@ export function DotsCharacter({ look, mood, active, motion, reaction = 0, lanter
   const host = useRef<HTMLSpanElement>(null), surface = useRef<HTMLSpanElement>(null)
   const avatar = useRef<MountedAvatar | null>(null)
   const visible = useElementVisible(host), documentVisible = useDocumentVisible(), reduce = usePrefersReducedMotion()
-  const activeNow = active && visible && documentVisible, moving = activeNow && motion && !reduce
+  const [failed, setFailed] = useState(false)
+  const activeNow = active && visible && documentVisible, moving = activeNow && motion && !reduce && !failed
   const definition = companionAvatar(look), color = avatarColors[look.color]
   const happy = mood === 'happy' || mood === 'wink'
   const state = reaction > 0 && ['happy', 'wink', 'surprised'].includes(mood) ? 'done' : mood === 'curious' ? 'thinking' : 'idle'
@@ -24,9 +25,11 @@ export function DotsCharacter({ look, mood, active, motion, reaction = 0, lanter
   useEffect(() => {
     const element = surface.current
     if (!element) return
+    const fail = () => { avatar.current?.destroy(); avatar.current = null; element.replaceChildren(); setFailed(true) }
+    element.addEventListener('contextlost', fail, true)
     try { avatar.current = mountAvatar(element, latest.current) }
-    catch { element.replaceChildren(); avatar.current = null }
-    return () => { avatar.current?.destroy(); avatar.current = null }
+    catch { fail() }
+    return () => { element.removeEventListener('contextlost', fail, true); avatar.current?.destroy(); avatar.current = null }
   }, [])
   useEffect(() => { avatar.current?.update(options) }, [definition, color, look.material, moving, state, happy, reaction, gaze])
   // The existing interaction hook writes gaze from touch/pointer/device inputs to a ref.
