@@ -12,3 +12,7 @@
 Физические Telegram iOS/Android, датчики на устройстве и энергопотребление NOT VERIFIED. Это frontend-изменение; рабочая база и API не требуются. Публикация не подтверждается локальными тестами.
 
 Параллельно обнаружен PR #32 (`cd44376`) с независимой реализацией для трёх форм. Ветка `codex/dots-avatar-gallery-23` сохранена отдельно; PR #32 и его изменения не перезаписаны. Владелец выбрал 23 персонажа. Ветка совмещена с main `527b764`: сохранён event-driven gaze из PR #32, второй RAF-цикл не нужен; полная галерея и две фактуры расширяют уже выпущенную замену.
+
+## Квитанция выпуска
+
+PR #33 влит, main/live `0a5f367a995818bed48835e1aca97660327fb53b`, Vercel success, четыре CI jobs PASS (Published release smoke skipped). Live demo Chromium PASS: 23 персонажа, две фактуры, выбор кота и reload с сохранением, page errors 0. `release.json`: built_at `2026-11-24T16:50:52.056Z`, build_sha256 `de1e1d02e7d79a054f091d1256ee7c95fd3832532832f7bf3cd161d8be38014f`, dirty true. Этот последующий docs-only commit не равен проверенному deployment SHA. Остальные предложения только проверены: [отчёт](../audits/2026-11-24-proposals.md).
