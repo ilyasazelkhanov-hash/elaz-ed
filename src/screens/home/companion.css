@@ -86,16 +86,14 @@
 .og-dots-interactions .og-dots-motion { margin-top: 14px; }
 .og-dots-interactions .og-dots-privacy { margin-bottom: 0; }
 
-
-
-/* A continuous abstract volume: native Canvas2D works when WebGL is disabled. */
-.og-dots-puppet-stage { position: absolute; inset: 0; display: grid; place-items: center; }
-.og-dots-puppet-canvas { display: block; width: 106%; max-width: none; height: auto; aspect-ratio: 5 / 6; opacity: 0; }
-.og-dots-puppet-canvas[data-visible='true'] { opacity: 1; }
-.og-dots-static-fallback { position: absolute; width: 106%; aspect-ratio: 1; overflow: hidden; }
-.og-dots-static-fallback img { position: absolute; display: block; width: 300%; height: 200%; max-width: none; user-select: none; }
-.og-dots-character[data-color='mint'] .og-dots-static-fallback { filter: hue-rotate(245deg) saturate(.83); }
-.og-dots-character[data-color='peach'] .og-dots-static-fallback { filter: hue-rotate(105deg) saturate(1.2); }
-.og-dots-character[data-color='sky'] .og-dots-static-fallback { filter: hue-rotate(305deg) saturate(.9); }
-.og-dots-image-unavailable { position: absolute; inset: 0; display: grid; place-items: center; color: var(--color-violet); font-size: 40px; }
-@media (prefers-reduced-motion: reduce) { .og-dots-puppet-stage { animation: none !important; transform: none !important; transition: none !important; } }
+/* The live canvas and its still SVG share one square, independent of the tap target. */
+.og-dots-avatar-square { position: absolute; top: 50%; left: 0; width: 100%; aspect-ratio: 1; transform: translateY(-50%); }
+.og-dots-avatar-live, .og-dots-avatar-still { position: absolute; inset: 0; display: block; }
+.og-dots-avatar-still > svg { display: block; width: 100%; height: 100%; }
+.og-dots-avatar-live:not(:empty) + .og-dots-avatar-still { visibility: hidden; }
+.og-dots-character[data-lantern='true'] .og-dots-avatar-square { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--dots-accent, var(--color-violet)) 62%, transparent)); }
+.og-dots-avatar-badge { position: absolute; right: 1%; bottom: 8%; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--color-line); color: var(--color-ink); background: var(--color-card); }
+.og-dots-avatar-reaction { position: absolute; inset: 13%; border-radius: 50%; opacity: 0; }
+.og-dots-avatar-reaction[data-reaction] { animation: og-dots-answer-glow 520ms ease-out; background: radial-gradient(ellipse, color-mix(in srgb, var(--dots-accent, var(--color-violet)) 35%, transparent), transparent 72%); }
+@keyframes og-dots-answer-glow { 0% { opacity: 0; transform: scale(.75); } 35% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
+@media (prefers-reduced-motion: reduce) { .og-dots-avatar-reaction { animation: none !important; transform: none !important; } }

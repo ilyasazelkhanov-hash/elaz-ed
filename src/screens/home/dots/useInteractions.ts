@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
+import type { DotsGaze } from './open-bot-avatar'
 import { telegram } from '../../../lib/tg'
 import { startCompanionMotion } from '../../../lib/companion-motion'
 import { companionMotionStatus, createCompanionSpeaker, readCompanionDevice, registerCompanionMotion, setCompanionMotionStatus, subscribeCompanionDevice, type VoiceState } from '../../../lib/companion-device'
 
-export function useDotsInteractions({ userId, active, motion, gaze, region, onReaction }: {
-  userId: number; active: boolean; motion: boolean; gaze: RefObject<{x: number;y: number}>; region: RefObject<HTMLElement | null>; onReaction(mood: string): void
+export function useDotsInteractions({ userId, active, motion, setGaze, region, onReaction }: {
+  userId: number; active: boolean; motion: boolean; setGaze(value: DotsGaze): void; region: RefObject<HTMLElement | null>; onReaction(mood: string): void
 }) {
   const [preferences, setPreferences] = useState(() => readCompanionDevice(userId))
   const [voiceState, setVoiceState] = useState<VoiceState>('idle')
@@ -17,10 +18,10 @@ export function useDotsInteractions({ userId, active, motion, gaze, region, onRe
   const speaker = useRef<ReturnType<typeof createCompanionSpeaker> | null>(null)
   const stop = useCallback((suspended = false) => {
     abort.current?.abort(); abort.current = null; stopHandle.current?.(); stopHandle.current = null
-    gaze.current.x = 0; gaze.current.y = 0
+    setGaze(null)
     region.current?.style.setProperty('--dots-tilt-x', '0deg'); region.current?.style.setProperty('--dots-tilt-y', '0deg')
     setCompanionMotionStatus(userId, suspended ? 'suspended' : 'off')
-  }, [userId, gaze, region])
+  }, [userId, setGaze, region])
   useEffect(() => {
     setPreferences(readCompanionDevice(userId))
     return subscribeCompanionDevice(() => setPreferences(readCompanionDevice(userId)))
@@ -41,7 +42,7 @@ export function useDotsInteractions({ userId, active, motion, gaze, region, onRe
         // No await before this call: browser motion permission needs the original user gesture.
         void startCompanionMotion({ telegram, signal: own.signal,
           onStatus(status) { if (!own.signal.aborted) setCompanionMotionStatus(userId, status) },
-          onTilt(value) { if (!own.signal.aborted && latest.current.active && latest.current.motion) { gaze.current.x = value.x * .8; gaze.current.y = value.y * .8; region.current?.style.setProperty('--dots-tilt-x', `${-value.y * 7}deg`); region.current?.style.setProperty('--dots-tilt-y', `${value.x * 9}deg`) } },
+          onTilt(value) { if (!own.signal.aborted && latest.current.active && latest.current.motion) { setGaze({ x: value.x * .8, y: value.y * .8 }); region.current?.style.setProperty('--dots-tilt-x', `${-value.y * 7}deg`); region.current?.style.setProperty('--dots-tilt-y', `${value.x * 9}deg`) } },
           onShake() {
             if (own.signal.aborted || !latest.current.active || !latest.current.motion) return
             latest.current.onReaction('surprised'); setMoment('Ого, встряхнуло! Я на месте.')
@@ -54,7 +55,7 @@ export function useDotsInteractions({ userId, active, motion, gaze, region, onRe
     }
     const unregister = registerCompanionMotion(userId, control)
     return () => { stop(); unregister(); clearTimeout(momentTimer.current) }
-  }, [userId, gaze, region, stop])
+  }, [userId, setGaze, region, stop])
   useEffect(() => {
     if (active && motion) return
     if (motionStatus !== 'active' && motionStatus !== 'requesting') return
