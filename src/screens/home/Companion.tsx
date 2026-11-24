@@ -1,17 +1,16 @@
 import { ArrowUpRight, SlidersHorizontal, Square, Volume2, X } from 'lucide-react'
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import { useReadPosts } from '../../lib/blog-read'
-import { companionCues, companionName, companionColors, companionShapes, companionAccessories, COMPANION_AUTO_LIMIT, COMPANION_INTERVAL_MS, nextCompanionCue, readCompanionSession, saveCompanionSession, readCompanionPreferences, saveCompanionPreferences, type CompanionPreferences } from '../../lib/home-companion'
+import { companionCues, companionName, companionColors, companionAvatars, COMPANION_AUTO_LIMIT, COMPANION_INTERVAL_MS, nextCompanionCue, readCompanionSession, saveCompanionSession, readCompanionPreferences, saveCompanionPreferences, type CompanionPreferences } from '../../lib/home-companion'
 import { useDocumentVisible, useElementVisible, usePrefersReducedMotion } from '../../lib/visibility'
 import { useStore } from '../../store'
 import { companionMotionStatus, companionVoiceAvailable, readCompanionDevice, requestCompanionMotion, saveCompanionDevice, stopCompanionMotion, subscribeCompanionDevice } from '../../lib/companion-device'
 import { useDotsInteractions } from './dots/useInteractions'
 import { DotsCharacter } from './dots/DotsCharacter'
+import { avatarLabels, companionAvatar } from './dots/open-avatar'
 import './companion.css'
 
 const colorLabels = { violet: 'Лаванда', mint: 'Мята', peach: 'Персик', sky: 'Небо' }
-const shapeLabels = { soft: 'Облачко', round: 'Кругляш', spark: 'Искра' }
-const accessoryLabels = { none: 'Без аксессуара', glasses: 'Очки', sprout: 'Росток', headphones: 'Наушники' }
 
 /** A compact authored companion. Only explicit navigation; never claims a reward or runs an AI task. */
 export function Companion({ userId }: { userId: number }) {
@@ -190,8 +189,8 @@ function CompanionSettingsForm({ userId }: { userId: number }) {
 
         <div className="og-dots-field"><label htmlFor={inputId}>Имя</label><input id={inputId} aria-describedby={`${inputId}-hint`} value={draft.name} maxLength={48} placeholder="Dots" autoComplete="off" onChange={event => setDraft(current => ({ ...current, name: event.target.value }))}/><small id={`${inputId}-hint`}>До 24 символов. Без личных данных.</small></div>
         <fieldset><legend>Цвет</legend><div className="og-dots-options">{companionColors.map(color => <label key={color} className="og-dots-option"><input type="radio" name="dots-color" value={color} checked={draft.color === color} onChange={() => setDraft(current => ({ ...current, color }))}/><span><i className="og-dots-swatch" data-color={color}/>{colorLabels[color]}</span></label>)}</div></fieldset>
-        <fieldset><legend>Форма</legend><div className="og-dots-options">{companionShapes.map(shape => <label key={shape} className="og-dots-option"><input type="radio" name="dots-shape" value={shape} checked={draft.shape === shape} onChange={() => setDraft(current => ({ ...current, shape }))}/><span>{shapeLabels[shape]}</span></label>)}</div></fieldset>
-        <fieldset><legend>Деталь характера</legend><div className="og-dots-options">{companionAccessories.map(accessory => <label key={accessory} className="og-dots-option"><input type="radio" name="dots-accessory" value={accessory} checked={draft.accessory === accessory} onChange={() => setDraft(current => ({ ...current, accessory }))}/><span>{accessoryLabels[accessory]}</span></label>)}</div></fieldset>
+        <fieldset><legend>Персонаж</legend><div className="og-dots-options og-dots-avatar-options">{companionAvatars.map(avatar => { const definition = companionAvatar({ ...draft, avatar }); return <label key={avatar} className="og-dots-option"><input type="radio" name="dots-avatar" value={avatar} checked={companionAvatar(draft).id === avatar} onChange={() => setDraft(current => ({ ...current, avatar }))}/><span><svg viewBox="0 0 100 100" width="48" height="48" aria-hidden="true"><path d={definition.body.path} fill="var(--color-violet)"/>{[-1, 1].map(side => <ellipse key={side} cx={definition.eyes.x + side * definition.eyes.spacing / 2} cy={definition.eyes.y} rx={3 * definition.eyes.scale} ry={5 * definition.eyes.scale} fill="#151515"/>)}</svg>{avatarLabels[avatar]}</span></label> })}</div></fieldset>
+        <fieldset><legend>Фактура</legend><div className="og-dots-options">{(['fluffy', 'flat'] as const).map(material => <label key={material} className="og-dots-option"><input type="radio" name="dots-material" value={material} checked={(draft.material ?? 'fluffy') === material} onChange={() => setDraft(current => ({ ...current, material }))}/><span>{material === 'fluffy' ? 'Пушистый' : 'Гладкий'}</span></label>)}</div><small className="og-dots-privacy">Если пушистая фактура недоступна на устройстве, персонаж будет гладким.</small></fieldset>
         <label className="og-dots-motion"><span>Живые анимации<small>{reduce ? 'Система просит меньше движения: анимации отключены.' : 'Взгляд, мимика и живые жесты. Можно отключить.'}</small></span><input type="checkbox" checked={!session.paused} disabled={reduce} onChange={event => changeMotion(!event.target.checked)}/></label>
         <details className="og-dots-interactions">
           <summary tabIndex={0}>Движение, свет и голос</summary>

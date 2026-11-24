@@ -83,32 +83,28 @@ test('sprout remains inside the camera through extreme gaze, curious tilt and re
   }
  }
 })
-test('component guards canvas errors, late image work and real pause/reduced/visibility, with no React state in tick',async()=>{
- const wrapper=await readFile(new URL('../src/screens/home/dots/DotsCharacter.tsx',import.meta.url),'utf8')
- assert.match(wrapper,/getContext\('2d'/);assert.match(wrapper,/catch \{ return \}/)
- assert.match(wrapper,/active && visible && documentVisible/);assert.match(wrapper,/activeNow && motion && !reduce/)
- assert.match(wrapper,/startPuppetLoop\(safeDraw\)/);assert.match(wrapper,/return \(\) => stop\?\.\(\)/)
- assert.match(wrapper,/if \(!alive \|\| contextLost\) return/);assert.match(wrapper,/ownDriver\?\.dispose\(\)/)
- assert.match(wrapper,/currentAtlasEvent\(posterSource, currentPoster.current/)
- assert.match(wrapper,/if \(!failed\) stop = startPuppetLoop/)
- assert.doesNotMatch(wrapper,/dotsFrame\(|startDotsBlink|previousFrame|og-dots-props|requestPermission|\.fetch\(/)
- const tick=wrapper.slice(wrapper.indexOf('tick(dt)'),wrapper.indexOf('still() {'))
- assert.doesNotMatch(tick,/setState|setReady|setBlink|\.animate\(/)
- assert.match(wrapper,/contextlost/);assert.match(wrapper,/contextrestored/)
-})
-test('SSR provides a real local poster and decorative canvas for every look, independent of WebGL',async()=>{
- const {transformWithOxc}=await import('vite'),{createElement}=await import('react'),{renderToStaticMarkup}=await import('react-dom/server')
- const file=new URL('../src/screens/home/dots/DotsCharacter.tsx',import.meta.url)
- let code=(await transformWithOxc(await readFile(file,'utf8'),file.pathname,{lang:'tsx',jsx:{runtime:'automatic'}})).code
- code=code.replace(/import \{[^}]+\} from ["'][^"']+\/visibility["'];?/,'const useElementVisible = () => true, useDocumentVisible = () => true, usePrefersReducedMotion = () => false;')
- for(const local of ['raster','puppet-motion','puppet-renderer'])code=code.replaceAll(`from "./${local}"`,`from ${JSON.stringify(new URL(`../src/screens/home/dots/${local}.ts`,import.meta.url).href)}`)
- for(const name of ['react','react/jsx-runtime'])code=code.replaceAll(`from "${name}"`,`from ${JSON.stringify(import.meta.resolve(name))}`)
- const {DotsCharacter}=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
- for(const color of ['violet','mint','peach','sky'])for(const shape of ['soft','round','spark'])for(const accessory of ['none','glasses','sprout','headphones']){
-  const html=renderToStaticMarkup(createElement(DotsCharacter,{look:{name:'Dots',color,shape,accessory},mood:'happy',active:true,motion:false,lantern:true}))
-  assert.match(html,/src="\/companion\/abstract-plush-v6.webp"/);assert.match(html,/data-motion="false"/);assert.match(html,/<canvas/);assert.match(html,/data-renderer="poster"/)
-  assert.doesNotMatch(html,/<script|src="http|<svg|plush-.*-v1|puppet-fur-v2/)
- }
+test('all Open Bot Avatar definitions validate; SSR supplies local decorative SVG without WebGL', async () => {
+ const { createServer } = await import('vite')
+ const { createElement } = await import('react'), { renderToStaticMarkup } = await import('react-dom/server')
+ const { companionAvatars } = await import('../src/lib/home-companion.ts')
+ const { validateAvatar } = await import('open-bot-avatar')
+ const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
+ try {
+  const { DotsCharacter } = await server.ssrLoadModule('/src/screens/home/dots/DotsCharacter.tsx')
+  const { companionAvatar } = await server.ssrLoadModule('/src/screens/home/dots/open-avatar.ts')
+  for (const avatar of companionAvatars) {
+   const look = { name: 'Dots', color: 'mint', shape: 'soft', accessory: 'none', avatar }
+   assert.equal(companionAvatar(look).id, avatar)
+   assert.equal(validateAvatar(companionAvatar(look)).ok, true)
+   const html = renderToStaticMarkup(createElement(DotsCharacter, { look, mood: 'happy', active: true, motion: false }))
+   assert.ok(html.includes(`data-avatar="${avatar}"`))
+   assert.match(html, /data-motion="false"/); assert.match(html, /<svg/)
+   assert.match(html, /aria-hidden="true"/); assert.doesNotMatch(html, /<script|(?:src|href)="https?:|<image/)
+  }
+  for (const [shape, id] of [['soft', 'cloud'], ['round', 'egg'], ['spark', 'star']]) {
+   assert.equal(companionAvatar({shape}).id, id)
+  }
+ } finally { await server.close() }
 })
 test('speech still has full wrapping and scene has reduced-motion and static fallbacks',async()=>{
  const css=await readFile(new URL('../src/screens/home/companion.css',import.meta.url),'utf8')

@@ -88,14 +88,12 @@
 
 
 
-/* A continuous abstract volume: native Canvas2D works when WebGL is disabled. */
-.og-dots-puppet-stage { position: absolute; inset: 0; display: grid; place-items: center; }
-.og-dots-puppet-canvas { display: block; width: 106%; max-width: none; height: auto; aspect-ratio: 5 / 6; opacity: 0; }
-.og-dots-puppet-canvas[data-visible='true'] { opacity: 1; }
-.og-dots-static-fallback { position: absolute; width: 106%; aspect-ratio: 1; overflow: hidden; }
-.og-dots-static-fallback img { position: absolute; display: block; width: 300%; height: 200%; max-width: none; user-select: none; }
-.og-dots-character[data-color='mint'] .og-dots-static-fallback { filter: hue-rotate(245deg) saturate(.83); }
-.og-dots-character[data-color='peach'] .og-dots-static-fallback { filter: hue-rotate(105deg) saturate(1.2); }
-.og-dots-character[data-color='sky'] .og-dots-static-fallback { filter: hue-rotate(305deg) saturate(.9); }
-.og-dots-image-unavailable { position: absolute; inset: 0; display: grid; place-items: center; color: var(--color-violet); font-size: 40px; }
-@media (prefers-reduced-motion: reduce) { .og-dots-puppet-stage { animation: none !important; transform: none !important; transition: none !important; } }
+/* Open Bot Avatar fills a square inside the existing compact conversation. */
+.og-dots-avatar-surface, .og-dots-avatar-poster { position: absolute; width: 112%; aspect-ratio: 1; left: -6%; top: 50%; transform: translateY(-50%); }
+.og-dots-avatar-poster svg { display: block; width: 100%; height: 100%; }
+.og-dots-character:has(.og-dots-avatar-surface > *) .og-dots-avatar-poster { visibility: hidden; }
+.og-dots-character[data-lantern='true'] { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-violet) 40%, transparent)); }
+@media (prefers-reduced-motion: reduce) { .og-dots-character { animation: none !important; transform: none !important; transition: none !important; } }
+
+.og-dots-avatar-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.og-dots-avatar-options .og-dots-option > span { flex-direction: column; height: 100%; padding: 8px 3px; text-align: center; overflow-wrap: anywhere; }
