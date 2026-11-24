@@ -1,97 +1,62 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { Glasses, Headphones, Sprout } from 'lucide-react'
+import { renderAvatarSvg } from 'open-bot-avatar'
+import type { MountedAvatar } from 'open-bot-avatar/dom'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useDocumentVisible, useElementVisible, usePrefersReducedMotion } from '../../../lib/visibility'
 import type { CompanionPreferences } from '../../../lib/home-companion'
-import { currentAtlasEvent, dotsArt, framePosition, posterCell } from './raster'
-import { createPuppetRig, startPuppetLoop, stepPuppetRig } from './puppet-motion'
-import { createPuppetPainter, PUPPET_ASSETS, tintPuppetPixels } from './puppet-renderer'
+import { dotsDefinitions, dotsExpression, dotsEyeColor, dotsGaze, dotsPalette, type DotsGaze } from './open-bot-avatar'
 
-type Driver = { tick(dt: number): void; still(): void; resume(): void; dispose(): void }
-/** A continuously deforming abstract plush. The limbless original remains if Canvas2D/images fail. */
-export function DotsCharacter({ look, mood, active, motion, reaction = 0, lantern = false, gaze }: {
-  look: CompanionPreferences; mood: string; active: boolean; motion: boolean; reaction?: number; lantern?: boolean; gaze?: RefObject<{ x: number; y: number }>
+const badges = { glasses: Glasses, sprout: Sprout, headphones: Headphones }
+type GazeTarget = RefObject<((value: DotsGaze) => void) | null>
+
+/** Use the bundled avatar renderer only while visible; its own still SVG stays available without canvas. */
+export function DotsCharacter({ look, mood, active, motion, reaction = 0, lantern = false, gazeTarget }: {
+  look: CompanionPreferences; mood: string; active: boolean; motion: boolean; reaction?: number; lantern?: boolean; gazeTarget?: GazeTarget
 }) {
-  const host = useRef<HTMLSpanElement>(null), canvas = useRef<HTMLCanvasElement>(null)
+  const host = useRef<HTMLSpanElement>(null), liveHost = useRef<HTMLSpanElement>(null)
   const visible = useElementVisible(host), documentVisible = useDocumentVisible(), reduce = usePrefersReducedMotion()
-  const activeNow = active && visible && documentVisible, moving = activeNow && motion && !reduce
-  const latest = useRef({ look, mood, reaction, lantern, gaze }); latest.current = { look, mood, reaction, lantern, gaze }
-  const [ready, setReady] = useState(false), [failedPoster, setFailedPoster] = useState(false), [contextEpoch, setContextEpoch] = useState(0)
-  const driver = useRef<Driver | null>(null)
-  const failDriver = useCallback((value: Driver | null = driver.current) => { value?.dispose(); if (driver.current === value) driver.current = null; setReady(false) }, [])
-  const posterSource = dotsArt(look.shape), currentPoster = useRef(posterSource); currentPoster.current = posterSource
-  // Assets and tint are prepared once per palette, not on every visibility change.
+  const [failed, setFailed] = useState(false)
+  const activeNow = active && visible && documentVisible, moving = activeNow && motion && !reduce && !failed
+  const definition = dotsDefinitions[look.shape], color = dotsPalette[look.color]
+  const options = useMemo(() => ({ definition, color, eyeColor: dotsEyeColor, ...dotsExpression(mood), label: '' }), [definition, color, mood])
+  const latest = useRef(options); latest.current = options
+  // Only trusted, bundled definitions and fixed palette values go into the renderer, not profile text or input.
+  const still = useMemo(() => renderAvatarSvg(definition, { color, eyeColor: dotsEyeColor, reducedMotion: true, mood: dotsExpression(mood).mood }), [definition, color, mood])
+  const driver = useRef<MountedAvatar | null>(null)
+  const Badge = look.accessory === 'none' ? null : badges[look.accessory]
+
   useEffect(() => {
-    setReady(false)
-    let alive = true, contextLost = false, ownDriver: Driver | null = null
-    const pending: HTMLImageElement[] = []
-    const image = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image(); pending.push(img); img.decoding = 'async'
-      img.onload = () => { img.onload = img.onerror = null; resolve(img) }
-      img.onerror = () => { img.onload = img.onerror = null; reject(new Error('companion art unavailable')) }; img.src = url
-    })
-    const element = canvas.current
-    if (!element) return
-    let context: CanvasRenderingContext2D | null = null
-    try { context = element.getContext('2d', { alpha: true }) } catch { return }
-    if (!context) return
-    const lost = () => { contextLost = true; if (alive) failDriver(ownDriver) }
-    const restored = () => { if (alive) setContextEpoch(epoch => epoch + 1) }
-    element.addEventListener('contextlost', lost); element.addEventListener('contextrestored', restored)
-    void Promise.all([image(PUPPET_ASSETS.fur), image(PUPPET_ASSETS.props)]).then(([fur, props]) => {
-      if (!alive || contextLost) return
-      // Fixed <61k-pixel backing store, independent of device DPR. No resize-observer loop.
-      const size = 224; element.width = size; element.height = Math.round(size * 1.2)
-      let tinted: HTMLCanvasElement | null = null
-      if (look.color !== 'violet') {
-        tinted = document.createElement('canvas'); tinted.width = fur.width; tinted.height = fur.height
-        const tint = tinted.getContext('2d')
-        if (tint) {
-          tint.drawImage(fur, 0, 0)
-          const pixels = tint.getImageData(0, 0, fur.width, fur.height)
-          tintPuppetPixels(pixels.data, look.color); tint.putImageData(pixels, 0, 0)
-        } else tinted = null
-      }
-      const painter = createPuppetPainter(context, { fur, props }, size, tinted ?? undefined)
-      const rig = createPuppetRig({ reaction: latest.current.reaction })
-      ownDriver = {
-        tick(dt) {
-          const current = latest.current
-          const pose = stepPuppetRig(rig, dt, { reaction: current.reaction, mood: current.mood, gaze: current.gaze?.current })
-          painter.paint(pose, current.look, current.lantern)
-        },
-        still() {
-          const current = latest.current, staticRig = createPuppetRig({ reaction: current.reaction })
-          for (let i = 0; i < 35; i++) stepPuppetRig(staticRig, .04, { reaction: current.reaction, mood: current.mood })
-          staticRig.pose.bodyX = staticRig.pose.bodyY = staticRig.pose.bodyRotation = 0
-          staticRig.pose.bodyScaleX = staticRig.pose.bodyScaleY = 1
-          staticRig.pose.ripple = staticRig.pose.coreTwist = 0
-          painter.paint(staticRig.pose, current.look, current.lantern)
-        },
-        resume() { rig.reaction = latest.current.reaction; rig.reactionAge = 2 },
-        dispose() { painter.dispose(); if (tinted) tinted.width = tinted.height = 0 },
-      }
-      ownDriver.still(); if (!alive || contextLost) { ownDriver.dispose(); return }; driver.current = ownDriver; setReady(true)
-    }).catch(() => { if (alive) failDriver(ownDriver) })
+    const element = liveHost.current
+    if (!moving || !element) return
+    let alive = true
+    let own: MountedAvatar | null = null
+    const receive = (value: DotsGaze) => { own?.update({ lookAt: dotsGaze(value) }) }
+    const lost = () => { if (alive) setFailed(true) }
+    // Canvas events do not have to bubble; capture on the isolated mount element.
+    element.addEventListener('contextlost', lost, true)
+    void import('open-bot-avatar/dom').then(({ mountAvatar }) => {
+      if (!alive) return
+      own = mountAvatar(element, { ...latest.current, followPointer: false, reducedMotion: false })
+      driver.current = own
+      if (gazeTarget) gazeTarget.current = receive
+    }).catch(() => { if (alive) setFailed(true) })
     return () => {
-      alive = false; for (const img of pending) img.onload = img.onerror = null
-      element.removeEventListener('contextlost', lost); element.removeEventListener('contextrestored', restored)
-      ownDriver?.dispose(); if (driver.current === ownDriver) driver.current = null
+      alive = false
+      if (gazeTarget?.current === receive) gazeTarget.current = null
+      element.removeEventListener('contextlost', lost, true)
+      own?.destroy()
+      if (driver.current === own) driver.current = null
     }
-  }, [look.color, contextEpoch, failDriver])
-  useEffect(() => {
-    const current = driver.current
-    if (!ready || !current) return
-    let stop: (() => void) | undefined, failed = false
-    const safeDraw = (dt: number) => { try { current.tick(dt) } catch { failed = true; stop?.(); failDriver(current) } }
-    if (moving) { current.resume(); safeDraw(0); if (!failed) stop = startPuppetLoop(safeDraw) }
-    else { try { current.still() } catch { failDriver(current) } }
-    return () => stop?.()
-  }, [moving, ready, failDriver])
-  useEffect(() => { if (ready && !moving) { try { driver.current?.still() } catch { failDriver() } } }, [ready, moving, look.shape, look.accessory, lantern, mood, failDriver])
-  useEffect(() => setFailedPoster(false), [look.shape])
-  return <span ref={host} className="og-dots-character" data-renderer={ready ? 'abstract-2d' : 'poster'} data-ready={ready} data-active={activeNow} data-motion={moving} data-mood={mood} data-color={look.color} data-shape={look.shape} data-accessory={look.accessory} aria-hidden="true">
-    <span className="og-dots-puppet-stage">
-      {!ready && (failedPoster ? <span className="og-dots-image-unavailable">✦</span> : <span className="og-dots-static-fallback"><img key={look.shape} src={posterSource} alt="" width="1536" height="1024" draggable={false} decoding="async" loading="lazy" style={framePosition(posterCell(look.shape))} onError={event => { if (currentAtlasEvent(posterSource, currentPoster.current, event.currentTarget.getAttribute('src'))) setFailedPoster(true) }}/></span>)}
-      <canvas ref={canvas} className="og-dots-puppet-canvas" width="224" height="269" data-visible={ready}/>
+  }, [moving, gazeTarget])
+
+  useEffect(() => { driver.current?.update(options) }, [options])
+
+  return <span ref={host} className="og-dots-character" data-renderer="open-bot-avatar" data-definition={definition.id} data-active={activeNow} data-motion={moving} data-mood={mood} data-color={look.color} data-shape={look.shape} data-accessory={look.accessory} data-lantern={lantern} aria-hidden="true">
+    <span className="og-dots-avatar-square">
+      <span key={reaction} className="og-dots-avatar-reaction" data-reaction={moving && reaction > 0 && ['wink', 'surprised'].includes(mood) ? mood : undefined}/>
+      <span ref={liveHost} className="og-dots-avatar-live"/>
+      <span className="og-dots-avatar-still" dangerouslySetInnerHTML={{ __html: still }}/>
+      {Badge && <span className="og-dots-avatar-badge"><Badge size={12} aria-hidden="true"/></span>}
     </span>
   </span>
 }

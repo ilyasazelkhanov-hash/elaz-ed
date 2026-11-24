@@ -7,11 +7,12 @@ import { useStore } from '../../store'
 import { companionMotionStatus, companionVoiceAvailable, readCompanionDevice, requestCompanionMotion, saveCompanionDevice, stopCompanionMotion, subscribeCompanionDevice } from '../../lib/companion-device'
 import { useDotsInteractions } from './dots/useInteractions'
 import { DotsCharacter } from './dots/DotsCharacter'
+import type { DotsGaze } from './dots/open-bot-avatar'
 import './companion.css'
 
 const colorLabels = { violet: 'Лаванда', mint: 'Мята', peach: 'Персик', sky: 'Небо' }
-const shapeLabels = { soft: 'Облачко', round: 'Кругляш', spark: 'Искра' }
-const accessoryLabels = { none: 'Без аксессуара', glasses: 'Очки', sprout: 'Росток', headphones: 'Наушники' }
+const shapeLabels = { soft: 'Облачко', round: 'Овал', spark: 'Звезда' }
+const accessoryLabels = { none: 'Без значка', glasses: 'Очки', sprout: 'Росток', headphones: 'Наушники' }
 
 /** A compact authored companion. Only explicit navigation; never claims a reward or runs an AI task. */
 export function Companion({ userId }: { userId: number }) {
@@ -32,7 +33,8 @@ export function Companion({ userId }: { userId: number }) {
   const [focused, setFocused] = useState(false)
   const [reaction, setReaction] = useState('')
   const [reactionId, setReactionId] = useState(0)
-  const gaze = useRef({ x: 0, y: 0 })
+  const gazeTarget = useRef<((value: DotsGaze) => void) | null>(null)
+  const setGaze = useCallback((value: DotsGaze) => { gazeTarget.current?.(value) }, [])
   const [announcement, setAnnouncement] = useState('')
   const region = useRef<HTMLElement>(null)
   const reactTimer = useRef<number>(0)
@@ -55,7 +57,7 @@ export function Companion({ userId }: { userId: number }) {
     reactTimer.current = window.setTimeout(() => setReaction(''), 1800)
   }, [])
 
-  const interactions = useDotsInteractions({ userId, active: visible && documentVisible && !covered, motion: !reduce && !session.paused, gaze, region, onReaction: react })
+  const interactions = useDotsInteractions({ userId, active: visible && documentVisible && !covered, motion: !reduce && !session.paused, setGaze, region, onReaction: react })
   const spoken = interactions.voiceState === 'speaking' || interactions.voiceState === 'starting'
   useEffect(() => {
     if (interactions.voiceState === 'error' || interactions.voiceState === 'unavailable') toast('Голос недоступен. Реплика остаётся текстом.')
@@ -118,10 +120,9 @@ export function Companion({ userId }: { userId: number }) {
         onPointerMove={event => {
           if (reduce || session.paused || event.pointerType !== 'mouse') return
           const box = event.currentTarget.getBoundingClientRect()
-          gaze.current.x = Math.max(-1, Math.min(1, (event.clientX - box.x) / box.width * 2 - 1))
-          gaze.current.y = Math.max(-1, Math.min(1, (event.clientY - box.y) / box.height * 2 - 1))
-        }} onPointerLeave={() => { gaze.current.x = 0; gaze.current.y = 0 }}>
-        <DotsCharacter look={look} mood={mood} active={visible && documentVisible && !covered} motion={!reduce && !session.paused} reaction={reactionId} gaze={gaze} lantern={interactions.preferences.lantern}/>
+          setGaze({ x: (event.clientX - box.x) / box.width * 2 - 1, y: (event.clientY - box.y) / box.height * 2 - 1 })
+        }} onPointerLeave={() => setGaze(null)}>
+        <DotsCharacter look={look} mood={mood} active={visible && documentVisible && !covered} motion={!reduce && !session.paused} reaction={reactionId} gazeTarget={gazeTarget} lantern={interactions.preferences.lantern}/>
       </button>
       <div className="og-dots-conversation">
         <div className="og-dots-heading"><span className="og-dots-name">{look.name} <span>твой спутник</span></span><span className="og-dots-heading-actions">{interactions.preferences.voice && <button type="button" className="og-dots-settings" onClick={() => interactions.readAloud(`${interactions.moment || cue.line} ${cue.detail}`)} aria-label={spoken ? 'Остановить чтение' : 'Прочитать реплику'} aria-pressed={spoken}>{spoken ? <Square size={15} aria-hidden="true"/> : <Volume2 size={17} aria-hidden="true"/>}</button>}<button type="button" className="og-dots-settings" onClick={() => push({ type: 'companion-settings' })} aria-label="Настроить Dots" title="Имя, образ и анимации"><SlidersHorizontal size={17} aria-hidden="true"/></button></span></div>
@@ -191,7 +192,7 @@ function CompanionSettingsForm({ userId }: { userId: number }) {
         <div className="og-dots-field"><label htmlFor={inputId}>Имя</label><input id={inputId} aria-describedby={`${inputId}-hint`} value={draft.name} maxLength={48} placeholder="Dots" autoComplete="off" onChange={event => setDraft(current => ({ ...current, name: event.target.value }))}/><small id={`${inputId}-hint`}>До 24 символов. Без личных данных.</small></div>
         <fieldset><legend>Цвет</legend><div className="og-dots-options">{companionColors.map(color => <label key={color} className="og-dots-option"><input type="radio" name="dots-color" value={color} checked={draft.color === color} onChange={() => setDraft(current => ({ ...current, color }))}/><span><i className="og-dots-swatch" data-color={color}/>{colorLabels[color]}</span></label>)}</div></fieldset>
         <fieldset><legend>Форма</legend><div className="og-dots-options">{companionShapes.map(shape => <label key={shape} className="og-dots-option"><input type="radio" name="dots-shape" value={shape} checked={draft.shape === shape} onChange={() => setDraft(current => ({ ...current, shape }))}/><span>{shapeLabels[shape]}</span></label>)}</div></fieldset>
-        <fieldset><legend>Деталь характера</legend><div className="og-dots-options">{companionAccessories.map(accessory => <label key={accessory} className="og-dots-option"><input type="radio" name="dots-accessory" value={accessory} checked={draft.accessory === accessory} onChange={() => setDraft(current => ({ ...current, accessory }))}/><span>{accessoryLabels[accessory]}</span></label>)}</div></fieldset>
+        <fieldset><legend>Значок</legend><div className="og-dots-options">{companionAccessories.map(accessory => <label key={accessory} className="og-dots-option"><input type="radio" name="dots-accessory" value={accessory} checked={draft.accessory === accessory} onChange={() => setDraft(current => ({ ...current, accessory }))}/><span>{accessoryLabels[accessory]}</span></label>)}</div></fieldset>
         <label className="og-dots-motion"><span>Живые анимации<small>{reduce ? 'Система просит меньше движения: анимации отключены.' : 'Взгляд, мимика и живые жесты. Можно отключить.'}</small></span><input type="checkbox" checked={!session.paused} disabled={reduce} onChange={event => changeMotion(!event.target.checked)}/></label>
         <details className="og-dots-interactions">
           <summary tabIndex={0}>Движение, свет и голос</summary>
