@@ -202,6 +202,8 @@ export function errorText(e: unknown) {
       return 'В группу отправляются только новости. Уроки остаются в курсах'
     case 'miniapp_only':
       return 'Эта новость отмечена «только в приложении» и в канал не отправляется'
+    case 'lesson_delete_disabled':
+      return 'Сними материал с публикации в редакторе. Его результаты сохранятся'
     case 'course_delete_disabled':
       return 'Удаление курса отключено. Сохрани его как черновик: уроки, покупки и доступы сохранятся'
     case 'course_locked':

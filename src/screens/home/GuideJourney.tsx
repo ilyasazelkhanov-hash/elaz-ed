@@ -1,7 +1,7 @@
 import {useId,useRef,useState,type ReactNode} from 'react'
 import {ArrowDown,ArrowLeft,ArrowRight,ArrowUp,BookOpen,Check,Lightbulb,RotateCcw} from 'lucide-react'
 import {Tap} from '../../ui'
-import {emptyJourney,evaluateGuideAnswer,guideAnswerPresent,guideInteractions,guideJourneyKey,moveGuideItem,readGuideJourney,saveGuideJourney,type GuideAnswer,type GuideChallenge,type GuideJourneyState,type GuideStep,type GuideStepVisual} from '../../lib/guide-interactions'
+import {emptyJourney,evaluateGuideAnswer,guideAnswerPresent,guideInteractions,guideJourneyKey,moveGuideItem,readGuideJourney,readSavedGuideJourney,saveGuideJourney,type GuideAnswer,type GuideChallenge,type GuideJourneyState,type GuideStep,type GuideStepVisual} from '../../lib/guide-interactions'
 import './guide-journey.css'
 
 type Props={scrollInset?:number;initialPractice?:boolean;scope:string;guide:{id:string;steps:GuideStep[]};children:ReactNode;challenges?:GuideChallenge[]}
@@ -13,6 +13,8 @@ export function GuideJourney(props:Props){return <Journey key={`${guideJourneyKe
 function Journey({scope,guide,children,challenges,initialPractice=false,scrollInset=12}:Props){
  const questions=challenges??guideInteractions[guide.id],key=guideJourneyKey(scope,guide.id,[guide.steps,questions]),id=useId(),heading=useRef<HTMLHeadingElement>(null)
  const [state,setState]=useState(()=>{const saved=readGuideJourney(key,questions||[]);return initialPractice ? {...saved,step:guide.steps.length} : saved}),[all,setAll]=useState(false)
+ const previousKey=key+':previous'
+ const [previous,setPrevious]=useState(()=>readSavedGuideJourney(previousKey,questions??[]))
  const [durable,setDurable]=useState<boolean|null>(null)
  const [phase,setPhase]=useState<'concept'|'question'>(()=>state.phase??(state.checked[state.step]||(questions?.[state.step]?.type!=='order'&&state.answers[state.step]!=null)?'question':'concept'))
  if(!questions||questions.length!==guide.steps.length)return <>{guide.steps.map(step=><section key={step.title}><h2>{step.title}</h2><p>{step.text}</p><GuideStepEvidence visual={step.visual}/></section>)}{children}</>
@@ -23,7 +25,20 @@ function Journey({scope,guide,children,challenges,initialPractice=false,scrollIn
  const focusStep=()=>requestAnimationFrame(()=>{const title=heading.current;if(!title)return;title.focus({preventScroll:true});const scroller=title.closest<HTMLElement>('.scroll');if(scroller)scroller.scrollTo({top:Math.max(0,scroller.scrollTop+title.getBoundingClientRect().top-scroller.getBoundingClientRect().top-scrollInset),behavior:'instant'})})
  const go=(next:number)=>{const target=Math.max(0,Math.min(next,guide.steps.length));const nextPhase=state.checked[target]||(questions?.[target]?.type!=='order'&&state.answers[target]!=null)?'question':'concept';update({...state,step:target,phase:nextPhase});setPhase(nextPhase);focusStep()}
  const ask=()=>{update({...state,phase:'question'});setPhase('question');focusStep()}
- const restart=()=>{update({...emptyJourney(questions),phase:'question'});setPhase('question');setAll(false);focusStep()}
+ const restart=()=>{
+  const saved={...state,phase}
+  saveGuideJourney(previousKey,saved,questions)
+  setPrevious(saved)
+  update({...emptyJourney(questions),phase:'question'})
+  setPhase('question');setAll(false);focusStep()
+ }
+ const restore=()=>{
+  if(!previous)return
+  const current={...state,phase}
+  saveGuideJourney(previousKey,current,questions)
+  update(previous)
+  setPhase(previous.phase??'concept');setPrevious(current);setAll(false);focusStep()
+ }
  const retry=()=>{update({...state,checked:state.checked.map((old,i)=>i===step?false:old)});focusStep()}
  return <section className="guide-journey" aria-label="Пошаговый урок" data-phase={practice?'practice':phase}>
   <div className="guide-journey-top"><span><span className="guide-journey-kicker">{practice?'Своя работа':'Тренировка'}</span><b>Шаг {step+1} <span>из {guide.steps.length+1}</span></b></span><Tap onClick={()=>setAll(v=>!v)} aria-pressed={all}><BookOpen size={16} aria-hidden="true"/>{all?'Вернуться к шагам':'Весь материал'}</Tap></div>
@@ -51,6 +66,7 @@ function Journey({scope,guide,children,challenges,initialPractice=false,scrollIn
    </div>
   </>}
   {state.checked.some(Boolean)&&<Tap onClick={restart}><RotateCcw size={17} aria-hidden="true"/>Попробовать заново без подсказок</Tap>}
+  {previous&&<Tap onClick={restore}><RotateCcw size={17} aria-hidden="true"/>Вернуться к предыдущей попытке</Tap>}
   <div hidden={!practice&&!all}>{children}</div>
   <details className="guide-journey-boundary"><summary tabIndex={0}>Тренировка без оценки · как сохраняются шаги</summary><p>Учебная тренировка без баллов. {durable===false?'Браузер не сохранил шаги: сейчас они доступны только до перезагрузки.':durable===true?'Шаги сохранены в этом браузере для текущего аккаунта и версии урока.':'После ответа шаги сохраняются в этом браузере, если его настройки это разрешают.'} Это не зачёт курса и не синхронизация между устройствами. Своя работа сохраняется отдельно по кнопке в задании.</p></details>
  </section>

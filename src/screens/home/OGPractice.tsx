@@ -32,8 +32,17 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
   refresh(); return subscribePracticeProgress(scope, refresh)
  }, [scope, scopeKey])
  const progress = savedProgress.key === scopeKey ? savedProgress.value : readPracticeProgress(scope)
- const serverDone = ogPracticeCourses.flatMap(item => item.lessons.filter(lesson => resolvePracticeLesson(resolvePracticeCourse(item, liveCourses), lesson, feed)?.completed).map(lesson => lesson.key))
- const resume = getPracticeResume({...progress, done: serverDone}, (item, lesson) => {const live = resolvePracticeCourse(item, liveCourses); return canOpenPracticeLesson(live, resolvePracticeLesson(live, lesson, feed))})
+ const resume = useMemo(() => {
+  if (course) return null
+  const serverDone = ogPracticeCourses.flatMap(item => {
+   const live = resolvePracticeCourse(item, liveCourses)
+   return item.lessons.filter(lesson => resolvePracticeLesson(live, lesson, feed)?.completed).map(lesson => lesson.key)
+  })
+  return getPracticeResume({...progress, done: serverDone}, (item, lesson) => {
+   const live = resolvePracticeCourse(item, liveCourses)
+   return canOpenPracticeLesson(live, resolvePracticeLesson(live, lesson, feed))
+  })
+ }, [course, progress, liveCourses, feed])
  if ((parts[1] && !course) || (parts[2] && !lesson) || parts.length > 3) return <section className="rounded-3xl border border-line bg-card p-5">
   <h1 className="font-display text-xl font-semibold">Этот урок не найден</h1><p className="mt-2 text-sm text-mute">Открой программу и выбери урок из списка.</p>
   <Tap onClick={() => go(course ? practicePath(course.key) : '/og-practice')} className="mt-4 flex min-h-11 items-center gap-2 font-semibold text-violet"><ArrowLeft size={17}/>{course ? 'К программе' : 'Все курсы'}</Tap>
@@ -86,6 +95,11 @@ function PracticeProgram({course, go}: {course: PracticeCourse; go: Route}) {
   <Tap onClick={() => go('/og-practice')} className="mb-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-violet"><ArrowLeft size={17}/>Все курсы</Tap>
   <div className="overflow-hidden rounded-[26px] border border-line bg-card"><PracticeArtwork courseKey={course.key}/><div className="p-5"><p className="text-[11px] font-bold uppercase tracking-[.15em] text-violet">Курс · {offer.label}</p><h1 className="mt-2 font-display text-[27px] font-semibold leading-tight">{course.title}</h1><p className="mt-3 text-sm leading-relaxed text-mute">{course.goal}</p><p className="mt-4 flex items-center gap-2 text-xs text-mute"><Clock3 size={14}/>{course.lessons.length} уроков · {minutes(duration)} · в своём темпе</p></div></div>
   <div className="mt-4 rounded-[23px] border border-violet/20 bg-violet/8 p-5"><p className="text-xs font-semibold uppercase tracking-wide text-violet">Твой итоговый проект</p><p className="mt-2 text-sm leading-relaxed">{course.project}</p><p className="mt-3 text-xs leading-relaxed text-mute">В каждом уроке: понятное объяснение, разобранный пример, самостоятельная работа и критерии готовности.</p><p className="mt-2 text-xs leading-relaxed text-mute">Отметка чтения, проверка понимания и проект - разные результаты. Счётчик уроков не подтверждает качество проекта; независимая проверка работы здесь не проводится.</p>{projectLesson && <Tap onClick={() => go(practicePath(course.key, projectLesson.key))} className="mt-3 flex min-h-11 items-center gap-2 text-sm font-semibold text-violet">Задание итогового проекта<ArrowRight size={16}/></Tap>}</div>
+  {course === ogPracticeCourses[0] && <details className="mt-4 rounded-2xl border border-line bg-card p-4">
+   <summary className="min-h-11 cursor-pointer py-2 font-semibold">Пример итоговой работы и инструменты</summary>
+   <p className="text-sm leading-relaxed">Например, пакет для подготовки короткого анонса: исходный бриф, сохранённая инструкция для ИИ, черновик и чек-лист проверки даты, времени и ссылки. На неполном брифе инструкция должна запросить недостающее время.</p>
+   <p className="mt-2 text-sm text-mute">Основную работу можно сделать в доступном тебе чате и текстовом редакторе. Нативные навыки и подключения зависят от сервиса и тарифа. Упражнения можно пройти вручную, если функция недоступна.</p>
+  </details>}
   <div className="mt-4 rounded-[23px] border border-line bg-card p-4" data-course-access>
    {live?.access ? <><p className="flex items-center gap-2 text-sm font-semibold text-success"><Check size={17}/>Доступ к курсу открыт</p><p className="mt-2 text-xs text-mute">Отмечено {count} из {course.lessons.length} уроков</p><div role="progressbar" aria-label="Отмеченные уроки" aria-valuemin={0} aria-valuemax={course.lessons.length} aria-valuenow={count} className="mt-2 h-1.5 overflow-hidden rounded-full bg-card2"><div className="h-full rounded-full bg-violet" style={{width: count / course.lessons.length * 100 + '%'}}/></div>{next && <Tap onClick={() => go(practicePath(course.key, next.lesson.key))} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet px-4 text-sm font-semibold text-on-violet">{count ? 'Продолжить курс' : 'Начать курс'}<ArrowRight size={17}/></Tap>}{!next && count === course.lessons.length && <p role="status" className="mt-3 text-sm text-success">Все уроки отмечены. Проверь свою работу по критериям итогового проекта выше. Качество проекта пока не подтверждено.</p>}</>
    : <><p className="text-sm font-semibold">{live ? 'Полная программа - после открытия доступа' : 'Продажи курса пока не открыты'}</p><p className="mt-2 text-xs leading-relaxed text-mute">{live ? `${preview ? 'Посмотри пробный урок' : 'Посмотри программу'} и реши, подходит ли тебе формат. Доступ открывается отдельно к этому курсу.` : 'Программа уже доступна для знакомства. Условия доступа появятся после публикации курса.'}</p>{preview && <Tap onClick={() => go(practicePath(course.key, preview.lesson.key))} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-violet/35 bg-violet/8 px-3 text-sm font-semibold text-violet"><BookOpen size={17}/>Бесплатный пробный урок</Tap>}{live && <CoursePaymentAction course={live}/>}</>}

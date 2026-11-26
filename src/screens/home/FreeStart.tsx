@@ -88,6 +88,14 @@ function FreeStartSession({path,go,user}:FreeStartProps & {user:number}) {
   <section className="free-start-task" aria-labelledby="vibe-atlas-title">
    <h2 id="vibe-atlas-title">VIBE ATLAS: справочник по вайбкодингу</h2>
    <p>Бесплатная методичка: 302 инструмента, навыка и MCP, 12 практических сценариев, готовые стеки и глоссарий. Для тех, кто хочет создавать приложения с ИИ.</p>
+   <details>
+    <summary>Попробовать первую задачу</summary>
+    <p>Представь один экран для людей, которым нужно решить одну задачу. Опиши пользователя, действие и результат. Затем выпиши, что человек увидит сразу, что нажмёт и что произойдёт после нажатия.</p>
+    <p><strong>Пример.</strong> Владелец питомца отмечает приём лекарства, чтобы видеть время последней дозы. На экране есть название, кнопка «Отметить приём» и запись с временем после нажатия.</p>
+    <PracticeArtifact scope={user ? `${isDemo ? 'demo' : 'live'}:${user}` : undefined} course="free-start" lesson="vibe-atlas-first-screen"
+     title="План первого экрана" task="Запиши идею одним предложением, затем перечисли содержимое экрана, одно основное действие и видимый результат."
+     criteria={['Назван человек и его задача','На первом экране есть одно основное действие','Описано, что изменится после нажатия']}/>
+   </details>
    <a className="free-start-link" href="/materials/vibe-atlas-2026-11-22.md" download="VIBE_ATLAS_2026.md">Скачать полную методичку (.md)<ArrowRight size={17} aria-hidden="true"/></a>
    <a className="free-start-link" href="https://vibe-atlas-six.vercel.app/" target="_blank" rel="noopener noreferrer">Открыть каталог Vibe Atlas в новой вкладке<ArrowRight size={17} aria-hidden="true"/></a>
    <p className="free-start-note">Редакция от 22 ноября 2026. Файл открывается в Markdown-редакторе, например Obsidian или VS Code. Команды и совместимость инструментов нужно сверять с их документацией; включение в каталог не означает проверку или установку.</p>

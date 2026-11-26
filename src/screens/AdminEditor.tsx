@@ -1,5 +1,5 @@
 import { CoverImage } from '../CoverImage'
-import { Eye, Megaphone, Plus, Trash2, X } from 'lucide-react'
+import { Eye, Megaphone, Plus, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText } from '../lib/api'
@@ -58,7 +58,7 @@ const TOOLS: { label: string; wrap: [string, string] }[] = [
 ]
 
 export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Kind }) {
-  const { pop, push, toast, guard, boot } = useStore.getState()
+  const { push, toast, guard, boot } = useStore.getState()
   const feed = useStore((s) => s.feed)
   const categories = useMemo(() => {
     const labels = feed.filter((c) => c.kind === 'lesson' && (lesson?.course_id ? c.course_id != null : c.course_id == null)).map((c) => c.category)
@@ -148,20 +148,6 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
     } catch (e) {
       toast(errorText(e))
     } finally {
-      setBusy(null)
-    }
-  }
-
-  const remove = async () => {
-    if (!d.id || !(await confirmDialog(`Удалить «${d.title}»? Это необратимо. Связанные результаты и записи могут быть удалены. Лучше снять материал с публикации, если нужно только скрыть его.`))) return
-    setBusy('delete')
-    try {
-      await api.adminDelete(d.id)
-      toast('Удалено')
-      void boot()
-      pop()
-    } catch (e) {
-      toast(errorText(e))
       setBusy(null)
     }
   }
@@ -363,12 +349,14 @@ export function EditorScreen({ lesson, kind }: { lesson: Lesson | null; kind: Ki
 
           </details>
 
+          {d.id && d.published && <Tap onClick={async () => {
+            if (await confirmDialog('Снять материал с публикации? Его можно будет опубликовать снова из редактора.')) await save(false)
+          }} disabled={!!busy} className="mt-5 min-h-12 w-full rounded-2xl border border-line bg-card2 px-4 font-semibold">Снять с публикации</Tap>}
           {d.id && d.published && !d.course_id && d.kind === 'lesson' && (
             <Tap onClick={announce} disabled={!!busy} className="mt-5 flex h-[52px] w-full items-center justify-center gap-2 rounded-[18px] border border-line bg-card2 text-[14.5px] font-semibold">
               {busy === 'announce' ? <Spinner size={18} /> : <Megaphone size={18} />} Анонсировать в канале
             </Tap>
           )}
-          {d.id && <details className="mt-6 rounded-2xl border border-rose/30 p-3"><summary tabIndex={0} className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-rose">Удаление материала</summary><p className="mt-2 text-sm leading-relaxed text-mute">Удаление необратимо: могут быть удалены связанные результаты и записи. Чтобы скрыть материал от читателей и сохранить данные, сними его с публикации.</p><Tap onClick={remove} disabled={!!busy} className="mt-3 min-h-12 w-full rounded-xl border border-rose/40 px-3 text-sm font-semibold text-rose">{busy==='delete'?<Spinner size={18}/>:<><Trash2 size={16} className="mr-2 inline"/>Удалить навсегда</>}</Tap></details>}
         </div>
       </div>
 

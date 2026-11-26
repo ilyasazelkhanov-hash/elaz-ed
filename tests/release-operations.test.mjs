@@ -20,6 +20,7 @@ const api='https://verified.supabase.co/functions/v1/api',app='https://example.c
 const response=value=>new Response(typeof value==='string'?value:JSON.stringify(value))
 const deployed=async url=>{
   url=String(url)
+  if(url===app+'runtime.json')return new Response(null,{status:404})
   if(url===app)return response('<script src="/assets/index.js"></script>')
   if(url===app+'assets/index.js')return response('import "./client.js";')
   if(url===app+'assets/client.js')return response(`const base="${api}"`)
@@ -29,6 +30,14 @@ test('deployment identity follows split public chunks and rejects explicit API m
   assert.deepEqual(chunkUrls('const files=["assets/child.js","./other.js"]',app+'assets/index.js'),[app+'assets/child.js',app+'assets/other.js'])
   assert.equal((await discoverApi(app,deployed)).apiUrl,api)
   await assert.rejects(smoke({apiUrl:'https://wrong.supabase.co/functions/v1/api',appUrl:app,fetcher:deployed}),/differs/)
+})
+test('published runtime metadata avoids crawling the application graph',async()=>{
+  const config = async url => {
+    assert.equal(url,app+'runtime.json')
+    return response({schema:1,api_url:api})
+  }
+  assert.deepEqual(await discoverApi(app,config),{apiUrl:api,assets:[]})
+  await assert.rejects(discoverApi(app,async()=>response({schema:1,api_url:'http://example.com/api'})),/HTTPS/)
 })
 test('smoke checks denials, fails on missing route, and never logs signed data',async()=>{
   const requested=[]

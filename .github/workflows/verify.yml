@@ -12,6 +12,9 @@ on:
         default: false
 permissions:
   contents: read
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
 jobs:
   master:
     name: Master platform and client templates
@@ -111,6 +114,23 @@ jobs:
       - run: npm ci
       - name: All tests and production build in isolated directory
         run: npm run test:all
+      - name: Install pinned Chromium
+        run: npx playwright install chromium
+      - name: Mobile browser smoke against the same build
+        run: node scripts/og-product-browser.mjs
+      - name: Asset baseline for the same build
+        shell: pwsh
+        run: |
+          $build = (Get-Content test-results/audit-validation.json -Raw | ConvertFrom-Json).out
+          node scripts/perf-assets.mjs --dist (Join-Path $build dist) --include App --out test-results/perf-assets.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-release-evidence
+          path: |
+            test-results/og-product-browser.json
+            test-results/perf-assets.json
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
