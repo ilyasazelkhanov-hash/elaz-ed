@@ -45,13 +45,13 @@ test('editor folds secondary fields, shows publication state and clearly marks s
  assert.match(html,/Сохранить<br\/>и смотреть/)
  assert.doesNotMatch(html,/Удалить навсегда/)
 })
-test('existing material deletion is outside toolbar and names irreversible effects',async()=>{
+test('published material can be hidden from inside the editor without offering deletion',async()=>{
  const {EditorScreen}=await load('AdminEditor')
  const lesson={id:7,title:'Article',body:'Text',kind:'lesson',published:true,editorial:{kind:'evergreen'},quiz:[],minutes:1,xp:0,gradient:'aurora',emoji:'✨',course_id:null}
  const html=renderToStaticMarkup(createElement(EditorScreen,{lesson,kind:'lesson'}))
  assert.doesNotMatch(html.slice(0,html.indexOf('</header>')),/Удалить/)
- assert.match(html,/Удаление материала/);assert.match(html,/Удаление необратимо/)
- assert.match(html,/сними его с публикации/);assert.match(html,/Удалить навсегда/)
+ assert.match(html,/Снять с публикации/)
+ assert.doesNotMatch(html,/Удаление материала|Удалить навсегда/)
 })
 test('legacy operations open on requests instead of an endless list plus payment controls',async()=>{
  const {CoursesAdminScreen}=await load('AdminCourses')

@@ -15,6 +15,10 @@ export function chunkUrls(source, base) {
 export async function discoverApi(appUrl, fetcher = fetch) {
   const app = new URL(appUrl)
   if (app.protocol !== 'https:' || app.username || app.password || app.search || app.hash) throw Error('Use a public HTTPS app URL')
+  const config = await fetcher(new URL('/runtime.json', app).href, {signal:AbortSignal.timeout(15000),redirect:'error',cache:'no-store'})
+  const data = config.ok ? await config.json().catch(()=>null) : null
+  if (data?.schema === 1) return {apiUrl: publicApiUrl(data.api_url), assets: []}
+  // Older releases do not publish public runtime metadata.
   const response = await fetcher(app, {signal:AbortSignal.timeout(15000),redirect:'error'})
   if (!response.ok) throw Error('Frontend unavailable')
   const html = await response.text(), queue = []
@@ -59,7 +63,7 @@ export async function smoke({apiUrl,appUrl,auth,expectedCommit,fetcher=fetch}) {
     try {
       const result = await fetcher(new URL('/release.json', appUrl).href, {signal:AbortSignal.timeout(15000),redirect:'error',cache:'no-store'})
       const data = await result.json()
-      if (result.ok && data?.schema === 1 && /^[a-f0-9]{40}$/i.test(data.commit) && /^[a-f0-9]{64}$/i.test(data.build_sha256) && Number.isInteger(data.file_count) && data.file_count > 0) {
+      if (result.ok && data?.schema === 1 && typeof data.dirty === 'boolean' && /^[a-f0-9]{40}$/i.test(data.commit) && /^[a-f0-9]{64}$/i.test(data.build_sha256) && Number.isInteger(data.file_count) && data.file_count > 0) {
         frontendRelease = {commit:data.commit,dirty:data.dirty===true,build_sha256:data.build_sha256,file_count:data.file_count}
       }
     } catch {}

@@ -36,6 +36,7 @@ export interface Card {
   published: boolean
   /** False keeps an archived/shared course reference out of news, while its direct link remains valid. */
   news_eligible?: boolean
+  telegram_delivery?: { status: string; text_fallback: boolean }
   /** False: новость выходит только в Mini App, очередь канала её пропускает. Поле есть только в админских данных. */
   telegram_publish?: boolean
   published_at: string | null

@@ -500,11 +500,9 @@ export const mockApi: Api = {
     return saved
   },
 
-  async adminDelete(id) {
+  async adminDelete() {
     await wait()
-    state.lessons = state.lessons.filter((l) => l.id !== id)
-    delete state.done[id]
-    save()
+    throw { error: 'lesson_delete_disabled' }
   },
 
   async adminAnnounce() {

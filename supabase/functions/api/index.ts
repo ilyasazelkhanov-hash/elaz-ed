@@ -1141,7 +1141,20 @@ async function adminList(body: Row) {
   ])
   if([lessons,users,subs,active,done].some(result=>result.error))throw new HttpError(500,'db')
   const page=(lessons.data??[]).slice(0,scope?30:500)
-  return {lessons:page,next:scope&&(lessons.data??[]).length>30?page.at(-1)!.id:null,stats:{users:users.count??0,subscribed:subs.count??0,active:active.count??0,completions:done.count??0}}
+  const settings=scope==='blog'&&page.length?await getSettings():null
+  const chat=settings?.news_publishing?.chat_id
+  let publicationStatus:'available'|'disabled'|'unavailable'|undefined
+  let deliveryById=new Map<number,{status:string;text_fallback:boolean}>()
+  if(settings){
+    publicationStatus=settings.news_publishing?.enabled&&chat?'available':'disabled'
+    if(publicationStatus==='available'){
+      const receipts=await db.from('news_publications').select('lesson_id,status,error_code').eq('chat_id',chat).in('lesson_id',page.map(item=>item.id))
+      if(receipts.error)publicationStatus='unavailable'
+      else deliveryById=new Map((receipts.data??[]).map(row=>[Number(row.lesson_id),{status:row.status,text_fallback:row.error_code==='media_400_text_fallback'}]))
+    }
+  }
+  const items=publicationStatus? page.map(item=>({...item,telegram_delivery:deliveryById.get(item.id)??{status:publicationStatus==='available'?'pending':publicationStatus,text_fallback:false}})):page
+  return {lessons:items,next:scope&&(lessons.data??[]).length>30?page.at(-1)!.id:null,stats:{users:users.count??0,subscribed:subs.count??0,active:active.count??0,completions:done.count??0}}
 }
 
 async function adminAnalytics(body: Row) {
@@ -1189,9 +1202,9 @@ async function adminSave(body: Row) {
 
 async function adminDelete(body: Row) {
   await member(body, true)
-  const { error } = await db.from('lessons').delete().eq('id', Number(body.id))
-  if (error) throw new HttpError(500, 'db')
-  return { ok: true }
+  // Older clients label this action as permanent deletion. The current
+  // editor changes publication state explicitly through admin_save.
+  throw new HttpError(409, 'lesson_delete_disabled')
 }
 
 // Анонс урока в канал: кнопка ведёт обратно в приложение.

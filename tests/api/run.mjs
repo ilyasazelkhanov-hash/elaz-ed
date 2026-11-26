@@ -1581,9 +1581,16 @@ test('course can be hidden and restored without detaching paid lessons or access
   assert.equal((await call('lesson',{id:10},BUYER)).status,200)
  }
 })
+test('deprecated material delete preserves the lesson and progress',async()=>{
+ await everyoneBoots()
+ const before=structuredClone({lessons:state.tables.lessons,progress:state.tables.progress})
+ const result=await call('admin_delete',{id:10},ADMIN)
+ assert.equal(result.status,409)
+ assert.deepEqual({lessons:state.tables.lessons,progress:state.tables.progress},before)
+})
 test('admin deletes report failed writes',async()=>{
  await everyoneBoots()
- for(const [route,table,body] of [['admin_delete','lessons',{id:1}],['admin_advent_door_delete','advent_doors',{day:1}],['admin_advent_point_delete','advent_points',{id:1}],['admin_advent_reward_delete','advent_rewards',{id:1}]]){
+ for(const [route,table,body] of [['admin_advent_door_delete','advent_doors',{day:1}],['admin_advent_point_delete','advent_points',{id:1}],['admin_advent_reward_delete','advent_rewards',{id:1}]]){
  state.failNext={table,op:'delete'}
  assert.equal((await call(route,body,ADMIN)).status,500,route)
  }

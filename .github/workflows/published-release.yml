@@ -1,0 +1,32 @@
+name: Live OG checks
+on:
+  deployment_status:
+  schedule:
+    - cron: '23 2 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-release:
+    if: github.event_name != 'deployment_status' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+      - name: Check deployed frontend and API
+        env:
+          RELEASE_EXPECTED_COMMIT: ${{ github.event.deployment.sha }}
+          RELEASE_API_URL: https://dcdepwdxvadhludnubis.supabase.co/functions/v1/api
+        run: node scripts/release-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-release-report
+          path: test-results/release-smoke.json
+          retention-days: 14

@@ -15,7 +15,7 @@ export function frontendSourceIdentity(base = root, env = process.env) {
   try {
     const head = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}).trim()
     if (!commit && commitPattern.test(head)) commit = head.toLowerCase()
-    dirty = !!execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], {cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}).trim()
+    dirty = head.toLowerCase() !== commit || !!execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], {cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}).trim()
   } catch {}
   return {commit, dirty}
 }

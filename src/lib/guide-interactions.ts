@@ -73,10 +73,14 @@ function storedJourneys():[string,GuideJourneyState][]{
  let rows:unknown;try{rows=JSON.parse(raw)}catch{return []}
  return Array.isArray(rows)?rows.slice(-MAX_ENTRIES).filter(row=>Array.isArray(row)&&row.length===2&&typeof row[0]==='string'&&row[0].length<=32000):[]
 }
-export function readGuideJourney(key:string,questions:GuideChallenge[]):GuideJourneyState{
+export function readSavedGuideJourney(key:string,questions:GuideChallenge[]):GuideJourneyState | null {
  let saved=journeys.get(key)
  try{saved=saved??storedJourneys().find(row=>row[0]===key)?.[1]}catch{/* denied/corrupt storage: memory only */}
- return structuredClone(safeJourney(saved,questions)??emptyJourney(questions))
+ const valid=safeJourney(saved,questions)
+ return valid ? structuredClone(valid) : null
+}
+export function readGuideJourney(key:string,questions:GuideChallenge[]):GuideJourneyState{
+ return readSavedGuideJourney(key,questions)??emptyJourney(questions)
 }
 /** Returns whether this attempt was saved durably in this browser, never a server completion. */
 export function saveGuideJourney(key:string,value:GuideJourneyState,questions?:GuideChallenge[]):boolean{

@@ -363,7 +363,10 @@ async function main(){
  const projectRef=process.env.RELEASE_PROJECT_REF
  if(projectRef!==expectedProject)fail('project_ref_must_be_dcdepwdxvadhludnubis')
  const payload=JSON.parse(await readFile(path.resolve(file),'utf8'))
- const localCourses=await loadLocalCourses()
+ const trainingFile=process.env.OG_PRIVATE_TRAINING_FILE
+ const pathsFile=process.env.OG_PRIVATE_PATHS_FILE
+ if(Boolean(trainingFile)!==Boolean(pathsFile)||[trainingFile,pathsFile].some(file=>file&&!path.isAbsolute(file)))fail('private_course_corpus_paths')
+ const localCourses=await loadLocalCourses(trainingFile,pathsFile)
  const query=await createCliQuery({cli:process.env.SUPABASE_CLI,projectRef})
  console.log(JSON.stringify(await runPublisher({payload,projectRef,query,publish,localCourses})))
 }

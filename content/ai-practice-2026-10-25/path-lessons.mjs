@@ -65,8 +65,10 @@ pathLessons.find(x=>x.key==='foundations-skill').steps=[
  step('Открой Customize → Skills → «+» → Create skill → Upload a skill. Выбери исходный focus-brief.zip и включи добавленный навык.','Установить пакет через актуальное меню.','Навык виден в списке Skills и включён; передача Markdown в чат не заменяет этот шаг.'),
  step('Начни новый разговор, приложи brief.md и попроси применить focus-brief для черновика анонса. Сверь результат с контрольными полями.','Проверить применение на настоящем входе.','Дата и время правильные, ссылка регистрации не придумана.'),
  step('В новом разговоре повтори с брифом без времени. Затем отключи навык в Customize → Skills и запиши результаты обоих тестов.','Проверить остановку и управляемость.','Вопрос вместо выдуманного времени; навык можно выключить.'),
+ step('В Gemini открой Customize → Skills и выбери загрузку навыка. Из учебного пакета используй сам SKILL.md или папку навыка с SKILL.md в её корне. Нужен вход в Gemini, возраст от 18 лет и доступный раздел Skills.','Проверить нативный Skill во втором сервисе.','Навык появился в списке. Если раздела нет, выполни тот же тест с procedure.md в чате и отметь ручной режим.'),
+ step('В новом чате Gemini явно выбери этот навык. Сравни полный бриф и версию без времени с результатами Claude.','Отличить исполнение процедуры от уверенной догадки.','В полном результате сохраняются факты. На неполном брифе помощник запрашивает время.'),
 ]
-pathLessons.find(x=>x.key==='foundations-skill').links.push(['Учебный Skill ZIP',local+'focus-brief.zip'])
+pathLessons.find(x=>x.key==='foundations-skill').links.push(['Учебный Skill ZIP',local+'focus-brief.zip'],['Gemini: создание и загрузка Skills','https://support.google.com/gemini/answer/17094296?hl=en'])
 
 // Keep the old completion ID but give the standalone coding course its own final.
 pathLessons.push({

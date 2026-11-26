@@ -6,7 +6,7 @@ The CLI validates structure, dates, duplication, text overlap and cover image ac
 
 ## Run
 
-Use Node 24 and the authenticated installed Supabase executable. Set `SUPABASE_CLI` to its absolute executable path and explicitly set `RELEASE_PROJECT_REF=dcdepwdxvadhludnubis`. Run from this checkout:
+Use Node 24 and the authenticated installed Supabase executable. For a separately maintained private source corpus, set both `OG_PRIVATE_TRAINING_FILE` and `OG_PRIVATE_PATHS_FILE` to absolute local JSON paths. Both inputs are required in that mode. The CLI rejects a missing or invalid corpus before connecting. Store the files and credentials outside the public repository; it never prints course bodies. Set `SUPABASE_CLI` to its absolute executable path and explicitly set `RELEASE_PROJECT_REF=dcdepwdxvadhludnubis`. Run from this checkout:
 
 ```powershell
 node scripts/publish-news.mjs --file test-results/news-draft.json --dry-run
