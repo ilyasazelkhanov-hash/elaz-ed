@@ -46,7 +46,7 @@
     "@types/three": "0.186.0",
     "@vitejs/plugin-react": "6.1.2",
     "embedded-postgres": "18.4.0-beta.17",
-    "pg": "8.16.3",
+    "pg": "8.23.1",
     "prettier": "3.9.10",
     "supabase": "2.121.0",
     "tailwindcss": "4.3.3",
