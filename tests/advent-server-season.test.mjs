@@ -56,15 +56,18 @@ test('seed and activation run on the real schema and keep the finished campaign 
  assert.notEqual((await one(`select title from advent_doors where season='${SEASON}' and day=2`)).title,'Правка автора')
  await db.exec(`update advent_doors set title='Открытая' where season='${SEASON}' and day=1`);await db.exec(seed)
  assert.equal((await one(`select title from advent_doors where season='${SEASON}' and day=1`)).title,'Открытая')
- await db.exec(activate);await db.exec(activate)
+ const expectedStart=(await one("select (((statement_timestamp() at time zone 'UTC') + interval '5 hours')::date)::text as d")).d
+ await db.exec(activate)
+ await db.exec("update settings set value='{\"day\":1,\"done\":true}' where key='advent_push_morning'")
+ await db.exec(activate)
  const now=(await one(`select value from settings where key='advent'`)).value
- assert.deepEqual([now.season,now.start,now.days,now.theme,now.enabled,now.grace,now.tz],[SEASON,'2026-11-14',53,'newyear',true,3,300])
+ assert.deepEqual([now.season,now.start,now.days,now.theme,now.enabled,now.grace,now.tz],[SEASON,expectedStart,53,'newyear',true,3,300])
  assert.deepEqual(now.catchup,{methods:['quiz'],stars:75})
  const old=(await one(`select config,archived_at from advent_seasons where id='legacy'`))
  assert.deepEqual([old.config.title,old.config.start,old.config.days],['Creator Vault','2026-10-18',24]);assert.ok(old.archived_at)
  assert.equal((await one(`select count(*)::int n from advent_doors where season='legacy'`)).n,24)
  assert.deepEqual(await one(`select day,xp,season from advent_opens where user_id=1 and season='legacy'`),{day:1,xp:30,season:'legacy'})
- assert.deepEqual((await one(`select value from settings where key='advent_push_morning'`)).value,{})
+ assert.deepEqual((await one(`select value from settings where key='advent_push_morning'`)).value,{day:1,done:true})
 })
 
 test('home entry prefers the server calendar and keeps the local practice calendar only as a fallback',async()=>{

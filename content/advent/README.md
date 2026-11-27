@@ -89,14 +89,14 @@
 | Призы | Принадлежат сезону, в котором созданы. Выданные коды прежних сезонов гасятся на кассе как раньше |
 | Админка | «Календарь», «Призы» и сводка показывают идущий сезон |
 
-Сезон «Новогодний AI-адвент» (`ai-winter-2026`, 14 ноября 2026 - 5 января 2027, 53 двери):
+Сезон «Новогодний AI-адвент» (`ai-winter-2026`, 53 двери со дня запуска по календарю кампании):
 
 ```bash
 node content/advent/build-season.mjs           # проверить, что сгенерированные файлы актуальны
 node content/advent/build-season.mjs --write   # пересобрать после правки заданий или плана дверей
 ```
 
-Источники: `ai-winter-2026.json` (задания) и `ai-winter-2026.doors.json` (вид двери, значок, вопросы квизов). Результат: `ai-winter-2026.seed.sql` и `src/lib/adventSeasonSeed.json` для демо. Включение: `ai-winter-2026.activate.sql`. Порядок выпуска и откат: [docs/fixes/2026-11-15-advent-seasons-and-platform.md](../../docs/fixes/2026-11-15-advent-seasons-and-platform.md).
+Источники: `ai-winter-2026.json` (задания) и `ai-winter-2026.doors.json` (вид двери, значок, вопросы квизов). Результат: `ai-winter-2026.seed.sql` и `src/lib/adventSeasonSeed.json` для демо. Включение: `ai-winter-2026.activate.sql`. Дата определяется при включении в часовом поясе кампании. Повторное включение сохраняет начальную дату и курсоры уведомлений. Порядок выпуска и откат: [docs/fixes/2026-11-15-advent-seasons-and-platform.md](../../docs/fixes/2026-11-15-advent-seasons-and-platform.md).
 
 Скрипты `build.mjs`, `seed.sql` и пакет `premium-2026-10-26` относятся к прежней кампании и рассчитаны на схему до сезонов (`on conflict (day)`). После миграции сезонов их не запускать.
 
