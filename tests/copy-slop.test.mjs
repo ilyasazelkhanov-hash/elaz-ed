@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {readFileSync, readdirSync} from 'node:fs'
+import {existsSync, readFileSync, readdirSync} from 'node:fs'
 import {scanText, SLOP_MARKERS} from '../scripts/copy-slop.mjs'
 
 const root = new URL('../', import.meta.url)
@@ -42,7 +42,8 @@ const learnerCode = [
  'src/lib/beginner-content.ts', 'src/lib/guide-interactions.ts', 'src/lib/warmup.ts', 'src/lib/shareCard.ts',
  'src/lib/og-course-access.ts', 'src/lib/stars-economy.ts', 'src/lib/access-grant.ts', 'src/lib/gamedev-course.json', 'src/lib/seed.json',
 ]
-const documents = ['README.md', 'docs/UNIT-ECONOMICS-2026-11.md', 'index.html']
+// The isolated full run copies the app without the root README, so a missing optional file is skipped, never the required ones.
+const documents = ['docs/UNIT-ECONOMICS-2026-11.md', 'index.html', ...['README.md'].filter(file => existsSync(new URL(file, root)))]
 
 test('learner-facing copy and the documents for people carry no stock phrases and no long dashes', () => {
  const found = []

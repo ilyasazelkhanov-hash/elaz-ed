@@ -64,7 +64,7 @@
     "test:theme-contrast": "node --test tests/theme-contrast.test.mjs",
     "test:home-assembly": "node --experimental-strip-types --test tests/home-assembly.test.mjs",
     "test:advent-season": "node --experimental-strip-types --test tests/advent-season.test.mjs tests/advent-isolation.test.mjs tests/advent-seasons-database.test.mjs tests/advent-server-season.test.mjs",
-    "test:growth": "node --experimental-strip-types --test tests/free-start-growth.test.mjs",
+    "test:growth": "node --experimental-strip-types --test tests/free-start-growth.test.mjs tests/free-start-landing.test.mjs",
     "test:platform-safety": "node --experimental-strip-types --test tests/platform-uncertain-action.test.mjs tests/platform-sculpture-motion.test.mjs tests/platform-wallet.test.mjs"
   },
   "dependencies": {

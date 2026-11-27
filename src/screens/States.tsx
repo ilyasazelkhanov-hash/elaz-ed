@@ -160,6 +160,13 @@ export function Setup() {
 }
 
 /** Открыли ссылку в обычном браузере. */
+// Three ways to start right away. The paths are public free-start routes of the demo.
+const QUICK_START: [string, string, string][] = [
+  ['/?demo#/courses/start/warmup', 'Разминка', '5 заданий за 2 минуты: узнаешь, с чего начать'],
+  ['/?demo#/courses/start/first-request', 'Первый разбор', '5 минут: запрос, который помогает'],
+  ['/?demo#/courses/start', 'Все пять разборов', 'Маршрут бесплатного старта'],
+]
+
 export function Outside() {
   const [links, setLinks] = useState(() => outsideEntryLinks(location))
   useEffect(() => {
@@ -172,19 +179,49 @@ export function Outside() {
     }
   }, [])
   return (
-    <Frame>
-      <Logo size={40} />
-      <p className="mt-5 max-w-[300px] text-[16px] leading-snug text-mute">Уроки, туториалы и новости с XP, стриком и рейтингом. Работает внутри Telegram.</p>
-      <div className="mt-8 w-full max-w-[320px] space-y-2.5">
-        <a href={links.telegram} className={primary}>
-          Открыть в Telegram
-        </a>
-        <a href={links.demo} className={secondary}>
-          Посмотреть демо
-        </a>
-      </div>
-      <Author />
-    </Frame>
+    <motion.div
+      className="relative z-10 h-full overflow-y-auto px-6"
+      style={{ paddingTop: 'calc(var(--top) + 28px)', paddingBottom: 'calc(28px + var(--bottom))' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      data-outside-entry
+    >
+      <main className="mx-auto flex min-h-full w-full max-w-[420px] flex-col justify-center">
+        <Logo size={30} />
+        <h1 className="mt-7 font-display text-[27px] font-semibold leading-[1.15]">Научись работать с ИИ на практике</h1>
+        <p className="mt-3 text-[16px] leading-relaxed text-mute">Пять бесплатных разборов по пять минут. Ты сразу делаешь: собираешь запрос из блоков, ищешь выдуманное в ответе, выбираешь инструмент под задачу.</p>
+        <div className="mt-7 space-y-2.5">
+          <a href={links.telegram} className={primary}>
+            Открыть в Telegram
+          </a>
+          <a href={links.demo} className={secondary}>
+            Попробовать в браузере
+          </a>
+        </div>
+        <nav aria-label="С чего начать" className="mt-8">
+          <h2 className="text-[13px] font-semibold text-mute">Или начни прямо сейчас</h2>
+          <ul className="mt-3 space-y-2">
+            {QUICK_START.map(([href, title, hint]) => (
+              <li key={href}>
+                <a href={href} className="flex min-h-[60px] items-center justify-between gap-3 rounded-[18px] border border-line bg-card/80 px-4 py-3 text-left">
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-semibold leading-snug">{title}</span>
+                    <span className="mt-0.5 block text-[13px] leading-snug text-mute">{hint}</span>
+                  </span>
+                  <span aria-hidden="true" className="shrink-0 text-violet">→</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <p className="mt-6 text-[13px] leading-relaxed text-mute">В браузере открывается демо: ответы и отметки хранятся на этом устройстве. Новости, XP, серия и курсы работают в Telegram.</p>
+        <div className="text-center">
+          <Author />
+        </div>
+      </main>
+    </motion.div>
   )
 }
 
