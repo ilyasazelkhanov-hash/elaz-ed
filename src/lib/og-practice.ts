@@ -1,14 +1,23 @@
 import directory from '../../content/ai-practice-2026-10-25/course-directory.json' with {type:'json'}
 
-export const ogPracticeCourses = directory
-export type PracticeCourse = typeof directory[number]
+import gamedevCourse from './gamedev-course.json' with {type:'json'}
+import { resolvePracticeCourse } from './og-course-access.ts'
+import type { Course } from './types'
+
+export const ogPracticeDemoCourses = directory
+export const ogPracticeCourses = [...ogPracticeDemoCourses, gamedevCourse]
+export type PracticeCourse = typeof ogPracticeCourses[number]
+
+export function visiblePracticeCourses(courses: Course[], demo: boolean): PracticeCourse[] {
+ return !demo && resolvePracticeCourse(gamedevCourse, courses) ? ogPracticeCourses : ogPracticeDemoCourses
+}
 export type PracticeProgress = {done: string[]; lastLesson: string | null}
 export const practiceTopics = ['Все', 'С нуля', 'Текст', 'Дизайн', 'Видео', 'Код', 'Автоматизация']
 const topics: Record<string, string[]> = {
  foundations: ['С нуля'], text: ['Текст', 'Дизайн'], media: ['Дизайн', 'Видео'],
- coding: ['Код'], automation: ['Автоматизация'],
+ coding: ['Код'], 'gamedev-starter': ['Код'], automation: ['Автоматизация'],
 }
-const lessonKeys = new Set(directory.flatMap(course => course.lessons.map(lesson => lesson.key)))
+const lessonKeys = new Set(ogPracticeCourses.flatMap(course => course.lessons.map(lesson => lesson.key)))
 export type PracticeProgressScope = {userId: string | number | undefined; mode: 'demo' | 'live'}
 const changeEvent = 'og:practice-progress'
 // Bump when the lesson sequence or completion meaning changes. Unowned v1 data is never adopted.
@@ -36,7 +45,7 @@ export function readPracticeProgress(scope: PracticeProgressScope, storage?: Pro
   const record = value as Record<string, unknown>
   if (record.version !== 2 || record.catalogVersion !== catalogVersion || record.mode !== scope.mode || record.userId !== String(scope.userId ?? 'guest') || typeof record.updatedAt !== 'number' || !Number.isFinite(record.updatedAt)) return empty
   const lastLesson = typeof record.lastLesson === 'string' ? record.lastLesson : null
-  const course = directory.find(course => course.lessons.some(lesson => lesson.key === lastLesson))
+  const course = ogPracticeCourses.find(course => course.lessons.some(lesson => lesson.key === lastLesson))
   return normalize({
    // Server progress is authoritative in live mode. Local data can only suggest a reading position.
    done: scope.mode === 'demo' && Array.isArray(record.done) ? record.done.filter((key): key is string => typeof key === 'string') : [],
@@ -48,7 +57,7 @@ export function writePracticeProgress(scope: PracticeProgressScope, progress: Pr
  const key = practiceProgressStorageKey(scope)
  if (!key) return false
  try {
-  const value = normalize(progress), course = directory.find(course => course.lessons.some(lesson => lesson.key === value.lastLesson))
+  const value = normalize(progress), course = ogPracticeCourses.find(course => course.lessons.some(lesson => lesson.key === value.lastLesson))
   ;(storage ?? localStorage).setItem(key, JSON.stringify({version: 2, catalogVersion, userId: String(scope.userId ?? 'guest'), mode: scope.mode, ...value, done: scope.mode === 'demo' ? value.done : [], courseKey: course?.key ?? null, updatedAt: Date.now()}))
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(changeEvent))
   return true
@@ -62,7 +71,7 @@ export function subscribePracticeProgress(scope: PracticeProgressScope, listener
  return () => { window.removeEventListener(changeEvent, listener); window.removeEventListener('storage', onStorage) }
 }
 /** The project assignment is not necessarily the last lesson: some courses have extra applications. */
-const projectLessons: Record<string, string> = {foundations: 'foundations-compare', text: 'text-project', media: 'media-project', coding: 'block-agent-reach', automation: 'automation-project'}
+const projectLessons: Record<string, string> = {foundations: 'foundations-compare', text: 'text-project', media: 'media-project', coding: 'block-agent-reach', automation: 'automation-project', 'gamedev-starter': 'gamedev-project'}
 export function practiceProjectLesson(course: PracticeCourse) {
  return course.lessons.find(lesson => lesson.key === projectLessons[course.key]) ?? null
 }
@@ -71,13 +80,13 @@ export function practicePath(courseKey: string, lessonKey?: string) {
 }
 export function getPracticeResume(progress: PracticeProgress, canOpen: (course: PracticeCourse, lesson: PracticeCourse['lessons'][number]) => boolean = () => true) {
  const {done, lastLesson} = normalize(progress)
- const recent = directory.find(course => course.lessons.some(lesson => lesson.key === lastLesson))
+ const recent = ogPracticeCourses.find(course => course.lessons.some(lesson => lesson.key === lastLesson))
  if (recent) {
   const lesson = recent.lessons.find(lesson => lesson.key === lastLesson && !done.includes(lesson.key) && canOpen(recent, lesson))
    ?? recent.lessons.find(lesson => !done.includes(lesson.key) && canOpen(recent, lesson))
   if (lesson) return {course: recent, lesson}
  }
- for (const course of directory) {
+ for (const course of ogPracticeCourses) {
   if (!course.lessons.some(lesson => done.includes(lesson.key))) continue
   const lesson = course.lessons.find(lesson => !done.includes(lesson.key) && canOpen(course, lesson))
   if (lesson) return {course, lesson}
@@ -87,7 +96,7 @@ export function getPracticeResume(progress: PracticeProgress, canOpen: (course: 
 const searchable = (value: string) => value.toLocaleLowerCase('ru').replaceAll('ё', 'е')
 export function practiceMatches(course: Omit<PracticeCourse, 'search_terms'> & {search_terms?: string[]}, topic: string, query: string) {
  if (topic !== 'Все' && !topics[course.key]?.includes(topic)) return false
- const terms = course.search_terms ?? directory.find(item => item.key === course.key)?.search_terms ?? []
+ const terms = course.search_terms ?? ogPracticeCourses.find(item => item.key === course.key)?.search_terms ?? []
  const text = searchable([course.title, course.goal, course.project, ...course.lessons.map(lesson => lesson.title), ...terms].join(' '))
  return searchable(query).trim().split(/\s+/).every(term => text.includes(term))
 }

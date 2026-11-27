@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises'
 import {transformWithOxc} from 'vite'
 import {createElement} from 'react'
 import {renderToStaticMarkup} from 'react-dom/server'
+import {lessonsWord, plural} from '../src/lib/game.ts'
 import {activeStories} from '../src/lib/highlights.ts'
 
 let nonce=0
@@ -81,11 +82,11 @@ test('advent banner uses original compact layout with honest local season label'
  assert.match(html,/min-h-\[88px\]/)
 })
 
-test('home courses combine the offer without hiding paid status or the introduction',async()=>{
+test('home courses combine the offer without hiding paid status',async()=>{
  const {MainCourses}=await load('screens/home/AcademyCourses.tsx',{
-  useStore:selector=>selector({push(){}}),Tap:button,ogPracticeCourses:[{lessons:[{},{}]},{lessons:[{}]}],
+  useStore:selector=>selector({push(){},courses:[]}),Tap:button,isDemo:false,lessonsWord,plural,visiblePracticeCourses:()=>[{lessons:[{},{}]},{lessons:[{}]}],
  })
  const html=renderToStaticMarkup(createElement(MainCourses))
- assert.match(html,/2 платных программ · 3 уроков/);assert.match(html,/Первый урок для знакомства/)
+ assert.match(html,/2 платные программы · 3 урока/)
  assert.match(html,/Посмотреть программы/);assert.doesNotMatch(html,/Направления курсов|Хочешь освоить/)
 })

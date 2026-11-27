@@ -12,6 +12,13 @@ const Lines = ({x, y, width, count = 3}: {x: number; y: number; width: number; c
 
 /** A small vector preview of the work a learner makes, rather than a generic course icon. */
 export function PracticeArtwork({courseKey, compact = false}: {courseKey: string; compact?: boolean}) {
+ if (courseKey === 'gamedev-starter') return <div className={`og-practice-art${compact ? ' is-compact' : ''}`} aria-hidden="true">
+  <img src="/courses/gamedev-starter/arena.webp" alt="" className="block h-full w-full object-cover" width={960} height={500}/>
+ </div>
+ return <PracticeVectorArtwork courseKey={courseKey} compact={compact}/>
+}
+
+function PracticeVectorArtwork({courseKey, compact}: {courseKey: string; compact: boolean}) {
  const ref = useRef<HTMLDivElement>(null), id = useId().replace(/[^a-z0-9_-]/gi, '')
  const reduced = usePrefersReducedMotion(), visible = useElementVisible(ref), documentVisible = useDocumentVisible()
  const look = colors[courseKey] ?? colors.foundations
