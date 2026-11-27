@@ -2,7 +2,7 @@
   "key": "gamedev-starter",
   "title": "AI GameDev Starter",
   "goal": "Собери первый 3D-прототип в Godot 4 с AI-помощником и проверь сборку в браузере.",
-  "project": "Мини-арена с управлением WASD, врагом, здоровьем, опытом и перезапуском. На выходе — рабочая Web-сборка.",
+  "project": "Мини-арена с управлением WASD, врагом, здоровьем, опытом и перезапуском. На выходе - рабочая Web-сборка.",
   "emoji": "🎮",
   "search_terms": ["Godot 4", "GDScript", "MCP", "Codex", "Claude Code", "Blender", "Playwright", "Ollama", "Kenney", "геймдев", "разработка игр"],
   "lessons": [

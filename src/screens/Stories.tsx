@@ -1,4 +1,5 @@
 import { activeStories, storySlideDuration } from '../lib/highlights'
+import { plainDashes } from '../lib/plain-dashes'
 import { useStoryPlayback } from '../lib/use-story-playback'
 import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react'
 import { AnimatePresence, motion, useDragControls } from 'motion/react'
@@ -138,7 +139,7 @@ export function Stories({ startId }: { startId: number }) {
             <Emoji char={story.emoji} size={20} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-bold leading-tight">{story.title}</p>
+            <p className="truncate text-[14px] font-bold leading-tight">{plainDashes(story.title)}</p>
             <p className="text-[12px] font-medium opacity-70">OG CRE8R² · {story.category}</p>
           </div>
           <button type="button" onClick={() => setPaused((value) => !value)} aria-label={paused ? 'Продолжить историю' : 'Приостановить историю'} aria-pressed={paused} className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-black/15">

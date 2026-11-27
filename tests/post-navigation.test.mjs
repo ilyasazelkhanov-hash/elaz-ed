@@ -37,7 +37,7 @@ const { PostScreen } = await import(await compile('../src/screens/Post.tsx', {
   '../lib/blog-read': moduleUrl('export const markPostRead=()=>{}'),
   '../lib/blog-library': moduleUrl('export const useSavedPosts=()=>[];export const toggleSavedPost=()=>true'),
   '../lib/track': moduleUrl('export const track=()=>{}'),
-  ...Object.fromEntries(['knowledge', 'og-practice', 'content', 'news-reader', 'og-course-access'].map(name => [`../lib/${name}`, new URL(`../src/lib/${name}.ts`, import.meta.url).href])),
+  ...Object.fromEntries(['knowledge', 'og-practice', 'content', 'news-reader', 'og-course-access', 'plain-dashes'].map(name => [`../lib/${name}`, new URL(`../src/lib/${name}.ts`, import.meta.url).href])),
 }))
 const labels = ['Главная', 'Новости', 'Курсы', 'Профиль']
 const ids = ['home', 'blog', 'courses', 'profile']

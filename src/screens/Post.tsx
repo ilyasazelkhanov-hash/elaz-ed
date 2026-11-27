@@ -1,4 +1,5 @@
 import { MainNav } from '../MainNav'
+import { plainDashes } from '../lib/plain-dashes'
 import { CoverImage } from '../CoverImage'
 import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, Heart, Lightbulb, Send } from 'lucide-react'
 import { useEffect } from 'react'
@@ -46,8 +47,8 @@ export function PostScreen({ id, post, preview, error, retry, like, share }: { i
     <article className="scroll selectable min-h-0 flex-1 px-5 pb-6 pt-6">
       {view && <>
         <div className="reader-post-meta"><span className="font-semibold text-violet">{view.category || 'ИИ и инструменты'}</span>{date && <time dateTime={view.published_at ?? undefined}>{date}</time>}{minutes > 0 && <span>≈ {minutes} мин чтения</span>}</div>
-        <h1 className="mt-4 font-display text-[25px] font-semibold leading-[1.3] tracking-tight" style={{ overflowWrap: 'anywhere' }}>{view.title}</h1>
-        {view.subtitle && <p className="mt-4 text-lg leading-relaxed text-mute">{view.subtitle}</p>}
+        <h1 className="mt-4 font-display text-[25px] font-semibold leading-[1.3] tracking-tight" style={{ overflowWrap: 'anywhere' }}>{plainDashes(view.title)}</h1>
+        {view.subtitle && <p className="mt-4 text-lg leading-relaxed text-mute">{plainDashes(view.subtitle)}</p>}
         <EditorialMetadata metadata={view.editorial} news/>
         {view.cover_url && <CoverImage src={view.cover_url} loading="eager" className="mt-5 max-h-80 w-full rounded-2xl object-cover"/>}
       </>}
