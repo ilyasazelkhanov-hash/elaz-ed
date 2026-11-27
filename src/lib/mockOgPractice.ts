@@ -1,10 +1,10 @@
 // Isolated demo fixtures: these short synthetic exercises are not the authored paid lessons.
-import {ogPracticeCourses} from './og-practice.ts'
+import {ogPracticeDemoCourses} from './og-practice.ts'
 import type {AdminCourse, Lesson, PracticeLessonOutline} from './types'
 
 type DemoCourse = AdminCourse & {practice_key?: string}
 const gradients = ['aurora', 'sunset', 'candy', 'ocean', 'mint'] as const
-const fixture = ogPracticeCourses.map((course, courseIndex) => ({
+const fixture = ogPracticeDemoCourses.map((course, courseIndex) => ({
  course,
  id: 9_000_001 + courseIndex,
  lessons: course.lessons.map((lesson, lessonIndex) => ({...lesson, id: 9_100_001 + courseIndex * 100 + lessonIndex})),

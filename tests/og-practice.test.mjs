@@ -1,13 +1,17 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
-import {ogPracticeCourses,readPracticeProgress,writePracticeProgress,practiceProgressStorageKey,practiceProjectLesson,getPracticeResume,practicePath,practiceMatches,practiceTopics,practiceSections} from '../src/lib/og-practice.ts'
+import {ogPracticeCourses,readPracticeProgress,writePracticeProgress,practiceProgressStorageKey,practiceProjectLesson,getPracticeResume,practicePath,practiceMatches,practiceTopics,practiceSections,visiblePracticeCourses} from '../src/lib/og-practice.ts'
 
 test('OG directory describes every lesson without eagerly loading the books',async()=>{
  const books=JSON.parse(await readFile(new URL('../content/ai-practice-2026-10-25/paths.json',import.meta.url),'utf8'))
- assert.deepEqual(ogPracticeCourses.map(c=>({key:c.key,lessons:c.lessons.map(l=>l.key)})),books.courses.map(c=>({key:c.key,lessons:c.lessons.map(l=>l.key)})))
+ assert.deepEqual(ogPracticeCourses.filter(c=>c.key!=='gamedev-starter').map(c=>({key:c.key,lessons:c.lessons.map(l=>l.key)})),books.courses.map(c=>({key:c.key,lessons:c.lessons.map(l=>l.key)})))
  assert.equal(JSON.stringify(ogPracticeCourses).includes('body'),false)
  assert.ok(JSON.stringify(ogPracticeCourses).length<20000)
+ const offer={id:42,title:'AI GameDev Starter'}
+ assert.equal(visiblePracticeCourses([],false).length,5)
+ assert.equal(visiblePracticeCourses([offer],true).length,5)
+ assert.equal(visiblePracticeCourses([offer],false).at(-1).key,'gamedev-starter')
 })
 
 const scopedStorage = () => {const data = new Map(); return {data, getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value)}}
@@ -84,7 +88,8 @@ test('resume follows the viewed lesson, advances completed lessons, and never re
 
 test('topic filters use actual course subjects and search includes lesson titles',()=>{
  assert.ok(ogPracticeCourses.some(c=>practiceMatches(c,'Дизайн','карусель')))
- assert.equal(ogPracticeCourses.filter(c=>practiceMatches(c,'Код','')).map(c=>c.key).join(','),'coding')
+ assert.equal(ogPracticeCourses.filter(c=>practiceMatches(c,'Код','')).map(c=>c.key).join(','),'coding,gamedev-starter')
+ assert.ok(practiceMatches(ogPracticeCourses.find(c=>c.key==='gamedev-starter'),'Код','godot ollama'))
  assert.ok(practiceMatches(ogPracticeCourses[1],'Все','gemini notebook'))
  assert.ok(practiceMatches(ogPracticeCourses.find(c=>c.key==='media'),'Все','Suno'))
  assert.ok(practiceMatches(ogPracticeCourses.find(c=>c.key==='foundations'),'Все','Perplexity'))

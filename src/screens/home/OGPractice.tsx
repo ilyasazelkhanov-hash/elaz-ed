@@ -3,7 +3,7 @@ import {ArrowLeft, ArrowRight, BookOpen, Check, Clock3, ChevronDown, LockKeyhole
 import {useEffect, useMemo, useRef, useState} from 'react'
 import {api, ApiError, errorText, isDemo} from '../../lib/api'
 import {canOpenPracticeLesson, practiceOffer, resolvePracticeCourse, resolvePracticeLesson} from '../../lib/og-course-access'
-import {getPracticeResume, ogPracticeCourses, practiceMatches, practicePath, practiceTopics, practiceProgressStorageKey, practiceProjectLesson, readPracticeProgress, subscribePracticeProgress, writePracticeProgress, type PracticeCourse} from '../../lib/og-practice'
+import {getPracticeResume, ogPracticeCourses, practiceMatches, practicePath, practiceTopics, practiceProgressStorageKey, practiceProjectLesson, readPracticeProgress, subscribePracticeProgress, writePracticeProgress, visiblePracticeCourses, type PracticeCourse} from '../../lib/og-practice'
 import type {Lesson} from '../../lib/types'
 import {useStore} from '../../store'
 import {track} from '../../lib/track'
@@ -26,7 +26,7 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
  const scope = useMemo(() => ({userId: user || undefined, mode: isDemo ? 'demo' as const : 'live' as const}), [user, isDemo])
  const scopeKey = practiceProgressStorageKey(scope)
  const [savedProgress, setProgress] = useState(() => ({key: scopeKey, value: readPracticeProgress(scope)}))
- const courses = useMemo(() => ogPracticeCourses.filter(c => practiceMatches(c, filter, query)), [filter, query])
+ const courses = useMemo(() => visiblePracticeCourses(liveCourses, isDemo).filter(c => practiceMatches(c, filter, query)), [filter, query, liveCourses])
  useEffect(() => {
   const refresh = () => setProgress({key: scopeKey, value: readPracticeProgress(scope)})
   refresh(); return subscribePracticeProgress(scope, refresh)
@@ -79,7 +79,7 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
     <div className="flex items-center gap-3 px-4 pb-4 pt-2"><Tap onClick={() => go(practicePath(item.key))} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-violet px-3 text-sm font-semibold text-on-violet">Смотреть программу<ArrowRight size={16}/></Tap></div>{live && !live.access && <CoursePaymentAction course={live} compact/>}
    </article>
   })}{!courses.length && <div className="rounded-2xl border border-dashed border-line p-5 text-center"><p className="text-sm text-mute">По этому запросу курсов нет.</p><Tap onClick={() => {setFilter('Все'); setQuery('')}} className="mt-3 min-h-11 text-sm font-semibold text-violet">Сбросить поиск и фильтры</Tap></div>}</EditorialCards>
-  <div className="mt-5 flex items-start gap-3 rounded-2xl border border-line p-4"><ShieldCheck size={19} className="mt-0.5 shrink-0 text-violet"/><p className="text-xs leading-relaxed text-mute">Каждый курс открывается отдельно. Перед покупкой посмотри программу и бесплатный пробный урок. Оплата - звёздами Telegram; доступ и прогресс сохраняются в аккаунте.</p></div>
+  <div className="mt-5 flex items-start gap-3 rounded-2xl border border-line p-4"><ShieldCheck size={19} className="mt-0.5 shrink-0 text-violet"/><p className="text-xs leading-relaxed text-mute">Каждый курс открывается отдельно. Перед покупкой можно посмотреть программу и пробный урок, если он доступен. Оплата - звёздами Telegram; доступ и прогресс сохраняются в аккаунте.</p></div>
  </section>
 }
 
@@ -152,7 +152,7 @@ function SecurePracticeLesson({course, lesson, go}: {course: PracticeCourse; les
   track('course_preview', {course_id: courseId, source: 'course'}, loaded.id)
  }, [loaded, courseId, live?.access, me?.id])
  const back = () => go(practicePath(course.key))
- if (!allowed || error === 'course_locked') return <section className="rounded-[25px] border border-line bg-card p-5" data-paid-lesson-locked><Tap onClick={back} className="mb-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-violet"><ArrowLeft size={17}/>К программе</Tap><div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-violet/10 text-violet"><LockKeyhole size={22}/></div><p className="text-xs font-semibold uppercase tracking-wide text-violet">Платный курс</p><h1 className="mt-2 font-display text-[24px] font-semibold leading-tight">{lesson.title}</h1><p className="mt-3 text-sm leading-relaxed text-mute">{live && remote ? 'Этот урок входит в полную программу. Открой курс, чтобы перейти к материалам и практике.' : 'Урок пока недоступен. Открой программу, чтобы посмотреть опубликованные материалы.'}</p>{live && <CoursePaymentAction course={live}/>}<Tap onClick={back} className="mt-2 flex min-h-11 w-full items-center justify-center text-sm font-semibold text-violet">Программа и бесплатный пробный урок</Tap></section>
+ if (!allowed || error === 'course_locked') return <section className="rounded-[25px] border border-line bg-card p-5" data-paid-lesson-locked><Tap onClick={back} className="mb-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-violet"><ArrowLeft size={17}/>К программе</Tap><div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-violet/10 text-violet"><LockKeyhole size={22}/></div><p className="text-xs font-semibold uppercase tracking-wide text-violet">Платный курс</p><h1 className="mt-2 font-display text-[24px] font-semibold leading-tight">{lesson.title}</h1><p className="mt-3 text-sm leading-relaxed text-mute">{live && remote ? 'Этот урок входит в полную программу. Открой курс, чтобы перейти к материалам и практике.' : 'Урок пока недоступен. Открой программу, чтобы посмотреть опубликованные материалы.'}</p>{live && <CoursePaymentAction course={live}/>}<Tap onClick={back} className="mt-2 flex min-h-11 w-full items-center justify-center text-sm font-semibold text-violet">Программа курса</Tap></section>
  if (!loaded) return <section className="rounded-[25px] border border-line bg-card p-5" aria-busy={!error}><Tap onClick={back} className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-violet"><ArrowLeft size={17}/>К программе</Tap><h1 className="mt-3 font-display text-xl font-semibold">{lesson.title}</h1><p role="status" className="mt-3 text-sm text-mute">{error ? 'Не удалось загрузить урок. Проверь соединение и попробуй ещё раз.' : 'Открываем урок…'}</p>{error && <Tap onClick={() => setRetry(value => value + 1)} className="mt-4 min-h-11 font-semibold text-violet">Повторить загрузку</Tap>}</section>
  const index = course.lessons.findIndex(item => item.key === lesson.key), previous = course.lessons[index - 1], next = course.lessons[index + 1]
  const finish = async () => {
