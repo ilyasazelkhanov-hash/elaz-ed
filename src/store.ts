@@ -34,6 +34,7 @@ export type Overlay =
   | { type: 'admin-content'; scope: 'blog' | 'stories' | 'legacy' }
   | { type: 'analytics' }
   | { type: 'courses-admin' }
+  | { type: 'access-admin' }
   | { type: 'course-editor'; course: AdminCourse | null }
   | { type: 'editor'; lesson: Lesson | null; kind: Kind }
   | { type: 'advent'; season?: string }

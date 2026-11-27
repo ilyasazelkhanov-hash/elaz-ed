@@ -56,6 +56,7 @@
     "test:practice-artifact": "node --experimental-strip-types --test tests/practice-artifact.test.mjs tests/saved-practice.test.mjs",
     "test:learner-accessibility": "node --test tests/learner-accessibility.test.mjs tests/focus-native-controls.test.mjs",
     "test:admin-usability": "node --experimental-strip-types --test tests/admin-usability.test.mjs",
+    "test:access": "node --experimental-strip-types --test tests/access-grant.test.mjs",
     "test:guide-interactions": "node --experimental-strip-types --test tests/guide-interactions.test.mjs tests/practice-sparks.test.mjs",
     "test:og-lesson-interactions": "node --experimental-strip-types --test tests/og-lesson-interactions.test.mjs tests/og-academy-bridge-draft.test.mjs",
     "test:theme-contrast": "node --test tests/theme-contrast.test.mjs",

@@ -1,5 +1,5 @@
 import {learningScope} from '../../lib/learning-next'
-import {ArrowLeft, ArrowRight, BookOpen, Check, Clock3, ChevronDown, LockKeyhole, Search, ShieldCheck, X} from 'lucide-react'
+import {ArrowLeft, ArrowRight, BookOpen, Check, Clock3, ChevronDown, LockKeyhole, Search, X} from 'lucide-react'
 import {useEffect, useMemo, useRef, useState} from 'react'
 import {api, ApiError, errorText, isDemo} from '../../lib/api'
 import {canOpenPracticeLesson, practiceOffer, resolvePracticeCourse, resolvePracticeLesson} from '../../lib/og-course-access'
@@ -10,6 +10,7 @@ import {track} from '../../lib/track'
 import {useCourseViewTelemetry} from '../Course'
 import {Tap} from '../../ui'
 import {CoursePaymentAction, useCoursePaymentRecovery} from './CoursePayment'
+import {AccessTiersNote, FriendUnlockCard} from './FriendUnlock'
 import {PracticeArtwork} from './PracticeArtwork'
 import {EditorialCards, LearningScene} from './LearningMotion'
 import {PracticeReader} from './PracticeReader'
@@ -79,7 +80,7 @@ export function OGPractice({path, go}: {path: string; go: Route}) {
     <div className="flex items-center gap-3 px-4 pb-4 pt-2"><Tap onClick={() => go(practicePath(item.key))} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-violet px-3 text-sm font-semibold text-on-violet">Смотреть программу<ArrowRight size={16}/></Tap></div>{live && !live.access && <CoursePaymentAction course={live} compact/>}
    </article>
   })}{!courses.length && <div className="rounded-2xl border border-dashed border-line p-5 text-center"><p className="text-sm text-mute">По этому запросу курсов нет.</p><Tap onClick={() => {setFilter('Все'); setQuery('')}} className="mt-3 min-h-11 text-sm font-semibold text-violet">Сбросить поиск и фильтры</Tap></div>}</EditorialCards>
-  <div className="mt-5 flex items-start gap-3 rounded-2xl border border-line p-4"><ShieldCheck size={19} className="mt-0.5 shrink-0 text-violet"/><p className="text-xs leading-relaxed text-mute">Каждый курс открывается отдельно. Перед покупкой можно посмотреть программу и пробный урок, если он доступен. Оплата - звёздами Telegram; доступ и прогресс сохраняются в аккаунте.</p></div>
+  <AccessTiersNote courses={liveCourses.filter(item => ogPracticeCourses.some(outline => resolvePracticeCourse(outline, liveCourses)?.id === item.id))}/>
  </section>
 }
 
@@ -102,7 +103,7 @@ function PracticeProgram({course, go}: {course: PracticeCourse; go: Route}) {
   </details>}
   <div className="mt-4 rounded-[23px] border border-line bg-card p-4" data-course-access>
    {live?.access ? <><p className="flex items-center gap-2 text-sm font-semibold text-success"><Check size={17}/>Доступ к курсу открыт</p><p className="mt-2 text-xs text-mute">Отмечено {count} из {course.lessons.length} уроков</p><div role="progressbar" aria-label="Отмеченные уроки" aria-valuemin={0} aria-valuemax={course.lessons.length} aria-valuenow={count} className="mt-2 h-1.5 overflow-hidden rounded-full bg-card2"><div className="h-full rounded-full bg-violet" style={{width: count / course.lessons.length * 100 + '%'}}/></div>{next && <Tap onClick={() => go(practicePath(course.key, next.lesson.key))} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet px-4 text-sm font-semibold text-on-violet">{count ? 'Продолжить курс' : 'Начать курс'}<ArrowRight size={17}/></Tap>}{!next && count === course.lessons.length && <p role="status" className="mt-3 text-sm text-success">Все уроки отмечены. Проверь свою работу по критериям итогового проекта выше. Качество проекта пока не подтверждено.</p>}</>
-   : <><p className="text-sm font-semibold">{live ? 'Полная программа - после открытия доступа' : 'Продажи курса пока не открыты'}</p><p className="mt-2 text-xs leading-relaxed text-mute">{live ? `${preview ? 'Посмотри пробный урок' : 'Посмотри программу'} и реши, подходит ли тебе формат. Доступ открывается отдельно к этому курсу.` : 'Программа уже доступна для знакомства. Условия доступа появятся после публикации курса.'}</p>{preview && <Tap onClick={() => go(practicePath(course.key, preview.lesson.key))} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-violet/35 bg-violet/8 px-3 text-sm font-semibold text-violet"><BookOpen size={17}/>Бесплатный пробный урок</Tap>}{live && <CoursePaymentAction course={live}/>}</>}
+   : <><p className="text-sm font-semibold">{live ? 'Полная программа - после открытия доступа' : 'Продажи курса пока не открыты'}</p><p className="mt-2 text-xs leading-relaxed text-mute">{live ? `${preview ? 'Посмотри пробный урок' : 'Посмотри программу'} и реши, подходит ли тебе формат. Доступ открывается отдельно к этому курсу.` : 'Программа уже доступна для знакомства. Условия доступа появятся после публикации курса.'}</p>{preview && <Tap onClick={() => go(practicePath(course.key, preview.lesson.key))} className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-violet/35 bg-violet/8 px-3 text-sm font-semibold text-violet"><BookOpen size={17}/>Бесплатный пробный урок</Tap>}{live && <CoursePaymentAction course={live}/>}{live && <FriendUnlockCard course={live}/>}</>}
    {isDemo && <p className="mt-3 text-xs leading-relaxed text-mute">Демо с короткими примерами. Условная оплата без списания звёзд.</p>}
   </div>
   <h2 className="mb-2 mt-7 font-display text-lg font-semibold">Программа курса</h2><p className="mb-3 text-xs leading-relaxed text-mute">{live?.access ? 'Выбирай урок и сохраняй результат практики.' : preview ? 'Пробный урок открыт бесплатно. Остальные уроки - после получения доступа к курсу.' : live ? 'Уроки полной программы открываются после получения доступа к курсу.' : 'Материалы появятся после публикации курса.'}</p>

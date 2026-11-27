@@ -83,3 +83,4 @@
 .og-reader-training-note{font-size:14px;line-height:1.7;margin-bottom:12px;color:var(--color-mute)}.og-reader-content>.guide-journey{margin-top:0}
 @keyframes og-reading-in{from{opacity:.6;transform:translateY(4px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.og-reader-page{animation:none}}
+.friend-unlock-meter{display:block;appearance:none;height:6px;border:0;border-radius:9px;overflow:hidden;background:var(--color-line);accent-color:var(--color-violet)}.friend-unlock-meter::-webkit-progress-bar{background:var(--color-line);border-radius:9px}.friend-unlock-meter::-webkit-progress-value{background:var(--color-violet);border-radius:9px}.friend-unlock-meter::-moz-progress-bar{background:var(--color-violet);border-radius:9px}

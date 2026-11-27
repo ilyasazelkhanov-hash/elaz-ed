@@ -444,9 +444,13 @@ export const mockApi: Api = {
     await wait(300)
   },
 
-  async adminGrant(_courseId, username) {
+  async adminGrant(courseId, username) {
     await wait(300)
-    return username.replace(/^@/, '')
+    const name = username.replace(/^@/, '')
+    // Demo-only: lets the "person has never opened the app" path be seen without a server.
+    if (/^ghost/i.test(name)) throw new ApiError('user_not_found', 404)
+    if (!state.courses.some((c) => c.id === courseId)) throw new ApiError('not_found', 404)
+    return name
   },
 
   async adminPayments(input) {

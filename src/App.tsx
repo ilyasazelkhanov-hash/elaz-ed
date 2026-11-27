@@ -34,6 +34,7 @@ const EditorScreen = lazy(() => import('./screens/AdminEditor').then((m) => ({ d
 const AnalyticsScreen = lazy(() => import('./screens/Analytics').then((m) => ({ default: m.AnalyticsScreen })))
 const CoursesAdminScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CoursesAdminScreen })))
 const CourseEditorScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CourseEditorScreen })))
+const AccessAdminScreen = lazy(() => import('./screens/AdminAccess').then((m) => ({ default: m.AccessAdminScreen })))
 const LabScreen = lazy(() => import('./screens/Lab').then((m) => ({ default: m.LabScreen })))
 const JourneyScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.JourneyScreen })))
 const ClubScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.ClubScreen })))
@@ -231,6 +232,12 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
       return (
         <Suspense fallback={null}>
           <CoursesAdminScreen />
+        </Suspense>
+      )
+    case 'access-admin':
+      return (
+        <Suspense fallback={null}>
+          <AccessAdminScreen />
         </Suspense>
       )
     case 'course-editor':
