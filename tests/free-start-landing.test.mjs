@@ -142,3 +142,13 @@ test('the app shell has a preview of its own, made absolute only by a build that
  await prerenderFreeStart({distDir: untouched, siteUrl: ''})
  assert.equal(await readFile(path.join(untouched, 'index.html'), 'utf8'), shell)
 })
+
+test('quick start links on the outside entry screen point at public free-start routes', () => {
+ const source = readFileSync(new URL('src/screens/States.tsx', root), 'utf8')
+ const block = source.slice(source.indexOf('const QUICK_START'), source.indexOf('export function Outside'))
+ const routes = [...block.matchAll(/'\/\?demo#(\/courses\/start[^']*)'/g)].map(match => match[1])
+ assert.deepEqual(routes, [`/courses/start/${WARMUP_SLUG}`, `/courses/start/${beginnerGuides[0].id}`, '/courses/start'])
+ for (const route of routes) assert.equal(publicEntryHash(route), `#${route}`, route)
+ assert.match(source, /Попробовать в браузере/)
+ assert.match(source, /В браузере открывается демо: ответы и отметки хранятся на этом устройстве/)
+})
