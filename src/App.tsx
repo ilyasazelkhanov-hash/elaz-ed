@@ -169,13 +169,14 @@ function Shell() {
       <AnimatePresence>
         {stack.map((o, i) => (
           <FocusLayer key={overlayKey(o, i)} active={i === stack.length - 1 && !reward && !share} label={o.type === 'companion-settings' ? 'Настроить своего Dots' : o.type === 'lesson' ? 'Публикация' : 'Экран приложения'} onClose={o.type === 'companion-settings' ? pop : undefined}>
-            <OverlayView overlay={o} />
-            {i === stack.length - 1 && !reward && !share && <RefreshNotice />}
+            {/* FocusLayer wraps children in AnimatePresence: every sibling needs its own key. */}
+            <OverlayView key="view" overlay={o} />
+            {i === stack.length - 1 && !reward && !share && <RefreshNotice key="refresh" />}
           </FocusLayer>
         ))}
       </AnimatePresence>
 
-      <AnimatePresence>{reward && <FocusLayer key="reward" active={!share} label="Награда" className="absolute inset-0 z-50"><RewardModal reward={reward} />{!share && <RefreshNotice />}</FocusLayer>}</AnimatePresence>
+      <AnimatePresence>{reward && <FocusLayer key="reward" active={!share} label="Награда" className="absolute inset-0 z-50"><RewardModal key="reward-view" reward={reward} />{!share && <RefreshNotice key="refresh" />}</FocusLayer>}</AnimatePresence>
 
       {!stack.length && !reward && !share && <RefreshNotice />}
       <ShareSheet />
