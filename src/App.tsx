@@ -4,7 +4,7 @@ import { isDemo } from './lib/api'
 import { RefreshNotice } from './RefreshNotice'
 import { coursesEntry } from './lib/learning-entry'
 import { entryHashFromParam } from './lib/outside-entry'
-import { parseGuideStartParam } from './lib/discovery-events'
+import { isWarmupStartParam, parseGuideStartParam, WARMUP_ID } from './lib/discovery-events'
 import { track } from './lib/track'
 import { academyEntry } from './lib/academy-entry'
 import { bindBack, initTelegram, inTelegram, startParam } from './lib/tg'
@@ -125,6 +125,7 @@ function Shell() {
   // Прямая ссылка на урок: t.me/бот?start=l12
   useEffect(() => {
     const freeGuide = parseGuideStartParam(location.hash ? '' : startParam)
+    const warmup = !location.hash && isWarmupStartParam(startParam)
     const academyPath = academyEntry(location.hash, location.hash ? '' : location.pathname, location.hash ? '' : startParam)
     const coursesPath = coursesEntry(location.hash, location.hash ? '' : location.pathname, location.hash ? '' : startParam)
     const entryHash = location.hash || entryHashFromParam(startParam)
@@ -134,8 +135,9 @@ function Shell() {
     else if (coursesPath) {useStore.getState().setTab('courses');if(coursesPath!=='/courses')useStore.getState().push({type:'learning',path:coursesPath})}
     else if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
     else if (freeGuide) {useStore.getState().setTab('courses');useStore.getState().push({type:'learning',path:'/courses/start/'+freeGuide.guideId})}
-    track('discovery_open',{source:freeGuide?'telegram_guide':postId?'blog':/(?:^|_)l\d+(?:_|$)/.test(startParam)?'telegram_post':/(?:^|_)c\d+(?:_|$)/.test(startParam)?'telegram_course':'direct'})
-    if (!initialRoute && !location.hash && !postId && !coursesPath && !academyPath && !freeGuide) {
+    else if (warmup) {useStore.getState().setTab('courses');useStore.getState().push({type:'learning',path:'/courses/start/'+WARMUP_ID})}
+    track('discovery_open',{source:freeGuide||warmup?'telegram_guide':postId?'blog':/(?:^|_)l\d+(?:_|$)/.test(startParam)?'telegram_post':/(?:^|_)c\d+(?:_|$)/.test(startParam)?'telegram_course':'direct'})
+    if (!initialRoute && !location.hash && !postId && !coursesPath && !academyPath && !freeGuide && !warmup) {
       const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
       const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
       if (id) useStore.getState().push({ type: 'lesson', id })

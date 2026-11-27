@@ -3,9 +3,9 @@ import assert from 'node:assert/strict'
 import { discoveryEvent, guideEvent, guideStartParam, parseGuideStartParam, normalizeDiscoverySource } from '../src/lib/discovery-events.ts'
 
 test('guide telemetry contains identity and explicit revision, never learner text', () => {
- assert.deepEqual(guideEvent('open','first-request','free_start'), {name:'guide_open',props:{guide_id:'first-request',content_version:'free-guides-v1',source:'free_start'}})
+ assert.deepEqual(guideEvent('open','first-request','free_start'), {name:'guide_open',props:{guide_id:'first-request',content_version:'free-guides-v2',source:'free_start'}})
  assert.equal(guideEvent('try','unknown','free_start'),null)
- assert.deepEqual(discoveryEvent('guide_feedback',{guide_id:'first-request',source:'home',useful:false,prompt:'private',answer:'secret',email:'person@example.org'}),{name:'guide_feedback',props:{guide_id:'first-request',content_version:'free-guides-v1',source:'home',useful:false}})
+ assert.deepEqual(discoveryEvent('guide_feedback',{guide_id:'first-request',source:'home',useful:false,prompt:'private',answer:'secret',email:'person@example.org'}),{name:'guide_feedback',props:{guide_id:'first-request',content_version:'free-guides-v2',source:'home',useful:false}})
  assert.equal(discoveryEvent('guide_feedback',{guide_id:'first-request',useful:'yes'}),null)
 })
 

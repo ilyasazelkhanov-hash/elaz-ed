@@ -1,8 +1,8 @@
 import { beginnerGuides } from './beginner-content.ts'
 import type { ClientEvent } from './types'
 
-/** Revision of the original five exercises; bump deliberately when their substance changes. */
-export const GUIDE_CONTENT_VERSION = 'free-guides-v1'
+/** Revision of the five free exercises; bump deliberately when their substance changes. v2: build, spot and sort tasks. */
+export const GUIDE_CONTENT_VERSION = 'free-guides-v2'
 export const discoveryEventNames = ['guide_open','guide_copy','guide_try','guide_feedback','blog_save','course_view','course_preview','checkout_start','checkout_result','discovery_open'] as const
 export type DiscoveryEventName = typeof discoveryEventNames[number]
 const sources = ['direct','home','free_start','guide_next','telegram_guide','blog','post','course','telegram_post','telegram_course'] as const
@@ -16,10 +16,17 @@ export function normalizeDiscoverySource(value: unknown): DiscoverySource {
 export function guideStartParam(guideId: string): string | null {
  return knownGuide(guideId) ? 'g_' + guideId : null
 }
+/** A challenge link may carry the inviter as `_r<id>`. The server reads it from the same parameter; the client only routes. */
+const referral = /_r[1-9]\d{0,19}$/
+/** Free two-minute quiz. It is an entry of the free start, not one of the five guides. */
+export const WARMUP_ID = 'warmup'
 export function parseGuideStartParam(value: unknown): {guideId: string; source: 'telegram_guide'} | null {
  if (typeof value !== 'string' || value.length > 64 || !value.startsWith('g_')) return null
- const guideId = value.slice(2)
+ const guideId = value.slice(2).replace(referral, '')
  return knownGuide(guideId) ? {guideId,source:'telegram_guide'} : null
+}
+export function isWarmupStartParam(value: unknown): boolean {
+ return typeof value === 'string' && value.length <= 64 && value.replace(referral, '') === 'g_' + WARMUP_ID
 }
 /** This is an allowlist, not a generic property copier. Never send prompts, answers or raw entry parameters. */
 export function discoveryEvent(name: DiscoveryEventName, input: Record<string, unknown> = {}, lessonId?: number): ClientEvent | null {
