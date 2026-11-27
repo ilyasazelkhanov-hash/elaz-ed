@@ -382,6 +382,7 @@ async function buildCourses(row: Row, feed: Row[]) {
   if (courses.error || access.error || requests.error) throw new HttpError(500, 'db')
   // The import receipt is the identity source; titles, positions and numeric ID ranges are not.
   const receipt = settings['content_revision:ai-practice-paths-2026-11-01-v5']
+    ?? settings['content_revision:ai-practice-paths-2026-10-26-v4']
   const courseMap = receipt?.courses && typeof receipt.courses === 'object' && !Array.isArray(receipt.courses) ? receipt.courses : {}
   const lessonMap = receipt?.lessons && typeof receipt.lessons === 'object' && !Array.isArray(receipt.lessons) ? receipt.lessons : {}
   const practiceKeys = ['foundations', 'text', 'media', 'coding', 'automation']

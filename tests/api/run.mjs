@@ -1665,6 +1665,18 @@ test('OG course import receipts expose published outlines, while paid bodies rem
  assert.equal((await call('lesson',{id:10},BUYER)).status,403)
  assert.equal((await call('lesson',{id:11},BUYER)).status,200)
 })
+test('v4 receipt resolves the existing course without declaring the v5 content release ready',async()=>{
+ state.tables.settings.push({key:'content_revision:ai-practice-paths-2026-10-26-v4',value:{courses:{foundations:1},lessons:{'block-1':11,'foundations-context':10}}})
+ await handler(new Request(SUPABASE_URL+'/functions/v1/api/advent_push',{method:'POST'}))
+ const result=await call('boot',{},BUYER)
+ assert.equal(result.status,200)
+ const course=result.body.courses.find(course=>course.id===1)
+ assert.equal(course.practice_key,'foundations')
+ assert.deepEqual(course.practice_lessons.map(lesson=>lesson.key).sort(),['block-1','foundations-context'])
+ assert.equal((await call('lesson',{id:10},BUYER)).status,403)
+ const health=await handler(new Request(SUPABASE_URL+'/functions/v1/api/health'))
+ assert.equal((await health.json()).release.content_revision,null)
+})
 test('ambiguous OG import receipts cannot assign one course to two programs',async()=>{
  state.tables.settings.push({key:'content_revision:ai-practice-paths-2026-11-01-v5',value:{courses:{foundations:1,text:1},lessons:{'block-1':11}}})
  await handler(new Request(`${SUPABASE_URL}/functions/v1/api/advent_push`,{method:'POST'}))
