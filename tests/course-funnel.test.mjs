@@ -41,6 +41,7 @@ function setup() {
  const api={async complete(){calls.complete++;if(behavior.completion instanceof Error)throw behavior.completion;return behavior.completion ?? {me:{...state.me,xp:10},already:false}},async courseInvoice(){calls.invoice++; if (behavior.invoice instanceof Error) throw behavior.invoice; return behavior.invoice},async lesson(){calls.lesson++; if (behavior.lesson instanceof Error) throw behavior.lesson; return behavior.lesson}}
  const inert=new Proxy({}, {get:(_,key)=>String(key)})
  const ui={...inert,Tap:'Tap',Cta:'Cta',Emoji:'Emoji',Pattern:'Pattern',Bar:'Bar',celebrate(){calls.celebrate++}}
+ const practiceOutlines=[{...ogPracticeCourses[0],key:'foundations',title:course.title,lessons:[{...ogPracticeCourses[0].lessons[0],key:'one',title:card.title,minutes:5}]}]
  const modules={
   react,'react/jsx-runtime':{jsx,jsxs:jsx},'lucide-react':inert,'motion/react':{motion:inert,AnimatePresence:'AnimatePresence',useMotionValue:()=>({set(){}})},
   store:{useStore,insetOf:()=>({})},ui,
@@ -50,7 +51,7 @@ function setup() {
   game:{iconFor:()=> '✨',GRADIENTS:{ocean:{css:'blue',ink:'white'}},lessonsWord:()=> 'уроков',plural:()=> 'друзей'},
   'learning-drafts':learningDrafts, 'learning-next':{learningScope},
   links:{appLink:()=>null},sfx:{sfx:{levelUp(){}}},content:{isBlogPost:()=>false},
-  'og-practice':{ogPracticeCourses:[{...ogPracticeCourses[0],key:'foundations',title:course.title,lessons:[{...ogPracticeCourses[0].lessons[0],key:'one',title:card.title,minutes:5}]}],practiceMatches,practiceTopics,practiceProgressStorageKey,practiceProjectLesson,readPracticeProgress:()=>({done:[]}),subscribePracticeProgress:()=>()=>{},getPracticeResume:()=>null,practicePath:(...parts)=>'/og-practice/'+parts.join('/'),writePracticeProgress(){}},
+  'og-practice':{ogPracticeCourses:practiceOutlines,visiblePracticeCourses:()=>practiceOutlines,practiceMatches,practiceTopics,practiceProgressStorageKey,practiceProjectLesson,readPracticeProgress:()=>({done:[]}),subscribePracticeProgress:()=>()=>{},getPracticeResume:()=>null,practicePath:(...parts)=>'/og-practice/'+parts.join('/'),writePracticeProgress(){}},
  }
  const cache={}
  function load(file) {
