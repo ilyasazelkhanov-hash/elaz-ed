@@ -9,3 +9,13 @@ supabase/.temp/
 test-results/
 /content/ai-academy/generated/
 /public/news/chatgpt-images-2-6.gif
+
+# Служебные файлы сборки, проверок и редакторов. В репозитории им не место.
+*.tsbuildinfo
+*.log
+coverage/
+playwright-report/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db

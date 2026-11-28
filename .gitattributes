@@ -1,2 +1,7 @@
 content/advent/ai-winter-2026.seed.sql text eol=lf
 src/lib/adventSeasonSeed.json text eol=lf
+
+# Собранные импорты и страницы проверки контента не считаются в статистике языков GitHub.
+# На показ изменений в pull request это не влияет: файлы остаются видны как обычно.
+content/**/*.sql linguist-detectable=false
+content/**/review.html linguist-detectable=false

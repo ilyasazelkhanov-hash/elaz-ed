@@ -1,0 +1,49 @@
+name: Ошибка
+description: Что-то работает не так, как должно
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Об уязвимостях сообщайте приватно: порядок в SECURITY.md. Не прикладывайте токены и данные учеников.
+  - type: textarea
+    id: what
+    attributes:
+      label: Что случилось
+      description: Что вы сделали, что увидели и что ожидали увидеть
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      placeholder: |
+        1. Открыть ...
+        2. Нажать ...
+        3. Видно ...
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Где воспроизводится
+      multiple: true
+      options:
+        - Telegram на iPhone
+        - Telegram на Android
+        - Telegram Desktop или Web
+        - Обычный браузер, демо
+        - Админка
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Версия
+      description: Значение commit из /release.json на сайте, если удалось открыть
+      placeholder: 579210f
+  - type: textarea
+    id: more
+    attributes:
+      label: Дополнительно
+      description: Снимок экрана, тема оформления, ширина экрана. Без личных данных
