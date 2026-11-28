@@ -1,0 +1,38 @@
+name: Предложение
+description: Идея улучшения продукта или репозитория
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Решения и очередь работ ведутся в docs/ROADMAP-2026-11-07.md. Предложение попадает туда после решения владельца.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую задачу человека это решает
+      description: Кто этот человек и где он сейчас спотыкается
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Что предлагается
+    validations:
+      required: true
+  - type: textarea
+    id: signal
+    attributes:
+      label: Как поймём, что помогло
+      description: Наблюдение или показатель с размером выборки и окном. Можно оставить пустым
+  - type: dropdown
+    id: area
+    attributes:
+      label: Что затрагивает
+      multiple: true
+      options:
+        - Интерфейс OG
+        - Edge API или база
+        - Контент
+        - Academy
+        - Мастер и platform-kit
+        - Репозиторий и проверки

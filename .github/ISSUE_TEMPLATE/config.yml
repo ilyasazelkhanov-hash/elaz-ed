@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Уязвимость
+    url: https://github.com/ilyasazelkhanov-hash/elaz-ed/security/policy
+    about: Сообщайте приватно, не через публичный issue
