@@ -12,6 +12,8 @@ for (const args of [
   ['scripts/academy-content.mjs'],
   ['node_modules/typescript/bin/tsc', '--noEmit'],
   ['node_modules/vite/bin/vite.js', 'build'],
+  // Before the Academy pages: it also makes the shell's preview tags absolute, and those pages are built from the shell.
+  ['--experimental-strip-types', 'scripts/free-start-prerender.mjs'],
   ['scripts/academy-prerender.mjs'],
 ]) {
   const result = spawnSync(process.execPath, args, {cwd: root, env: process.env, stdio: 'inherit', windowsHide: true})

@@ -1,7 +1,7 @@
 // Картинка для сторис 1080×1920. Рисуется на canvas прямо в приложении, без сервера.
-import { emojiCode, NOTO } from './emoji'
-import { days, GRADIENTS, levelOf, plural } from './game'
-import type { CompleteResult, GradientName, Me, ShareKind } from './types'
+import { emojiCode, NOTO } from './emoji.ts'
+import { days, GRADIENTS, levelOf, plural } from './game.ts'
+import type { CompleteResult, GradientName, Me, ServerShareKind, ShareKind } from './types'
 
 export interface ShareCard {
   kind: ShareKind
@@ -75,6 +75,48 @@ export function achievementCard(a: { title: string; desc: string; emoji: string 
   }
 }
 
+const SERVER_KINDS: readonly ShareKind[] = ['level', 'lesson', 'streak', 'achievement']
+/** Сервер готовит сообщение бота только для своих видов карточек. */
+export const isServerShareKind = (kind: ShareKind): kind is ServerShareKind => SERVER_KINDS.includes(kind)
+/** Картинка новых карточек хранится в ячейке уровня: так же поступает сервер с незнакомым видом. */
+export const shareUploadKind = (kind: ShareKind): ServerShareKind => isServerShareKind(kind) ? kind : 'level'
+
+const GUIDE_EMOJI: Record<string, string> = { message: '💬', check: '🔎', compass: '🧭', image: '🖼️', folder: '🗂️' }
+
+/**
+ * Бесплатный разбор: самоотчёт о попытке и число решённых заданий тренировки.
+ * Карточка не утверждает проверенный навык и не показывает XP: за разбор их не начисляют.
+ */
+export function guideCard(guide: { id: string; title: string; icon: string }, trained: { correct: number; total: number }, link: string | null): ShareCard {
+  const complete = trained.total > 0 && trained.correct === trained.total
+  return {
+    kind: 'guide',
+    link: link ?? undefined,
+    gradient: 'mint',
+    chip: 'Разбор пройден',
+    emoji: GUIDE_EMOJI[guide.icon] ?? '✨',
+    title: guide.title,
+    big: complete ? `${trained.correct} из ${trained.total}` : undefined,
+    sub: complete ? 'заданий решено, своя попытка сделана' : 'Попробовал на своей задаче',
+    caption: `Прошёл бесплатный разбор «${guide.title}» в OG CRE8R². Это 5 минут и задания вместо лекции. Попробуй тоже.`,
+  }
+}
+
+/** AI-разминка: число верных ответов с первой попытки. Это разминка, не аттестация. */
+export function warmupCard(score: number, total: number, link: string | null): ShareCard {
+  return {
+    kind: 'warmup',
+    link: link ?? undefined,
+    gradient: 'candy',
+    chip: 'AI-разминка',
+    emoji: '⚡',
+    title: 'Мой результат',
+    big: `${score} из ${total}`,
+    sub: 'с первой попытки. Пять заданий о работе с ИИ: сравним?',
+    caption: `Мой результат в AI-разминке OG CRE8R²: ${score} из ${total} с первой попытки. Пройди за 2 минуты и сравним.`,
+  }
+}
+
 // ---------- Отрисовка ----------
 
 const W = 1080
@@ -84,6 +126,26 @@ const SAFE_TOP = 280
 const FOOTER_TOP = 1450
 const DISPLAY = '"Unbounded Variable", system-ui, sans-serif'
 const TEXT = '"Onest Variable", system-ui, sans-serif'
+
+/** Нижняя строка блока заканчивается пустым интерлиньяжем: настолько блок может зайти за верх подвала, как у карточки стрика. */
+const TEXT_SLACK = 24
+const TITLE_SIZES = [88, 76, 66, 58, 50] as const
+
+const TITLE_LINES = 3
+
+/**
+ * Размер заголовка, при котором он целиком входит в три строки, а текстовый блок - в отведённую высоту.
+ * `lines` возвращает число строк заголовка без обрезки при данном размере шрифта, `fixed` - высота остальных строк блока.
+ * Если не помещается и самый мелкий размер, остаётся он: тогда заголовок обрезается многоточием.
+ */
+export function fitTitle(lines: (size: number) => number, fixed: number, available: number) {
+  let size: number = TITLE_SIZES[0]
+  for (size of TITLE_SIZES) {
+    const count = lines(size)
+    if (count <= TITLE_LINES && count * Math.round(size * 1.16) + fixed <= available) break
+  }
+  return { size, line: Math.round(size * 1.16) }
+}
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -199,13 +261,18 @@ export async function renderCard(card: ShareCard, userName: string, botUsername:
   }
 
   // Текстовый блок: высоту считаем заранее и ставим его по центру между эмодзи и подвалом.
-  ctx.font = `700 88px ${DISPLAY}`
-  const titleLines = wrap(ctx, card.title, 900, 3)
   ctx.font = `500 44px ${TEXT}`
   const subLines = card.sub ? wrap(ctx, card.sub, 880, 2) : []
   const bigSize = card.bigFirst ? 300 : 148
+  // Длинный заголовок уменьшается, пока блок не поместится над подвалом: текст не должен наезжать на подпись.
+  const fit = fitTitle((size) => {
+    ctx.font = `700 ${size}px ${DISPLAY}`
+    return wrap(ctx, card.title, 900, 99).length
+  }, (card.big ? bigSize * 1.04 + 22 : 0) + (subLines.length ? subLines.length * 60 + 26 : 0), FOOTER_TOP - 950 + TEXT_SLACK)
+  ctx.font = `700 ${fit.size}px ${DISPLAY}`
+  const titleLines = wrap(ctx, card.title, 900, TITLE_LINES)
   const blocks = {
-    title: titleLines.length * 102,
+    title: titleLines.length * fit.line,
     big: card.big ? bigSize * 1.04 : 0,
     sub: subLines.length ? subLines.length * 60 + 26 : 0,
   }
@@ -213,11 +280,11 @@ export async function renderCard(card: ShareCard, userName: string, botUsername:
   let y = 950 + Math.max(0, (FOOTER_TOP - 950 - total) / 2)
 
   const drawTitle = () => {
-    ctx.font = `700 88px ${DISPLAY}`
+    ctx.font = `700 ${fit.size}px ${DISPLAY}`
     ctx.fillStyle = ink
     for (const line of titleLines) {
-      ctx.fillText(line, W / 2, y + 51)
-      y += 102
+      ctx.fillText(line, W / 2, y + fit.line / 2)
+      y += fit.line
     }
   }
   const drawBig = () => {

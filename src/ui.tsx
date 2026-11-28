@@ -223,8 +223,10 @@ export function Sheet({ open, onClose, children, focusManaged = false }: { open:
     <AnimatePresence>
       {open && (
         <SheetContainer managed={focusManaged} open={open} onClose={onClose}>
-          <div className="absolute inset-0 bg-black/65" onClick={onClose} />
+          {/* SheetContainer may be a FocusLayer, whose AnimatePresence needs a distinct key per child. */}
+          <div key="backdrop" className="absolute inset-0 bg-black/65" onClick={onClose} />
           <motion.div
+            key="panel"
             className="relative w-full max-w-[480px] rounded-t-[32px] border-t border-line bg-card2 px-6 pt-3"
             style={{ paddingBottom: 'calc(28px + var(--bottom))' }}
             initial={{ y: '100%' }}

@@ -4,7 +4,7 @@ import { isDemo } from './lib/api'
 import { RefreshNotice } from './RefreshNotice'
 import { coursesEntry } from './lib/learning-entry'
 import { entryHashFromParam } from './lib/outside-entry'
-import { parseGuideStartParam } from './lib/discovery-events'
+import { isWarmupStartParam, parseGuideStartParam, WARMUP_ID } from './lib/discovery-events'
 import { track } from './lib/track'
 import { academyEntry } from './lib/academy-entry'
 import { bindBack, initTelegram, inTelegram, startParam } from './lib/tg'
@@ -34,6 +34,7 @@ const EditorScreen = lazy(() => import('./screens/AdminEditor').then((m) => ({ d
 const AnalyticsScreen = lazy(() => import('./screens/Analytics').then((m) => ({ default: m.AnalyticsScreen })))
 const CoursesAdminScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CoursesAdminScreen })))
 const CourseEditorScreen = lazy(() => import('./screens/AdminCourses').then((m) => ({ default: m.CourseEditorScreen })))
+const AccessAdminScreen = lazy(() => import('./screens/AdminAccess').then((m) => ({ default: m.AccessAdminScreen })))
 const LabScreen = lazy(() => import('./screens/Lab').then((m) => ({ default: m.LabScreen })))
 const JourneyScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.JourneyScreen })))
 const ClubScreen = lazy(() => import('./screens/Experience').then((m) => ({ default: m.ClubScreen })))
@@ -125,6 +126,7 @@ function Shell() {
   // Прямая ссылка на урок: t.me/бот?start=l12
   useEffect(() => {
     const freeGuide = parseGuideStartParam(location.hash ? '' : startParam)
+    const warmup = !location.hash && isWarmupStartParam(startParam)
     const academyPath = academyEntry(location.hash, location.hash ? '' : location.pathname, location.hash ? '' : startParam)
     const coursesPath = coursesEntry(location.hash, location.hash ? '' : location.pathname, location.hash ? '' : startParam)
     const entryHash = location.hash || entryHashFromParam(startParam)
@@ -134,8 +136,9 @@ function Shell() {
     else if (coursesPath) {useStore.getState().setTab('courses');if(coursesPath!=='/courses')useStore.getState().push({type:'learning',path:coursesPath})}
     else if (academyPath) useStore.getState().push({ type: 'academy', path: academyPath })
     else if (freeGuide) {useStore.getState().setTab('courses');useStore.getState().push({type:'learning',path:'/courses/start/'+freeGuide.guideId})}
-    track('discovery_open',{source:freeGuide?'telegram_guide':postId?'blog':/(?:^|_)l\d+(?:_|$)/.test(startParam)?'telegram_post':/(?:^|_)c\d+(?:_|$)/.test(startParam)?'telegram_course':'direct'})
-    if (!initialRoute && !location.hash && !postId && !coursesPath && !academyPath && !freeGuide) {
+    else if (warmup) {useStore.getState().setTab('courses');useStore.getState().push({type:'learning',path:'/courses/start/'+WARMUP_ID})}
+    track('discovery_open',{source:freeGuide||warmup?'telegram_guide':postId?'blog':/(?:^|_)l\d+(?:_|$)/.test(startParam)?'telegram_post':/(?:^|_)c\d+(?:_|$)/.test(startParam)?'telegram_course':'direct'})
+    if (!initialRoute && !location.hash && !postId && !coursesPath && !academyPath && !freeGuide && !warmup) {
       const id = Number(/(?:^|_)l(\d+)/.exec(startParam)?.[1] ?? 0)
       const course = Number(/(?:^|_)c(\d+)/.exec(startParam)?.[1] ?? 0)
       if (id) useStore.getState().push({ type: 'lesson', id })
@@ -169,13 +172,14 @@ function Shell() {
       <AnimatePresence>
         {stack.map((o, i) => (
           <FocusLayer key={overlayKey(o, i)} active={i === stack.length - 1 && !reward && !share} label={o.type === 'companion-settings' ? 'Настроить своего Dots' : o.type === 'lesson' ? 'Публикация' : 'Экран приложения'} onClose={o.type === 'companion-settings' ? pop : undefined}>
-            <OverlayView overlay={o} />
-            {i === stack.length - 1 && !reward && !share && <RefreshNotice />}
+            {/* FocusLayer wraps children in AnimatePresence: every sibling needs its own key. */}
+            <OverlayView key="view" overlay={o} />
+            {i === stack.length - 1 && !reward && !share && <RefreshNotice key="refresh" />}
           </FocusLayer>
         ))}
       </AnimatePresence>
 
-      <AnimatePresence>{reward && <FocusLayer key="reward" active={!share} label="Награда" className="absolute inset-0 z-50"><RewardModal reward={reward} />{!share && <RefreshNotice />}</FocusLayer>}</AnimatePresence>
+      <AnimatePresence>{reward && <FocusLayer key="reward" active={!share} label="Награда" className="absolute inset-0 z-50"><RewardModal key="reward-view" reward={reward} />{!share && <RefreshNotice key="refresh" />}</FocusLayer>}</AnimatePresence>
 
       {!stack.length && !reward && !share && <RefreshNotice />}
       <ShareSheet />
@@ -228,6 +232,12 @@ function OverlayView({ overlay }: { overlay: Overlay }) {
       return (
         <Suspense fallback={null}>
           <CoursesAdminScreen />
+        </Suspense>
+      )
+    case 'access-admin':
+      return (
+        <Suspense fallback={null}>
+          <AccessAdminScreen />
         </Suspense>
       )
     case 'course-editor':

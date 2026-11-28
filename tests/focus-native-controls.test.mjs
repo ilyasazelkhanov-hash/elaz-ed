@@ -48,3 +48,13 @@ test('disclosure content expands and empty scopes still trap safely',()=>harness
  for(const item of items)item.disabled=true
  assert.equal(key(),true);assert.equal(doc.activeElement,root)
 }))
+test('every sibling passed into the layer AnimatePresence has its own key',async()=>{
+ const read=path=>readFile(new URL(path,import.meta.url),'utf8')
+ const [layer,app,ui,profile]=await Promise.all(['../src/FocusLayer.tsx','../src/App.tsx','../src/ui.tsx','../src/screens/Profile.tsx'].map(read))
+ assert.match(layer,/<AnimatePresence>\{children\}<\/AnimatePresence>/,'the layer still hands children to AnimatePresence')
+ // Unkeyed siblings share the implicit empty key and React reports duplicate children.
+ assert.match(app,/<OverlayView key="view" overlay=\{o\} \/>/)
+ assert.match(app,/&& <RefreshNotice key="refresh" \/>\}\s*<\/FocusLayer>/)
+ assert.match(app,/<RewardModal key="reward-view" reward=\{reward\} \/>\{!share && <RefreshNotice key="refresh" \/>\}/)
+ for(const source of [ui,profile]){assert.match(source,/<div key="backdrop" className="absolute inset-0 bg-black\/65"/);assert.match(source,/key="panel"/)}
+})

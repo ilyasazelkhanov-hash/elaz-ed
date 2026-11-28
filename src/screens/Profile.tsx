@@ -262,8 +262,8 @@ export function Profile() {
 
       <AnimatePresence>
         {picked && <FocusLayer key="achievement" active label={`Достижение: ${picked.title}`} onClose={() => setOpen(null)} className="fixed inset-0 z-[60] flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/65" onClick={() => setOpen(null)} aria-hidden="true" />
-          <div className="scroll relative max-h-[85dvh] w-full max-w-[480px] rounded-t-[32px] border-t border-line bg-card2 px-6 pt-5 text-center" style={{ paddingBottom: 'calc(28px + var(--bottom))' }}>
+          <div key="backdrop" className="absolute inset-0 bg-black/65" onClick={() => setOpen(null)} aria-hidden="true" />
+          <div key="panel" className="scroll relative max-h-[85dvh] w-full max-w-[480px] rounded-t-[32px] border-t border-line bg-card2 px-6 pt-5 text-center" style={{ paddingBottom: 'calc(28px + var(--bottom))' }}>
             <Tap onClick={() => setOpen(null)} className="mb-4 min-h-11 rounded-xl border border-line px-5 text-sm font-semibold">Закрыть</Tap>
             <Emoji char={picked.emoji} size={92} animated={me.achievements.includes(picked.code)} className={`mx-auto ${me.achievements.includes(picked.code) ? '' : 'opacity-30 grayscale'}`} />
             <p className="mt-4 font-display text-[20px] font-semibold">{picked.title}</p>

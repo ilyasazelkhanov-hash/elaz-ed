@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react'
+import { plainDashes } from '../../lib/plain-dashes'
 import { motion, useMotionValue, useTransform, type MotionValue } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { GRADIENTS, iconFor } from '../../lib/game'
@@ -105,10 +106,10 @@ function HeroCard({ card, active, single, index, step, scrollX }: HeroProps) {
             </span>
           )}
         </div>
-        <h3 className="mt-3 line-clamp-3 max-w-[82%] font-display text-[20px] font-semibold leading-[1.14]">{card.title}</h3>
+        <h3 className="mt-3 line-clamp-3 max-w-[82%] font-display text-[20px] font-semibold leading-[1.14]">{plainDashes(card.title)}</h3>
         {card.subtitle && (
           <p className="mt-2 max-w-[58%] text-[13.5px] font-medium leading-snug opacity-85">
-            <Typed text={card.subtitle} active={active} />
+            <Typed text={plainDashes(card.subtitle)} active={active} />
           </p>
         )}
         <div className="tabular mt-auto flex items-center gap-2 text-[12.5px] font-bold">

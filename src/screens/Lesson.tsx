@@ -1,4 +1,5 @@
 import { learningDraftKey, readLearningDraft, writeLearningDraft, clearLearningDraft } from '../lib/learning-drafts'
+import { plainDashes } from '../lib/plain-dashes'
 import { CoverImage } from '../CoverImage'
 import { Check, ChevronLeft, Copy, Eye, Heart, Send, X } from 'lucide-react'
 import { AnimatePresence, motion, useMotionValue } from 'motion/react'
@@ -188,8 +189,8 @@ function LessonSession({ id, from, post = false }: { id: number; from?: Inset; p
                   <Eye size={12} /> {view.views}
                 </span>
               </div>
-              <h1 className="selectable mt-3.5 font-display text-[25px] font-semibold leading-[1.15]">{view.title}</h1>
-              {view.subtitle && <p className="selectable mt-2.5 text-[16px] leading-snug text-mute">{view.subtitle}</p>}
+              <h1 className="selectable mt-3.5 font-display text-[25px] font-semibold leading-[1.15]">{plainDashes(view.title)}</h1>
+              {view.subtitle && <p className="selectable mt-2.5 text-[16px] leading-snug text-mute">{plainDashes(view.subtitle)}</p>}
             </>
           )}
 

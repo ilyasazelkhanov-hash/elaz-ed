@@ -22,6 +22,14 @@
       "destination": "/courses/:code/index.html"
     },
     {
+      "source": "/start",
+      "destination": "/start/index.html"
+    },
+    {
+      "source": "/start/:guide(first-request|check-answer|choose-tool|image-brief|safe-workflow|warmup)",
+      "destination": "/start/:guide/index.html"
+    },
+    {
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }

@@ -1,4 +1,5 @@
 import test from 'node:test'
+import {plainDashes} from '../src/lib/plain-dashes.ts'
 import assert from 'node:assert/strict'
 import vm from 'node:vm'
 import {rolldown} from 'rolldown'
@@ -50,7 +51,7 @@ function setup() {
   track:{track:(name,props,lessonId)=>events.push(discoveryEvent(name,props,lessonId))},
   game:{iconFor:()=> '✨',GRADIENTS:{ocean:{css:'blue',ink:'white'}},lessonsWord:()=> 'уроков',plural:()=> 'друзей'},
   'learning-drafts':learningDrafts, 'learning-next':{learningScope},
-  links:{appLink:()=>null},sfx:{sfx:{levelUp(){}}},content:{isBlogPost:()=>false},
+  links:{appLink:()=>null},sfx:{sfx:{levelUp(){}}},content:{isBlogPost:()=>false},'plain-dashes':{plainDashes},
   'og-practice':{ogPracticeCourses:practiceOutlines,visiblePracticeCourses:()=>practiceOutlines,practiceMatches,practiceTopics,practiceProgressStorageKey,practiceProjectLesson,readPracticeProgress:()=>({done:[]}),subscribePracticeProgress:()=>()=>{},getPracticeResume:()=>null,practicePath:(...parts)=>'/og-practice/'+parts.join('/'),writePracticeProgress(){}},
  }
  const cache={}

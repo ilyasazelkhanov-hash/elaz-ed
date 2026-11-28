@@ -474,7 +474,10 @@ export interface AdminStats {
   completions: number
 }
 
-export type ShareKind = 'level' | 'lesson' | 'streak' | 'achievement'
+/** Виды, для которых сервер хранит картинку и готовит сообщение бота. */
+export type ServerShareKind = 'level' | 'lesson' | 'streak' | 'achievement'
+/** `guide` и `warmup` существуют только в приложении: сервер о них не знает. */
+export type ShareKind = ServerShareKind | 'guide' | 'warmup'
 
 export interface ClientEvent {
   name: 'share' | 'copy' | 'story_open' | 'theme' | 'lab' | 'catchup' | 'guide_open' | 'guide_copy' | 'guide_try' | 'guide_feedback' | 'blog_save' | 'course_view' | 'course_preview' | 'checkout_start' | 'checkout_result' | 'discovery_open'
@@ -524,9 +527,9 @@ export interface Api {
   top(): Promise<TopResult>
   track(events: ClientEvent[]): Promise<void>
   /** Кладёт картинку в хранилище и возвращает публичную ссылку; в демо-режиме — null. */
-  shareUpload(image: string, kind: ShareKind): Promise<string | null>
+  shareUpload(image: string, kind: ServerShareKind): Promise<string | null>
   /** Готовит сообщение с картинкой и кнопкой; возвращает его id для Telegram. */
-  shareMessage(kind: ShareKind, lessonId?: number): Promise<string | null>
+  shareMessage(kind: ServerShareKind, lessonId?: number): Promise<string | null>
   courseRequest(id: number): Promise<void>
   /** Ссылка на счёт в звёздах; null — демо-режим, оплата условная. */
   courseInvoice(id: number): Promise<string | null>

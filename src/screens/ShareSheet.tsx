@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, errorText, isDemo } from '../lib/api'
 import { appLink } from '../lib/links'
 import { newsShareText } from '../../supabase/functions/_shared/news'
-import { blobToBase64, renderCard, type ShareCard } from '../lib/shareCard'
+import { blobToBase64, isServerShareKind, renderCard, shareUploadKind, type ShareCard } from '../lib/shareCard'
 import { canDownload, canShareMessage, canShareStory, downloadFile, haptic, shareLink, shareMessage, shareToStory } from '../lib/tg'
 import { track } from '../lib/track'
 import { useStore } from '../store'
@@ -79,7 +79,7 @@ function Body({ card }: { card: ShareCard }) {
   // Telegram публикует и сохраняет картинку только по ссылке — загружаем её один раз.
   const hostedUrl = async () => {
     if (hosted.current || !blob) return hosted.current
-    hosted.current = await api.shareUpload(await blobToBase64(blob), card.kind)
+    hosted.current = await api.shareUpload(await blobToBase64(blob), shareUploadKind(card.kind))
     return hosted.current
   }
 
@@ -106,7 +106,8 @@ function Body({ card }: { card: ShareCard }) {
   // Сообщение с картинкой и кнопкой «Открыть»: Telegram сам покажет выбор чата.
   const toChat = () =>
     run('chat', async () => {
-      if (!(await hostedUrl())) return
+      // Подпись и ссылку такого сообщения собирает сервер, а разборы и разминку он не знает.
+      if (!isServerShareKind(card.kind) || !(await hostedUrl())) return
       const id = await api.shareMessage(card.kind, card.lessonId)
       if (id && (await shareMessage(id))) {
         haptic.success()
@@ -161,7 +162,7 @@ function Body({ card }: { card: ShareCard }) {
       </div>
 
       <div className="mt-5 space-y-2">
-        {canShareMessage && !isDemo && (
+        {canShareMessage && !isDemo && isServerShareKind(card.kind) && (
           <Tap onClick={toChat} disabled={!file || !!busy} className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[18px] bg-inverse text-[14.5px] font-semibold text-on-inverse disabled:opacity-60">
             {busy === 'chat' ? <Spinner size={18} /> : <MessageCircle size={18} />} Отправить в чат
           </Tap>

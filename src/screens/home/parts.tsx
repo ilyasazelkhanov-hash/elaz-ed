@@ -1,4 +1,5 @@
 import { Check, Lock, Star } from 'lucide-react'
+import { plainDashes } from '../../lib/plain-dashes'
 import { GRADIENTS, iconFor, lessonsWord } from '../../lib/game'
 import type { Card, Course } from '../../lib/types'
 import { insetOf, useStore } from '../../store'
@@ -35,7 +36,7 @@ export function StoryBubble({ card, index }: { card: Card; index: number }) {
           </div>
         </div>
       </div>
-      <p className={`mt-1.5 line-clamp-2 text-center text-[11px] font-medium leading-tight ${seen ? 'text-faint' : 'text-ink'}`}>{card.title}</p>
+      <p className={`mt-1.5 line-clamp-2 text-center text-[11px] font-medium leading-tight ${seen ? 'text-faint' : 'text-ink'}`}>{plainDashes(card.title)}</p>
     </Tap>
   )
 }
@@ -60,7 +61,7 @@ export function CourseCard({ course, single }: { course: Course; single: boolean
           {course.access ? <Check size={12} strokeWidth={3.5} /> : <Lock size={11} strokeWidth={3} />}
           {course.access ? 'Курс открыт' : 'Закрытый курс'}
         </span>
-        <h3 className="mt-2.5 max-w-[78%] font-display text-[19px] font-semibold leading-[1.15]">{course.title}</h3>
+        <h3 className="mt-2.5 max-w-[78%] font-display text-[19px] font-semibold leading-[1.15]">{plainDashes(course.title)}</h3>
         <div className="tabular mt-auto flex items-center gap-2 text-[12.5px] font-bold">
           <span className="rounded-full bg-black/15 px-2.5 py-1">{course.access ? `${course.done} из ${course.lessons}` : `${course.lessons} ${lessonsWord(course.lessons)}`}</span>
           {!course.access && course.price_stars > 0 && (

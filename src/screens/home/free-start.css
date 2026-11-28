@@ -2,3 +2,59 @@
 .free-start a.free-start-link{min-height:44px;margin:12px 0 0}.free-start a:focus-visible{outline:2px solid var(--color-violet);outline-offset:4px}
 
 .free-start-worked{min-width:0;overflow-wrap:anywhere}.free-start-worked details{border-top:1px solid var(--color-line);margin-top:14px}.free-start-worked summary{min-height:44px;padding:12px 0;font-size:15px;font-weight:600;line-height:1.45;cursor:pointer}.free-start-example-version{margin-top:14px;padding:12px 0}.free-start-example-version strong{font-size:13px;color:var(--color-ink)}.free-start-example-version p{color:var(--color-ink);white-space:pre-wrap}.free-start-worked ul{padding-left:20px;margin:10px 0}.free-start-worked li{font-size:15px;line-height:1.65;margin-top:10px;color:var(--color-mute)}
+
+/* Start screen: progress, local sparks, warm-up entry and the five-step route. */
+.free-start-status{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin-top:14px}
+.free-start-status .free-start-progress{margin-top:0}
+.free-start-sparks{min-width:0;font-size:13px}.free-start-sparks[open]{flex-basis:100%}
+.free-start-sparks summary{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 2px;cursor:pointer;list-style:none;color:var(--color-amber);font-weight:650}.free-start-sparks summary::-webkit-details-marker{display:none}
+.free-start-sparks summary span{text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--color-amber) 45%,transparent);text-underline-offset:4px}
+.free-start .free-start-sparks p{padding-bottom:6px;font-size:13px;line-height:1.6;color:var(--color-mute)}
+.free-start-warmup{display:flex;width:100%;gap:12px;align-items:center;margin-top:10px;padding:16px 15px;border:1px solid color-mix(in srgb,var(--color-amber) 38%,var(--color-line));border-radius:22px;background:linear-gradient(135deg,color-mix(in srgb,var(--color-amber) 10%,var(--color-card)),var(--color-card));text-align:left}
+.free-start-warmup .free-start-card-icon{color:var(--color-amber)}.free-start-warmup>span:nth-child(2){flex:1;min-width:0}.free-start-warmup>svg{flex-shrink:0;color:var(--color-amber)}
+.free-start-warmup small{display:block;font-size:11px;font-weight:650;color:var(--color-amber)}.free-start-warmup b{display:block;margin:4px 0;font-size:16px;line-height:1.35}.free-start-warmup>span:nth-child(2)>span{display:block;font-size:13px;line-height:1.5;color:var(--color-mute)}
+.free-start .free-start-route-note{margin:-6px 0 14px;font-size:13px;color:var(--color-mute)}
+.free-start-card[data-state=current]{border-color:color-mix(in srgb,var(--color-violet) 55%,var(--color-line));background:color-mix(in srgb,var(--color-violet) 7%,var(--color-card));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--color-violet) 35%,transparent)}
+.free-start-card .free-start-card-status{display:inline-block!important;margin-top:9px;padding:3px 9px;border:1px solid var(--color-line);border-radius:99px;font-size:11px!important;font-weight:650;line-height:1.5;color:var(--color-mute)}
+.free-start-card[data-state=current] .free-start-card-status{border-color:var(--color-violet);color:var(--color-violet)}
+.free-start-card[data-state=tried] .free-start-card-status{border-color:color-mix(in srgb,var(--color-success) 45%,var(--color-line));color:var(--color-success)}
+.free-start-card[data-state=tried] .free-start-card-tail{width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--color-success) 14%,var(--color-card))}
+.free-start-card[data-state=current] .free-start-card-tail,.free-start-card[data-state=idle] .free-start-card-tail,.free-start-card[data-state=started] .free-start-card-tail{color:var(--color-mute)}
+
+/* End of a guide and of the warm-up: facts, the learner's own mark, one next step. */
+.free-start-finale[data-done]{border-color:color-mix(in srgb,var(--color-success) 38%,var(--color-line))}
+.free-start-finale-facts{display:grid;gap:8px;margin:14px 0 0;padding:0;list-style:none}
+.free-start-finale-facts li{display:flex;align-items:flex-start;gap:9px;font-size:14px;line-height:1.5;color:var(--color-mute)}.free-start-finale-facts svg{flex-shrink:0;margin-top:3px}
+.free-start-finale-facts li[data-ok]{color:var(--color-ink)}.free-start-finale-facts li[data-ok] svg{color:var(--color-success)}
+.free-start-finale-share{margin-top:18px;padding-top:4px;border-top:1px solid var(--color-line)}
+.free-start-task .free-start-finale-secondary{margin-top:12px;border:1px solid color-mix(in srgb,var(--color-violet) 45%,var(--color-line));background:color-mix(in srgb,var(--color-violet) 8%,var(--color-card));color:var(--color-violet)}
+.free-start .free-start-finale-next{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;margin-top:14px;padding:14px 16px;border-radius:18px;background:var(--color-violet);color:var(--color-on-violet);text-align:left;font-size:15px;font-weight:650;line-height:1.35;box-shadow:0 3px 0 color-mix(in srgb,var(--color-violet) 65%,var(--color-bg))}
+.free-start-finale-next span{min-width:0;overflow-wrap:anywhere}.free-start-finale-next small{display:block;margin-bottom:4px;font-size:11px;font-weight:600;opacity:.82;color:inherit}.free-start-finale-next svg{flex-shrink:0}
+
+/* AI-разминка */
+.free-start-article[data-warmup=run] .guide-journey{margin-top:0}
+.guide-journey .warmup-solution{margin-top:8px;font-size:14px;line-height:1.6}.warmup-solution b{font-weight:650}
+.warmup-score{padding:22px;border:1px solid color-mix(in srgb,var(--color-amber) 35%,var(--color-line));border-radius:28px;background:linear-gradient(135deg,color-mix(in srgb,var(--color-amber) 11%,var(--color-card)),var(--color-card))}
+.warmup-score .free-start-kicker{color:var(--color-amber)}
+.free-start .warmup-score-number{display:flex;align-items:baseline;gap:10px;margin:14px 0 6px;line-height:1}
+.warmup-score-number b{font-family:var(--font-display);font-size:64px;font-weight:700;letter-spacing:-.04em;background:var(--aurora-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.warmup-score-number span{font-size:18px;font-weight:600;color:var(--color-mute)}
+.free-start .warmup-score h1{margin:8px 0;font-size:clamp(22px,6vw,26px)}.free-start .warmup-score>p{font-size:15px;color:var(--color-mute)}
+.free-start .warmup-score .guide-journey-gain{display:flex;align-items:center;gap:6px;margin-top:12px;color:var(--color-amber);font-size:13px;font-weight:650}
+.warmup-topics{display:grid;margin:18px 0 0;padding:0;list-style:none;border:1px solid var(--color-line);border-radius:20px;background:var(--color-card);overflow:hidden}
+.warmup-topics li+li{border-top:1px solid var(--color-line)}
+.warmup-topics button{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:10px 14px;text-align:left}.warmup-topics button>svg{flex-shrink:0;color:var(--color-mute)}
+.warmup-topics button>span:nth-child(2){flex:1;min-width:0}.warmup-topics b{display:block;font-size:14px;font-weight:650}.warmup-topics small{display:block;margin-top:2px;font-size:12px;line-height:1.45;color:var(--color-mute);overflow-wrap:anywhere}
+.warmup-mark{display:grid;place-items:center;flex-shrink:0;width:28px;height:28px;border-radius:50%;border:1px solid var(--color-rose);color:var(--color-rose)}.warmup-mark[data-ok]{border-color:var(--color-success);color:var(--color-success);background:color-mix(in srgb,var(--color-success) 12%,transparent)}
+.warmup-rules{display:grid;gap:10px;margin:18px 0 0;padding:0 4px 0 22px;font-size:14px;line-height:1.6;color:var(--color-mute)}
+.free-start-article [tabindex="-1"]:focus{outline:none}
+@media(max-width:350px){.free-start-warmup{padding:14px 10px;gap:8px}.warmup-score{padding:18px}.warmup-score-number b{font-size:54px}}
+
+/* Guide page: a tighter header keeps the first training step and its action on the first screen. */
+.free-start-article>.free-start-link{margin-bottom:4px}
+.free-start-article .free-start-eyebrow{margin:2px 0 10px}
+.free-start-article .free-start-intro{margin-top:10px}
+.free-start-article .free-start-time{margin:8px 0 12px}
+.free-start-article .free-start-result{padding:13px 15px;border-radius:16px}
+.free-start-article>.free-start-note{margin-top:10px}
+.free-start-article>.guide-journey{margin-top:12px}

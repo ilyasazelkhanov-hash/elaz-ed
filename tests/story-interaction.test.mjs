@@ -17,6 +17,7 @@ const imports={
  '../lib/sfx':url('export const sfx={}'),
  '../lib/tg':url('export const haptic={}'),
  '../lib/track':url('export const track=()=>{}'),
+ '../lib/plain-dashes':new URL('../src/lib/plain-dashes.ts',import.meta.url).href,
  '../Markdown':url('export const Markdown="article"'),
  '../ui':url('export const Emoji="i",Pattern="i",Tap="button"'),
  '../store':url(`const store={feed:[${JSON.stringify(fixture)}],pop(){},markSeen(){}};export const useStore=fn=>fn(store);useStore.getState=()=>store`),

@@ -3,6 +3,7 @@ import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { api, ApiError, errorText } from '../lib/api'
 import { GRADIENT_NAMES, GRADIENTS, plural } from '../lib/game'
+import { starsEstimateText } from '../lib/stars-economy'
 import { confirmDialog, haptic } from '../lib/tg'
 import type { AccessRequest, AdminCourse, CourseDraft, GradientName, Payment } from '../lib/types'
 import { useStore } from '../store'
@@ -326,6 +327,8 @@ export function CourseEditorScreen({ course }: { course: AdminCourse | null }) {
             </div>
           </div>
           <p className="mt-2 text-[12.5px] leading-snug text-faint">С ценой курс продаётся за звёзды, и кнопки «Запросить доступ» у него нет. Ноль в цене - курс не продаётся, доступ по заявке. Ноль в «друзьях» - открыть приглашениями нельзя.</p>
+          {d.price_stars > 0 && <p data-price-estimate className="mt-2 text-[12.5px] leading-snug text-mute">{starsEstimateText(d.price_stars)}</p>}
+          {d.invite_unlock > 0 && <p className="mt-2 text-[12.5px] leading-snug text-mute">Друг засчитывается, когда впервые открывает приложение по ссылке ученика и подписан на канал. Это проверяет сервер. Репост или лайк проверить нельзя, поэтому они курс не открывают.</p>}
 
           <Label hint="меньше - выше в списке">Порядок</Label>
           <input id="course-position" type="number" inputMode="numeric" value={d.position} onChange={(e) => set('position', Math.max(0, Number(e.target.value)))} min={0} className={field} />
