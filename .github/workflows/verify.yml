@@ -24,8 +24,8 @@ jobs:
       run:
         working-directory: Azelkhanov-master
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.19.0
           cache: npm
@@ -43,8 +43,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.19.0
           cache: npm
@@ -57,7 +57,7 @@ jobs:
         run: node scripts/verify-recovery.mjs --fixture
       - name: Fingerprint release sources
         run: node scripts/release-manifest.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-source-manifest
           path: test-results/release-manifest.json
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.5.6
@@ -78,13 +78,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.19.0
       - name: Verify deployed identity, release contract and auth denials
         run: node scripts/release-smoke.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: published-release-smoke
@@ -93,12 +93,12 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.19.0
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.12.10
       - name: Install FFmpeg 8.1.2 and verify archive
@@ -123,7 +123,7 @@ jobs:
         run: |
           $build = (Get-Content test-results/audit-validation.json -Raw | ConvertFrom-Json).out
           node scripts/perf-assets.mjs --dist (Join-Path $build dist) --include App --out test-results/perf-assets.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: browser-release-evidence
@@ -131,12 +131,12 @@ jobs:
             test-results/og-product-browser.json
             test-results/perf-assets.json
           retention-days: 14
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: validation-results
           path: test-results/*.log
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: validation-summary
