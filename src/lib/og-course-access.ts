@@ -1,7 +1,7 @@
 import type { Card, Course, PracticeLessonOutline } from './types'
 
 type CourseIdentity = {key: string; title: string}
-type LessonIdentity = {key: string; title: string}
+type LessonIdentity = {key: string; title: string; previousTitle?: string}
 const normalizedTitle = (title: string) => title.trim().replace(/\s+/g, ' ').normalize('NFKC').toLocaleLowerCase('ru').replaceAll('ё', 'е')
 const validId = (id: number) => Number.isSafeInteger(id) && id > 0
 
@@ -27,7 +27,9 @@ export function resolvePracticeLesson(course: Course | null, outline: LessonIden
   const matches = course.practice_lessons.filter(lesson => lesson.key === outline.key && validId(lesson.id))
   return matches.length === 1 ? matches[0] : null
  }
- const legacy = feed.filter(lesson => lesson.kind === 'lesson' && lesson.published && lesson.course_id === course.id && validId(lesson.id) && normalizedTitle(lesson.title) === normalizedTitle(outline.title))
+ const titles = new Set([normalizedTitle(outline.title)])
+ if (outline.previousTitle) titles.add(normalizedTitle(outline.previousTitle))
+ const legacy = feed.filter(lesson => lesson.kind === 'lesson' && lesson.published && lesson.course_id === course.id && validId(lesson.id) && titles.has(normalizedTitle(lesson.title)))
  return legacy.length === 1 ? {key: outline.key, id: legacy[0].id, title: legacy[0].title, minutes: legacy[0].minutes, free_preview: legacy[0].free_preview, completed: legacy[0].completed} : null
 }
 
