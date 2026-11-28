@@ -43,7 +43,7 @@ const learnerCode = [
  'src/lib/og-course-access.ts', 'src/lib/stars-economy.ts', 'src/lib/access-grant.ts', 'src/lib/gamedev-course.json', 'src/lib/seed.json',
 ]
 // The isolated full run copies the app without the root README, so a missing optional file is skipped, never the required ones.
-const documents = ['docs/UNIT-ECONOMICS-2026-11.md', 'index.html', ...['README.md'].filter(file => existsSync(new URL(file, root)))]
+const documents = ['docs/UNIT-ECONOMICS-2026-11.md', 'docs/roadmaps/AFTER-N13-2026-12.md', 'index.html', ...['README.md', 'CONTRIBUTING.md', 'SECURITY.md'].filter(file => existsSync(new URL(file, root)))]
 
 test('learner-facing copy and the documents for people carry no stock phrases and no long dashes', () => {
  const found = []
