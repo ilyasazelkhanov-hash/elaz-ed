@@ -4,15 +4,15 @@
   "goal": "Собери первый 3D-прототип в Godot 4 с AI-помощником и проверь сборку в браузере.",
   "project": "Мини-арена с управлением WASD, врагом, здоровьем, опытом и перезапуском. На выходе - рабочая Web-сборка.",
   "emoji": "🎮",
-  "search_terms": ["Godot 4", "GDScript", "MCP", "Codex", "Claude Code", "Blender", "Playwright", "Ollama", "Kenney", "геймдев", "разработка игр"],
+  "search_terms": ["Godot 4", "GDScript", "чат агента", "Codex", "Claude", "веб-экспорт", "геймдев", "разработка игр"],
   "lessons": [
-    {"key": "gamedev-setup", "title": "1. Установка инструментов и первый запуск", "minutes": 25},
-    {"key": "gamedev-mcp", "title": "2. Проект Godot и подключение MCP", "minutes": 25},
-    {"key": "gamedev-agents", "title": "3. Первый запрос в Codex или Claude Code", "minutes": 20},
-    {"key": "gamedev-assets-qa", "title": "4. Blender, GLB и проверка в Playwright", "minutes": 35},
-    {"key": "gamedev-toolkit", "title": "5. Бесплатные ассеты, звук и тесты", "minutes": 20},
-    {"key": "gamedev-cli", "title": "6. Запуск и экспорт Godot через CLI", "minutes": 25},
-    {"key": "gamedev-ollama", "title": "7. Локальная модель через Ollama", "minutes": 25},
-    {"key": "gamedev-project", "title": "8. Итоговый проект и стартовый промпт", "minutes": 60}
+    {"key":"gamedev-setup","title":"1. Пустая арена запускается из Godot","previousTitle":"1. Установка инструментов и первый запуск","minutes":25},
+    {"key":"gamedev-mcp","title":"2. Игрок двигается и упирается в стены","previousTitle":"2. Проект Godot и подключение MCP","minutes":25},
+    {"key":"gamedev-agents","title":"3. Враг, урон и опыт","previousTitle":"3. Первый запрос в Codex или Claude Code","minutes":20},
+    {"key":"gamedev-assets-qa","title":"4. Проигрыш и повторная попытка","previousTitle":"4. Blender, GLB и проверка в Playwright","minutes":35},
+    {"key":"gamedev-toolkit","title":"5. Читаемая арена и интерфейс","previousTitle":"5. Бесплатные ассеты, звук и тесты","minutes":20},
+    {"key":"gamedev-cli","title":"6. Веб-версия из редактора","previousTitle":"6. Запуск и экспорт Godot через CLI","minutes":25},
+    {"key":"gamedev-ollama","title":"7. Один баг от жалобы до исправления","previousTitle":"7. Локальная модель через Ollama","minutes":25},
+    {"key":"gamedev-project","title":"8. Готовая арена и передача проекта","previousTitle":"8. Итоговый проект и стартовый промпт","minutes":60}
   ]
 }

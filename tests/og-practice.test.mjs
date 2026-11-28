@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import {resolvePracticeLesson} from '../src/lib/og-course-access.ts'
 import {readFile} from 'node:fs/promises'
 import {ogPracticeCourses,readPracticeProgress,writePracticeProgress,practiceProgressStorageKey,practiceProjectLesson,getPracticeResume,practicePath,practiceMatches,practiceTopics,practiceSections,visiblePracticeCourses} from '../src/lib/og-practice.ts'
 
@@ -89,12 +90,22 @@ test('resume follows the viewed lesson, advances completed lessons, and never re
 test('topic filters use actual course subjects and search includes lesson titles',()=>{
  assert.ok(ogPracticeCourses.some(c=>practiceMatches(c,'Дизайн','карусель')))
  assert.equal(ogPracticeCourses.filter(c=>practiceMatches(c,'Код','')).map(c=>c.key).join(','),'coding,gamedev-starter')
- assert.ok(practiceMatches(ogPracticeCourses.find(c=>c.key==='gamedev-starter'),'Код','godot ollama'))
+ assert.ok(practiceMatches(ogPracticeCourses.find(c=>c.key==='gamedev-starter'),'Код','godot чат агента'))
  assert.ok(practiceMatches(ogPracticeCourses[1],'Все','gemini notebook'))
  assert.ok(practiceMatches(ogPracticeCourses.find(c=>c.key==='media'),'Все','Suno'))
  assert.ok(practiceMatches(ogPracticeCourses.find(c=>c.key==='foundations'),'Все','Perplexity'))
  assert.equal(practiceMatches(ogPracticeCourses[1],'Все','несуществующий урок'),false)
  for(const topic of practiceTopics)assert.ok(ogPracticeCourses.some(c=>practiceMatches(c,topic,'')),topic)
+})
+
+test('GameDev lessons resolve during the title rollout without guessing between duplicates',()=>{
+ const course = {id:8}
+ const outline = ogPracticeCourses.find(item=>item.key==='gamedev-starter').lessons[5]
+ const oldCard = {id:221,kind:'lesson',published:true,course_id:8,title:outline.previousTitle}
+ const newCard = {...oldCard,title:outline.title}
+ assert.equal(resolvePracticeLesson(course,outline,[oldCard]).id,221)
+ assert.equal(resolvePracticeLesson(course,outline,[newCard]).id,221)
+ assert.equal(resolvePracticeLesson(course,outline,[oldCard,{...newCard,id:999}]),null)
 })
 
 test('reader sections preserve Markdown fences and separate practice from the explanation',()=>{
